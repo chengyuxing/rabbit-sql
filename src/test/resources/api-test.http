@@ -1,0 +1,12 @@
+GET https://jsonplaceholder.typicode.com/todos/1
+Accept: application/json
+
+###
+GET http://localhost:80/api/item?id=99
+Accept: application/json
+
+###
+GET www.baidu.com
+Accept: application/json
+
+###

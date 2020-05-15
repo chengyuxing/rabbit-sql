@@ -1,7 +1,7 @@
 package func;
 
-import org.rabbit.sql.types.Order;
-import org.rabbit.sql.types.Param;
+import com.github.chengyuxing.sql.types.Order;
+import com.github.chengyuxing.sql.types.Param;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;

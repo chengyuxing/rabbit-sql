@@ -4,7 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <description>对JDBC的一个薄封装工具类，提供基本的增删改查操作。</description>
-    <groupId>org.rabbit</groupId>
+    <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
     <packaging>jar</packaging>
     <version>2.0.6</version>
@@ -16,7 +16,7 @@
     <dependencies>
 
         <dependency>
-            <groupId>org.rabbit</groupId>
+            <groupId>com.github.chengyuxing</groupId>
             <artifactId>rabbit-common</artifactId>
             <version>${rabbit.common.version}</version>
         </dependency>

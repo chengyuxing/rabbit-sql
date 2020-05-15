@@ -1,12 +1,14 @@
 package tests;
 
+import com.github.chengyuxing.sql.dao.Condition;
+import com.github.chengyuxing.sql.dao.Filter;
+import com.github.chengyuxing.sql.dao.LightDao;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.rabbit.sql.dao.*;
-import org.rabbit.sql.Light;
-import org.rabbit.sql.dao.Params;
-import org.rabbit.sql.types.ValueWrap;
+import com.github.chengyuxing.sql.Light;
+import com.github.chengyuxing.sql.dao.Params;
+import com.github.chengyuxing.sql.types.ValueWrap;
 
 public class LightSessionTest {
 

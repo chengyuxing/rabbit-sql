@@ -173,12 +173,12 @@ public class LightDao extends JdbcSupport implements Light {
 
     @Override
     public <T> Optional<T> fetch(String sql, Function<DataRow, T> convert, ICondition ICondition) {
-        return query(sql, convert, ICondition).findFirst();
+        return query(sql, convert, ICondition, 1).findFirst();
     }
 
     @Override
     public <T> Optional<T> fetch(String sql, Function<DataRow, T> convert, Map<String, Param> args) {
-        return query(sql, convert, args).findFirst();
+        return query(sql, convert, args, 1).findFirst();
     }
 
     @Override

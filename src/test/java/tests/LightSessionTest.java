@@ -145,9 +145,15 @@ public class LightSessionTest {
     }
 
     @Test
-    public void strTest() throws Exception{
+    public void boolTest() throws Exception {
+        light.fetch("select 'a',true", r -> r)
+                .ifPresent(System.out::println);
+    }
+
+    @Test
+    public void strTest() throws Exception {
         String sql = "mm||mm";
-        System.out.println("\""+sql+"\"");
+        System.out.println("\"" + sql + "\"");
     }
 
 }

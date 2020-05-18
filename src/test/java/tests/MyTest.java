@@ -6,19 +6,19 @@ import func.FFilter;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.nutz.json.Json;
-import com.github.chengyuxing.common.types.DataRow;
-import com.github.chengyuxing.sql.dao.Condition;
-import com.github.chengyuxing.sql.dao.Filter;
-import com.github.chengyuxing.sql.dao.LightDao;
-import com.github.chengyuxing.sql.Light;
-import com.github.chengyuxing.sql.support.SQLFileManager;
-import com.github.chengyuxing.sql.page.Pageable;
-import com.github.chengyuxing.sql.page.impl.PGPageHelper;
-import com.github.chengyuxing.sql.transaction.Tx;
-import com.github.chengyuxing.sql.types.OUTParamType;
-import com.github.chengyuxing.sql.types.Order;
-import com.github.chengyuxing.sql.types.Param;
-import com.github.chengyuxing.sql.dao.Params;
+import rabbit.common.types.DataRow;
+import rabbit.sql.dao.Condition;
+import rabbit.sql.dao.Filter;
+import rabbit.sql.dao.LightDao;
+import rabbit.sql.Light;
+import rabbit.sql.support.SQLFileManager;
+import rabbit.sql.page.Pageable;
+import rabbit.sql.page.impl.PGPageHelper;
+import rabbit.sql.transaction.Tx;
+import rabbit.sql.types.OUTParamType;
+import rabbit.sql.types.Order;
+import rabbit.sql.types.Param;
+import rabbit.sql.dao.Params;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -26,7 +26,7 @@ import java.sql.*;
 import java.util.*;
 import java.util.stream.Stream;
 
-import static com.github.chengyuxing.sql.utils.SqlUtil.getPreparedSqlAndIndexedArgNames;
+import static rabbit.sql.utils.SqlUtil.getPreparedSqlAndIndexedArgNames;
 
 public class MyTest {
 

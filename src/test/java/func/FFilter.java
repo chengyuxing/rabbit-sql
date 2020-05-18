@@ -1,11 +1,11 @@
 package func;
 
-import com.github.chengyuxing.common.tuple.Triple;
+import rabbit.common.tuple.Triple;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.github.chengyuxing.sql.utils.SqlUtil.SEP;
+import static rabbit.sql.utils.SqlUtil.SEP;
 
 public class FFilter<T> {
     static final AtomicInteger integer = new AtomicInteger();

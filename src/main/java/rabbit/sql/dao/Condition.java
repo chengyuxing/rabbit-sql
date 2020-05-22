@@ -172,8 +172,8 @@ public class Condition implements IOrderBy {
             if (cnds.startsWith(" and ")) {
                 cnds = cnds.substring(5);
             }
-            return where + cnds + orderBy.getSql();
+            return "\n" + where + cnds + orderBy.getSql();
         }
-        return where + cnds;
+        return "\n" + where + cnds;
     }
 }

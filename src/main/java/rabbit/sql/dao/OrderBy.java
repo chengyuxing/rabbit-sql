@@ -30,6 +30,6 @@ public class OrderBy implements IOrderBy {
 
     @Override
     public String getSql() {
-        return " order by " + String.join(", ", orders);
+        return "\n order by " + String.join(", ", orders);
     }
 }

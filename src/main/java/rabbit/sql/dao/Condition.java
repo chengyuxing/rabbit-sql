@@ -30,12 +30,13 @@ public class Condition implements IOrderBy {
 
     }
 
-    public static Condition where() {
-        Condition condition = new Condition();
-        if (condition.where.equals("")) {
-            condition.where = " where ";
-        }
-        return condition;
+    /**
+     * 创建一个条件拼接器实例
+     *
+     * @return 空的条件拼接器
+     */
+    public static Condition create() {
+        return new Condition();
     }
 
     /**
@@ -45,7 +46,11 @@ public class Condition implements IOrderBy {
      * @return 条件拼接器
      */
     public static Condition where(IFilter filter) {
-        return where().concatFilterBy("", filter);
+        Condition condition = create();
+        if (condition.where.equals("")) {
+            condition.where = " where ";
+        }
+        return condition.concatFilterBy("", filter);
     }
 
     /**
@@ -168,6 +173,9 @@ public class Condition implements IOrderBy {
     @Override
     public String getSql() {
         String cnds = conditions.toString();
+        if (cnds.equals("")) {
+            return "";
+        }
         if (orderBy != null) {
             if (cnds.startsWith(" and ")) {
                 cnds = cnds.substring(5);

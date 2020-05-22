@@ -106,7 +106,9 @@ public abstract class DataSourceUtil {
     /**
      * 如果事务结束或当前没有事务，则释放连接对象资源
      *
+     * @param connection 连接对象
      * @param dataSource 数据源
+     * @throws SQLException 释放连接对象失败
      */
     public static void doReleaseConnectionIfNecessary(Connection connection, DataSource dataSource) throws SQLException {
         if (connection == null) {

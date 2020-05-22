@@ -41,6 +41,9 @@ public abstract class JdbcSupport {
     /**
      * 释放连接的实现逻辑，比如在开启事务同步时，应保持连接，
      * 而不应该释放，在执行其他非事务操作完成时应立即释放
+     *
+     * @param connection 连接对象
+     * @param dataSource 数据源
      */
     protected abstract void releaseConnection(Connection connection, DataSource dataSource);
 

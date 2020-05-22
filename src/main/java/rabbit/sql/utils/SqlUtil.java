@@ -104,6 +104,7 @@ public class SqlUtil {
      *
      * @param sourceSql 原始sql字符串
      * @param args      参数
+     * @return 替换模版占位符后的sql
      */
     public static String resolveSqlPart(final String sourceSql, Map<String, Param> args) {
         AtomicReference<String> sourceSqlRef = new AtomicReference<>(sourceSql);

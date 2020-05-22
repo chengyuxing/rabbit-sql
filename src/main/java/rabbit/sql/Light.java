@@ -30,7 +30,8 @@ public interface Light {
     /**
      * 执行一条原始sql
      *
-     * @param sql 原始sql
+     * @param sql    原始sql
+     * @param params 参数
      * @return 如果执行成功，DML语句返回1，DDL语句返回0
      */
     long execute(String sql, Map<String, Param> params);
@@ -65,7 +66,7 @@ public interface Light {
     /**
      * 删除
      *
-     * @param tableName 表名
+     * @param tableName  表名
      * @param ICondition 条件
      * @return 受影响的行数
      */
@@ -74,8 +75,8 @@ public interface Light {
     /**
      * 更新
      *
-     * @param tableName 表名
-     * @param data      数据
+     * @param tableName  表名
+     * @param data       数据
      * @param ICondition 条件
      * @return 受影响的行数
      */
@@ -133,10 +134,10 @@ public interface Light {
      * 查询<br>
      * e.g. select * from table
      *
-     * @param sql       查询sql
-     * @param convert   转换
+     * @param sql        查询sql
+     * @param convert    转换
      * @param ICondition 参数
-     * @param <T>       目标类型
+     * @param <T>        目标类型
      * @return 收集为流的结果集
      */
     <T> Stream<T> query(String sql, Function<DataRow, T> convert, ICondition ICondition);
@@ -145,11 +146,11 @@ public interface Light {
      * 查询<br>
      * e.g. select * from table
      *
-     * @param sql       查询sql
-     * @param convert   转换
+     * @param sql        查询sql
+     * @param convert    转换
      * @param ICondition 参数
-     * @param fetchSize 条数
-     * @param <T>       目标类型
+     * @param fetchSize  条数
+     * @param <T>        目标类型
      * @return 收集为流的结果集
      */
     <T> Stream<T> query(String sql, Function<DataRow, T> convert, ICondition ICondition, long fetchSize);
@@ -173,7 +174,7 @@ public interface Light {
      * @param recordQuery 查询SQL
      * @param countQuery  查询记录数SQL
      * @param convert     行转换
-     * @param ICondition   条件拼接器
+     * @param ICondition  条件拼接器
      * @param page        分页对象
      * @param <T>         目标类型
      * @return 分页的结果集
@@ -185,7 +186,7 @@ public interface Light {
      *
      * @param recordQuery 查询SQL
      * @param convert     行转换
-     * @param ICondition   条件拼接器
+     * @param ICondition  条件拼接器
      * @param page        分页对象
      * @param <T>         目标类型
      * @return 分页的结果集
@@ -230,10 +231,10 @@ public interface Light {
      * 获取一条<br>
      * e.g. select * from table
      *
-     * @param sql       查询sql
-     * @param convert   转换
+     * @param sql        查询sql
+     * @param convert    转换
      * @param ICondition 条件
-     * @param <T>       目标类型
+     * @param <T>        目标类型
      * @return 空或一条
      */
     <T> Optional<T> fetch(String sql, Function<DataRow, T> convert, ICondition ICondition);
@@ -261,7 +262,7 @@ public interface Light {
     /**
      * 判断是否存在数据行
      *
-     * @param sql       sql
+     * @param sql        sql
      * @param ICondition 条件
      * @return 是否存在
      */
@@ -290,6 +291,7 @@ public interface Light {
      * 获取数据库的元数据信息
      *
      * @return 数据库的元数据信息
+     * @throws SQLException sql连接异常
      */
     DatabaseMetaData getMetaData() throws SQLException;
 }

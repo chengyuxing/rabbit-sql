@@ -1,16 +1,14 @@
 package rabbit.sql.dao;
 
 import rabbit.common.tuple.Pair;
-import rabbit.sql.support.ICondition;
 import rabbit.sql.support.IFilter;
+import rabbit.sql.support.IOrderBy;
 import rabbit.sql.types.Order;
 import rabbit.sql.types.Param;
 import rabbit.sql.types.ValueWrap;
 import rabbit.sql.utils.SqlUtil;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -20,24 +18,24 @@ import static rabbit.sql.utils.SqlUtil.unWrapValue;
 /**
  * SQL条件拼装器
  */
-public class Condition implements ICondition {
+public class Condition implements IOrderBy {
     private final Map<String, Param> params = new HashMap<>();
 
-    private final StringBuilder where = new StringBuilder();
+    private String where = "";
+    private final StringBuilder conditions = new StringBuilder();
+    private IOrderBy orderBy;
     private int arg_index = 0;
-    private List<String> orders;
 
-    private Condition() {
+    Condition() {
 
     }
 
-    /**
-     * 创建一个新的条件拼接器
-     *
-     * @return 条件拼接器
-     */
-    public static Condition New() {
-        return new Condition();
+    public static Condition where() {
+        Condition condition = new Condition();
+        if (condition.where.equals("")) {
+            condition.where = " where ";
+        }
+        return condition;
     }
 
     /**
@@ -46,25 +44,17 @@ public class Condition implements ICondition {
      * @param filter 过滤器
      * @return 条件拼接器
      */
-    public Condition where(IFilter filter) {
-        if (filter.getValue() != IFilter.IGNORE_VALUE) {
-            Pair<String, String> sf = getSpecialField(filter.getField(), filter.getValue());
-            where.append(" where ").append(filter.getField()).append(filter.getOperator()).append(sf.getItem2());
-            params.put(sf.getItem1(), Param.IN(unWrapValue(filter.getValue())));
-        } else {
-            where.append(" where ").append(filter.getField()).append(filter.getOperator());
-        }
-        return this;
+    public static Condition where(IFilter filter) {
+        return where().concatFilterBy("", filter);
     }
 
     /**
-     * 排序
+     * 返回一个OrderBy实例
      *
-     * @param field 字段名
-     * @return 条件拼接器
+     * @return orderly
      */
-    public Condition orderBy(String field) {
-        return orderBy(field, Order.ASC);
+    public static IOrderBy orderBy() {
+        return new OrderBy();
     }
 
     /**
@@ -74,11 +64,23 @@ public class Condition implements ICondition {
      * @param order 排序枚举
      * @return 条件拼接器
      */
-    public Condition orderBy(String field, Order order) {
-        if (orders == null) {
-            orders = new ArrayList<>();
+    @Override
+    public IOrderBy orderBy(String field, Order order) {
+        if (orderBy == null) {
+            orderBy = new OrderBy();
         }
-        orders.add(field + " " + order.getValue());
+        orderBy.orderBy(field, order);
+        return this;
+    }
+
+    /**
+     * 一段原生sql表达式
+     *
+     * @param sql sql
+     * @return 条件拼接器
+     */
+    public Condition expression(String sql) {
+        conditions.append(" ").append(sql).append(" ");
         return this;
     }
 
@@ -113,13 +115,16 @@ public class Condition implements ICondition {
      * @return 条件拼接器
      */
     private Condition concatFilterBy(String s, IFilter filter, IFilter... more) {
+        if (where.equals(" where ")) {
+            //  去除
+        }
         if (more.length == 0) {
             if (filter.getValue() != IFilter.IGNORE_VALUE) {
                 Pair<String, String> sf = getSpecialField(filter.getField(), filter.getValue());
-                where.append(s).append(filter.getField()).append(filter.getOperator()).append(sf.getItem2());
+                conditions.append(s).append(filter.getField()).append(filter.getOperator()).append(sf.getItem2());
                 params.put(sf.getItem1(), Param.IN(unWrapValue(filter.getValue())));
             } else {
-                where.append(s).append(filter.getField()).append(filter.getOperator());
+                conditions.append(s).append(filter.getField()).append(filter.getOperator());
             }
             return this;
         }
@@ -135,7 +140,7 @@ public class Condition implements ICondition {
             }
             return f.getField() + f.getOperator();
         }).collect(Collectors.joining(s));
-        where.append(s).append("( ").append(childAndGroup).append(")");
+        conditions.append(s).append("( ").append(childAndGroup).append(")");
         return this;
     }
 
@@ -161,10 +166,14 @@ public class Condition implements ICondition {
     }
 
     @Override
-    public String getString() {
-        if (orders == null) {
-            return where.toString();
+    public String getSql() {
+        String cnds = conditions.toString();
+        if (orderBy != null) {
+            if (cnds.startsWith(" and ")) {
+                cnds = cnds.substring(5);
+            }
+            return where + cnds + orderBy.getSql();
         }
-        return where.toString() + " order by " + String.join(", ", orders);
+        return where + cnds;
     }
 }

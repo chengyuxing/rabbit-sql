@@ -12,14 +12,13 @@ import rabbit.common.utils.ResourceUtil;
 import rabbit.common.utils.StringUtil;
 import rabbit.sql.dao.Condition;
 import rabbit.sql.dao.Filter;
+import rabbit.sql.support.ICondition;
 import rabbit.sql.support.IFilter;
 import rabbit.sql.support.SQLFileManager;
 import rabbit.sql.page.AbstractPageHelper;
 import rabbit.sql.page.impl.OraclePageHelper;
 import rabbit.sql.page.Pageable;
 import rabbit.sql.types.Order;
-import rabbit.sql.types.Param;
-import rabbit.sql.dao.Params;
 import rabbit.sql.types.ValueWrap;
 import rabbit.sql.utils.SqlUtil;
 
@@ -88,30 +87,50 @@ public class Tests {
     }
 
     @Test
+    public void orderByTest() throws Exception {
+    }
+
+    @Test
     public void CndTest() throws Exception {
-        Condition condition = Condition.New().where(Filter.eq("id", 5))
+        ICondition condition = Condition.where(Filter.eq("id", 5))
                 .and(Filter.gt("age", ValueWrap.wrapEnd(26, "::text")))
                 .and(Filter.eq("name", "chengyuxing"), Filter.isNotNull("address"))
                 .or(Filter.endsWith("name", "jack"))
                 .and(Filter.gt("id", ValueWrap.wrapStart("interval", "7 minutes")))
                 .and(new JsonIncludeFilter())
-                .orderBy("id")
+                .asc("id")
                 .orderBy("px", Order.DESC);
 
-        Map<String, Param> params = Params.builder()
-                .putIn("name", "cyx")
-                .putIn("age", ValueWrap.wrapEnd("21", "::integer"))
-                .putIn("time", ValueWrap.wrapStart("timestamp", "1993-5-10"))
-                .build();
+        Condition xc = Condition.where();
 
-        String insert = SqlUtil.generateInsert("test.user", params);
-        String update = SqlUtil.generateUpdate("test.user", params);
+        int a = 1;
+        if (a == 1) {
+            xc.and(Filter.eq("name", "xyc"), Filter.like("name", "aaa")).asc("ddd");
+        }
+        if (a > 0) {
+            xc.and(Filter.gt("age", 27)).expression("(select * from user)").and(Filter.eq("a",1)).desc("age");
+        }
 
-        System.out.println(condition.getString());
+        ICondition orderc = Condition.orderBy().asc("name").desc("id");
+        System.out.println(orderc.getSql());
+
+//        Map<String, Param> params = Params.builder()
+//                .putIn("name", "cyx")
+//                .putIn("age", ValueWrap.wrapEnd("21", "::integer"))
+//                .putIn("time", ValueWrap.wrapStart("timestamp", "1993-5-10"))
+//                .build();
+
+//        String insert = SqlUtil.generateInsert("test.user", params);
+//        String update = SqlUtil.generateUpdate("test.user", params);
+
+        System.out.println(condition.getSql());
         System.out.println(condition.getParams());
 
-        System.out.println(insert);
-        System.out.println(update);
+        System.out.println(xc.getSql());
+        System.out.println(xc.getParams());
+
+//        System.out.println(insert);
+//        System.out.println(update);
     }
 
     @Test

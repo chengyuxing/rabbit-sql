@@ -11,6 +11,7 @@ import rabbit.sql.dao.Condition;
 import rabbit.sql.dao.Filter;
 import rabbit.sql.dao.LightDao;
 import rabbit.sql.Light;
+import rabbit.sql.support.ICondition;
 import rabbit.sql.support.SQLFileManager;
 import rabbit.sql.page.Pageable;
 import rabbit.sql.page.impl.PGPageHelper;
@@ -103,7 +104,7 @@ public class MyTest {
 //                "select count(1) from test.student t",
                 DataRow::toMap,
 //                Params.empty(),
-                Condition.New().where(Filter.lt("age", 27)),
+                Condition.where(Filter.lt("age", 27)),
                 PGPageHelper.of(1, 10));
         System.out.println(pageable);
     }
@@ -157,7 +158,7 @@ public class MyTest {
     @Test
     public void testQuery() throws SQLException {
         light.query("select * from test.user", row -> row,
-                Condition.New().where(Filter.eq("password", "123456"))
+                Condition.where(Filter.eq("password", "123456"))
                         .and(Filter.gtEq("id", 4))
                         .orderBy("id", Order.ASC))
                 .forEach(System.out::println);
@@ -229,7 +230,7 @@ public class MyTest {
 
     @Test
     public void TestDelete() throws SQLException {
-        int i = light.delete("test.user", Condition.New().where(Filter.like("name", "batch%")));
+        int i = light.delete("test.user", Condition.where(Filter.like("name", "batch%")));
         System.out.println(i);
     }
 
@@ -237,7 +238,7 @@ public class MyTest {
     public void testUpdate() throws SQLException {
         int i = light.update("test.user t",
                 Params.builder().put("name", Param.IN("SQLFileManager")).build(),
-                Condition.New().where(Filter.eq("id", 5)));
+                Condition.where(Filter.eq("id", 5)));
         System.out.println(i);
     }
 
@@ -256,7 +257,7 @@ public class MyTest {
 
     @Test
     public void ConditionTest() {
-        Condition conditions = Condition.New()//.where(Filter.eq("id", 25))
+        ICondition conditions = Condition.where(Filter.eq("id", 25))
                 .and(Filter.eq("password", "123456"),
                         Filter.eq("name", "admin"),
                         Filter.gtEq("id", 2),

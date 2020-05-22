@@ -90,13 +90,13 @@ public class LightDao extends JdbcSupport implements Light {
 
     @Override
     public int delete(String tableName, ICondition ICondition) {
-        return executeNonQuery("delete from " + tableName + " " + ICondition.getString(), ICondition.getParams());
+        return executeNonQuery("delete from " + tableName + " " + ICondition.getSql(), ICondition.getParams());
     }
 
     @Override
     public int update(String tableName, Map<String, Param> data, ICondition ICondition) {
         data.putAll(ICondition.getParams());
-        return executeNonQuery(SqlUtil.generateUpdate(tableName, data) + ICondition.getString(), data);
+        return executeNonQuery(SqlUtil.generateUpdate(tableName, data) + ICondition.getSql(), data);
     }
 
     @Override
@@ -140,9 +140,14 @@ public class LightDao extends JdbcSupport implements Light {
 
     @Override
     public <T> Pageable<T> query(String recordQuery, String countQuery, Function<DataRow, T> convert, ICondition ICondition, AbstractPageHelper page) {
-        String cnd = ICondition.getString();
+        String cnd = ICondition.getSql();
+        String countCnd = cnd;
+        int orderExist = cnd.lastIndexOf("order by");
+        if (orderExist != -1) {
+            countCnd = cnd.substring(0, cnd.lastIndexOf("order by"));
+        }
         Map<String, Param> paramMap = ICondition.getParams();
-        return query(getSql(recordQuery) + cnd, getSql(countQuery) + cnd, convert, paramMap, page);
+        return query(getSql(recordQuery) + cnd, getSql(countQuery) + countCnd, convert, paramMap, page);
     }
 
     @Override

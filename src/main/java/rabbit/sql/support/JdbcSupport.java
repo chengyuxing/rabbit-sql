@@ -185,7 +185,7 @@ public abstract class JdbcSupport {
                     params.putAll(args);
                 if (ICondition != null) {
                     params.putAll(ICondition.getParams());
-                    sourceSql += ICondition.getString();
+                    sourceSql += ICondition.getSql();
                 }
                 sourceSql = SqlUtil.resolveSqlPart(sourceSql, params);
                 log.debug("SQL：{}", sourceSql);

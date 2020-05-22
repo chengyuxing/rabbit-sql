@@ -101,8 +101,8 @@ public class LightSessionTest {
     public void testQuery() throws Exception {
         light.query("select * from test.user",
                 r -> r,
-                Condition.New().where(Filter.startsWith("name", "c"))
-                        .and(Filter.gt("id", ValueWrap.wrapEnd("1000", "::integer"))))
+                Condition.where(Filter.startsWith("name", "c"))
+                        .and(Filter.gt("id", ValueWrap.wrapEnd("1000", "::integer"))).desc("id"))
                 .forEach(System.out::println);
     }
 
@@ -131,7 +131,7 @@ public class LightSessionTest {
         light.update("test.score", Params.builder()
                         .putIn("student_id", ValueWrap.wrapEnd("5", "::integer"))
                         .build(),
-                Condition.New().where(Filter.eq("id", ValueWrap.wrapEnd("11", "::integer"))));
+                Condition.where(Filter.eq("id", ValueWrap.wrapEnd("11", "::integer"))));
     }
 
     @Test
@@ -146,7 +146,7 @@ public class LightSessionTest {
 
     @Test
     public void boolTest() throws Exception {
-        light.fetch("select 'a',true", r -> r)
+        light.fetch("select 'a',true,current_timestamp,current_date,current_time", r -> r)
                 .ifPresent(System.out::println);
     }
 

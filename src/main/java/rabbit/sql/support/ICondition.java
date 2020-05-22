@@ -20,5 +20,5 @@ public interface ICondition {
      *
      * @return sql
      */
-     String getString();
+    String getSql();
 }

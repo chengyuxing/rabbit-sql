@@ -101,7 +101,7 @@ public class Tests {
                 .asc("id")
                 .orderBy("px", Order.DESC);
 
-        Condition xc = Condition.where();
+        Condition xc = Condition.create();
 
         int a = 1;
         if (a == 1) {

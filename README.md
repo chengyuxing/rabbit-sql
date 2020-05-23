@@ -14,3 +14,44 @@
 - sql文件将优先寻找sql文件内的sql片段
 ## 对 *IntelliJ IDEA* 的友好支持
 - 配置了数据源的情况下，可以直接选中需要执行的sql右键，点击`Execute`执行sql，参数占位符(`:name`)和sql片段占位符(`${part}`)都会弹出输入框方便填写，直接进行测试sql
+
+## Excaple
+
+### 初始化
+
+```java
+dataSource = new HikariDataSource();
+dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
+dataSource.setUsername("chengyuxing");
+dataSource.setDriverClassName("org.postgresql.Driver");
+
+SQLFileManager manager = new SQLFileManager("pgsql/data.sql");
+
+LightDao light = new LightDao(dataSource);
+light.setSqlFileManager(manager);
+```
+
+### query
+
+```java
+light.query("&data.queryUser", row -> row,
+                Condition.where(Filter.eq("password", "123456"))
+                        .and(Filter.gtEq("id", 4))
+                        .orderBy("id", Order.ASC))
+                .forEach(System.out::println);
+```
+
+### call Function
+
+```java
+Stream<DataRow> rows = Tx.using(() -> {
+  DataRow row = light.call("call test.fun_query(:c::refcursor)",
+                           Params.builder()
+                           .put("c", Param.IN_OUT("result", OUTParamType.REF_CURSOR))
+                           .build());
+  System.out.println(row);
+  return row.get(0);
+});
+rows.forEach(System.out::println);
+```
+

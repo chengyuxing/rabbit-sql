@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * 排序
  */
-public class OrderBy implements IOrderBy {
+public final class OrderBy implements IOrderBy {
     private final List<String> orders = new ArrayList<>();
 
     OrderBy() {

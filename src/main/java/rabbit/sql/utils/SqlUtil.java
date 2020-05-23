@@ -1,15 +1,16 @@
 package rabbit.sql.utils;
 
 import rabbit.common.tuple.Pair;
-import rabbit.common.types.DataRow;
-import rabbit.sql.types.ParamMode;
-import rabbit.sql.types.Param;
 import rabbit.sql.dao.Wrap;
+import rabbit.sql.types.Ignore;
+import rabbit.sql.types.Param;
+import rabbit.sql.types.ParamMode;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -28,16 +29,34 @@ public class SqlUtil {
      */
     public static final Pattern CHILD_STR_PATTERN = Pattern.compile("'[^']*'", Pattern.MULTILINE);
 
-    public static String generateInsert(String tableName, Map<String, Param> data) {
-        String fields = String.join(",", data.keySet());
-        String holders = data.keySet().stream().
-                map(key -> ":" + key)
-                .collect(Collectors.joining(","));
-        return "insert into " + tableName + " (" + fields + ") values (" + holders + ")";
+    /**
+     * 忽略值过滤器
+     *
+     * @param data   数据
+     * @param ignore 忽略类型
+     * @return 过滤器
+     */
+    public static Predicate<String> ignoreValueFilter(final Map<String, Param> data, Ignore ignore) {
+        return k -> {
+            if (ignore == Ignore.NULL) {
+                return data.get(k).getValue() != null;
+            }
+            if (ignore == Ignore.BLANK) {
+                return data.get(k).getValue() != null && !data.get(k).getValue().equals("");
+            }
+            return true;
+        };
     }
 
-    public static String generateInsert(String tableName, DataRow row) {
-        return generateInsert(tableName, row.toMap(Param::IN));
+    public static String generateInsert(final String tableName, final Map<String, Param> data, final Ignore ignore) {
+        String fields = data.keySet().stream()
+                .filter(ignoreValueFilter(data, ignore))
+                .collect(Collectors.joining(","));
+        String holders = data.keySet().stream()
+                .filter(ignoreValueFilter(data, ignore))
+                .map(key -> ":" + key)
+                .collect(Collectors.joining(","));
+        return "insert into " + tableName + " (" + fields + ") values (" + holders + ")";
     }
 
     public static String generateUpdate(String tableName, Map<String, Param> data) {

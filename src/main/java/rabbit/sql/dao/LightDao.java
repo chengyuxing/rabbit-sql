@@ -8,6 +8,7 @@ import rabbit.sql.page.Pageable;
 import rabbit.sql.support.ICondition;
 import rabbit.sql.support.JdbcSupport;
 import rabbit.sql.support.SQLFileManager;
+import rabbit.sql.types.Ignore;
 import rabbit.sql.types.Param;
 import rabbit.sql.utils.SqlUtil;
 import org.slf4j.Logger;
@@ -71,19 +72,29 @@ public class LightDao extends JdbcSupport implements Light {
 
     @Override
     public int insert(String tableName, Map<String, Param> data) {
-        return executeNonQuery(SqlUtil.generateInsert(tableName, data), data);
+        return insert(tableName, data, null);
+    }
+
+    @Override
+    public int insert(String tableName, Map<String, Param> data, Ignore ignore) {
+        return executeNonQuery(SqlUtil.generateInsert(tableName, data, ignore), data);
     }
 
     @Override
     public int insert(String tableName, DataRow row) {
-        return executeNonQueryOfDataRow(SqlUtil.generateInsert(tableName, row), row);
+        return insert(tableName, row, null);
+    }
+
+    @Override
+    public int insert(String tableName, DataRow row, Ignore ignore) {
+        return executeNonQueryOfDataRow(SqlUtil.generateInsert(tableName, row.toMap(Param::IN), ignore), row);
     }
 
     @Override
     public int insert(String tableName, Collection<Map<String, Param>> data) {
         if (data != null && data.size() > 0) {
             Map<String, Param> first = data.stream().findFirst().get();
-            return executeNonQuery(SqlUtil.generateInsert(tableName, first), data);
+            return executeNonQuery(SqlUtil.generateInsert(tableName, first, null), data);
         }
         return -1;
     }

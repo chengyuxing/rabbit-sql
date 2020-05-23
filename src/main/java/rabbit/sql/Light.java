@@ -4,6 +4,7 @@ import rabbit.common.types.DataRow;
 import rabbit.sql.page.AbstractPageHelper;
 import rabbit.sql.page.Pageable;
 import rabbit.sql.support.ICondition;
+import rabbit.sql.types.Ignore;
 import rabbit.sql.types.Param;
 
 import java.sql.DatabaseMetaData;
@@ -49,10 +50,30 @@ public interface Light {
      * 插入
      *
      * @param tableName 表名
+     * @param data      数据
+     * @param ignore    忽略插入的值类型
+     * @return 受影响的行数
+     */
+    int insert(String tableName, Map<String, Param> data, Ignore ignore);
+
+    /**
+     * 插入
+     *
+     * @param tableName 表名
      * @param row       数据
      * @return 受影响的行数
      */
     int insert(String tableName, DataRow row);
+
+    /**
+     * 插入
+     *
+     * @param tableName 表名
+     * @param row       数据
+     * @param ignore    忽略插入的值类型
+     * @return 受影响的行数
+     */
+    int insert(String tableName, DataRow row, Ignore ignore);
 
     /**
      * 批量插入

@@ -1,5 +1,6 @@
 package rabbit.sql.types;
 
+import rabbit.sql.dao.Wrap;
 import rabbit.sql.support.IOutParam;
 
 /**
@@ -15,7 +16,7 @@ public final class Param {
      *
      * @param value 值 (可以是明确的值或包装值)
      * @return param
-     * @see ValueWrap
+     * @see Wrap
      */
     public static Param IN(Object value) {
         Param param = new Param();
@@ -43,7 +44,7 @@ public final class Param {
      * @param value 入参值 (可以是明确的值或包装值)
      * @param type  出参类型
      * @return param
-     * @see ValueWrap
+     * @see Wrap
      */
     public static Param IN_OUT(Object value, IOutParam type) {
         Param param = new Param();

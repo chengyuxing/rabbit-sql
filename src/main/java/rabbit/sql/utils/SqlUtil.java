@@ -4,7 +4,7 @@ import rabbit.common.tuple.Pair;
 import rabbit.common.types.DataRow;
 import rabbit.sql.types.ParamMode;
 import rabbit.sql.types.Param;
-import rabbit.sql.types.ValueWrap;
+import rabbit.sql.dao.Wrap;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -87,14 +87,14 @@ public class SqlUtil {
     }
 
     /**
-     * 解除字段值的包装，获取真实的字段值
+     * 如果是值包装类型，就解除包装获取真实值
      *
-     * @param value 包装的字段值
-     * @return 字段值
+     * @param value 值或包装类型值
+     * @return 真实值
      */
-    public static Object unWrapValue(Object value) {
-        if (value instanceof ValueWrap) {
-            return ((ValueWrap) value).getValue();
+    public static Object unwrapValue(Object value) {
+        if (value instanceof Wrap) {
+            return ((Wrap) value).getValue();
         }
         return value;
     }
@@ -115,8 +115,8 @@ public class SqlUtil {
                 sourceSqlRef.set(sourceSqlRef.get().replace("${" + k + "}", v));
             } else if (pm == ParamMode.IN || pm == ParamMode.IN_OUT) {
                 Object v = args.get(k).getValue();
-                if (v instanceof ValueWrap) {
-                    ValueWrap wrapV = (ValueWrap) v;
+                if (v instanceof Wrap) {
+                    Wrap wrapV = (Wrap) v;
                     sourceSqlRef.set(sourceSqlRef.get().replace(":" + k, wrapV.getStart() + " :" + k + wrapV.getEnd()));
                 }
             }

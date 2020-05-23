@@ -6,14 +6,18 @@ import rabbit.sql.types.ParamMode;
 import rabbit.sql.types.Param;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import rabbit.sql.dao.Wrap;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.*;
+import java.time.*;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
+
+import static rabbit.sql.utils.SqlUtil.unwrapValue;
 
 public class JdbcUtil {
     private final static Logger log = LoggerFactory.getLogger(JdbcSupport.class);
@@ -156,6 +160,32 @@ public class JdbcUtil {
     }
 
     /**
+     * 设置预编译sql的参数值
+     *
+     * @param statement statement
+     * @param index     序号
+     * @param value     值
+     * @throws SQLException sqlExp
+     */
+    public static void setStatementValue(CallableStatement statement, int index, Object value) throws SQLException {
+        if (value instanceof java.util.Date) {
+            statement.setObject(index, new Date(((java.util.Date) value).getTime()));
+        } else if (value instanceof LocalDateTime) {
+            statement.setObject(index, new Timestamp(((LocalDateTime) value).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
+        } else if (value instanceof LocalDate) {
+            statement.setObject(index, new Date(((LocalDate) value).atStartOfDay(ZoneOffset.systemDefault()).toInstant().toEpochMilli()));
+        } else if (value instanceof LocalTime) {
+            statement.setObject(index, new Time(((LocalTime) value).atDate(LocalDate.now()).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
+        } else if (value instanceof Instant) {
+            statement.setObject(index, new Timestamp(((Instant) value).toEpochMilli()));
+        } else if (value instanceof Wrap) {
+            statement.setObject(index, unwrapValue(value));
+        } else {
+            statement.setObject(index, value);
+        }
+    }
+
+    /**
      * 注册预编译SQL参数
      *
      * @param statement 声明
@@ -170,7 +200,7 @@ public class JdbcUtil {
                     int index = i + 1;
                     Param param = args.get(names.get(i));
                     if (param.getParamMode() == ParamMode.IN) {
-                        statement.setObject(index, SqlUtil.unWrapValue(param.getValue()));
+                        setStatementValue(statement, index, param.getValue());
                         continue;
                     }
                     if (param.getParamMode() == ParamMode.OUT) {
@@ -178,7 +208,7 @@ public class JdbcUtil {
                         continue;
                     }
                     if (param.getParamMode() == ParamMode.IN_OUT) {
-                        statement.setObject(index, SqlUtil.unWrapValue(param.getValue()));
+                        setStatementValue(statement, index, param.getValue());
                         statement.registerOutParameter(index, param.getType().getTypeNumber());
                     }
                 }

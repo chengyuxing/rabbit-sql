@@ -8,7 +8,13 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import rabbit.sql.Light;
 import rabbit.sql.dao.Params;
-import rabbit.sql.types.ValueWrap;
+import rabbit.sql.dao.Wrap;
+
+import java.sql.Date;
+import java.sql.Time;
+import java.sql.Timestamp;
+import java.time.*;
+
 
 public class LightSessionTest {
 
@@ -102,7 +108,7 @@ public class LightSessionTest {
         light.query("select * from test.user",
                 r -> r,
                 Condition.where(Filter.startsWith("name", "c"))
-                        .and(Filter.gt("id", ValueWrap.wrapEnd("1000", "::integer"))).desc("id"))
+                        .and(Filter.gt("id", Wrap.wrapEnd("1000", "::integer"))).desc("id"))
                 .forEach(System.out::println);
     }
 
@@ -120,18 +126,19 @@ public class LightSessionTest {
     @Test
     public void valueWrapTest() throws Exception {
         light.insert("test.score", Params.builder()
-                .putIn("student_id", ValueWrap.wrapEnd(7, "::integer"))
-                .putIn("subject", "物理")
-                .putIn("grade", ValueWrap.wrapEnd("31", "::integer"))
+                .putIn("student_id", Wrap.wrapEnd(7, "::integer"))
+                .putIn("subject", "政治")
+                .putIn("grade", Wrap.wrapEnd("88", "::integer"))
                 .build());
     }
 
     @Test
     public void valueWrapTest2() throws Exception {
         light.update("test.score", Params.builder()
-                        .putIn("student_id", ValueWrap.wrapEnd("5", "::integer"))
+                        .putIn("grade", Wrap.wrapEnd("15", "::integer"))
                         .build(),
-                Condition.where(Filter.eq("id", ValueWrap.wrapEnd("11", "::integer"))));
+                Condition.where(Filter.eq("id", Wrap.wrapEnd("7", "::integer")))
+                        );
     }
 
     @Test
@@ -148,6 +155,28 @@ public class LightSessionTest {
     public void boolTest() throws Exception {
         light.fetch("select 'a',true,current_timestamp,current_date,current_time", r -> r)
                 .ifPresent(System.out::println);
+    }
+
+    @Test
+    public void dateTimeTest() throws Exception {
+        light.insert("test.datetime", Params.builder()
+                .putIn("ts", Instant.now())
+                .putIn("dt", LocalDate.now())
+                .putIn("tm", LocalTime.now())
+                .build());
+    }
+
+    @Test
+    public void secondsTest() throws Exception {
+        System.out.println(new Timestamp(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
+
+        System.out.println(new Date(LocalDate.now().atStartOfDay(ZoneOffset.systemDefault()).toInstant().toEpochMilli()));
+
+        System.out.println(new Time(LocalTime.now().atDate(LocalDate.now()).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
+
+        System.out.println(Instant.now().atZone(ZoneId.systemDefault()).toLocalDateTime());
+
+        System.out.println(new Timestamp(Instant.now().toEpochMilli()));
     }
 
     @Test

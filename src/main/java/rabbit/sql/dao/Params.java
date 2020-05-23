@@ -1,7 +1,6 @@
 package rabbit.sql.dao;
 
 import rabbit.sql.types.Param;
-import rabbit.sql.types.ValueWrap;
 import rabbit.sql.support.IOutParam;
 
 import java.util.Collections;
@@ -47,7 +46,7 @@ public class Params {
          * @param name  键
          * @param value 值 (可以是明确的值或包装值)
          * @return builder
-         * @see ValueWrap
+         * @see Wrap
          */
         public Builder putIn(String name, Object value) {
             put(name, Param.IN(value));
@@ -73,7 +72,7 @@ public class Params {
          * @param value 入参值 (可以是明确的值或包装值)
          * @param type  出参类型
          * @return builder
-         * @see ValueWrap
+         * @see Wrap
          */
         public Builder putInOut(String name, Object value, IOutParam type) {
             put(name, Param.IN_OUT(value, type));

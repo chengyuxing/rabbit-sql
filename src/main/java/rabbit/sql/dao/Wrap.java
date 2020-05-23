@@ -1,14 +1,14 @@
-package rabbit.sql.types;
+package rabbit.sql.dao;
 
 /**
  * 值包装器
  */
-public class ValueWrap {
+public class Wrap {
     private final Object value;
     private final String start;
     private final String end;
 
-    ValueWrap(String start, Object value, String end) {
+    Wrap(String start, Object value, String end) {
         this.value = value;
         this.start = start;
         this.end = end;
@@ -24,8 +24,8 @@ public class ValueWrap {
      * @param end   后缀
      * @return 值包装器
      */
-    public static ValueWrap wrap(String start, Object value, String end) {
-        return new ValueWrap(start, value, end);
+    public static Wrap wrap(String start, Object value, String end) {
+        return new Wrap(start, value, end);
     }
 
     /**
@@ -37,8 +37,8 @@ public class ValueWrap {
      * @param value 值
      * @return 值包装器
      */
-    public static ValueWrap wrapStart(String start, Object value) {
-        return new ValueWrap(start, value, "");
+    public static Wrap wrapStart(String start, Object value) {
+        return new Wrap(start, value, "");
     }
 
     /**
@@ -50,8 +50,8 @@ public class ValueWrap {
      * @param end   后缀
      * @return 值包装器
      */
-    public static ValueWrap wrapEnd(Object value, String end) {
-        return new ValueWrap("", value, end);
+    public static Wrap wrapEnd(Object value, String end) {
+        return new Wrap("", value, end);
     }
 
     public String getEnd() {

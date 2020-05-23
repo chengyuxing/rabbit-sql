@@ -19,7 +19,7 @@ import rabbit.sql.page.AbstractPageHelper;
 import rabbit.sql.page.impl.OraclePageHelper;
 import rabbit.sql.page.Pageable;
 import rabbit.sql.types.Order;
-import rabbit.sql.types.ValueWrap;
+import rabbit.sql.dao.Wrap;
 import rabbit.sql.utils.SqlUtil;
 
 import java.io.IOException;
@@ -35,6 +35,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static rabbit.sql.utils.SqlUtil.SEP;
 
 public class Tests {
 
@@ -77,11 +79,13 @@ public class Tests {
         String str = "select t.id || 'number' || 'age:age,name:cyx', '{\"name\":\"user\"}'::jsonb " +
                 "from test.user " +
                 "where id = :id::integer and id > :idc and name=text :username";
+        String upd = "update test.score set grade =  :grade::integer" +
+                " where id =   :id_˞0::integer::integer or id >   :id_˞1::integer::integer";
 
-//        String sql = "insert into test.user(idd,name,id,age,address) values (:id,:name::integer,:idd" + SEP + "::float,integer :age,date :address)";
+        String sql = "insert into test.user(idd,name,id,age,address) values (:id,:name::integer,:idd" + SEP + "::float,integer :age,date :address)";
 //        String sql2 = "select * from test.user where id = '1' and tag = '1' and num = '1' and name = :name";
 //        String jsonSql = "select '{\"a\":[1,2,3],\"b\":[4,5,6]}'::json #>> '{b,1}'";
-        Pair<String, List<String>> pair = SqlUtil.getPreparedSqlAndIndexedArgNames(str);
+        Pair<String, List<String>> pair = SqlUtil.getPreparedSqlAndIndexedArgNames(upd);
         System.out.println(pair.getItem1());
         System.out.println(pair.getItem2());
     }
@@ -93,10 +97,10 @@ public class Tests {
     @Test
     public void CndTest() throws Exception {
         ICondition condition = Condition.where(Filter.eq("id", 5))
-                .and(Filter.gt("age", ValueWrap.wrapEnd(26, "::text")))
+                .and(Filter.gt("age", Wrap.wrapEnd(26, "::text")))
                 .and(Filter.eq("name", "chengyuxing"), Filter.isNotNull("address"))
                 .or(Filter.endsWith("name", "jack"))
-                .and(Filter.gt("id", ValueWrap.wrapStart("interval", "7 minutes")))
+                .and(Filter.gt("id", Wrap.wrapStart("interval", "7 minutes")))
                 .and(new JsonIncludeFilter())
                 .asc("id")
                 .orderBy("px", Order.DESC);
@@ -134,17 +138,32 @@ public class Tests {
     }
 
     @Test
+    public void Condition2() throws Exception{
+        ICondition condition = Condition.where(Filter.eq("id", Wrap.wrapEnd("7", "::integer")))
+                .or(Filter.gt("id", Wrap.wrapEnd("100", "::integer")));
+        System.out.println(condition.getSql());
+        System.out.println(condition.getParams());
+
+        Condition condition1 = Condition.where(Filter.eq("id", Wrap.wrapEnd("7", "::integer")));
+        System.out.println(condition1.getSql());
+    }
+
+    @Test
+    public void generateSql() throws Exception{
+    }
+
+    @Test
     public void replaceTest() throws Exception {
         Map<String, Object> args = new HashMap<>();
-        args.put("name", ValueWrap.wrapEnd("cyx", "::text"));
-        args.put("age", ValueWrap.wrapStart("integer", 26));
+        args.put("name", Wrap.wrapEnd("cyx", "::text"));
+        args.put("age", Wrap.wrapStart("integer", 26));
         args.put("address", "kunming");
 
         AtomicReference<String> sql = new AtomicReference<>("select * from test.user where id = :id and name = :name or age = :age");
 
         args.keySet().forEach(k -> {
-            if (args.get(k) instanceof ValueWrap) {
-                ValueWrap v = (ValueWrap) args.get(k);
+            if (args.get(k) instanceof Wrap) {
+                Wrap v = (Wrap) args.get(k);
                 sql.set(sql.get().replace(":" + k, v.getStart() + " :" + k + v.getEnd()));
             }
         });

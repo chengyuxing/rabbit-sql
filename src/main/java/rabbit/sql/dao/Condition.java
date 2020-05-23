@@ -5,7 +5,6 @@ import rabbit.sql.support.IFilter;
 import rabbit.sql.support.IOrderBy;
 import rabbit.sql.types.Order;
 import rabbit.sql.types.Param;
-import rabbit.sql.types.ValueWrap;
 import rabbit.sql.utils.SqlUtil;
 
 import java.util.HashMap;
@@ -13,7 +12,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static rabbit.sql.utils.SqlUtil.unWrapValue;
+import static rabbit.sql.utils.SqlUtil.unwrapValue;
 
 /**
  * SQL条件拼装器
@@ -127,7 +126,7 @@ public class Condition implements IOrderBy {
             if (filter.getValue() != IFilter.IGNORE_VALUE) {
                 Pair<String, String> sf = getSpecialField(filter.getField(), filter.getValue());
                 conditions.append(s).append(filter.getField()).append(filter.getOperator()).append(sf.getItem2());
-                params.put(sf.getItem1(), Param.IN(unWrapValue(filter.getValue())));
+                params.put(sf.getItem1(), Param.IN(unwrapValue(filter.getValue())));
             } else {
                 conditions.append(s).append(filter.getField()).append(filter.getOperator());
             }
@@ -140,7 +139,7 @@ public class Condition implements IOrderBy {
             if (f.getValue() != IFilter.IGNORE_VALUE) {
                 Pair<String, String> sf = getSpecialField(f.getField(), f.getValue());
                 String and = f.getField() + f.getOperator() + sf.getItem2();
-                params.put(sf.getItem1(), Param.IN(unWrapValue(f.getValue())));
+                params.put(sf.getItem1(), Param.IN(unwrapValue(f.getValue())));
                 return and;
             }
             return f.getField() + f.getOperator();
@@ -158,8 +157,8 @@ public class Condition implements IOrderBy {
      */
     private Pair<String, String> getSpecialField(String field, Object value) {
         String s = field + "_" + SqlUtil.SEP + arg_index++;
-        if (value instanceof ValueWrap) {
-            ValueWrap wrapV = (ValueWrap) value;
+        if (value instanceof Wrap) {
+            Wrap wrapV = (Wrap) value;
             return Pair.of(s, wrapV.getStart() + " :" + s + wrapV.getEnd());
         }
         return Pair.of(s, ":" + s);

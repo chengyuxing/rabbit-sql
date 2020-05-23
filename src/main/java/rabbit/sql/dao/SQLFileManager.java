@@ -1,4 +1,4 @@
-package rabbit.sql.support;
+package rabbit.sql.dao;
 
 import rabbit.sql.dao.LightDao;
 import rabbit.common.utils.ResourceUtil;

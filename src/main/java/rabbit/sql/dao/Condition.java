@@ -119,9 +119,6 @@ public class Condition implements IOrderBy {
      * @return 条件拼接器
      */
     private Condition concatFilterBy(String s, IFilter filter, IFilter... more) {
-        if (where.equals(" where ")) {
-            //  去除
-        }
         if (more.length == 0) {
             if (filter.getValue() != IFilter.IGNORE_VALUE) {
                 Pair<String, String> sf = getSpecialField(filter.getField(), filter.getValue());

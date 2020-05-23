@@ -15,7 +15,7 @@ import rabbit.sql.dao.Filter;
 import rabbit.sql.dao.Params;
 import rabbit.sql.support.ICondition;
 import rabbit.sql.support.IFilter;
-import rabbit.sql.support.SQLFileManager;
+import rabbit.sql.dao.SQLFileManager;
 import rabbit.sql.page.AbstractPageHelper;
 import rabbit.sql.page.impl.OraclePageHelper;
 import rabbit.sql.page.Pageable;

@@ -12,7 +12,7 @@ import rabbit.sql.dao.Filter;
 import rabbit.sql.dao.LightDao;
 import rabbit.sql.Light;
 import rabbit.sql.support.ICondition;
-import rabbit.sql.support.SQLFileManager;
+import rabbit.sql.dao.SQLFileManager;
 import rabbit.sql.page.Pageable;
 import rabbit.sql.page.impl.PGPageHelper;
 import rabbit.sql.transaction.Tx;

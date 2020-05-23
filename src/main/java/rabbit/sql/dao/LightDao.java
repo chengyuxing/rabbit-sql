@@ -7,7 +7,6 @@ import rabbit.sql.page.AbstractPageHelper;
 import rabbit.sql.page.Pageable;
 import rabbit.sql.support.ICondition;
 import rabbit.sql.support.JdbcSupport;
-import rabbit.sql.support.SQLFileManager;
 import rabbit.sql.types.Ignore;
 import rabbit.sql.types.Param;
 import rabbit.sql.utils.SqlUtil;

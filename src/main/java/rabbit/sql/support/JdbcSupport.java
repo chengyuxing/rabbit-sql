@@ -55,19 +55,25 @@ public abstract class JdbcSupport {
      */
     protected abstract String getSql(String sql);
 
-    public <T> T execute(StatementCallback<T> callback) {
+    /**
+     * 执行一句sql
+     *
+     * @param sql      sql
+     * @param callback 执行声明回调函数
+     * @param <T>      结果类型参数
+     * @return 任意类型
+     */
+    public <T> T execute(final String sql, StatementCallback<T> callback) {
         CallableStatement statement = null;
-        String executeSql = "";
         Connection connection = getConnection();
         try {
-            executeSql = callback.getExecuteSql();
-            statement = connection.prepareCall(executeSql);
+            statement = connection.prepareCall(sql);
             return callback.doInStatement(statement);
         } catch (SQLException e) {
             JdbcUtil.closeStatement(statement);
             statement = null;
             releaseConnection(connection, getDataSource());
-            throw new RuntimeException(String.format("execute target sql[%s]:%s", executeSql, e.getMessage()));
+            throw new RuntimeException(String.format("execute target sql[%s]:%s", sql, e.getMessage()));
         } finally {
             JdbcUtil.closeStatement(statement);
             releaseConnection(connection, getDataSource());
@@ -82,80 +88,83 @@ public abstract class JdbcSupport {
      * @return 总的受影响的行数
      */
     public int executeNonQuery(final String sql, final Collection<Map<String, Param>> args) {
-        class BatchUpdateStatementCallback implements StatementCallback<Integer> {
-            private List<String> argNames = new ArrayList<>();
-
-            @Override
-            public Integer doInStatement(CallableStatement statement) throws SQLException {
-                int i = 0;
-                for (Map<String, Param> arg : args) {
-                    JdbcUtil.registerParams(statement, arg, argNames);
-                    i += statement.executeUpdate();
-                }
-                log.info("{} rows updated!", i);
-                return i;
-            }
-
-            @Override
-            public String getExecuteSql() {
-                if (args == null || args.size() < 1) {
-                    throw new NoSuchElementException("args is null or length less than 1.");
-                }
-                Map<String, Param> firstArg = args.stream().findFirst().get();
-                String sourceSql = SqlUtil.resolveSqlPart(getSql(sql), firstArg);
-                log.debug("SQL:{}", sourceSql);
-                log.debug("Args:{}", args);
-
-                Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSqlAndIndexedArgNames(sourceSql);
-                argNames = preparedSqlAndArgNames.getItem2();
-                return preparedSqlAndArgNames.getItem1();
-            }
+        if (args == null || args.size() < 1) {
+            throw new NoSuchElementException("args is null or length less than 1.");
         }
-        return execute(new BatchUpdateStatementCallback());
+        Map<String, Param> firstArg = args.stream().findFirst().get();
+        String sourceSql = SqlUtil.resolveSqlPart(getSql(sql), firstArg);
+        log.debug("SQL:{}", sourceSql);
+        log.debug("Args:{}", args);
+
+        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSqlAndIndexedArgNames(sourceSql);
+        final List<String> argNames = preparedSqlAndArgNames.getItem2();
+        final String preparedSql = preparedSqlAndArgNames.getItem1();
+
+        return execute(preparedSql, sc -> {
+            int i = 0;
+            for (Map<String, Param> arg : args) {
+                JdbcUtil.registerParams(sc, arg, argNames);
+                i += sc.executeUpdate();
+            }
+            log.info("{} rows updated!", i);
+            return i;
+        });
     }
 
-    public int executeNonQuery(final String sql, final Map<String, Param> args) {
-        return executeNonQuery(sql, Collections.singletonList(args));
+    /**
+     * 执行一句非查询语句
+     *
+     * @param sql sql
+     * @param arg 参数
+     * @return 受影响的行数
+     */
+    public int executeNonQuery(final String sql, final Map<String, Param> arg) {
+        return executeNonQuery(sql, Collections.singletonList(arg));
     }
 
+    /**
+     * 执行一句非查询语句
+     *
+     * @param sql  sql
+     * @param args 一组参数
+     * @return 受影响的行数
+     */
     public int executeNonQueryOfDataRow(final String sql, final Collection<DataRow> args) {
-        class RowUpdateStatementCallback implements StatementCallback<Integer> {
-            private List<String> argNames = new ArrayList<>();
-
-            @Override
-            public Integer doInStatement(CallableStatement statement) throws SQLException {
-                int i = 0;
-                for (DataRow row : args) {
-                    Map<String, Param> arg = row.toMap(Param::IN);
-                    JdbcUtil.registerParams(statement, arg, argNames);
-                    i += statement.executeUpdate();
-                }
-                log.info("{} rows updated!", i);
-                return i;
-            }
-
-            @Override
-            public String getExecuteSql() {
-                if (args == null || args.size() < 1) {
-                    throw new NoSuchElementException("args is null or length less than 1.");
-                }
-                Map<String, Param> firstArg = args.stream()
-                        .map(r -> r.toMap(Param::IN))
-                        .findFirst().get();
-                String sourceSql = SqlUtil.resolveSqlPart(getSql(sql), firstArg);
-                log.debug("SQL:{}", sourceSql);
-                log.debug("Args:{}", args);
-
-                Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSqlAndIndexedArgNames(sourceSql);
-                argNames = preparedSqlAndArgNames.getItem2();
-                return preparedSqlAndArgNames.getItem1();
-            }
+        if (args == null || args.size() < 1) {
+            throw new NoSuchElementException("args is null or length less than 1.");
         }
-        return execute(new RowUpdateStatementCallback());
+        Map<String, Param> firstArg = args.stream()
+                .map(r -> r.toMap(Param::IN))
+                .findFirst().get();
+        String sourceSql = SqlUtil.resolveSqlPart(getSql(sql), firstArg);
+        log.debug("SQL:{}", sourceSql);
+        log.debug("Args:{}", args);
+
+        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSqlAndIndexedArgNames(sourceSql);
+        final List<String> argNames = preparedSqlAndArgNames.getItem2();
+        final String preparedSql = preparedSqlAndArgNames.getItem1();
+
+        return execute(preparedSql, sc -> {
+            int i = 0;
+            for (DataRow row : args) {
+                Map<String, Param> arg = row.toMap(Param::IN);
+                JdbcUtil.registerParams(sc, arg, argNames);
+                i += sc.executeUpdate();
+            }
+            log.info("{} rows updated!", i);
+            return i;
+        });
     }
 
-    public int executeNonQueryOfDataRow(final String sql, final DataRow args) {
-        return executeNonQueryOfDataRow(sql, Collections.singletonList(args));
+    /**
+     * 执行一句非查询语句
+     *
+     * @param sql sql
+     * @param arg 参数
+     * @return 受影响的行数
+     */
+    public int executeNonQueryOfDataRow(final String sql, final DataRow arg) {
+        return executeNonQueryOfDataRow(sql, Collections.singletonList(arg));
     }
 
     /**
@@ -170,36 +179,27 @@ public abstract class JdbcSupport {
      * @return 结果集
      */
     public <T> Stream<T> query(final String sql, Function<DataRow, T> convert, final long fetchSize, Map<String, Param> args, ICondition ICondition) {
-        class QueryStatementCallback implements StatementCallback<Stream<T>> {
-            private final Map<String, Param> params = new HashMap<>();
-            private List<String> argNames = new ArrayList<>();
-
-            @Override
-            public Stream<T> doInStatement(CallableStatement statement) throws SQLException {
-                JdbcUtil.registerParams(statement, params, argNames);
-                ResultSet resultSet = statement.executeQuery();
-                return JdbcUtil.resolveResultSet(resultSet, fetchSize, convert);
-            }
-
-            @Override
-            public String getExecuteSql() {
-                String sourceSql = getSql(sql);
-                if (args != null)
-                    params.putAll(args);
-                if (ICondition != null) {
-                    params.putAll(ICondition.getParams());
-                    sourceSql += ICondition.getSql();
-                }
-                sourceSql = SqlUtil.resolveSqlPart(sourceSql, params);
-                log.debug("SQL：{}", sourceSql);
-                log.debug("Args:{}", params);
-
-                Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSqlAndIndexedArgNames(sourceSql);
-                argNames = preparedSqlAndArgNames.getItem2();
-                return preparedSqlAndArgNames.getItem1();
-            }
+        Map<String, Param> params = new HashMap<>();
+        String sourceSql = getSql(sql);
+        if (args != null)
+            params.putAll(args);
+        if (ICondition != null) {
+            params.putAll(ICondition.getParams());
+            sourceSql += ICondition.getSql();
         }
-        return execute(new QueryStatementCallback());
+        sourceSql = SqlUtil.resolveSqlPart(sourceSql, params);
+        log.debug("SQL：{}", sourceSql);
+        log.debug("Args:{}", params);
+
+        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSqlAndIndexedArgNames(sourceSql);
+        final List<String> argNames = preparedSqlAndArgNames.getItem2();
+        final String preparedSql = preparedSqlAndArgNames.getItem1();
+
+        return execute(preparedSql, sc -> {
+            JdbcUtil.registerParams(sc, params, argNames);
+            ResultSet resultSet = sc.executeQuery();
+            return JdbcUtil.resolveResultSet(resultSet, fetchSize, convert);
+        });
     }
 
     /**
@@ -210,48 +210,38 @@ public abstract class JdbcSupport {
      * @return DataRow
      */
     public DataRow executeCall(final String sql, Map<String, Param> args) {
-        class ProcedureStatementCallback implements StatementCallback<DataRow> {
-            private List<String> argNames = new ArrayList<>();
+        String sourceSql = SqlUtil.resolveSqlPart(getSql(sql), args);
+        log.debug("SQL：{}", sourceSql);
+        log.debug("Args：{}", args);
 
-            @Override
-            public DataRow doInStatement(CallableStatement statement) throws SQLException {
-                JdbcUtil.registerParams(statement, args, argNames);
-                statement.execute();
-                Param[] params = args.values().toArray(new Param[0]);
-                String[] fields = new String[params.length];
-                Object[] values = new Object[params.length];
-                String[] types = new String[params.length];
-                for (int i = 0; i < params.length; i++) {
-                    if (params[i].getParamMode() == ParamMode.OUT || params[i].getParamMode() == ParamMode.IN_OUT) {
-                        Object result = statement.getObject(i + 1);
-                        fields[i] = "column" + i;
-                        if (result instanceof ResultSet) {
-                            Stream<DataRow> rowStream = JdbcUtil.resolveResultSet((ResultSet) result, -1, row -> row);
-                            values[i] = rowStream;
-                            types[i] = "java.util.stream.Stream<DataRow>";
-                            log.info("boxing a result with type: cursor,convert to Stream<DataRow>,get result by name:{} or index:{}!", fields[i], i);
-                        } else {
-                            values[i] = result;
-                            types[i] = result.getClass().getName();
-                            log.info("boxing a result with type:{},get result by name:{} or index:{}!", types[i], fields[i], i);
-                        }
+        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSqlAndIndexedArgNames(sourceSql);
+        final String executeSql = preparedSqlAndArgNames.getItem1();
+        final List<String> argNames = preparedSqlAndArgNames.getItem2();
+
+        return execute(executeSql, sc -> {
+            JdbcUtil.registerParams(sc, args, argNames);
+            sc.execute();
+            Param[] params = args.values().toArray(new Param[0]);
+            String[] fields = new String[params.length];
+            Object[] values = new Object[params.length];
+            String[] types = new String[params.length];
+            for (int i = 0; i < params.length; i++) {
+                if (params[i].getParamMode() == ParamMode.OUT || params[i].getParamMode() == ParamMode.IN_OUT) {
+                    Object result = sc.getObject(i + 1);
+                    fields[i] = "column" + i;
+                    if (result instanceof ResultSet) {
+                        Stream<DataRow> rowStream = JdbcUtil.resolveResultSet((ResultSet) result, -1, row -> row);
+                        values[i] = rowStream;
+                        types[i] = "java.util.stream.Stream<DataRow>";
+                        log.info("boxing a result with type: cursor,convert to Stream<DataRow>,get result by name:{} or index:{}!", fields[i], i);
+                    } else {
+                        values[i] = result;
+                        types[i] = result.getClass().getName();
+                        log.info("boxing a result with type:{},get result by name:{} or index:{}!", types[i], fields[i], i);
                     }
                 }
-                return DataRow.of(fields, types, values);
             }
-
-            @Override
-            public String getExecuteSql() {
-                String sourceSql = SqlUtil.resolveSqlPart(getSql(sql), args);
-                log.debug("SQL：{}", sourceSql);
-                log.debug("Args：{}", args);
-
-                Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSqlAndIndexedArgNames(sourceSql);
-                String executeSql = preparedSqlAndArgNames.getItem1();
-                argNames = preparedSqlAndArgNames.getItem2();
-                return executeSql;
-            }
-        }
-        return execute(new ProcedureStatementCallback());
+            return DataRow.of(fields, types, values);
+        });
     }
 }

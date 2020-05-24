@@ -1,9 +1,8 @@
 package rabbit.sql.dao;
 
-import rabbit.sql.dao.LightDao;
-import rabbit.common.utils.ResourceUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import rabbit.common.utils.ResourceUtil;
 
 import java.io.BufferedReader;
 import java.io.File;

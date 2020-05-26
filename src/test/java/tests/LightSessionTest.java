@@ -1,5 +1,6 @@
 package tests;
 
+import rabbit.common.types.DataRow;
 import rabbit.sql.dao.Condition;
 import rabbit.sql.dao.Filter;
 import rabbit.sql.dao.LightDao;
@@ -14,6 +15,7 @@ import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.*;
+import java.util.stream.Collectors;
 
 
 public class LightSessionTest {
@@ -138,7 +140,7 @@ public class LightSessionTest {
                         .putIn("grade", Wrap.wrapEnd("15", "::integer"))
                         .build(),
                 Condition.where(Filter.eq("id", Wrap.wrapEnd("7", "::integer")))
-                        );
+        );
     }
 
     @Test
@@ -153,14 +155,14 @@ public class LightSessionTest {
 
     @Test
     public void boolTest() throws Exception {
-        light.fetch("select 'a',true,current_timestamp,current_date,current_time", r -> r)
+        light.fetch("select 'a',true,current_timestamp,current_date,current_time", r -> r.getValues().collect(Collectors.toList()))
                 .ifPresent(System.out::println);
     }
 
     @Test
     public void dateTimeTest() throws Exception {
         light.insert("test.datetime", Params.builder()
-                .putIn("ts", Instant.now())
+                .putIn("ts", LocalDateTime.now())
                 .putIn("dt", LocalDate.now())
                 .putIn("tm", LocalTime.now())
                 .build());

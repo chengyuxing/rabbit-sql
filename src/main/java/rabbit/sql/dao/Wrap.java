@@ -15,9 +15,9 @@ public class Wrap {
     }
 
     /**
-     * 前后包裹
-     * <p>e.g PostgreSQL: <code>select age(date '1993-5-10 12:34:55'::timestamp)<code/></p>
-     * <p>e.g <code>wrap("date", "1993-5-10 12:34:55", "::timestamp")<code/></p>
+     * 前后包裹<br>
+     * e.g. PostgreSQL: <code>select age(date '1993-5-10 12:34:55'::timestamp)</code><br>
+     * e.g. <code>wrap("date", "1993-5-10 12:34:55", "::timestamp")</code>
      *
      * @param start 前缀
      * @param value 值
@@ -29,9 +29,9 @@ public class Wrap {
     }
 
     /**
-     * 前包裹
-     * <p>e.g PostgreSQL: <code>select age(timestamp '1993-5-10')<code/></p>
-     * <p>e.g <code>wrap("timestamp","1993510")<code/></p>
+     * 前包裹<br>
+     * e.g. PostgreSQL: <code>select age(timestamp '1993-5-10')</code><br>
+     * e.g. <code>wrap("timestamp","1993510")</code>
      *
      * @param start 前缀
      * @param value 值
@@ -42,9 +42,9 @@ public class Wrap {
     }
 
     /**
-     * 后包裹
-     * <p>e.g PostgreSQL: <code>select age('1993-5-10'::timestamp)<code/></p>
-     * <p>e.g <code>wrap("1993510", "::timestamp")<code/></p>
+     * 后包裹<br>
+     * e.g. PostgreSQL: <code>select age('1993-5-10'::timestamp)</code><br>
+     * e.g. <code>wrap("1993510", "::timestamp")</code>
      *
      * @param value 值
      * @param end   后缀

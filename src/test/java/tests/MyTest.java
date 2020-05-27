@@ -181,6 +181,15 @@ public class MyTest {
 //        }
     }
 
+    @Test
+    public void callTest() throws Exception {
+        DataRow row = light.call("call test.now2(:r,:n)",
+                Params.builder().putOut("r", OUTParamType.TIMESTAMP)
+                        .putOut("n", OUTParamType.INTEGER)
+                        .build());
+        System.out.println(row);
+    }
+
 //    @Test
 //    public void testInsert() throws SQLException {
 //        int i = xDao.execute("insert into test.user (name,password) values (#{name},#{password})",

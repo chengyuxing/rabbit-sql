@@ -211,7 +211,7 @@ public abstract class JdbcSupport {
      */
     public DataRow executeCall(final String sql, Map<String, Param> args) {
         String sourceSql = SqlUtil.resolveSqlPart(getSql(sql), args);
-        log.debug("SQL：{}", sourceSql);
+        log.debug("Procedure：{}", sourceSql);
         log.debug("Args：{}", args);
 
         Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSqlAndIndexedArgNames(sourceSql);
@@ -221,14 +221,13 @@ public abstract class JdbcSupport {
         return execute(executeSql, sc -> {
             JdbcUtil.registerParams(sc, args, argNames);
             sc.execute();
-            Param[] params = args.values().toArray(new Param[0]);
-            String[] fields = new String[params.length];
-            Object[] values = new Object[params.length];
-            String[] types = new String[params.length];
-            for (int i = 0; i < params.length; i++) {
-                if (params[i].getParamMode() == ParamMode.OUT || params[i].getParamMode() == ParamMode.IN_OUT) {
+            String[] fields = new String[argNames.size()];
+            Object[] values = new Object[argNames.size()];
+            String[] types = new String[argNames.size()];
+            for (int i = 0; i < argNames.size(); i++) {
+                if (args.get(argNames.get(i)).getParamMode() == ParamMode.OUT || args.get(argNames.get(i)).getParamMode() == ParamMode.IN_OUT) {
                     Object result = sc.getObject(i + 1);
-                    fields[i] = "column" + i;
+                    fields[i] = argNames.get(i);
                     if (result instanceof ResultSet) {
                         Stream<DataRow> rowStream = JdbcUtil.resolveResultSet((ResultSet) result, -1, row -> row);
                         values[i] = rowStream;

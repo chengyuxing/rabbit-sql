@@ -17,7 +17,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * SQL文件管理器
+ * SQL文件解析管理器
  */
 public final class SQLFileManager {
     private final static Logger log = LoggerFactory.getLogger(LightDao.class);
@@ -37,10 +37,21 @@ public final class SQLFileManager {
     SQLFileManager() {
     }
 
+    /**
+     * 构造函数
+     *
+     * @param basePath sql基本目录
+     */
     public SQLFileManager(String basePath) {
         this.basePath = basePath;
     }
 
+    /**
+     * 解析sql文件
+     *
+     * @param path 路径
+     * @throws IOException IOexp
+     */
     private void resolveSqlContent(Path path) throws IOException {
         String fileName = path.getFileName().toString();
         String prefix = fileName.substring(0, fileName.length() - 3);
@@ -165,12 +176,6 @@ public final class SQLFileManager {
                 });
     }
 
-    public void look() {
-        RESOURCE.forEach((k, v) -> {
-            System.out.println(String.format("KEY:[%s]\nVALUE:[%s]", k, v));
-        });
-    }
-
     /**
      * 获取一条sql
      *
@@ -191,6 +196,11 @@ public final class SQLFileManager {
         throw new NoSuchElementException(String.format("no SQL named [%s] was found.", name));
     }
 
+    /**
+     * 获取基本目录
+     *
+     * @return 基本目录
+     */
     public String getBasePath() {
         return basePath;
     }

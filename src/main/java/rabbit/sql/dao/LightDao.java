@@ -29,6 +29,7 @@ import java.util.stream.Stream;
 
 /**
  * 默认的light实现
+ * @see rabbit.sql.support.JdbcSupport
  */
 public class LightDao extends JdbcSupport implements Light {
     private final static Logger log = LoggerFactory.getLogger(LightDao.class);
@@ -40,14 +41,30 @@ public class LightDao extends JdbcSupport implements Light {
 
     }
 
+    /**
+     * 构造函数
+     *
+     * @param dataSource 数据源
+     */
     public LightDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
+    /**
+     * 实例化一个LightDao对象
+     *
+     * @param dataSource 数据源
+     * @return LightDao实例
+     */
     public static LightDao of(DataSource dataSource) {
         return new LightDao(dataSource);
     }
 
+    /**
+     * 指定sql文件解析管理器
+     *
+     * @param sqlFileManager sql文件解析管理器
+     */
     public void setSqlFileManager(SQLFileManager sqlFileManager) {
         this.sqlFileManager = sqlFileManager;
         try {

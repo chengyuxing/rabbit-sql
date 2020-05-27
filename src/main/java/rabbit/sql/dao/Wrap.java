@@ -16,8 +16,8 @@ public class Wrap {
 
     /**
      * 前后包裹
-     * <p>e.g PostgreSQL: select age(date '1993-5-10 12:34:55'::timestamp)</p>
-     * <p>e.g wrap("date", "1993-5-10 12:34:55", "::timestamp")</p>
+     * <p>e.g PostgreSQL: <code>select age(date '1993-5-10 12:34:55'::timestamp)<code/></p>
+     * <p>e.g <code>wrap("date", "1993-5-10 12:34:55", "::timestamp")<code/></p>
      *
      * @param start 前缀
      * @param value 值
@@ -30,8 +30,8 @@ public class Wrap {
 
     /**
      * 前包裹
-     * <p>e.g PostgreSQL: select age(timestamp '1993-5-10')</p>
-     * <p>e.g wrap("timestamp","1993510")</p>
+     * <p>e.g PostgreSQL: <code>select age(timestamp '1993-5-10')<code/></p>
+     * <p>e.g <code>wrap("timestamp","1993510")<code/></p>
      *
      * @param start 前缀
      * @param value 值
@@ -43,8 +43,8 @@ public class Wrap {
 
     /**
      * 后包裹
-     * <p>e.g PostgreSQL: select age('1993-5-10'::timestamp)</p>
-     * <p>e.g wrap("1993510", "::timestamp")</p>
+     * <p>e.g PostgreSQL: <code>select age('1993-5-10'::timestamp)<code/></p>
+     * <p>e.g <code>wrap("1993510", "::timestamp")<code/></p>
      *
      * @param value 值
      * @param end   后缀
@@ -54,14 +54,26 @@ public class Wrap {
         return new Wrap("", value, end);
     }
 
+    /**
+     * 获取后缀
+     * @return 后缀
+     */
     public String getEnd() {
         return end;
     }
 
+    /**
+     * 获取前缀
+     * @return 前缀
+     */
     public String getStart() {
         return start;
     }
 
+    /**
+     * 获取值
+     * @return 值
+     */
     public Object getValue() {
         return value;
     }

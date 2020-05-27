@@ -105,7 +105,6 @@ public interface Light {
 
     /**
      * 查询<br>
-     * e.g. select * from table
      *
      * @param sql     查询sql
      * @param convert 转换
@@ -116,7 +115,6 @@ public interface Light {
 
     /**
      * 查询<br>
-     * e.g. select * from table
      *
      * @param sql       查询sql
      * @param convert   转换
@@ -128,7 +126,6 @@ public interface Light {
 
     /**
      * 查询<br>
-     * e.g. select * from table where id = :id
      *
      * @param sql     查询sql
      * @param convert 转换
@@ -140,7 +137,6 @@ public interface Light {
 
     /**
      * 查询<br>
-     * e.g. select * from table where id = :id
      *
      * @param sql       查询sql
      * @param convert   转换
@@ -153,7 +149,6 @@ public interface Light {
 
     /**
      * 查询<br>
-     * e.g. select * from table
      *
      * @param sql        查询sql
      * @param convert    转换
@@ -165,7 +160,6 @@ public interface Light {
 
     /**
      * 查询<br>
-     * e.g. select * from table
      *
      * @param sql        查询sql
      * @param convert    转换
@@ -239,7 +233,6 @@ public interface Light {
 
     /**
      * 获取一条<br>
-     * e.g. select * from table
      *
      * @param sql     查询sql
      * @param convert 转换
@@ -250,7 +243,6 @@ public interface Light {
 
     /**
      * 获取一条<br>
-     * e.g. select * from table
      *
      * @param sql        查询sql
      * @param convert    转换
@@ -262,7 +254,6 @@ public interface Light {
 
     /**
      * 获取一条<br>
-     * e.g. select * from table where id = :id
      *
      * @param sql     查询sql
      * @param convert 转换
@@ -300,7 +291,6 @@ public interface Light {
 
     /**
      * 执行存储过程或函数
-     * e.g. call func(:arg1,:argn...)
      *
      * @param name 过程名
      * @param args 参数 （占位符名字，参数对象）

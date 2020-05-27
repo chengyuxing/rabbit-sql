@@ -17,19 +17,33 @@ public final class Pageable<T> {
         this.data = data;
     }
 
+    /**
+     * 创建一个分页数据资源对象
+     *
+     * @param pager 分页对象
+     * @param data  数据
+     * @param <T>   类型参数
+     * @return 分页的数据
+     */
     public static <T> Pageable<T> of(AbstractPageHelper pager, List<T> data) {
         return new Pageable<>(pager, data);
     }
 
+    /**
+     * 创建一个空的分页资源对象
+     *
+     * @param <T> 类型参数
+     * @return 空的分页
+     */
     public static <T> Pageable<T> empty() {
         return new Pageable<>(null, Collections.emptyList());
     }
 
-    public void setData(List<T> data) {
+    void setData(List<T> data) {
         this.data = data;
     }
 
-    public void setPager(AbstractPageHelper pager) {
+    void setPager(AbstractPageHelper pager) {
         this.pager = pager;
     }
 

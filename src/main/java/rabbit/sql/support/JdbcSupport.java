@@ -19,7 +19,16 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
- * jdbc基本操作支持
+ * <h2>jdbc基本操作支持<h2/><br/>
+ * <p>:name (jdbc标准的传名参数写法，参数将被预编译安全处理)<br/><br/>
+ * ${part} (通用的字符串模版占位符，不进行预编译，用于动态sql的拼接)<br/><br/>
+ * 小提示：PostgreSQL中，带有问号的操作符`(?,?|,?&,@?)`可以使用双问号`(??,??|,??&,@??)`解决预编译sql参数未设定的报错()，或者直接使用函数<p/>
+ * <code>e.g. select t.id || 'number' || 'name:cyx','{"name": "user"}'::jsonb as json<code/><br/>
+ * <code>&nbsp;from test.user t<code/><br/>
+ * <code>&nbsp;&nbsp;&nbsp;&nbsp;where id = :id::integer<code/><br/>
+ * <code>&nbsp;&nbsp;&nbsp;&nbsp;and id > :idc<code/><br/>
+ * <code>&nbsp;&nbsp;&nbsp;&nbsp;and name = text :username<code/><br/>
+ * <code>&nbsp;&nbsp;&nbsp;&nbsp;and '["a","b","c"]'::jsonb ??& array ['a', 'b'];<code/>
  */
 public abstract class JdbcSupport {
     private final static Logger log = LoggerFactory.getLogger(JdbcSupport.class);
@@ -81,7 +90,8 @@ public abstract class JdbcSupport {
     }
 
     /**
-     * 批量执行 insert，update，delete（e.g. insert into table (a,b,c) values (:v1,:v2,:v3)）
+     * 执行一句非查询语句(insert，update，delete)<br/>
+     * e.g. <code>insert into table (a,b,c) values (:v1,:v2,:v3)<code/>
      *
      * @param sql  sql
      * @param args 数据
@@ -112,7 +122,8 @@ public abstract class JdbcSupport {
     }
 
     /**
-     * 执行一句非查询语句
+     * 执行一句非查询语句(insert，update，delete)<br/>
+     * e.g. <code>insert into table (a,b,c) values (:v1,:v2,:v3)<code/>
      *
      * @param sql sql
      * @param arg 参数
@@ -123,7 +134,8 @@ public abstract class JdbcSupport {
     }
 
     /**
-     * 执行一句非查询语句
+     * 执行一句非查询语句(insert，update，delete)<br/>
+     * e.g. <code>insert into table (a,b,c) values (:v1,:v2,:v3)<code/>
      *
      * @param sql  sql
      * @param args 一组参数
@@ -157,7 +169,8 @@ public abstract class JdbcSupport {
     }
 
     /**
-     * 执行一句非查询语句
+     * 执行一句非查询语句(insert，update，delete)<br/>
+     * e.g. <code>insert into table (a,b,c) values (:v1,:v2,:v3)<code/>
      *
      * @param sql sql
      * @param arg 参数
@@ -168,7 +181,8 @@ public abstract class JdbcSupport {
     }
 
     /**
-     * 查询
+     * 执行一句查询<br/>
+     * e.g. <code>select * from test.user where name = :name and id > :id<code/>
      *
      * @param sql        sql
      * @param convert    类型转换
@@ -203,7 +217,8 @@ public abstract class JdbcSupport {
     }
 
     /**
-     * 执行存储过程或函数
+     * 执行存储过程或函数<br/>
+     * e.g. <code>call test.now3(:a,:b,:r,:n)<code/>
      *
      * @param sql  sql
      * @param args 参数

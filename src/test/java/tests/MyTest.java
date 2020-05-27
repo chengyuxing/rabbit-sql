@@ -113,7 +113,6 @@ public class MyTest {
     public void manager() throws Exception {
         SQLFileManager manager = new SQLFileManager("pgsql");
         manager.init();
-        manager.look();
     }
 
     @Test

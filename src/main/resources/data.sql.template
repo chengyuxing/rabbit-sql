@@ -1,16 +1,34 @@
 /**
-* SQL文件内容格式说明
-* 文件格式为标准的sql文件格式进行了一点扩展
-* sql名和sql必须满足成对的出现，形如 a b a b a b a b ...
-* a为sql名,b为sql（可多行），a与b之间可以有注释
+* -------SQL文件内容格式说明-------
+* 文件格式为标准的sql文件格式进行了一点扩展;
+* :name (jdbc标准的传名参数写法，参数将被预编译安全处理)
+* ${part} (通用的字符串模版占位符，不进行预编译，用于动态sql的拼接)
+* sql名(/*[name]*/)或sql片段(/*{part}*/)和sql必须满足成对的出现，形如 a b a b a b a b ...;
+* a为sql名,b为sql（可多行），a与b之间可以有注释;
+* 小提示：`PostgreSQL`中，带有问号的操作符`(?,?|,?&,@?)`可以使用双问号`(??,??|,??&,@??)`解决预编译sql参数未设定的报错()，或者直接使用函数
 **/
 
+/*[good_query]*/
+/*一段稍微复杂的sql也可以被正确的解析*/
+select t.id || 'number' || 'name:cyx',
+       '{
+         "name": "user"
+       }'::jsonb as json
+from test.user t
+where id = :id::integer
+  and id > :idc
+  and name = text :username
+  and '[
+  "a",
+  "b",
+  "c"
+]'::jsonb ??& array ['a', 'b'];
 
 /*[query]*/
 select ${field}
 from test."user" t --用户表
 /*啊啊bbb啊啊*/
-${part1} ;
+${part1};
 
 /*插入语句。*/
 /*[insert]*/
@@ -19,7 +37,8 @@ values (:id, :name, :password);
 
 /*第一部分*/
 /*{part1}*/
-where id = :id ${order};
+where id = :id
+${order};
 
 /*{field}*/
 /*用户表字段*/

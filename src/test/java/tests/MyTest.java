@@ -24,6 +24,7 @@ import rabbit.sql.dao.Params;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.sql.*;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -166,7 +167,7 @@ public class MyTest {
     @Test
     public void testCall() throws Exception {
         Stream<DataRow> rows = Tx.using(() -> {
-            DataRow row = light.call("call test.fun_query(:c::refcursor)",
+            DataRow row = light.function("call test.fun_query(:c::refcursor)",
                     Params.builder()
                             .put("c", Param.IN_OUT("result", OUTParamType.REF_CURSOR))
                             .build());
@@ -182,13 +183,15 @@ public class MyTest {
 
     @Test
     public void callTest() throws Exception {
-        DataRow row = light.call("call test.now3(:a,:b,:r,:n)",
+        DataRow row = light.function("call test.now3(:a,:b,:r,:n)",
                 Params.builder()
                         .putIn("a", 101)
                         .putIn("b", 55)
                         .putOut("r", OUTParamType.TIMESTAMP)
                         .putOut("n", OUTParamType.INTEGER)
                         .build());
+        Timestamp dt = row.get("r");
+        System.out.println(dt.toLocalDateTime());
         System.out.println(row);
     }
 

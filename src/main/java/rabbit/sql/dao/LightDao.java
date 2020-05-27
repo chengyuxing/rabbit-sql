@@ -29,6 +29,7 @@ import java.util.stream.Stream;
 
 /**
  * 默认的light实现
+ *
  * @see rabbit.sql.support.JdbcSupport
  */
 public class LightDao extends JdbcSupport implements Light {
@@ -229,8 +230,13 @@ public class LightDao extends JdbcSupport implements Light {
     }
 
     @Override
-    public DataRow call(String name, Map<String, Param> args) {
+    public DataRow procedure(String name, Map<String, Param> args) {
         return executeCall("{" + name + "}", args);
+    }
+
+    @Override
+    public DataRow function(String name, Map<String, Param> args) {
+        return procedure(name, args);
     }
 
     @Override

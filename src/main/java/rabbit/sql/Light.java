@@ -290,13 +290,22 @@ public interface Light {
     boolean exists(String sql, Map<String, Param> args);
 
     /**
-     * 执行存储过程或函数
+     * 执行存储过程
      *
      * @param name 过程名
      * @param args 参数 （占位符名字，参数对象）
-     * @return 一个或多个结果
+     * @return 一个或多个结果或无结果
      */
-    DataRow call(String name, Map<String, Param> args);
+    DataRow procedure(String name, Map<String, Param> args);
+
+    /**
+     * 执行函数
+     *
+     * @param name 函数名
+     * @param args 参数（占位符名字，参数对象）
+     * @return 至少一个结果
+     */
+    DataRow function(String name, Map<String, Param> args);
 
     /**
      * 获取数据库的元数据信息

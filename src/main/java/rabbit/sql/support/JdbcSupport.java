@@ -221,26 +221,30 @@ public abstract class JdbcSupport {
         return execute(executeSql, sc -> {
             JdbcUtil.registerParams(sc, args, argNames);
             sc.execute();
-            String[] fields = new String[argNames.size()];
-            Object[] values = new Object[argNames.size()];
-            String[] types = new String[argNames.size()];
+            String[] names = argNames.stream().filter(n -> {
+                ParamMode mode = args.get(n).getParamMode();
+                return mode == ParamMode.OUT || mode == ParamMode.IN_OUT;
+            }).toArray(String[]::new);
+            Object[] values = new Object[names.length];
+            String[] types = new String[names.length];
+            int resultIndex = 0;
             for (int i = 0; i < argNames.size(); i++) {
                 if (args.get(argNames.get(i)).getParamMode() == ParamMode.OUT || args.get(argNames.get(i)).getParamMode() == ParamMode.IN_OUT) {
                     Object result = sc.getObject(i + 1);
-                    fields[i] = argNames.get(i);
                     if (result instanceof ResultSet) {
                         Stream<DataRow> rowStream = JdbcUtil.resolveResultSet((ResultSet) result, -1, row -> row);
-                        values[i] = rowStream;
-                        types[i] = "java.util.stream.Stream<DataRow>";
-                        log.info("boxing a result with type: cursor,convert to Stream<DataRow>,get result by name:{} or index:{}!", fields[i], i);
+                        values[resultIndex] = rowStream;
+                        types[resultIndex] = "java.util.stream.Stream<DataRow>";
+                        log.info("boxing a result with type: cursor, convert to Stream<DataRow>, get result by name:{} or index:{}!", names[resultIndex], resultIndex);
                     } else {
-                        values[i] = result;
-                        types[i] = result.getClass().getName();
-                        log.info("boxing a result with type:{},get result by name:{} or index:{}!", types[i], fields[i], i);
+                        values[resultIndex] = result;
+                        types[resultIndex] = result.getClass().getName();
+                        log.info("boxing a result with type:{}, get result by name:{} or index:{}!", types[resultIndex], names[resultIndex], resultIndex);
                     }
+                    resultIndex++;
                 }
             }
-            return DataRow.of(fields, types, values);
+            return DataRow.of(names, types, values);
         });
     }
 }

@@ -183,8 +183,11 @@ public class MyTest {
 
     @Test
     public void callTest() throws Exception {
-        DataRow row = light.call("call test.now2(:r,:n)",
-                Params.builder().putOut("r", OUTParamType.TIMESTAMP)
+        DataRow row = light.call("call test.now3(:a,:b,:r,:n)",
+                Params.builder()
+                        .putIn("a", 101)
+                        .putIn("b", 55)
+                        .putOut("r", OUTParamType.TIMESTAMP)
                         .putOut("n", OUTParamType.INTEGER)
                         .build());
         System.out.println(row);

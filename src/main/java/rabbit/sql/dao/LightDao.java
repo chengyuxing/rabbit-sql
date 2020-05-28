@@ -28,8 +28,20 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * 默认的light实现
- *
+ * <p>如果配置了{@link SQLFileManager },则接口所有方法都可以通过 <b>&amp文件名.sql</b> 名来获取sql,通过<b>&amp;</b>
+ * 前缀符号来判断如果是sql名则获取sql否在当作sql直接执行</p>
+ * 指定sql名执行：
+ * <blockquote>
+ *     <pre>light.query("&amp;data.query", r -&gt; r, {@link Params}.builder()
+ *                 .put("id", {@link Param}.IN(3))
+ *                 .build())
+ *                 .forEach(System.out::println);</pre>
+ * </blockquote>
+ *直接执行一句sql：
+ * <blockquote>
+ *     <pre>light.query("select * from test.user where id = 3;", {@link DataRow}::toMap)
+ *                 forEach(System.out::println)</pre>
+ * </blockquote>
  * @see rabbit.sql.support.JdbcSupport
  */
 public class LightDao extends JdbcSupport implements Light {

@@ -166,14 +166,11 @@ public class MyTest {
 
     @Test
     public void testCall() throws Exception {
-        Stream<DataRow> rows = Tx.using(() -> {
-            DataRow row = light.function("call test.fun_query(:c::refcursor)",
-                    Params.builder()
-                            .put("c", Param.IN_OUT("result", OUTParamType.REF_CURSOR))
-                            .build());
-            System.out.println(row);
-            return row.get(0);
-        });
+        Stream<DataRow> rows = Tx.using(() -> light.function("call test.fun_query(:c::refcursor)",
+                Params.builder()
+                        .put("c", Param.IN_OUT("result", OUTParamType.REF_CURSOR))
+                        .build())
+                .get(0));
         rows.forEach(System.out::println);
 //        for (int i = 0; i < 10; i++) {
 //            TimeUnit.SECONDS.sleep(10);

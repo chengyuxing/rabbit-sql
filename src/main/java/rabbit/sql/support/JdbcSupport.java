@@ -23,12 +23,17 @@ import java.util.stream.Stream;
  * <p>:name (jdbc标准的传名参数写法，参数将被预编译安全处理)</p><br>
  * <p>${part} (通用的字符串模版占位符，不进行预编译，用于动态sql的拼接)</p><br>
  * <p>小提示：PostgreSQL中，带有问号的操作符(?,?|,?&amp;,@?)可以使用双问号(??,??|,??&amp;,@??)解决预编译sql参数未设定的报错，或者直接使用函数</p><br>
- * <code>e.g. select t.id || 'number' || 'name:cyx','{"name": "user"}'::jsonb as json</code><br>
- * <code>&nbsp;from test.user t</code><br>
- * <code>&nbsp;&nbsp;&nbsp;&nbsp;where id = :id::integer</code><br>
- * <code>&nbsp;&nbsp;&nbsp;&nbsp;and id &gt; :idc</code><br>
- * <code>&nbsp;&nbsp;&nbsp;&nbsp;and name = text :username</code><br>
- * <code>&nbsp;&nbsp;&nbsp;&nbsp;and '["a","b","c"]'::jsonb ??&amp; array ['a', 'b'];</code>
+ * SQL字符串例如：
+ * <blockquote>
+ * <pre>
+ *       select t.id || 'number' || 'name:cyx','{"name": "user"}'::jsonb
+ *       from test.user t
+ *       where id = :id::integer
+ *       and id &gt; :idc
+ *       and name = text :username
+ *       and '["a","b","c"]'::jsonb ??&amp; array ['a', 'b'] ${cnd};
+ *     </pre>
+ * </blockquote>
  */
 public abstract class JdbcSupport {
     private final static Logger log = LoggerFactory.getLogger(JdbcSupport.class);
@@ -91,7 +96,10 @@ public abstract class JdbcSupport {
 
     /**
      * 执行一句非查询语句(insert，update，delete)<br>
-     * e.g. <code>insert into table (a,b,c) values (:v1,:v2,:v3)</code>
+     * e.g.
+     * <blockquote>
+     * <pre>insert into table (a,b,c) values (:v1,:v2,:v3)</pre>
+     * </blockquote>
      *
      * @param sql  sql
      * @param args 数据
@@ -123,7 +131,10 @@ public abstract class JdbcSupport {
 
     /**
      * 执行一句非查询语句(insert，update，delete)<br>
-     * e.g. <code>insert into table (a,b,c) values (:v1,:v2,:v3)</code>
+     * e.g.
+     * <blockquote>
+     * <pre>insert into table (a,b,c) values (:v1,:v2,:v3)</pre>
+     * </blockquote>
      *
      * @param sql sql
      * @param arg 参数
@@ -135,7 +146,10 @@ public abstract class JdbcSupport {
 
     /**
      * 执行一句非查询语句(insert，update，delete)<br>
-     * e.g. <code>insert into table (a,b,c) values (:v1,:v2,:v3)</code>
+     * e.g.
+     * <blockquote>
+     * <pre>insert into table (a,b,c) values (:v1,:v2,:v3)</pre>
+     * </blockquote>
      *
      * @param sql  sql
      * @param args 一组参数
@@ -170,7 +184,10 @@ public abstract class JdbcSupport {
 
     /**
      * 执行一句非查询语句(insert，update，delete)<br>
-     * e.g. <code>insert into table (a,b,c) values (:v1,:v2,:v3)</code>
+     * e.g.
+     * <blockquote>
+     * <pre>insert into table (a,b,c) values (:v1,:v2,:v3)</pre>
+     * </blockquote>
      *
      * @param sql sql
      * @param arg 参数
@@ -182,7 +199,10 @@ public abstract class JdbcSupport {
 
     /**
      * 执行一句查询<br>
-     * e.g. <code>select * from test.user where name = :name and id &gt; :id</code>
+     * e.g.
+     * <blockquote>
+     * <pre>select * from test.user where name = :name and id &gt; :id</pre>
+     * </blockquote>
      *
      * @param sql        sql
      * @param convert    类型转换
@@ -218,7 +238,26 @@ public abstract class JdbcSupport {
 
     /**
      * 执行存储过程或函数<br>
-     * e.g. <code>call test.now3(:a,:b,:r,:n)</code>
+     * e.g.
+     * <blockquote>
+     * <pre>
+     *         call test.func1(:arg1,:arg2,:result1,:result2);
+     *         call test.func2(:result::refcursor);
+     *         :result = call test.func3();
+     *     </pre>
+     * </blockquote>
+     * PostgreSQL执行获取一个游标类型的结果e.g.
+     * <blockquote>
+     * <pre>
+     * Stream&lt;DataRow&gt; rows = Tx.using(() -&gt;
+     *   light.function("call test.func2(:c::refcursor)",
+     *     Params.builder()
+     *       .put("c",Param.IN_OUT("result", OUTParamType.REF_CURSOR))
+     *       .build())
+     *       .get(0);
+     *    );
+     *         </pre>
+     * </blockquote>
      *
      * @param sql  sql
      * @param args 参数

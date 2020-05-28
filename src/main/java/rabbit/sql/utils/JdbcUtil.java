@@ -19,6 +19,9 @@ import java.util.stream.Stream;
 
 import static rabbit.sql.utils.SqlUtil.unwrapValue;
 
+/**
+ * JDBC工具类
+ */
 public class JdbcUtil {
     private final static Logger log = LoggerFactory.getLogger(JdbcSupport.class);
 
@@ -60,11 +63,19 @@ public class JdbcUtil {
         return obj;
     }
 
+    /**
+     * Blob对象转换为字节数组
+     *
+     * @param blob 二进制对象
+     * @return 字节数组
+     * @throws SQLException SqlExp
+     */
     public static byte[] getBytes(Blob blob) throws SQLException {
         byte[] bytes = new byte[0];
         if (blob != null) {
             try (InputStream ins = blob.getBinaryStream()) {
                 bytes = new byte[(int) blob.length()];
+                //noinspection ResultOfMethodCallIgnored
                 ins.read(bytes);
             } catch (IOException e) {
                 log.error("read blob catch an error:" + e.getMessage());
@@ -73,6 +84,12 @@ public class JdbcUtil {
         return bytes;
     }
 
+    /**
+     * 判断是非支持批量执行修改操作
+     *
+     * @param con 连接对象
+     * @return 是否支持
+     */
     public static boolean supportsBatchUpdates(Connection con) {
         try {
             DatabaseMetaData dbmd = con.getMetaData();
@@ -90,6 +107,11 @@ public class JdbcUtil {
         return false;
     }
 
+    /**
+     * 关闭结果集
+     *
+     * @param resultSet 结果集
+     */
     public static void closeResultSet(ResultSet resultSet) {
         try {
             if (resultSet != null) {
@@ -102,6 +124,11 @@ public class JdbcUtil {
         }
     }
 
+    /**
+     * 关闭connection声明对象
+     *
+     * @param statement 声明对象
+     */
     public static void closeStatement(Statement statement) {
         try {
             if (statement != null) {

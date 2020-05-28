@@ -23,14 +23,14 @@ import java.util.stream.Stream;
  * <p>:name (jdbc标准的传名参数写法，参数将被预编译安全处理)</p><br>
  * <p>${part} (通用的字符串模版占位符，不进行预编译，用于动态sql的拼接)</p><br>
  * <p>小提示：PostgreSQL中，带有问号的操作符(?,?|,?&amp;,@?)可以使用双问号(??,??|,??&amp;,@??)解决预编译sql参数未设定的报错，或者直接使用函数</p><br>
- * SQL字符串例如：
+ * 执行的SQL字符串例如：
  * <blockquote>
  * <pre>
  *       select t.id || 'number' || 'name:cyx','{"name": "user"}'::jsonb
  *       from test.user t
- *       where id = :id::integer
+ *       where id = :id::integer --后缀类型转换
  *       and id &gt; :idc
- *       and name = text :username
+ *       and name = text :username --前缀类型转换
  *       and '["a","b","c"]'::jsonb ??&amp; array ['a', 'b'] ${cnd};
  *     </pre>
  * </blockquote>
@@ -238,25 +238,14 @@ public abstract class JdbcSupport {
 
     /**
      * 执行存储过程或函数<br>
-     * e.g.
+     * 所有出参结果都放入到{@link DataRow}中，可通过命名参数名来取得，或者通过索引来取，索引从0开始<br>
+     * 语句形如原生jdbc，只是将?号改为命名参数（:参数名）：
      * <blockquote>
      * <pre>
-     *         call test.func1(:arg1,:arg2,:result1,:result2);
-     *         call test.func2(:result::refcursor);
-     *         :result = call test.func3();
+     *         {call test.func1(:arg1, :arg2, :result1, :result2)};
+     *         {call test.func2(:result::refcursor)}; //PostgreSQL
+     *         {:result = call test.func3()};
      *     </pre>
-     * </blockquote>
-     * PostgreSQL执行获取一个游标类型的结果e.g.
-     * <blockquote>
-     * <pre>
-     * Stream&lt;DataRow&gt; rows = Tx.using(() -&gt;
-     *   light.function("call test.func2(:c::refcursor)",
-     *     Params.builder()
-     *       .put("c",Param.IN_OUT("result", OUTParamType.REF_CURSOR))
-     *       .build())
-     *       .get(0);
-     *    );
-     *         </pre>
      * </blockquote>
      *
      * @param sql  sql
@@ -265,7 +254,7 @@ public abstract class JdbcSupport {
      */
     public DataRow executeCall(final String sql, Map<String, Param> args) {
         String sourceSql = SqlUtil.resolveSqlPart(getSql(sql), args);
-        log.debug("Procedure：{}", sourceSql);
+        log.debug("SQL：{}", sourceSql);
         log.debug("Args：{}", args);
 
         Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSqlAndIndexedArgNames(sourceSql);

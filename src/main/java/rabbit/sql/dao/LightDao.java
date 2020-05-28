@@ -28,21 +28,23 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * <p>如果配置了{@link SQLFileManager },则接口所有方法都可以通过 <b>&amp文件名.sql</b> 名来获取sql,通过<b>&amp;</b>
- * 前缀符号来判断如果是sql名则获取sql否在当作sql直接执行</p>
+ * <p>如果配置了{@link SQLFileManager },则接口所有方法都可以通过 <b>&amp文件名.sql</b> 名来获取sql文件内的sql,通过<b>&amp;</b>
+ * 前缀符号来判断如果是sql名则获取sql否则当作sql直接执行</p>
  * 指定sql名执行：
  * <blockquote>
- *     <pre>light.query("&amp;data.query", r -&gt; r, {@link Params}.builder()
+ * <pre>light.query("&amp;data.query", r -&gt; r, {@link Params}.builder()
  *                 .put("id", {@link Param}.IN(3))
  *                 .build())
  *                 .forEach(System.out::println);</pre>
  * </blockquote>
- *直接执行一句sql：
+ * 直接执行一句sql：
  * <blockquote>
- *     <pre>light.query("select * from test.user where id = 3;", {@link DataRow}::toMap)
+ * <pre>light.query("select * from test.user where id = 3;", {@link DataRow}::toMap)
  *                 forEach(System.out::println)</pre>
  * </blockquote>
+ *
  * @see rabbit.sql.support.JdbcSupport
+ * @see rabbit.sql.Light
  */
 public class LightDao extends JdbcSupport implements Light {
     private final static Logger log = LoggerFactory.getLogger(LightDao.class);
@@ -241,11 +243,38 @@ public class LightDao extends JdbcSupport implements Light {
         return fetch(sql, r -> r, args).isPresent();
     }
 
+    /**
+     * 执行一个存储过程<br>
+     * PostgreSQL执行获取一个游标类型的结果：
+     * <blockquote>
+     * <pre>
+     *  {@link Stream}&lt;{@link DataRow}&gt; rows = {@link rabbit.sql.transaction.Tx}.using(() -&gt;
+     *    light.function("call test.func2(:c::refcursor)",
+     *       Params.builder()
+     *         .put("c",Param.IN_OUT("result", OUTParamType.REF_CURSOR))
+     *         .build())
+     *         .get(0);
+     *       );
+     *   </pre>
+     * </blockquote>
+     *
+     * @param name 过程名
+     * @param args 参数 （占位符名字，参数对象）
+     * @return 包含至少一个结果的DataRow结果集
+     */
     @Override
     public DataRow procedure(String name, Map<String, Param> args) {
         return executeCall("{" + name + "}", args);
     }
 
+    /**
+     * 执行一个函数<br>
+     * 同{@code procedure(String name, Map<String, Param> args)}方法
+     *
+     * @param name 函数名
+     * @param args 参数（占位符名字，参数对象）
+     * @return 包含至少一个结果的DataRow结果集
+     */
     @Override
     public DataRow function(String name, Map<String, Param> args) {
         return procedure(name, args);
@@ -295,6 +324,12 @@ public class LightDao extends JdbcSupport implements Light {
         }
     }
 
+    /**
+     * 释放连接对象，如果有事务存在，并不会执行真正的释放
+     *
+     * @param connection 连接对象
+     * @param dataSource 数据源
+     */
     @Override
     protected void releaseConnection(Connection connection, DataSource dataSource) {
         DataSourceUtil.releaseConnectionIfNecessary(connection, dataSource);

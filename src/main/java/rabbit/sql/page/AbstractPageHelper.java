@@ -9,6 +9,12 @@ public abstract class AbstractPageHelper {
     private int pageCount;
     private int recordCount;
 
+    /**
+     * 构造函数，必须至少提供2个参数
+     *
+     * @param pageNumber 当前页码
+     * @param pageSize   每页大小
+     */
     public AbstractPageHelper(int pageNumber, int pageSize) {
         this.pageNumber = pageNumber;
         this.pageSize = pageSize;

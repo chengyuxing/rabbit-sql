@@ -15,6 +15,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+/**
+ * SQL工具类
+ */
 public class SqlUtil {
     /**
      * 特殊字符用来防止字段名重复的问题
@@ -48,6 +51,14 @@ public class SqlUtil {
         };
     }
 
+    /**
+     * 构建一个插入语句
+     *
+     * @param tableName 表名
+     * @param data      数据
+     * @param ignore    忽略类型
+     * @return 插入语句
+     */
     public static String generateInsert(final String tableName, final Map<String, Param> data, final Ignore ignore) {
         String fields = data.keySet().stream()
                 .filter(ignoreValueFilter(data, ignore))
@@ -59,6 +70,13 @@ public class SqlUtil {
         return "insert into " + tableName + " (" + fields + ") values (" + holders + ")";
     }
 
+    /**
+     * 构建一个更新语句
+     *
+     * @param tableName 表名
+     * @param data      数据
+     * @return 更新语句
+     */
     public static String generateUpdate(String tableName, Map<String, Param> data) {
         String sets = data.keySet().stream()
                 .filter(key -> !key.contains(SEP))

@@ -28,7 +28,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * <p>如果配置了{@link SQLFileManager },则接口所有方法都可以通过 <b>&amp文件名.sql</b> 名来获取sql文件内的sql,通过<b>&amp;</b>
+ * <p>如果配置了{@link SQLFileManager },则接口所有方法都可以通过 <b>&amp;文件名.sql</b> 名来获取sql文件内的sql,通过<b>&amp;</b>
  * 前缀符号来判断如果是sql名则获取sql否则当作sql直接执行</p>
  * 指定sql名执行：
  * <blockquote>

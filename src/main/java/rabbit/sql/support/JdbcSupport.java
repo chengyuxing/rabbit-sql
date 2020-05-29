@@ -29,9 +29,9 @@ import java.util.stream.Stream;
  *       select t.id || 'number' || 'name:cyx','{"name": "user"}'::jsonb
  *       from test.user t
  *       where id = :id::integer --后缀类型转换
- *       and id &gt; :idc
+ *       and id {@code >} :idc
  *       and name = text :username --前缀类型转换
- *       and '["a","b","c"]'::jsonb ??&amp; array ['a', 'b'] ${cnd};
+ *       and '["a","b","c"]'::jsonb{@code ??&} array ['a', 'b'] ${cnd};
  *     </pre>
  * </blockquote>
  */
@@ -201,7 +201,7 @@ public abstract class JdbcSupport {
      * 执行一句查询<br>
      * e.g.
      * <blockquote>
-     * <pre>select * from test.user where name = :name and id &gt; :id</pre>
+     * <pre>select * from test.user where name = :name and id {@code >} :id</pre>
      * </blockquote>
      *
      * @param sql        sql

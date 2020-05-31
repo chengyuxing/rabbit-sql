@@ -32,15 +32,9 @@ import java.util.stream.Stream;
  * 前缀符号来判断如果是sql名则获取sql否则当作sql直接执行</p>
  * 指定sql名执行：
  * <blockquote>
- * <pre>light.query("&amp;data.query", r -&gt; r, {@link Params}.builder()
- *                 .put("id", {@link Param}.IN(3))
- *                 .build())
- *                 .forEach(System.out::println);</pre>
- * </blockquote>
- * 直接执行一句sql：
- * <blockquote>
- * <pre>light.query("select * from test.user where id = 3;", {@link DataRow}::toMap)
- *                 forEach(System.out::println)</pre>
+ * <pre>try ({@link Stream}&lt;{@link DataRow}&gt; s = light.query("&data.query")) {
+ *     s.map({@link DataRow}::toMap).forEach(System.out::println);
+ *   }</pre>
  * </blockquote>
  *
  * @see rabbit.sql.support.JdbcSupport
@@ -48,13 +42,9 @@ import java.util.stream.Stream;
  */
 public class LightDao extends JdbcSupport implements Light {
     private final static Logger log = LoggerFactory.getLogger(LightDao.class);
+    private final DataSource dataSource;
     private SQLFileManager sqlFileManager;
-    private DataSource dataSource;
     private DatabaseMetaData metaData;
-
-    LightDao() {
-
-    }
 
     /**
      * 构造函数
@@ -142,41 +132,38 @@ public class LightDao extends JdbcSupport implements Light {
     }
 
     @Override
-    public <T> Stream<T> query(String sql, Function<DataRow, T> convert) {
-        return query(sql, convert, -1, null, null);
+    public Stream<DataRow> query(String sql) {
+        return query(sql, Params.empty());
     }
 
     @Override
-    public <T> Stream<T> query(String sql, Function<DataRow, T> convert, long fetchSize) {
-        return query(sql, convert, fetchSize, null, null);
+    public Stream<DataRow> query(String sql, Map<String, Param> args) {
+        try {
+            return executeQueryStream(sql, args, null);
+        } catch (SQLException ex) {
+            log.error(ex.toString());
+        }
+        return Stream.empty();
     }
 
     @Override
-    public <T> Stream<T> query(String sql, Function<DataRow, T> convert, Map<String, Param> args) {
-        return query(sql, convert, -1, args, null);
-    }
-
-    @Override
-    public <T> Stream<T> query(String sql, Function<DataRow, T> convert, Map<String, Param> args, long fetchSize) {
-        return query(sql, convert, fetchSize, args, null);
-    }
-
-    @Override
-    public <T> Stream<T> query(String sql, Function<DataRow, T> convert, ICondition ICondition) {
-        return query(sql, convert, -1, null, ICondition);
-    }
-
-    @Override
-    public <T> Stream<T> query(String sql, Function<DataRow, T> convert, ICondition ICondition, long fetchSize) {
-        return query(sql, convert, fetchSize, null, ICondition);
+    public Stream<DataRow> query(String sql, ICondition ICondition) {
+        try {
+            return executeQueryStream(sql, null, ICondition);
+        } catch (SQLException ex) {
+            log.error(ex.toString());
+        }
+        return Stream.empty();
     }
 
     @Override
     public <T> Pageable<T> query(String recordQuery, String countQuery, Function<DataRow, T> convert, Map<String, Param> args, AbstractPageHelper pager) {
-        return fetch(countQuery, r -> r.getInt(0), args).map(cn -> {
-            pager.init(cn);
-            List<T> data = query(pager.wrapPagedSql(getSql(recordQuery)), convert, args).collect(Collectors.toList());
-            return Pageable.of(pager, data);
+        return fetch(countQuery, args).map(cn -> {
+            pager.init(Optional.ofNullable(cn.getInt(0)).orElse(0));
+            try (Stream<DataRow> s = query(pager.wrapPagedSql(getSql(recordQuery)), args)) {
+                List<T> data = s.map(convert).collect(Collectors.toList());
+                return Pageable.of(pager, data);
+            }
         }).orElseGet(Pageable::empty);
     }
 
@@ -214,33 +201,37 @@ public class LightDao extends JdbcSupport implements Light {
     }
 
     @Override
-    public <T> Optional<T> fetch(String sql, Function<DataRow, T> convert) {
-        return query(sql, convert, 1).findFirst();
+    public Optional<DataRow> fetch(String sql) {
+        return fetch(sql, Params.empty());
     }
 
     @Override
-    public <T> Optional<T> fetch(String sql, Function<DataRow, T> convert, ICondition ICondition) {
-        return query(sql, convert, ICondition, 1).findFirst();
+    public Optional<DataRow> fetch(String sql, ICondition iCondition) {
+        try (Stream<DataRow> s = query(sql, iCondition)) {
+            return s.findFirst();
+        }
     }
 
     @Override
-    public <T> Optional<T> fetch(String sql, Function<DataRow, T> convert, Map<String, Param> args) {
-        return query(sql, convert, args, 1).findFirst();
+    public Optional<DataRow> fetch(String sql, Map<String, Param> args) {
+        try (Stream<DataRow> s = query(sql, args)) {
+            return s.findFirst();
+        }
     }
 
     @Override
     public boolean exists(String sql) {
-        return fetch(sql, r -> r).isPresent();
+        return fetch(sql).isPresent();
     }
 
     @Override
     public boolean exists(String sql, ICondition ICondition) {
-        return fetch(sql, r -> r, ICondition).isPresent();
+        return fetch(sql, ICondition).isPresent();
     }
 
     @Override
     public boolean exists(String sql, Map<String, Param> args) {
-        return fetch(sql, r -> r, args).isPresent();
+        return fetch(sql, args).isPresent();
     }
 
     /**
@@ -248,7 +239,7 @@ public class LightDao extends JdbcSupport implements Light {
      * PostgreSQL执行获取一个游标类型的结果：
      * <blockquote>
      * <pre>
-     *  {@link Stream}&lt;{@link DataRow}&gt; rows = {@link rabbit.sql.transaction.Tx}.using(() -&gt;
+     *  {@link List}&lt;{@link DataRow}&gt; rows = {@link rabbit.sql.transaction.Tx}.using(() -&gt;
      *    light.function("call test.func2(:c::refcursor)",
      *       Params.builder()
      *         .put("c",Param.IN_OUT("result", OUTParamType.REF_CURSOR))

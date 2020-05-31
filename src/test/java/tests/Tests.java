@@ -8,6 +8,7 @@ import org.nutz.dao.entity.Record;
 import org.nutz.json.Json;
 import rabbit.common.tuple.Pair;
 import rabbit.common.types.DataRow;
+import rabbit.common.types.UncheckedCloseable;
 import rabbit.common.utils.ResourceUtil;
 import rabbit.common.utils.StringUtil;
 import rabbit.sql.dao.Condition;
@@ -25,6 +26,7 @@ import rabbit.sql.dao.Wrap;
 import rabbit.sql.types.Param;
 import rabbit.sql.utils.SqlUtil;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
@@ -59,6 +61,17 @@ public class Tests {
         public Object getValue() {
             return "'{aaa}'";
         }
+    }
+
+    @Test
+    public void nestTest() throws Exception {
+        UncheckedCloseable close = null;
+        close = UncheckedCloseable.wrap(new FileInputStream("D:\\logs\\debug.log"));
+        close = close.nest(new FileInputStream("D:\\logs\\debug-1.log"));
+        close = close.nest(new FileInputStream("D:\\logs\\debug-2.log"));
+        close = close.nest(new FileInputStream("D:\\logs\\debug-3.log"));
+
+        close.run();
     }
 
     @BeforeClass
@@ -115,7 +128,7 @@ public class Tests {
             xc.and(Filter.eq("name", "xyc"), Filter.like("name", "aaa")).asc("ddd");
         }
         if (a > 0) {
-            xc.and(Filter.gt("age", 27)).expression("(select * from user)").and(Filter.eq("a",1)).desc("age");
+            xc.and(Filter.gt("age", 27)).expression("(select * from user)").and(Filter.eq("a", 1)).desc("age");
         }
 
         ICondition orderc = Condition.orderBy().asc("name").desc("id");
@@ -141,7 +154,7 @@ public class Tests {
     }
 
     @Test
-    public void Condition2() throws Exception{
+    public void Condition2() throws Exception {
         ICondition condition = Condition.where(Filter.eq("id", Wrap.wrapEnd("7", "::integer")))
                 .or(Filter.gt("id", Wrap.wrapEnd("100", "::integer")));
         System.out.println(condition.getSql());
@@ -152,14 +165,14 @@ public class Tests {
     }
 
     @Test
-    public void generateSql() throws Exception{
+    public void generateSql() throws Exception {
         Map<String, Param> paramMap = Params.builder().putIn("a", null)
                 .putIn("b", "v")
                 .putIn("c", "")
                 .putIn("d", null)
                 .putIn("e", "1").build();
 
-        System.out.println(SqlUtil.generateInsert("test.user",paramMap, Ignore.BLANK));
+        System.out.println(SqlUtil.generateInsert("test.user", paramMap, Ignore.BLANK));
     }
 
     @Test

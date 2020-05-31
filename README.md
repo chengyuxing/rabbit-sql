@@ -34,17 +34,15 @@ light.setSqlFileManager(manager);
 ### query
 
 ```java
-light.query("&data.queryUser", row -> row,
-                Condition.where(Filter.eq("password", "123456"))
-                        .and(Filter.gtEq("id", 4))
-                        .orderBy("id", Order.ASC))
-                .forEach(System.out::println);
+try (Stream<DataRow> fruits = orclLight.query("select * from fruit")) {
+            fruits.limit(10).forEach(System.out::println);
+        }
 ```
 
 ### call Function
 
 ```java
-Stream<DataRow> rows = Tx.using(() -> {
+List<DataRow> rows = Tx.using(() -> {
   DataRow row = light.call("call test.fun_query(:c::refcursor)",
                            Params.builder()
                            .put("c", Param.IN_OUT("result", OUTParamType.REF_CURSOR))

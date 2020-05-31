@@ -15,28 +15,50 @@ import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.*;
+import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 
 public class LightSessionTest {
 
     static Light light;
-    static Light orclLight;
+    static LightDao orclLight;
 
     @BeforeClass
     public static void init() {
-        HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
-        dataSource.setUsername("chengyuxing");
-        dataSource.setDriverClassName("org.postgresql.Driver");
-        light = LightDao.of(dataSource);
+//        HikariDataSource dataSource = new HikariDataSource();
+//        dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
+//        dataSource.setUsername("chengyuxing");
+//        dataSource.setDriverClassName("org.postgresql.Driver");
+//        light = LightDao.of(dataSource);
 
-//        HikariDataSource dataSource2 = new HikariDataSource();
-//        dataSource2.setJdbcUrl("jdbc:oracle:thin:@192.168.101.4:1521/orcl");
-//        dataSource2.setUsername("chengyuxing");
-//        dataSource2.setPassword("123456");
-//        dataSource2.setDriverClassName("oracle.sql.OracleDriver");
-//        orclLight = LightDao.of(dataSource2);
+        HikariDataSource dataSource2 = new HikariDataSource();
+        dataSource2.setJdbcUrl("jdbc:oracle:thin:@127.0.0.1:1521/orcl");
+        dataSource2.setUsername("chengyuxing");
+        dataSource2.setPassword("123456");
+        dataSource2.setDriverClassName("oracle.jdbc.OracleDriver");
+        orclLight = LightDao.of(dataSource2);
+    }
+
+    @Test
+    public void streamTest() throws Exception {
+        try (Stream<DataRow> fruits = orclLight.query("select * from fruit")) {
+            fruits.limit(10).forEach(System.out::println);
+        }
+//        for(int i =0;i<20;i++){
+//            Thread.sleep(3000);
+//        }
+    }
+
+    @Test
+    public void testStream2() throws Exception {
+        orclLight.query("select * from fruit").limit(10)
+                .forEach(System.out::println);
+
+        for (int i = 0; i < 20; i++) {
+            Thread.sleep(3000);
+        }
     }
 
     @Test
@@ -49,7 +71,7 @@ public class LightSessionTest {
 
     @Test
     public void oracleBlobTest() throws Exception {
-        light.query("select * from nutzbook.files", r -> r)
+        light.query("select * from nutzbook.files")
                 .forEach(r -> {
                     String a = r.getString(0);
                 });
@@ -57,7 +79,7 @@ public class LightSessionTest {
 
     @Test
     public void fileTest() throws Exception {
-        light.query("select * from test.files", r -> r)
+        light.query("select * from test.files")
                 .forEach(r -> {
                     System.out.println(r);
                     byte[] bytes = r.get("file");
@@ -85,7 +107,7 @@ public class LightSessionTest {
                 "        \"aliquip\",\n" +
                 "        \"qui\"\n" +
                 "      ]\n" +
-                "    }'::jsonb", r -> r)
+                "    }'::jsonb")
                 .forEach(r -> {
                     Object res = r.get(0);
                     System.out.println(r);
@@ -99,16 +121,15 @@ public class LightSessionTest {
                 "           \"name\": \"cyx\",\n" +
                 "           \"age\": 26,\n" +
                 "           \"address\": \"昆明市\"\n" +
-                "         }'::json) t(a)", r -> r)
+                "         }'::json) t(a)")
                 .forEach(System.out::println);
 
-        light.fetch("select array [4,5] || array [1,2,3]", r -> r).ifPresent(System.out::println);
+        light.fetch("select array [4,5] || array [1,2,3]").ifPresent(System.out::println);
     }
 
     @Test
     public void testQuery() throws Exception {
         light.query("select * from test.user",
-                r -> r,
                 Condition.where(Filter.startsWith("name", "c"))
                         .and(Filter.gt("id", Wrap.wrapEnd("1000", "::integer"))).desc("id"))
                 .forEach(System.out::println);
@@ -144,18 +165,24 @@ public class LightSessionTest {
     }
 
     @Test
+    public void fetchTest() throws Exception {
+        orclLight.fetch("select * from fruit", Condition.where(Filter.gt("price", 800)))
+                .ifPresent(System.out::println);
+    }
+
+    @Test
     public void jsonTests() throws Exception {
         light.fetch("select '{\n" +
                 "  \"a\": 1,\n" +
                 "  \"b\": 2,\n" +
                 "  \"c\": 3\n" +
-                "}'::jsonb ??| array ['d', 's'];", r -> r)
+                "}'::jsonb ??| array ['d', 's'];")
                 .ifPresent(System.out::println);
     }
 
     @Test
     public void boolTest() throws Exception {
-        light.fetch("select 'a',true,current_timestamp,current_date,current_time", r -> r.getValues().collect(Collectors.toList()))
+        light.fetch("select 'a',true,current_timestamp,current_date,current_time")
                 .ifPresent(System.out::println);
     }
 

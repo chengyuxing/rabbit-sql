@@ -56,9 +56,8 @@ public class MyTest {
 
     @Test
     public void array() throws Exception {
-        light.fetch("select array [1,2,3.3,5.67,8]:: integer[]", r -> r)
+        light.fetch("select array [1,2,3.3,5.67,8]:: integer[]")
                 .ifPresent(r -> {
-
                     Array arr = r.get(0);
                     try {
                         Integer[] ints = (Integer[]) arr.getArray();
@@ -129,21 +128,15 @@ public class MyTest {
     @Test
     public void TestMultiDs() throws SQLException {
         light.query("select * from test.user where id --用户ID\n" +
-                " = 3;", r -> r, -1).forEach(System.out::println);
+                " = 3;").forEach(System.out::println);
 //        xDao2.query("select * from user;", DataRow::toMap, -1).forEach(System.out::println);
     }
 
     @Test
     public void testSqlFile() {
-
-        light.query("&data.query", r -> r, Params.builder()
-                .put("id", Param.IN(3))
-//                .put("cnd", Param.TEMPLATE("order by id"))
-                .build())
-                .forEach(System.out::println);
-
-        light.query("select * from test.user where id --用户ID\n" +
-                " = 3;", r -> r, -1).forEach(System.out::println);
+        try (Stream<DataRow> s = light.query("&data.query")) {
+            s.map(DataRow::toMap).forEach(System.out::println);
+        }
     }
 
     @Test
@@ -157,7 +150,7 @@ public class MyTest {
 
     @Test
     public void testQuery() throws SQLException {
-        light.query("select * from test.user", row -> row,
+        light.query("select * from test.user",
                 Condition.where(Filter.eq("password", "123456"))
                         .and(Filter.gtEq("id", 4))
                         .orderBy("id", Order.ASC))
@@ -166,7 +159,7 @@ public class MyTest {
 
     @Test
     public void testCall() throws Exception {
-        Stream<DataRow> rows = Tx.using(() -> light.function("call test.fun_query(:c::refcursor)",
+        List<DataRow> rows = Tx.using(() -> light.function("call test.fun_query(:c::refcursor)",
                 Params.builder()
                         .put("c", Param.IN_OUT("result", OUTParamType.REF_CURSOR))
                         .build())

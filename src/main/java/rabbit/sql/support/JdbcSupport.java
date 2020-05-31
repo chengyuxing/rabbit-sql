@@ -1,13 +1,14 @@
 package rabbit.sql.support;
 
-import rabbit.sql.utils.JdbcUtil;
-import rabbit.sql.utils.SqlUtil;
-import rabbit.common.tuple.Pair;
-import rabbit.common.types.DataRow;
-import rabbit.sql.types.Param;
-import rabbit.sql.types.ParamMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import rabbit.common.tuple.Pair;
+import rabbit.common.types.DataRow;
+import rabbit.common.types.UncheckedCloseable;
+import rabbit.sql.types.Param;
+import rabbit.sql.types.ParamMode;
+import rabbit.sql.utils.JdbcUtil;
+import rabbit.sql.utils.SqlUtil;
 
 import javax.sql.DataSource;
 import java.sql.CallableStatement;
@@ -15,8 +16,9 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.function.Function;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * <h2>jdbc基本操作支持</h2><br>
@@ -91,6 +93,78 @@ public abstract class JdbcSupport {
         } finally {
             JdbcUtil.closeStatement(statement);
             releaseConnection(connection, getDataSource());
+        }
+    }
+
+    /**
+     * 惰性执行一句查询，只有调用终端操作和短路操作才会真正开始执行<br>
+     * 使用完请务必关闭流，否则将一直占用连接对象直到连接池耗尽<br>
+     * 使用{@code try-with-resource}进行包裹：
+     * <blockquote>
+     * <pre>try ({@link Stream}&lt;{@link DataRow}&gt; stream = ...) {
+     *       stream.limit(10).forEach(System.out::println);
+     *         }</pre>
+     * </blockquote>
+     *
+     * @param sql        e.g. <code>select * from test.user where id = :id</code>
+     * @param args       参数 （占位符名字，参数对象）
+     * @param ICondition 条件
+     * @return Stream数据流
+     */
+    public Stream<DataRow> executeQueryStream(final String sql, Map<String, Param> args, ICondition ICondition) throws SQLException {
+        UncheckedCloseable close = null;
+        try {
+            Map<String, Param> params = new HashMap<>();
+            String sourceSql = getSql(sql);
+            if (args != null)
+                params.putAll(args);
+            if (ICondition != null) {
+                params.putAll(ICondition.getParams());
+                sourceSql += ICondition.getSql();
+            }
+            sourceSql = SqlUtil.resolveSqlPart(sourceSql, params);
+            log.debug("SQL：{}", sourceSql);
+            log.debug("Args:{}", params);
+
+            Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSqlAndIndexedArgNames(sourceSql);
+            final List<String> argNames = preparedSqlAndArgNames.getItem2();
+            final String preparedSql = preparedSqlAndArgNames.getItem1();
+
+            Connection connection = getConnection();
+            close = UncheckedCloseable.wrap(connection);
+            CallableStatement statement = connection.prepareCall(preparedSql);
+            JdbcUtil.registerParams(statement, params, argNames);
+            close = close.nest(statement);
+            ResultSet resultSet = statement.executeQuery();
+            close = close.nest(resultSet);
+            return StreamSupport.stream(new Spliterators.AbstractSpliterator<DataRow>(Long.MAX_VALUE, Spliterator.ORDERED) {
+                String[] names = null;
+
+                @Override
+                public boolean tryAdvance(Consumer<? super DataRow> action) {
+                    try {
+                        if (!resultSet.next()) {
+                            return false;
+                        }
+                        if (names == null) {
+                            names = JdbcUtil.createNames(resultSet);
+                        }
+                        action.accept(JdbcUtil.createDataRow(names, resultSet));
+                        return true;
+                    } catch (SQLException ex) {
+                        throw new RuntimeException(ex);
+                    }
+                }
+            }, false).onClose(close);
+        } catch (SQLException sqlEx) {
+            if (close != null) {
+                try {
+                    close.close();
+                } catch (Exception e) {
+                    sqlEx.addSuppressed(e);
+                }
+            }
+            throw sqlEx;
         }
     }
 
@@ -198,45 +272,6 @@ public abstract class JdbcSupport {
     }
 
     /**
-     * 执行一句查询<br>
-     * e.g.
-     * <blockquote>
-     * <pre>select * from test.user where name = :name and id {@code >} :id</pre>
-     * </blockquote>
-     *
-     * @param sql        sql
-     * @param convert    类型转换
-     * @param fetchSize  请求条数
-     * @param args       参数 （占位符名字，参数对象）
-     * @param ICondition 条件
-     * @param <T>        类型参数
-     * @return 结果集
-     */
-    public <T> Stream<T> query(final String sql, Function<DataRow, T> convert, final long fetchSize, Map<String, Param> args, ICondition ICondition) {
-        Map<String, Param> params = new HashMap<>();
-        String sourceSql = getSql(sql);
-        if (args != null)
-            params.putAll(args);
-        if (ICondition != null) {
-            params.putAll(ICondition.getParams());
-            sourceSql += ICondition.getSql();
-        }
-        sourceSql = SqlUtil.resolveSqlPart(sourceSql, params);
-        log.debug("SQL：{}", sourceSql);
-        log.debug("Args:{}", params);
-
-        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSqlAndIndexedArgNames(sourceSql);
-        final List<String> argNames = preparedSqlAndArgNames.getItem2();
-        final String preparedSql = preparedSqlAndArgNames.getItem1();
-
-        return execute(preparedSql, sc -> {
-            JdbcUtil.registerParams(sc, params, argNames);
-            ResultSet resultSet = sc.executeQuery();
-            return JdbcUtil.resolveResultSet(resultSet, fetchSize, convert);
-        });
-    }
-
-    /**
      * 执行存储过程或函数<br>
      * 所有出参结果都放入到{@link DataRow}中，可通过命名参数名来取得，或者通过索引来取，索引从0开始<br>
      * 语句形如原生jdbc，只是将?号改为命名参数（:参数名）：
@@ -275,10 +310,10 @@ public abstract class JdbcSupport {
                 if (args.get(argNames.get(i)).getParamMode() == ParamMode.OUT || args.get(argNames.get(i)).getParamMode() == ParamMode.IN_OUT) {
                     Object result = sc.getObject(i + 1);
                     if (result instanceof ResultSet) {
-                        Stream<DataRow> rowStream = JdbcUtil.resolveResultSet((ResultSet) result, -1, row -> row);
-                        values[resultIndex] = rowStream;
-                        types[resultIndex] = "java.util.stream.Stream<DataRow>";
-                        log.info("boxing a result with type: cursor, convert to Stream<DataRow>, get result by name:{} or index:{}!", names[resultIndex], resultIndex);
+                        List<DataRow> rows = JdbcUtil.resolveResultSet((ResultSet) result, -1);
+                        values[resultIndex] = rows;
+                        types[resultIndex] = "java.util.ArrayList<DataRow>";
+                        log.info("boxing a result with type: cursor, convert to ArrayList<DataRow>, get result by name:{} or index:{}!", names[resultIndex], resultIndex);
                     } else {
                         values[resultIndex] = result;
                         types[resultIndex] = result.getClass().getName();

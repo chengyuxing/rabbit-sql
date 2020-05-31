@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.sql.*;
 import java.time.*;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -142,48 +143,68 @@ public class JdbcUtil {
     }
 
     /**
+     * 创建数据行表头
+     *
+     * @param resultSet 结果集
+     * @return 一组表头
+     * @throws SQLException sqlEx
+     */
+    public static String[] createNames(ResultSet resultSet) throws SQLException {
+        ResultSetMetaData metaData = resultSet.getMetaData();
+        int columnCount = metaData.getColumnCount();
+        String[] names = new String[columnCount];
+        for (int i = 0; i < columnCount; i++) {
+            names[i] = metaData.getColumnName(i + 1).toLowerCase();
+        }
+        return names;
+    }
+
+    /**
+     * 创建数据行
+     *
+     * @param names     表头名
+     * @param resultSet 结果集
+     * @return 数据化载体
+     * @throws SQLException sqlEx
+     */
+    public static DataRow createDataRow(String[] names, ResultSet resultSet) throws SQLException {
+        ResultSetMetaData metaData = resultSet.getMetaData();
+        String[] types = new String[names.length];
+        Object[] values = new Object[names.length];
+        for (int i = 0; i < names.length; i++) {
+            values[i] = JdbcUtil.getResultValue(resultSet, i + 1);
+            if (values[i] == null) {
+                types[i] = metaData.getColumnClassName(i + 1);
+            } else {
+                types[i] = values[i].getClass().getName();
+            }
+        }
+        return DataRow.of(names, types, values);
+    }
+
+    /**
      * 解析ResultSet
      *
      * @param resultSet 结果集
      * @param fetchSize 请求数据大小
-     * @param convert   转换
-     * @param <T>       目标类型
      * @return 以流包装的结果集
      * @throws SQLException ex
      */
-    public static <T> Stream<T> resolveResultSet(final ResultSet resultSet, final long fetchSize, final Function<DataRow, T> convert) throws SQLException {
-        Stream.Builder<T> sb = Stream.builder();
+    public static List<DataRow> resolveResultSet(final ResultSet resultSet, final long fetchSize) throws SQLException {
+        List<DataRow> list = new ArrayList<>();
+        String[] names = null;
         long size = fetchSize;
-        ResultSetMetaData metaData = resultSet.getMetaData();
-        int columnCount = metaData.getColumnCount();
-        String[] types = new String[columnCount];
-        String[] fields = new String[columnCount];
-        for (int i = 0; i < columnCount; i++) {
-            fields[i] = metaData.getColumnName(i + 1).toLowerCase();
-        }
-        boolean first = true;
         while (resultSet.next()) {
             if (size == 0)
                 break;
-            Object[] values = new Object[columnCount];
-            for (int i = 0; i < columnCount; i++) {
-                values[i] = JdbcUtil.getResultValue(resultSet, i + 1);
+            if (names == null) {
+                names = createNames(resultSet);
             }
-            if (first) {
-                for (int i = 0; i < columnCount; i++) {
-                    if (values[i] == null) {
-                        types[i] = metaData.getColumnClassName(i + 1);
-                    } else {
-                        types[i] = values[i].getClass().getName();
-                    }
-                }
-                first = false;
-            }
-            sb.accept(convert.apply(DataRow.of(fields, types, values)));
+            list.add(createDataRow(names, resultSet));
             size--;
         }
         closeResultSet(resultSet);
-        return sb.build();
+        return list;
     }
 
     /**

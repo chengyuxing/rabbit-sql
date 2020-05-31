@@ -106,69 +106,28 @@ public interface Light {
     /**
      * 查询<br>
      *
-     * @param sql     查询sql
-     * @param convert 转换
-     * @param <T>     目标类型
+     * @param sql 查询sql
      * @return 收集为流的结果集
      */
-    <T> Stream<T> query(String sql, Function<DataRow, T> convert);
+    Stream<DataRow> query(String sql);
 
     /**
      * 查询<br>
      *
-     * @param sql       查询sql
-     * @param convert   转换
-     * @param fetchSize 条数
-     * @param <T>       目标类型
+     * @param sql  查询sql
+     * @param args 参数
      * @return 收集为流的结果集
      */
-    <T> Stream<T> query(String sql, Function<DataRow, T> convert, long fetchSize);
-
-    /**
-     * 查询<br>
-     *
-     * @param sql     查询sql
-     * @param convert 转换
-     * @param args    参数
-     * @param <T>     目标类型
-     * @return 收集为流的结果集
-     */
-    <T> Stream<T> query(String sql, Function<DataRow, T> convert, Map<String, Param> args);
-
-    /**
-     * 查询<br>
-     *
-     * @param sql       查询sql
-     * @param convert   转换
-     * @param args      参数
-     * @param fetchSize 条数
-     * @param <T>       目标类型
-     * @return 收集为流的结果集
-     */
-    <T> Stream<T> query(String sql, Function<DataRow, T> convert, Map<String, Param> args, long fetchSize);
+    Stream<DataRow> query(String sql, Map<String, Param> args);
 
     /**
      * 查询<br>
      *
      * @param sql        查询sql
-     * @param convert    转换
      * @param ICondition 参数
-     * @param <T>        目标类型
      * @return 收集为流的结果集
      */
-    <T> Stream<T> query(String sql, Function<DataRow, T> convert, ICondition ICondition);
-
-    /**
-     * 查询<br>
-     *
-     * @param sql        查询sql
-     * @param convert    转换
-     * @param ICondition 参数
-     * @param fetchSize  条数
-     * @param <T>        目标类型
-     * @return 收集为流的结果集
-     */
-    <T> Stream<T> query(String sql, Function<DataRow, T> convert, ICondition ICondition, long fetchSize);
+    Stream<DataRow> query(String sql, ICondition ICondition);
 
     /**
      * 分页查询
@@ -234,34 +193,28 @@ public interface Light {
     /**
      * 获取一条<br>
      *
-     * @param sql     查询sql
-     * @param convert 转换
-     * @param <T>     目标类型
+     * @param sql 查询sql
      * @return 空或一条
      */
-    <T> Optional<T> fetch(String sql, Function<DataRow, T> convert);
+    Optional<DataRow> fetch(String sql);
 
     /**
      * 获取一条<br>
      *
      * @param sql        查询sql
-     * @param convert    转换
      * @param ICondition 条件
-     * @param <T>        目标类型
      * @return 空或一条
      */
-    <T> Optional<T> fetch(String sql, Function<DataRow, T> convert, ICondition ICondition);
+     Optional<DataRow> fetch(String sql, ICondition ICondition);
 
     /**
      * 获取一条<br>
      *
-     * @param sql     查询sql
-     * @param convert 转换
-     * @param args    参数
-     * @param <T>     目标类型
+     * @param sql  查询sql
+     * @param args 参数
      * @return 空或一条
      */
-    <T> Optional<T> fetch(String sql, Function<DataRow, T> convert, Map<String, Param> args);
+     Optional<DataRow> fetch(String sql, Map<String, Param> args);
 
     /**
      * 判断是否存在数据行

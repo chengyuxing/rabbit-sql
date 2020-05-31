@@ -110,6 +110,7 @@ public abstract class JdbcSupport {
      * @param args       参数 （占位符名字，参数对象）
      * @param ICondition 条件
      * @return Stream数据流
+     * @throws SQLException sqlEx
      */
     public Stream<DataRow> executeQueryStream(final String sql, Map<String, Param> args, ICondition ICondition) throws SQLException {
         UncheckedCloseable close = null;

@@ -32,7 +32,7 @@ import java.util.stream.Stream;
  * 前缀符号来判断如果是sql名则获取sql否则当作sql直接执行</p>
  * 指定sql名执行：
  * <blockquote>
- * <pre>try ({@link Stream}&lt;{@link DataRow}&gt; s = light.query("&data.query")) {
+ * <pre>try ({@link Stream}&lt;{@link DataRow}&gt; s = light.query("&amp;data.query")) {
  *     s.map({@link DataRow}::toMap).forEach(System.out::println);
  *   }</pre>
  * </blockquote>

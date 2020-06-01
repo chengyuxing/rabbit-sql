@@ -132,7 +132,7 @@ public class LightSessionTest {
         try (Stream<DataRow> s = light.query("select * from test.user",
                 Condition.where(Filter.startsWith("name", "c"))
                         .and(Filter.gt("id", Wrap.wrapEnd("1000", "::integer"))).desc("id"))) {
-            s.limit(3)
+            s.limit(30)
                     .forEach(System.out::println);
         }
 

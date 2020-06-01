@@ -80,7 +80,7 @@ public class Tests {
     }
 
     @Test
-    public void Datarows() throws Exception{
+    public void Datarows() throws Exception {
         Map<Integer, Object> map = new HashMap<>();
         map.put(1, "a");
         map.put(2, "2");
@@ -88,7 +88,9 @@ public class Tests {
         map.put(4, 10.01);
 
         DataRow row = DataRow.fromMap(map);
-        System.out.println(row);
+        row.foreach((k, v) -> {
+            System.out.println(k + ":" + v);
+        });
     }
 
     @Test

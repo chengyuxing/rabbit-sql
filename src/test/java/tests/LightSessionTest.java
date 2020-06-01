@@ -27,18 +27,18 @@ public class LightSessionTest {
 
     @BeforeClass
     public static void init() {
-//        HikariDataSource dataSource = new HikariDataSource();
-//        dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
-//        dataSource.setUsername("chengyuxing");
-//        dataSource.setDriverClassName("org.postgresql.Driver");
-//        light = LightDao.of(dataSource);
+        HikariDataSource dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
+        dataSource.setUsername("chengyuxing");
+        dataSource.setDriverClassName("org.postgresql.Driver");
+        light = LightDao.of(dataSource);
 
-        HikariDataSource dataSource2 = new HikariDataSource();
-        dataSource2.setJdbcUrl("jdbc:oracle:thin:@127.0.0.1:1521/orcl");
-        dataSource2.setUsername("chengyuxing");
-        dataSource2.setPassword("123456");
-        dataSource2.setDriverClassName("oracle.jdbc.OracleDriver");
-        orclLight = LightDao.of(dataSource2);
+//        HikariDataSource dataSource2 = new HikariDataSource();
+//        dataSource2.setJdbcUrl("jdbc:oracle:thin:@127.0.0.1:1521/orcl");
+//        dataSource2.setUsername("chengyuxing");
+//        dataSource2.setPassword("123456");
+//        dataSource2.setDriverClassName("oracle.jdbc.OracleDriver");
+//        orclLight = LightDao.of(dataSource2);
     }
 
     @Test
@@ -129,10 +129,15 @@ public class LightSessionTest {
 
     @Test
     public void testQuery() throws Exception {
-        light.query("select * from test.user",
+        try (Stream<DataRow> s = light.query("select * from test.user",
                 Condition.where(Filter.startsWith("name", "c"))
-                        .and(Filter.gt("id", Wrap.wrapEnd("1000", "::integer"))).desc("id"))
-                .forEach(System.out::println);
+                        .and(Filter.gt("id", Wrap.wrapEnd("1000", "::integer"))).desc("id"))) {
+            s.limit(3)
+                    .forEach(System.out::println);
+        }
+
+
+        ;
     }
 
     @Test

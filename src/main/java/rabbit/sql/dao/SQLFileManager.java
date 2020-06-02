@@ -57,38 +57,38 @@ public final class SQLFileManager {
         String prefix = fileName.substring(0, fileName.length() - 3);
         String previousSqlName = "";
         boolean firstLine = true;
-        BufferedReader reader = Files.newBufferedReader(path);
-        String line;
-        while ((line = reader.readLine()) != null) {
-            String trimLine = line.trim();
-            if (!trimLine.isEmpty()) {
-                if (firstLine) {
-                    if (!trimLine.startsWith(NAME_OPEN) && !trimLine.startsWith(PART_OPEN)) {
-                        continue;
+        try (BufferedReader reader = Files.newBufferedReader(path)) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                String trimLine = line.trim();
+                if (!trimLine.isEmpty()) {
+                    if (firstLine) {
+                        if (!trimLine.startsWith(NAME_OPEN) && !trimLine.startsWith(PART_OPEN)) {
+                            continue;
+                        }
                     }
-                }
-                if (trimLine.startsWith(NAME_OPEN) && trimLine.endsWith(NAME_CLOSE)) {
-                    firstLine = false;
-                    String sqlName = prefix + line.substring(line.indexOf(NAME_OPEN) + NAME_OPEN.length(), line.indexOf(NAME_CLOSE));
-                    previousSqlName = sqlName;
-                    RESOURCE.put(sqlName, "");
-                } else if (trimLine.startsWith(PART_OPEN) && trimLine.endsWith(PART_CLOSE)) {
-                    firstLine = false;
-                    String partName = prefix + line.substring(line.indexOf(PART_OPEN) + PART_OPEN.length(), line.indexOf(PART_CLOSE));
-                    partName = "${" + partName + "}";
-                    previousSqlName = partName;
-                    RESOURCE.put(partName, "");
-                } else {
-                    String prepareLine = RESOURCE.get(previousSqlName) + line;
-                    if (trimLine.endsWith(SEPARATOR)) {
-                        RESOURCE.put(previousSqlName, prepareLine.substring(0, prepareLine.lastIndexOf(SEPARATOR)));
-                        log.debug("scan to get SQL [{}]：{}", previousSqlName, RESOURCE.get(previousSqlName));
-                    } else
-                        RESOURCE.put(previousSqlName, prepareLine.concat("\n"));
+                    if (trimLine.startsWith(NAME_OPEN) && trimLine.endsWith(NAME_CLOSE)) {
+                        firstLine = false;
+                        String sqlName = prefix + line.substring(line.indexOf(NAME_OPEN) + NAME_OPEN.length(), line.indexOf(NAME_CLOSE));
+                        previousSqlName = sqlName;
+                        RESOURCE.put(sqlName, "");
+                    } else if (trimLine.startsWith(PART_OPEN) && trimLine.endsWith(PART_CLOSE)) {
+                        firstLine = false;
+                        String partName = prefix + line.substring(line.indexOf(PART_OPEN) + PART_OPEN.length(), line.indexOf(PART_CLOSE));
+                        partName = "${" + partName + "}";
+                        previousSqlName = partName;
+                        RESOURCE.put(partName, "");
+                    } else {
+                        String prepareLine = RESOURCE.get(previousSqlName) + line;
+                        if (trimLine.endsWith(SEPARATOR)) {
+                            RESOURCE.put(previousSqlName, prepareLine.substring(0, prepareLine.lastIndexOf(SEPARATOR)));
+                            log.debug("scan to get SQL [{}]：{}", previousSqlName, RESOURCE.get(previousSqlName));
+                        } else
+                            RESOURCE.put(previousSqlName, prepareLine.concat("\n"));
+                    }
                 }
             }
         }
-        reader.close();
         mergeSqlPartIfNecessary();
     }
 

@@ -62,12 +62,12 @@ public class SqlUtil {
     public static String generateInsert(final String tableName, final Map<String, Param> data, final Ignore ignore) {
         String fields = data.keySet().stream()
                 .filter(ignoreValueFilter(data, ignore))
-                .collect(Collectors.joining(","));
+                .collect(Collectors.joining(",", "(", ")"));
         String holders = data.keySet().stream()
                 .filter(ignoreValueFilter(data, ignore))
                 .map(key -> ":" + key)
-                .collect(Collectors.joining(","));
-        return "insert into " + tableName + " (" + fields + ") values (" + holders + ")";
+                .collect(Collectors.joining(",", "(", ")"));
+        return "insert into " + tableName + fields + " values " + holders;
     }
 
     /**

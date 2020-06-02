@@ -8,6 +8,7 @@ import org.nutz.dao.entity.Record;
 import org.nutz.json.Json;
 import rabbit.common.tuple.Pair;
 import rabbit.common.types.DataRow;
+import rabbit.common.types.ImmutableList;
 import rabbit.common.types.UncheckedCloseable;
 import rabbit.common.utils.ResourceUtil;
 import rabbit.common.utils.StringUtil;
@@ -40,6 +41,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import static rabbit.sql.utils.SqlUtil.SEP;
 
@@ -88,9 +90,20 @@ public class Tests {
         map.put(4, 10.01);
 
         DataRow row = DataRow.fromMap(map);
-        row.foreach((k, v) -> {
-            System.out.println(k + ":" + v);
-        });
+    }
+
+    @Test
+    public void Lista() throws Exception {
+        ImmutableList<Integer> i = ImmutableList.of(1, 2, 3, 4);
+        while (i.hasNext()) {
+            System.out.println(i.next());
+        }
+
+//        for (Integer x : i) {
+//            System.out.println(x);
+//        }
+//        Stream.of(1, 2, 3, 4).forEach(System.out::println);
+//        i.foreach(System.out::println);
     }
 
     @Test

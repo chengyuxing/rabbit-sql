@@ -140,8 +140,8 @@ public class Condition implements IOrderBy {
                 return and;
             }
             return f.getField() + f.getOperator();
-        }).collect(Collectors.joining(s));
-        conditions.append(s).append("( ").append(childAndGroup).append(")");
+        }).collect(Collectors.joining(s, "(", ")"));
+        conditions.append(s).append(childAndGroup);
         return this;
     }
 

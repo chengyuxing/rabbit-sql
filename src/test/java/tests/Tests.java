@@ -33,10 +33,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.sql.Date;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -76,11 +73,6 @@ public class Tests {
         close.run();
     }
 
-    @BeforeClass
-    public static void init() {
-
-    }
-
     @Test
     public void Datarows() throws Exception {
         Map<Integer, Object> map = new HashMap<>();
@@ -92,18 +84,27 @@ public class Tests {
         DataRow row = DataRow.fromMap(map);
     }
 
-    @Test
-    public void Lista() throws Exception {
-        ImmutableList<Integer> i = ImmutableList.of(1, 2, 3, 4);
-        while (i.hasNext()) {
-            System.out.println(i.next());
-        }
+    private static ImmutableList<Integer> immutableList;
 
-//        for (Integer x : i) {
-//            System.out.println(x);
-//        }
-//        Stream.of(1, 2, 3, 4).forEach(System.out::println);
-//        i.foreach(System.out::println);
+    @BeforeClass
+    public static void init() {
+        final List<Integer> list = new ArrayList<>();
+        for (int i = 0; i < 100000; i++) {
+            list.add(i);
+        }
+        immutableList = ImmutableList.of(list);
+    }
+
+    @Test
+    public void iteratorTest() throws Exception {
+        while (immutableList.hasNext()) {
+            System.out.println(immutableList.next());
+        }
+    }
+
+    @Test
+    public void lambdaTest() throws Exception{
+        immutableList.foreach(System.out::println);
     }
 
     @Test

@@ -30,10 +30,12 @@ import rabbit.sql.utils.SqlUtil;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.math.BigDecimal;
 import java.net.URISyntaxException;
 import java.nio.file.Path;
 import java.sql.Date;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -74,6 +76,28 @@ public class Tests {
     }
 
     @Test
+    public void numberIn() throws Exception {
+        BigDecimal n = new BigDecimal(100);
+        System.out.println(Double.parseDouble(n.toString()));
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        AtomicInteger x = new AtomicInteger(50);
+        List<Runnable> runnables = new ArrayList<>();
+        for (int j = 0; j < 5; j++) {
+            Runnable runnable = () -> {
+                for (int i = 0; i < 10; i++) {
+                    x.getAndDecrement();
+                }
+            };
+            runnables.add(runnable);
+        }
+        runnables.forEach(r -> new Thread(r).start());
+        Thread.sleep(1000);
+        System.out.println(x.get());
+    }
+
+    @Test
     public void Datarows() throws Exception {
         Map<Integer, Object> map = new HashMap<>();
         map.put(1, "a");
@@ -82,6 +106,7 @@ public class Tests {
         map.put(4, 10.01);
 
         DataRow row = DataRow.fromMap(map);
+
     }
 
     private static ImmutableList<Integer> immutableList;
@@ -103,7 +128,7 @@ public class Tests {
     }
 
     @Test
-    public void lambdaTest() throws Exception{
+    public void lambdaTest() throws Exception {
         immutableList.foreach(System.out::println);
     }
 

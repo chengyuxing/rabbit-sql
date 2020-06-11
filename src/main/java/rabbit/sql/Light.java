@@ -156,6 +156,41 @@ public interface Light {
     <T> Pageable<T> query(String recordQuery, String countQuery, Function<DataRow, T> convert, ICondition ICondition, AbstractPageHelper page);
 
     /**
+     * 分页查询
+     *
+     * @param recordQuery 查询SQL
+     * @param convert     行转换
+     * @param ICondition  条件拼接器
+     * @param page        分页对象
+     * @param <T>         目标类型
+     * @return 分页的结果集
+     */
+    <T> Pageable<T> query(String recordQuery, Function<DataRow, T> convert, ICondition ICondition, AbstractPageHelper page);
+
+    /**
+     * 分页查询
+     *
+     * @param recordQuery 查询SQL
+     * @param convert     行转换
+     * @param args        参数
+     * @param page        分页对象
+     * @param <T>         目标类型
+     * @return 分页的结果集
+     */
+    <T> Pageable<T> query(String recordQuery, Function<DataRow, T> convert, Map<String, Param> args, AbstractPageHelper page);
+
+    /**
+     * 分页查询
+     *
+     * @param recordQuery 查询SQL
+     * @param convert     行转换
+     * @param page        分页对象
+     * @param <T>         目标类型
+     * @return 分页的结果集
+     */
+    <T> Pageable<T> query(String recordQuery, Function<DataRow, T> convert, AbstractPageHelper page);
+
+    /**
      * 获取一条<br>
      *
      * @param sql 查询sql
@@ -170,7 +205,7 @@ public interface Light {
      * @param ICondition 条件
      * @return 空或一条
      */
-    Optional<DataRow> fetch(String sql, ICondition ICondition);
+     Optional<DataRow> fetch(String sql, ICondition ICondition);
 
     /**
      * 获取一条<br>
@@ -179,7 +214,7 @@ public interface Light {
      * @param args 参数
      * @return 空或一条
      */
-    Optional<DataRow> fetch(String sql, Map<String, Param> args);
+     Optional<DataRow> fetch(String sql, Map<String, Param> args);
 
     /**
      * 判断是否存在数据行

@@ -180,27 +180,6 @@ public class LightDao extends JdbcSupport implements Light {
     }
 
     @Override
-    public <T> Pageable<T> query(String recordQuery, Function<DataRow, T> convert, Map<String, Param> args, AbstractPageHelper page) {
-        String query = getSql(recordQuery);
-        String countQuery = "SELECT COUNT(*) " + query.substring(query.toLowerCase().lastIndexOf("from"));
-        return query(query, countQuery, convert, args, page);
-    }
-
-    @Override
-    public <T> Pageable<T> query(String recordQuery, Function<DataRow, T> convert, AbstractPageHelper page) {
-        String query = getSql(recordQuery);
-        String countQuery = "SELECT COUNT(*) " + query.substring(query.toLowerCase().lastIndexOf("from"));
-        return query(query, countQuery, convert, Params.empty(), page);
-    }
-
-    @Override
-    public <T> Pageable<T> query(String recordQuery, Function<DataRow, T> convert, ICondition ICondition, AbstractPageHelper page) {
-        String query = getSql(recordQuery);
-        String countQuery = "SELECT COUNT(*) " + query.substring(query.toLowerCase().lastIndexOf("from"));
-        return query(query, countQuery, convert, ICondition, page);
-    }
-
-    @Override
     public Optional<DataRow> fetch(String sql) {
         return fetch(sql, Params.empty());
     }

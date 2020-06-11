@@ -1,12 +1,12 @@
 package rabbit.sql.utils;
 
-import rabbit.common.types.DataRow;
-import rabbit.sql.support.JdbcSupport;
-import rabbit.sql.types.ParamMode;
-import rabbit.sql.types.Param;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import rabbit.common.types.DataRow;
 import rabbit.sql.dao.Wrap;
+import rabbit.sql.support.JdbcSupport;
+import rabbit.sql.types.Param;
+import rabbit.sql.types.ParamMode;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,8 +15,6 @@ import java.time.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Stream;
 
 import static rabbit.sql.utils.SqlUtil.unwrapValue;
 

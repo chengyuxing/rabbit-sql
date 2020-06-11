@@ -24,10 +24,11 @@ public class LightSessionTest {
 
     static Light light;
     static LightDao orclLight;
+    static HikariDataSource dataSource;
 
     @BeforeClass
     public static void init() {
-        HikariDataSource dataSource = new HikariDataSource();
+        dataSource = new HikariDataSource();
         dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
         dataSource.setUsername("chengyuxing");
         dataSource.setDriverClassName("org.postgresql.Driver");
@@ -39,6 +40,11 @@ public class LightSessionTest {
 //        dataSource2.setPassword("123456");
 //        dataSource2.setDriverClassName("oracle.jdbc.OracleDriver");
 //        orclLight = LightDao.of(dataSource2);
+    }
+
+    @Test
+    public void dst() throws Exception {
+        System.out.println(dataSource.getConnectionTimeout());
     }
 
     @Test

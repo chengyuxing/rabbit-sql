@@ -286,14 +286,14 @@ public class LightDao extends JdbcSupport implements Light {
         if (sql.startsWith("&")) {
             if (sqlFileManager != null) {
                 try {
-                    return SqlUtil.trimSem(sqlFileManager.get(sql.substring(1)));
+                    return SqlUtil.trimEnd(sqlFileManager.get(sql.substring(1)));
                 } catch (IOException | URISyntaxException e) {
                     log.error("get SQL failed:{}", e.getMessage());
                 }
             }
             throw new NullPointerException("can not find property 'sqlPath' or SQLFileManager init failed!");
         }
-        return SqlUtil.trimSem(sql);
+        return SqlUtil.trimEnd(sql);
     }
 
     @Override

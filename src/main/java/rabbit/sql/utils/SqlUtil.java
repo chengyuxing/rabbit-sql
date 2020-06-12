@@ -137,17 +137,13 @@ public class SqlUtil {
     }
 
     /**
-     * 去除sql结尾的分号
+     * 排除sql字符串尾部的非sql语句部分的其他字符
      *
      * @param sql sql字符串
      * @return 去除分号后的sql
      */
-    public static String trimSem(String sql) {
-        if (sql.lastIndexOf(";") == -1) {
-            return sql;
-        }
-        sql = sql.substring(0, sql.length() - 1);
-        return trimSem(sql);
+    public static String trimEnd(String sql) {
+        return sql.replaceAll("([^\\w'\"})\\]]+)$", "");
     }
 
     /**

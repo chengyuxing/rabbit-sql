@@ -182,21 +182,17 @@ public class LightDao extends JdbcSupport implements Light {
     @Override
     public <T> Pageable<T> query(String recordQuery, Function<DataRow, T> convert, Map<String, Param> args, AbstractPageHelper page) {
         String query = getSql(recordQuery);
-        String countQuery = "SELECT COUNT(*) " + query.substring(query.toLowerCase().lastIndexOf("from"));
+        String countQuery = "select count(*) " + query.substring(query.toLowerCase().lastIndexOf("from")).toLowerCase();
+        if (countQuery.lastIndexOf("order by") != -1) {
+            countQuery = countQuery.substring(0, countQuery.lastIndexOf("order by"));
+        }
         return query(query, countQuery, convert, args, page);
-    }
-
-    @Override
-    public <T> Pageable<T> query(String recordQuery, Function<DataRow, T> convert, AbstractPageHelper page) {
-        String query = getSql(recordQuery);
-        String countQuery = "SELECT COUNT(*) " + query.substring(query.toLowerCase().lastIndexOf("from"));
-        return query(query, countQuery, convert, Params.empty(), page);
     }
 
     @Override
     public <T> Pageable<T> query(String recordQuery, Function<DataRow, T> convert, ICondition ICondition, AbstractPageHelper page) {
         String query = getSql(recordQuery);
-        String countQuery = "SELECT COUNT(*) " + query.substring(query.toLowerCase().lastIndexOf("from"));
+        String countQuery = "select count(*) " + query.substring(query.toLowerCase().lastIndexOf("from"));
         return query(query, countQuery, convert, ICondition, page);
     }
 
@@ -290,14 +286,14 @@ public class LightDao extends JdbcSupport implements Light {
         if (sql.startsWith("&")) {
             if (sqlFileManager != null) {
                 try {
-                    return sqlFileManager.get(sql.substring(1));
+                    return SqlUtil.trimSem(sqlFileManager.get(sql.substring(1)));
                 } catch (IOException | URISyntaxException e) {
                     log.error("get SQL failed:{}", e.getMessage());
                 }
             }
             throw new NullPointerException("can not find property 'sqlPath' or SQLFileManager init failed!");
         }
-        return sql;
+        return SqlUtil.trimSem(sql);
     }
 
     @Override

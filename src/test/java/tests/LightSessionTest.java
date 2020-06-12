@@ -34,12 +34,6 @@ public class LightSessionTest {
         dataSource.setDriverClassName("org.postgresql.Driver");
         light = LightDao.of(dataSource);
 
-//        HikariDataSource dataSource2 = new HikariDataSource();
-//        dataSource2.setJdbcUrl("jdbc:oracle:thin:@127.0.0.1:1521/orcl");
-//        dataSource2.setUsername("chengyuxing");
-//        dataSource2.setPassword("123456");
-//        dataSource2.setDriverClassName("oracle.jdbc.OracleDriver");
-//        orclLight = LightDao.of(dataSource2);
     }
 
     @Test

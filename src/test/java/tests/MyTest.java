@@ -87,14 +87,6 @@ public class MyTest {
 
     @Test
     public void pageTest() throws Exception {
-        for (int i = 0; i < 5; i++) {
-            Pageable<Map<String, Object>> res = light.query("&data.select_all",
-                    DataRow::toMap,
-                    PGPageHelper.of(1, 10));
-//            System.out.println(res);
-            System.out.println(Json.toJson(Json.toJson(res)));
-//            TimeUnit.SECONDS.sleep(10);
-        }
     }
 
     @Test

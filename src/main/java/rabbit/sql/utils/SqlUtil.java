@@ -137,6 +137,20 @@ public class SqlUtil {
     }
 
     /**
+     * 去除sql结尾的分号
+     *
+     * @param sql sql字符串
+     * @return 去除分号后的sql
+     */
+    public static String trimSem(String sql) {
+        if (sql.lastIndexOf(";") == -1) {
+            return sql;
+        }
+        sql = sql.substring(0, sql.length() - 1);
+        return trimSem(sql);
+    }
+
+    /**
      * 解析SQL字符串
      *
      * @param sourceSql 原始sql字符串

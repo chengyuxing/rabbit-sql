@@ -10,4 +10,7 @@
 update test."user"
 set name     = 'cyx',
     password = '123456'
-where id = 5;
+where id = 5
+/*[getAllFile]*/
+select * from test.files;
+

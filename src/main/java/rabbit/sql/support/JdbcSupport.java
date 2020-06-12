@@ -180,7 +180,7 @@ public abstract class JdbcSupport {
      * @param args 数据
      * @return 总的受影响的行数
      */
-    public int executeNonQuery(final String sql, final Collection<Map<String, Param>> args) {
+    protected int executeNonQuery(final String sql, final Collection<Map<String, Param>> args) {
         if (args == null || args.size() < 1) {
             throw new NoSuchElementException("args is null or length less than 1.");
         }
@@ -215,7 +215,7 @@ public abstract class JdbcSupport {
      * @param arg 参数
      * @return 受影响的行数
      */
-    public int executeNonQuery(final String sql, final Map<String, Param> arg) {
+    protected int executeNonQuery(final String sql, final Map<String, Param> arg) {
         return executeNonQuery(sql, Collections.singletonList(arg));
     }
 
@@ -230,7 +230,7 @@ public abstract class JdbcSupport {
      * @param args 一组参数
      * @return 受影响的行数
      */
-    public int executeNonQueryOfDataRow(final String sql, final Collection<DataRow> args) {
+    protected int executeNonQueryOfDataRow(final String sql, final Collection<DataRow> args) {
         if (args == null || args.size() < 1) {
             throw new NoSuchElementException("args is null or length less than 1.");
         }
@@ -268,7 +268,7 @@ public abstract class JdbcSupport {
      * @param arg 参数
      * @return 受影响的行数
      */
-    public int executeNonQueryOfDataRow(final String sql, final DataRow arg) {
+    protected int executeNonQueryOfDataRow(final String sql, final DataRow arg) {
         return executeNonQueryOfDataRow(sql, Collections.singletonList(arg));
     }
 
@@ -288,7 +288,7 @@ public abstract class JdbcSupport {
      * @param args 参数
      * @return DataRow
      */
-    public DataRow executeCall(final String sql, Map<String, Param> args) {
+    protected DataRow executeCall(final String sql, Map<String, Param> args) {
         String sourceSql = SqlUtil.resolveSqlPart(getSql(sql), args);
         log.debug("SQL：{}", sourceSql);
         log.debug("Args：{}", args);

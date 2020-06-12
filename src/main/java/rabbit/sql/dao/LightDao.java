@@ -182,8 +182,8 @@ public class LightDao extends JdbcSupport implements Light {
     @Override
     public <T> Pageable<T> query(String recordQuery, Function<DataRow, T> convert, Map<String, Param> args, AbstractPageHelper page) {
         String query = getSql(recordQuery);
-        String countQuery = "select count(*) " + query.substring(query.toLowerCase().lastIndexOf("from")).toLowerCase();
-        if (countQuery.lastIndexOf("order by") != -1) {
+        String countQuery = "select count(*) " + query.substring(query.toLowerCase().lastIndexOf("from"));
+        if (countQuery.toLowerCase().lastIndexOf("order by") != -1) {
             countQuery = countQuery.substring(0, countQuery.lastIndexOf("order by"));
         }
         return query(query, countQuery, convert, args, page);

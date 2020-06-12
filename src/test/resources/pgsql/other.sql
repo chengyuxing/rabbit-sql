@@ -4,13 +4,15 @@
 * sql名和sql必须满足成对的出现，形如 a b a b a b a b ...
 * a为sql名,b为sql（可多行），a与b之间可以有注释
 **/
-
+-- aaaaaaaaaaaaaaa
+-- bbbbbbbbbbbbbbb
 
 /*[other]*/
 update test."user"
 set name     = 'cyx',
     password = '123456'
-where id = 5
+where id = 5;
+
 /*[getAllFile]*/
-select * from test.files;
+select * from test.files
 

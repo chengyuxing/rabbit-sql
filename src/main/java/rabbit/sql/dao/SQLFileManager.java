@@ -13,7 +13,6 @@ import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
@@ -22,8 +21,8 @@ import java.util.concurrent.locks.ReentrantLock;
 public final class SQLFileManager {
     private final static Logger log = LoggerFactory.getLogger(LightDao.class);
     private final ReentrantLock lock = new ReentrantLock();
-    static final ConcurrentHashMap<String, String> RESOURCE = new ConcurrentHashMap<>();
-    final Map<String, Long> LAST_MODIFIED = new HashMap<>();
+    static final Map<String, String> RESOURCE = new HashMap<>();
+    static final Map<String, Long> LAST_MODIFIED = new HashMap<>();
 
     private String basePath;
     private boolean checkModified;
@@ -83,8 +82,9 @@ public final class SQLFileManager {
                         if (trimLine.endsWith(SEPARATOR)) {
                             RESOURCE.put(previousSqlName, prepareLine.substring(0, prepareLine.lastIndexOf(SEPARATOR)));
                             log.debug("scan to get SQL [{}]：{}", previousSqlName, RESOURCE.get(previousSqlName));
-                        } else
+                        } else {
                             RESOURCE.put(previousSqlName, prepareLine.concat("\n"));
+                        }
                     }
                 }
             }
@@ -174,6 +174,15 @@ public final class SQLFileManager {
                     File f = p.toFile();
                     LAST_MODIFIED.put(f.getName(), f.lastModified());
                 });
+    }
+
+    /**
+     * 查看sql资源
+     */
+    public void look() {
+        RESOURCE.forEach((k, v) -> {
+            System.out.println("[" + k + "] -> " + v);
+        });
     }
 
     /**

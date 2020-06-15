@@ -7,7 +7,7 @@ import rabbit.sql.utils.SqlUtil;
 public class SqlFileTest {
     @Test
     public void sqlTest() throws Exception {
-        SQLFileManager sqlFileManager = new SQLFileManager("pgsql/other.sql");
+        SQLFileManager sqlFileManager = new SQLFileManager("pgsql");
         sqlFileManager.init();
         sqlFileManager.look();
 
@@ -15,7 +15,8 @@ public class SqlFileTest {
 
     @Test
     public void strTest() throws Exception {
-        String sql = "select * from user where 1=1 and id = 2)}];\n;; \t\n \r\n;; ";
-        System.out.println(SqlUtil.trimEnd(sql));
+        String sql = "select * from user where 1=1 and id = 2)}];\n;; \t\n \r\n;; \n\n\t\r";
+//        System.out.println(SqlUtil.trimEnd(sql));
+        System.out.println(sql.trim());
     }
 }

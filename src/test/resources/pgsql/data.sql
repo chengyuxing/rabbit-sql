@@ -2,7 +2,6 @@
 /*[query]*/
 select ${field}
 from test."user" t --用户表
-/*啊啊bbb啊啊*/
     ${part1};
 
 /*插入语句。*/

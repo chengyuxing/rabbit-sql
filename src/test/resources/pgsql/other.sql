@@ -8,11 +8,17 @@
 -- bbbbbbbbbbbbbbb
 
 /*[other]*/
+/*cccccccccccccc*/
+/*xxxxxxxxxxxxxx*/
 update test."user"
-set name     = 'cyx',
-    password = '123456'
+set name     = 'cyx', --姓名
+    password = '123456' --密码
 where id = 5;
 
+/*ddddddd
+cmd
+ddddddd*/
 /*[getAllFile]*/
-select * from test.files
+/*asdfghjllk*/
+select * from test.files;
 

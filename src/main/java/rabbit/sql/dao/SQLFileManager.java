@@ -73,35 +73,26 @@ public final class SQLFileManager {
                         previousSqlName = partName;
                         RESOURCE.put(partName, "");
                     } else {
-                        // 行注释直接跳过
-                        if (trimLine.startsWith("--")) {
-                            continue;
-                        }
-                        // 块注释
-                        if (trimLine.startsWith(ANNOTATION_START)) {
-                            // 如果块注释只有一行直接跳过
-                            if (trimLine.endsWith(ANNOTATION_END)) {
-                                continue;
+                        // 排除单行注释
+                        if (!trimLine.startsWith("--")) {
+                            // 排除块注释
+                            if (trimLine.startsWith(ANNOTATION_START)) {
+                                // 没有找到块注释结束 则标记下面的代码都是注释
+                                if (!trimLine.endsWith(ANNOTATION_END)) {
+                                    isAnnotation = true;
+                                }
+                                // 直到找到块注释结束符号，标记注释结束
+                            } else if (trimLine.endsWith(ANNOTATION_END)) {
+                                isAnnotation = false;
+                            } else if (!isAnnotation) {
+                                String prepareLine = RESOURCE.get(previousSqlName) + line;
+                                if (trimLine.endsWith(SEPARATOR)) {
+                                    RESOURCE.put(previousSqlName, prepareLine.substring(0, prepareLine.lastIndexOf(SEPARATOR)));
+                                    log.debug("scan to get SQL [{}]：{}", previousSqlName, RESOURCE.get(previousSqlName));
+                                } else {
+                                    RESOURCE.put(previousSqlName, prepareLine.concat("\n"));
+                                }
                             }
-                            // 没有找到块注释结束 则标记下面的代码都是注释
-                            isAnnotation = true;
-                            continue;
-                        }
-                        // 直到找到块注释结束符号，标记注释结束
-                        if (trimLine.endsWith(ANNOTATION_END)) {
-                            isAnnotation = false;
-                            continue;
-                        }
-                        // 块注释内的代码全部跳过
-                        if (isAnnotation) {
-                            continue;
-                        }
-                        String prepareLine = RESOURCE.get(previousSqlName) + line;
-                        if (trimLine.endsWith(SEPARATOR)) {
-                            RESOURCE.put(previousSqlName, prepareLine.substring(0, prepareLine.lastIndexOf(SEPARATOR)));
-                            log.debug("scan to get SQL [{}]：{}", previousSqlName, RESOURCE.get(previousSqlName));
-                        } else {
-                            RESOURCE.put(previousSqlName, prepareLine.concat("\n"));
                         }
                     }
                 }

@@ -153,7 +153,7 @@ public class Condition implements IOrderBy {
      * @return (字段名, 字段名占位符)
      */
     private Pair<String, String> getSpecialField(String field, Object value) {
-        String s = field + "_" + SqlUtil.SEP + arg_index++;
+        String s = field + SqlUtil.SEP + arg_index++;
         if (value instanceof Wrap) {
             Wrap wrapV = (Wrap) value;
             return Pair.of(s, wrapV.getStart() + " :" + s + wrapV.getEnd());

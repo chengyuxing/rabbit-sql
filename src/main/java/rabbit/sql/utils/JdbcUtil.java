@@ -247,13 +247,9 @@ public class JdbcUtil {
                     Param param = args.get(names.get(i));
                     if (param.getParamMode() == ParamMode.IN) {
                         setStatementValue(statement, index, param.getValue());
-                        continue;
-                    }
-                    if (param.getParamMode() == ParamMode.OUT) {
+                    } else if (param.getParamMode() == ParamMode.OUT) {
                         statement.registerOutParameter(index, param.getType().getTypeNumber());
-                        continue;
-                    }
-                    if (param.getParamMode() == ParamMode.IN_OUT) {
+                    } else if (param.getParamMode() == ParamMode.IN_OUT) {
                         setStatementValue(statement, index, param.getValue());
                         statement.registerOutParameter(index, param.getType().getTypeNumber());
                     }

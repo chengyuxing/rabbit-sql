@@ -8,11 +8,9 @@ import rabbit.sql.Light;
 import rabbit.sql.dao.Condition;
 import rabbit.sql.dao.Filter;
 import rabbit.sql.dao.LightDao;
-import rabbit.sql.dao.Params;
 import rabbit.sql.page.Pageable;
 import rabbit.sql.page.impl.OraclePageHelper;
 
-import java.util.List;
 import java.util.Map;
 
 public class OracleTest {

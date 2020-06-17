@@ -5,26 +5,22 @@ import func.FCondition;
 import func.FFilter;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.nutz.json.Json;
+import rabbit.common.tuple.Pair;
 import rabbit.common.types.DataRow;
-import rabbit.sql.dao.Condition;
-import rabbit.sql.dao.Filter;
-import rabbit.sql.dao.LightDao;
+import rabbit.sql.dao.*;
 import rabbit.sql.Light;
 import rabbit.sql.support.ICondition;
-import rabbit.sql.dao.SQLFileManager;
 import rabbit.sql.page.Pageable;
 import rabbit.sql.page.impl.PGPageHelper;
 import rabbit.sql.transaction.Tx;
 import rabbit.sql.types.OUTParamType;
 import rabbit.sql.types.Order;
 import rabbit.sql.types.Param;
-import rabbit.sql.dao.Params;
+import rabbit.sql.utils.SqlUtil;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.sql.*;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -81,7 +77,7 @@ public class MyTest {
         map.put("productplace", "bbb");
         map.put("price", 1000);
 
-        int i = light.insert("test.fruit", Params.from(map));
+        int i = light.insert("test.fruit", ParamMap.from(map));
         System.out.println(i);
     }
 
@@ -150,11 +146,16 @@ public class MyTest {
     }
 
     @Test
+    public void funTest() throws Exception {
+        DataRow row = light.function(":now = call test.now()",
+                ParamMap.create().putOut("now", OUTParamType.TIMESTAMP));
+        System.out.println(row);
+    }
+
+    @Test
     public void testCall() throws Exception {
         List<DataRow> rows = Tx.using(() -> light.function("call test.fun_query(:c::refcursor)",
-                Params.builder()
-                        .put("c", Param.IN_OUT("result", OUTParamType.REF_CURSOR))
-                        .build())
+                ParamMap.create().putInOut("c", "result", OUTParamType.REF_CURSOR))
                 .get(0));
         rows.forEach(System.out::println);
 //        for (int i = 0; i < 10; i++) {
@@ -164,14 +165,20 @@ public class MyTest {
     }
 
     @Test
+    public void Var() throws Exception {
+        Pair<String, List<String>> a = SqlUtil.getPreparedSqlAndIndexedArgNames("call test.now3(:a,:b,:r,:n)");
+        System.out.println(a.getItem1());
+        System.out.println(a.getItem2());
+    }
+
+    @Test
     public void callTest() throws Exception {
         DataRow row = light.function("call test.now3(:a,:b,:r,:n)",
-                Params.builder()
+                ParamMap.create()
                         .putIn("a", 101)
                         .putIn("b", 55)
                         .putOut("r", OUTParamType.TIMESTAMP)
-                        .putOut("n", OUTParamType.INTEGER)
-                        .build());
+                        .putOut("n", OUTParamType.INTEGER));
         Timestamp dt = row.get("r");
         System.out.println(dt.toLocalDateTime());
         System.out.println(row);
@@ -192,14 +199,12 @@ public class MyTest {
 //        Transaction.begin();
         try {
             int i = Tx.using(() -> {
-                int x = light.insert("test.user", Params.builder()
-                        .put("name", Param.IN("chengyuxing_outer_transaction"))
-                        .put("password", Param.IN("1993510"))
-                        .build());
-                int y = light2.insert("test.user", Params.builder()
-                        .put("name", Param.IN("jackson_outer_transaction"))
-                        .put("password", Param.IN("new Date("))
-                        .build());
+                int x = light.insert("test.user", ParamMap.create()
+                        .putIn("name", "chengyuxing_outer_transaction")
+                        .putIn("password", "1993510"));
+                int y = light2.insert("test.user", ParamMap.create()
+                        .putIn("name", "jackson_outer_transaction")
+                        .putIn("password", "new Date("));
                 return x + y;
             });
             System.out.println(i);
@@ -215,10 +220,9 @@ public class MyTest {
     public void testInsertBatch() throws SQLException {
         List<Map<String, Param>> list = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            list.add(Params.builder()
-                    .put("name", Param.IN("batch" + i))
-                    .put("password", Param.IN("123456"))
-                    .build());
+            list.add(ParamMap.create()
+                    .putIn("name", "batch" + i)
+                    .putIn("password", "123456"));
         }
         int i = light.insert("test.user", list);
         System.out.println(i);
@@ -233,7 +237,7 @@ public class MyTest {
     @Test
     public void testUpdate() throws SQLException {
         int i = light.update("test.user t",
-                Params.builder().put("name", Param.IN("SQLFileManager")).build(),
+                ParamMap.create().putIn("name", Param.IN("SQLFileManager")),
                 Condition.where(Filter.eq("id", 5)));
         System.out.println(i);
     }
@@ -281,11 +285,6 @@ public class MyTest {
 
     @Test
     public void ParamsTest() {
-        Map<String, Param> map = Params.builder()
-                .put("name", Param.IN("cyx"))
-                .put("age", Param.IN(26))
-                .put("address", Param.IN("昆明市"))
-                .build();
-        System.out.println(map);
+
     }
 }

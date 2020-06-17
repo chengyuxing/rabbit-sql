@@ -12,18 +12,14 @@ import rabbit.common.types.ImmutableList;
 import rabbit.common.types.UncheckedCloseable;
 import rabbit.common.utils.ResourceUtil;
 import rabbit.common.utils.StringUtil;
-import rabbit.sql.dao.Condition;
-import rabbit.sql.dao.Filter;
-import rabbit.sql.dao.Params;
+import rabbit.sql.dao.*;
 import rabbit.sql.support.ICondition;
 import rabbit.sql.support.IFilter;
-import rabbit.sql.dao.SQLFileManager;
 import rabbit.sql.page.AbstractPageHelper;
 import rabbit.sql.page.impl.OraclePageHelper;
 import rabbit.sql.page.Pageable;
 import rabbit.sql.types.Ignore;
 import rabbit.sql.types.Order;
-import rabbit.sql.dao.Wrap;
 import rabbit.sql.types.Param;
 import rabbit.sql.utils.SqlUtil;
 
@@ -164,6 +160,25 @@ public class Tests {
     }
 
     @Test
+    public void paramTest() throws Exception {
+        ParamMap map = new ParamMap().putIn("name", "cyx")
+                .putIn("age", 21)
+                .putIn("address", "昆明市");
+        printMap(map);
+        System.out.println(ParamMap.empty());
+        Map<String, Object> map1 = new HashMap<>();
+        map1.put("a", 1);
+        map1.put("b", 2);
+        map1.put("c", true);
+
+        System.out.println(ParamMap.from(map1));
+    }
+
+    public static void printMap(Map<String, Param> map) {
+        System.out.println(map);
+    }
+
+    @Test
     public void CndTest() throws Exception {
         ICondition condition = Condition.where(Filter.eq("id", 5))
                 .and(Filter.gt("age", Wrap.wrapEnd(26, "::text")))
@@ -219,11 +234,11 @@ public class Tests {
 
     @Test
     public void generateSql() throws Exception {
-        Map<String, Param> paramMap = Params.builder().putIn("a", null)
+        ParamMap paramMap = ParamMap.create().putIn("a", null)
                 .putIn("b", "v")
                 .putIn("c", "")
                 .putIn("d", null)
-                .putIn("e", "1").build();
+                .putIn("e", "1");
 
         System.out.println(SqlUtil.generateInsert("test.user", paramMap, Ignore.BLANK));
     }

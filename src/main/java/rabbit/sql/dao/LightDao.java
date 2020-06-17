@@ -83,7 +83,7 @@ public class LightDao extends JdbcSupport implements Light {
 
     @Override
     public long execute(String sql) {
-        return executeNonQuery(sql, Params.empty());
+        return executeNonQuery(sql, ParamMap.empty());
     }
 
     @Override
@@ -133,7 +133,7 @@ public class LightDao extends JdbcSupport implements Light {
 
     @Override
     public Stream<DataRow> query(String sql) {
-        return query(sql, Params.empty());
+        return query(sql, ParamMap.empty());
     }
 
     @Override
@@ -198,7 +198,7 @@ public class LightDao extends JdbcSupport implements Light {
 
     @Override
     public Optional<DataRow> fetch(String sql) {
-        return fetch(sql, Params.empty());
+        return fetch(sql, ParamMap.empty());
     }
 
     @Override

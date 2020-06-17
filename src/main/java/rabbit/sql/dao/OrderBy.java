@@ -25,7 +25,7 @@ public final class OrderBy implements IOrderBy {
 
     @Override
     public Map<String, Param> getParams() {
-        return Params.empty();
+        return ParamMap.empty();
     }
 
     @Override

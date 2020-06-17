@@ -11,6 +11,8 @@ public class SqlFileTest {
         sqlFileManager.init();
         sqlFileManager.look();
 
+        System.out.println(sqlFileManager.get("other.other"));
+
     }
 
     @Test

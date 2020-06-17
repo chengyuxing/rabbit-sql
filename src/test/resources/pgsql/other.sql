@@ -22,3 +22,5 @@ ddddddd*/
 /*asdfghjllk*/
 select * from test.files;
 
+/*{field}*/
+a.id, a.name, a.date;

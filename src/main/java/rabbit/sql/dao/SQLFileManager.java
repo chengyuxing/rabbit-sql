@@ -54,6 +54,7 @@ public final class SQLFileManager {
      * @throws IOException IOexp
      */
     private void resolveSqlContent(Path path) throws IOException {
+        Map<String, String> singleResource = new HashMap<>();
         String fileName = path.getFileName().toString();
         String prefix = fileName.substring(0, fileName.length() - 3);
         String previousSqlName = "";
@@ -65,10 +66,10 @@ public final class SQLFileManager {
                 if (!trimLine.isEmpty()) {
                     if (trimLine.startsWith(NAME_OPEN) && trimLine.endsWith(NAME_CLOSE)) {
                         previousSqlName = prefix + trimLine.substring(3, trimLine.length() - 3);
-                        RESOURCE.put(previousSqlName, "");
+                        singleResource.put(previousSqlName, "");
                     } else if (trimLine.startsWith(PART_OPEN) && trimLine.endsWith(PART_CLOSE)) {
                         previousSqlName = "${" + prefix + trimLine.substring(3, trimLine.length() - 3) + "}";
-                        RESOURCE.put(previousSqlName, "");
+                        singleResource.put(previousSqlName, "");
                     } else {
                         // 排除单行注释
                         if (!trimLine.startsWith("--")) {
@@ -82,12 +83,12 @@ public final class SQLFileManager {
                             } else if (trimLine.endsWith(ANNOTATION_END)) {
                                 isAnnotation = false;
                             } else if (!isAnnotation && !previousSqlName.equals("")) {
-                                String prepareLine = RESOURCE.get(previousSqlName) + line;
+                                String prepareLine = singleResource.get(previousSqlName) + line;
                                 if (trimLine.endsWith(SEPARATOR)) {
-                                    RESOURCE.put(previousSqlName, prepareLine.substring(0, prepareLine.lastIndexOf(SEPARATOR)));
-                                    log.debug("scan to get SQL [{}]：{}", previousSqlName, RESOURCE.get(previousSqlName));
+                                    singleResource.put(previousSqlName, prepareLine.substring(0, prepareLine.lastIndexOf(SEPARATOR)));
+                                    log.debug("scan to get SQL [{}]：{}", previousSqlName, singleResource.get(previousSqlName));
                                 } else {
-                                    RESOURCE.put(previousSqlName, prepareLine.concat("\n"));
+                                    singleResource.put(previousSqlName, prepareLine.concat("\n"));
                                 }
                             }
                         }
@@ -95,7 +96,8 @@ public final class SQLFileManager {
                 }
             }
         }
-        mergeSqlPartIfNecessary();
+        mergeSqlPartIfNecessary(singleResource);
+        RESOURCE.putAll(singleResource);
     }
 
     /**
@@ -103,31 +105,31 @@ public final class SQLFileManager {
      *
      * @param partName sql片段名
      */
-    private void doMergeSqlPart(final String partName) {
+    private void doMergeSqlPart(final String partName, Map<String, String> sqlResource) {
         String pn = "${" + partName.substring(partName.indexOf(".") + 1);
         boolean has = false;
-        for (String key : RESOURCE.keySet()) {
+        for (String key : sqlResource.keySet()) {
             if (!key.startsWith("${")) {
-                if (RESOURCE.get(key).contains(pn)) {
-                    RESOURCE.put(key, RESOURCE.get(key).replace(pn, RESOURCE.get(partName)));
+                if (sqlResource.get(key).contains(pn)) {
+                    sqlResource.put(key, sqlResource.get(key).replace(pn, sqlResource.get(partName)));
                 }
-                if (RESOURCE.get(key).contains(pn)) {
+                if (sqlResource.get(key).contains(pn)) {
                     has = true;
                 }
             }
         }
         if (has) {
-            doMergeSqlPart(partName);
+            doMergeSqlPart(partName, sqlResource);
         }
     }
 
     /**
      * 合并SQL可复用片段到包含片段名的SQL中
      */
-    private void mergeSqlPartIfNecessary() {
-        RESOURCE.keySet().stream()
+    private void mergeSqlPartIfNecessary(Map<String, String> sqlResource) {
+        sqlResource.keySet().stream()
                 .filter(k -> k.startsWith("${"))
-                .forEach(this::doMergeSqlPart);
+                .forEach(k -> doMergeSqlPart(k, sqlResource));
     }
 
     /**
@@ -146,20 +148,17 @@ public final class SQLFileManager {
                         // 如果是新文件则不过滤
                         return true;
                     }).forEach(p -> {
-                File f = p.toFile();
-                String name = f.getName();
-                log.debug("removing expired SQL cache...");
-                RESOURCE.keySet().stream()
-                        .filter(k -> k.startsWith(name.substring(0, name.length() - 3)))
-                        .forEach(RESOURCE::remove);
                 try {
+                    log.debug("removing expired SQL cache...");
                     resolveSqlContent(p);
+                    File f = p.toFile();
+                    String name = f.getName();
+                    //更新最后一次修改的时间
+                    LAST_MODIFIED.put(name, f.lastModified());
                     log.debug("reload modified sql file:{}", name);
                 } catch (IOException e) {
                     log.error("resolve SQL file with an error:{}", e.getMessage());
                 }
-                //更新最后一次修改的时间
-                LAST_MODIFIED.put(name, f.lastModified());
             });
     }
 

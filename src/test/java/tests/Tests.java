@@ -61,6 +61,12 @@ public class Tests {
     }
 
     @Test
+    public void substrTest() throws Exception{
+        String s = "aaaaoo";
+        System.out.println(s.substring(3,s.length()-3));
+    }
+
+    @Test
     public void nestTest() throws Exception {
         UncheckedCloseable close = null;
         close = UncheckedCloseable.wrap(new FileInputStream("D:\\logs\\debug.log"));

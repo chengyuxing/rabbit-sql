@@ -64,14 +64,11 @@ public final class SQLFileManager {
                 String trimLine = line.trim();
                 if (!trimLine.isEmpty()) {
                     if (trimLine.startsWith(NAME_OPEN) && trimLine.endsWith(NAME_CLOSE)) {
-                        String sqlName = prefix + line.substring(line.indexOf(NAME_OPEN) + NAME_OPEN.length(), line.indexOf(NAME_CLOSE));
-                        previousSqlName = sqlName;
-                        RESOURCE.put(sqlName, "");
+                        previousSqlName = prefix + trimLine.substring(3, trimLine.length() - 3);
+                        RESOURCE.put(previousSqlName, "");
                     } else if (trimLine.startsWith(PART_OPEN) && trimLine.endsWith(PART_CLOSE)) {
-                        String partName = prefix + line.substring(line.indexOf(PART_OPEN) + PART_OPEN.length(), line.indexOf(PART_CLOSE));
-                        partName = "${" + partName + "}";
-                        previousSqlName = partName;
-                        RESOURCE.put(partName, "");
+                        previousSqlName = "${" + prefix + trimLine.substring(3, trimLine.length() - 3) + "}";
+                        RESOURCE.put(previousSqlName, "");
                     } else {
                         // 排除单行注释
                         if (!trimLine.startsWith("--")) {
@@ -84,7 +81,7 @@ public final class SQLFileManager {
                                 // 直到找到块注释结束符号，标记注释结束
                             } else if (trimLine.endsWith(ANNOTATION_END)) {
                                 isAnnotation = false;
-                            } else if (!isAnnotation) {
+                            } else if (!isAnnotation && !previousSqlName.equals("")) {
                                 String prepareLine = RESOURCE.get(previousSqlName) + line;
                                 if (trimLine.endsWith(SEPARATOR)) {
                                     RESOURCE.put(previousSqlName, prepareLine.substring(0, prepareLine.lastIndexOf(SEPARATOR)));

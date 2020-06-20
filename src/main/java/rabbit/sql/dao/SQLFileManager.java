@@ -16,7 +16,8 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * SQL文件解析管理器
+ * SQL文件解析管理器<br>
+ * 格式参考data.sql.template
  */
 public final class SQLFileManager {
     private final static Logger log = LoggerFactory.getLogger(LightDao.class);
@@ -24,7 +25,7 @@ public final class SQLFileManager {
     static final Map<String, String> RESOURCE = new HashMap<>();
     static final Map<String, Long> LAST_MODIFIED = new HashMap<>();
 
-    private String basePath;
+    private final String basePath;
     private boolean checkModified;
 
     private static final String NAME_OPEN = "/*[";
@@ -34,9 +35,6 @@ public final class SQLFileManager {
     private static final String ANNOTATION_START = "/*";
     private static final String ANNOTATION_END = "*/";
     private static final String SEPARATOR = ";";
-
-    SQLFileManager() {
-    }
 
     /**
      * 构造函数

@@ -117,7 +117,7 @@ public abstract class JdbcSupport {
         try {
             Map<String, Param> params = new HashMap<>();
             String sourceSql = getSql(sql);
-            if (args != null)
+            if (args != null && !args.isEmpty())
                 params.putAll(args);
             if (ICondition != null) {
                 params.putAll(ICondition.getParams());

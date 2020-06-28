@@ -122,7 +122,8 @@ public class MyTest {
 
     @Test
     public void testSqlFile() {
-        try (Stream<DataRow> s = light.query("&data.query")) {
+        try (Stream<DataRow> s = light.query("&data.query",
+                ParamMap.create().putIn("id", 4))) {
             s.map(DataRow::toMap).forEach(System.out::println);
         }
     }
@@ -143,6 +144,14 @@ public class MyTest {
                         .and(Filter.gtEq("id", 4))
                         .orderBy("id", Order.ASC))
                 .forEach(System.out::println);
+    }
+
+    @Test
+    public void jsonSyntax() throws Exception {
+        String json = "{\n" +
+                "  \"name\": \"json\",\n" +
+                "  \"age\": 21\n" +
+                "}";
     }
 
     @Test

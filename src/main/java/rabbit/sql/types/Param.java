@@ -81,8 +81,19 @@ public final class Param {
 
     @Override
     public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{");
         if (value != null)
-            return value.toString();
-        return "<empty>";
+            sb.append("value=")
+                    .append(value)
+                    .append(", ");
+        if (type != null)
+            sb.append("type=")
+                    .append(type.getName())
+                    .append(", ");
+        sb.append("mode=")
+                .append(paramMode)
+                .append("}");
+        return sb.toString();
     }
 }

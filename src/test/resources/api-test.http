@@ -1,3 +1,12 @@
+POST http://localhost:80/api/item
+Content-Type: application/x-www-form-urlencoded
+
+{
+  "name": "json",
+  "age": 25
+}
+
+###
 GET https://jsonplaceholder.typicode.com/todos/1
 Accept: application/json
 

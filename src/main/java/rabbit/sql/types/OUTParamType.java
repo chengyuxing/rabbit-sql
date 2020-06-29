@@ -15,7 +15,8 @@ public enum OUTParamType implements IOutParam {
     ARRAY(Types.ARRAY, "array"),
     BLOB(Types.BLOB, "blob"),
     BOOLEAN(Types.BOOLEAN, "boolean"),
-    TIMESTAMP(Types.TIMESTAMP, "timestamp");
+    TIMESTAMP(Types.TIMESTAMP, "timestamp"),
+    OTHER(Types.OTHER, "other");
 
     private final int typeNumber;
     private final String name;

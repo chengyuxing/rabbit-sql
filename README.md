@@ -43,7 +43,7 @@ try (Stream<DataRow> fruits = orclLight.query("select * from fruit")) {
 
 ```java
 List<DataRow> rows = Tx.using(() -> {
-  DataRow row = light.call("call test.fun_query(:c::refcursor)",
+  DataRow row = light.function("call test.fun_query(:c::refcursor)",
                            Params.builder()
                            .put("c", Param.IN_OUT("result", OUTParamType.REF_CURSOR))
                            .build());

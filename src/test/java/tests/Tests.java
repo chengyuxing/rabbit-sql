@@ -61,9 +61,9 @@ public class Tests {
     }
 
     @Test
-    public void substrTest() throws Exception{
+    public void substrTest() throws Exception {
         String s = "aaaaoo";
-        System.out.println(s.substring(3,s.length()-3));
+        System.out.println(s.substring(3, s.length() - 3));
     }
 
     @Test
@@ -147,18 +147,27 @@ public class Tests {
 
     @Test
     public void sqlReplace() throws Exception {
-        String str = "select t.id || 'number' || 'age:age,name:cyx', '{\"name\":\"user\"}'::jsonb " +
-                "from test.user " +
-                "where id = :id::integer and id > :idc and name=text :username";
+        String str = "select t.id || 'number' || 'age:age,name:cyx', '{\"name\":\"user\"}'::jsonb from test.user where id =:id::integer and id >:idc and name=text :username";
         String upd = "update test.score set grade =  :grade::integer" +
                 " where id =   :id_˞0::integer::integer or id >   :id_˞1::integer::integer";
 
         String sql = "insert into test.user(idd,name,id,age,address) values (:id,:name::integer,:idd" + SEP + "::float,integer :age,date :address)";
 //        String sql2 = "select * from test.user where id = '1' and tag = '1' and num = '1' and name = :name";
 //        String jsonSql = "select '{\"a\":[1,2,3],\"b\":[4,5,6]}'::json #>> '{b,1}'";
-        Pair<String, List<String>> pair = SqlUtil.getPreparedSqlAndIndexedArgNames(upd);
+        Pair<String, List<String>> pair = SqlUtil.getPreparedSqlAndIndexedArgNames(str);
         System.out.println(pair.getItem1());
         System.out.println(pair.getItem2());
+    }
+
+    @Test
+    public void regexTest() throws Exception {
+        String str = "select t.id || 'number' || 'age:age,name:cyx', '{\"name\":\"user\"}'::jsonb from test.user where id =:id::integer and id >:idc and name=text:username";
+
+        Pattern pattern = Pattern.compile("[^:]:(?<name>[\\w.]+)");
+        Matcher matcher = pattern.matcher(str);
+        while (matcher.find()) {
+            System.out.println(matcher.group("name"));
+        }
     }
 
     @Test
@@ -229,7 +238,7 @@ public class Tests {
 
     @Test
     public void Condition2() throws Exception {
-        ICondition condition = Condition.where(Filter.eq("id", Wrap.wrapEnd("7", "::integer")))
+        ICondition condition = Condition.where(Filter.eq("t.id", Wrap.wrapEnd("7", "::integer")))
                 .or(Filter.gt("id", Wrap.wrapEnd("100", "::integer")));
         System.out.println(condition.getSql());
         System.out.println(condition.getParams());

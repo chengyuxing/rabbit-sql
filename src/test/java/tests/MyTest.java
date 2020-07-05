@@ -51,6 +51,12 @@ public class MyTest {
     }
 
     @Test
+    public void yut() throws Exception{
+        DataRow row = light.function("", ParamMap.empty());
+        System.out.println(row);
+    }
+
+    @Test
     public void array() throws Exception {
         light.fetch("select array [1,2,3.3,5.67,8]:: integer[]")
                 .ifPresent(r -> {

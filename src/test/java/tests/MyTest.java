@@ -16,6 +16,7 @@ import rabbit.sql.transaction.Tx;
 import rabbit.sql.types.OUTParamType;
 import rabbit.sql.types.Order;
 import rabbit.sql.types.Param;
+import rabbit.sql.utils.JdbcUtil;
 import rabbit.sql.utils.SqlUtil;
 
 import java.io.IOException;
@@ -51,9 +52,8 @@ public class MyTest {
     }
 
     @Test
-    public void yut() throws Exception{
-        DataRow row = light.function("", ParamMap.empty());
-        System.out.println(row);
+    public void jdbcTest() throws Exception{
+        System.out.println(JdbcUtil.supportsNamedParameters(dataSource.getConnection()));
     }
 
     @Test
@@ -188,10 +188,10 @@ public class MyTest {
 
     @Test
     public void callTest() throws Exception {
-        DataRow row = light.function("call test.now3(:a,:b,:r,:n)",
+        DataRow row = light.function("call test.now3(101,55,:r,:n)",
                 ParamMap.create()
-                        .putIn("a", 101)
-                        .putIn("b", 55)
+//                        .putIn("a", 101)
+//                        .putIn("b", 55)
                         .putOut("r", OUTParamType.TIMESTAMP)
                         .putOut("n", OUTParamType.INTEGER));
         Timestamp dt = row.get("r");

@@ -84,6 +84,52 @@ public class JdbcUtil {
     }
 
     /**
+     * 判断是否支持存储过程和函数
+     *
+     * @param connection 连接对象
+     * @return 是否支持
+     */
+    public static boolean supportStoredProcedure(Connection connection) {
+        try {
+            DatabaseMetaData dbmd = connection.getMetaData();
+            if (dbmd != null) {
+                if (dbmd.supportsStoredProcedures()) {
+                    log.debug("JDBC driver supports stored procedure");
+                    return true;
+                } else {
+                    log.debug("JDBC driver does not support stored procedure");
+                }
+            }
+        } catch (SQLException throwables) {
+            log.debug("JDBC driver 'supportsStoredProcedures' method threw exception", throwables);
+        }
+        return false;
+    }
+
+    /**
+     * 判断是否支持命名参数
+     *
+     * @param connection 连接对象
+     * @return 是否支持
+     */
+    public static boolean supportsNamedParameters(Connection connection) {
+        try {
+            DatabaseMetaData dbmd = connection.getMetaData();
+            if (dbmd != null) {
+                if (dbmd.supportsNamedParameters()) {
+                    log.debug("JDBC driver supports stored procedure");
+                    return true;
+                } else {
+                    log.debug("JDBC driver does not support stored procedure");
+                }
+            }
+        } catch (SQLException throwables) {
+            log.debug("JDBC driver 'supportsStoredProcedures' method threw exception", throwables);
+        }
+        return false;
+    }
+
+    /**
      * 判断是非支持批量执行修改操作
      *
      * @param con 连接对象
@@ -213,7 +259,7 @@ public class JdbcUtil {
      * @param value     值
      * @throws SQLException sqlExp
      */
-    public static void setStatementValue(CallableStatement statement, int index, Object value) throws SQLException {
+    public static void setStatementValue(PreparedStatement statement, int index, Object value) throws SQLException {
         if (value instanceof java.util.Date) {
             statement.setObject(index, new Date(((java.util.Date) value).getTime()));
         } else if (value instanceof LocalDateTime) {
@@ -232,14 +278,36 @@ public class JdbcUtil {
     }
 
     /**
-     * 注册预编译SQL参数
+     * 注册预编译sql参数
+     *
+     * @param statement sql声明
+     * @param args      参数
+     * @param names     占位符参数名
+     * @throws SQLException ex
+     */
+    public static void setSqlParams(PreparedStatement statement, Map<String, Param> args, List<String> names) throws SQLException {
+        if (args != null && !args.isEmpty()) {
+            for (int i = 0; i < names.size(); i++) {
+                if (args.containsKey(names.get(i))) {
+                    int index = i + 1;
+                    Param param = args.get(names.get(i));
+                    if (param.getParamMode() == ParamMode.IN) {
+                        setStatementValue(statement, index, param.getValue());
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * 注册预编译存储过程参数
      *
      * @param statement 声明
      * @param args      参数
      * @param names     占位符参数名
      * @throws SQLException ex
      */
-    public static void registerParams(CallableStatement statement, Map<String, Param> args, List<String> names) throws SQLException {
+    public static void setStoreParams(CallableStatement statement, Map<String, Param> args, List<String> names) throws SQLException {
         if (args != null && !args.isEmpty()) {
             for (int i = 0; i < names.size(); i++) {
                 if (args.containsKey(names.get(i))) {

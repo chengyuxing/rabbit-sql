@@ -251,7 +251,7 @@ public class LightDao extends JdbcSupport implements Light {
      */
     @Override
     public DataRow procedure(String name, Map<String, Param> args) {
-        return executeCall("{" + name + "}", args);
+        return executeCall(name, args);
     }
 
     /**

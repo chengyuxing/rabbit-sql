@@ -11,10 +11,7 @@ import rabbit.sql.utils.JdbcUtil;
 import rabbit.sql.utils.SqlUtil;
 
 import javax.sql.DataSource;
-import java.sql.CallableStatement;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -80,10 +77,10 @@ public abstract class JdbcSupport {
      * @return 任意类型
      */
     public <T> T execute(final String sql, StatementCallback<T> callback) {
-        CallableStatement statement = null;
+        PreparedStatement statement = null;
         Connection connection = getConnection();
         try {
-            statement = connection.prepareCall(sql);
+            statement = connection.prepareStatement(sql);
             return callback.doInStatement(statement);
         } catch (SQLException e) {
             JdbcUtil.closeStatement(statement);
@@ -133,8 +130,8 @@ public abstract class JdbcSupport {
 
             Connection connection = getConnection();
             close = UncheckedCloseable.wrap(connection);
-            CallableStatement statement = connection.prepareCall(preparedSql);
-            JdbcUtil.registerParams(statement, params, argNames);
+            PreparedStatement statement = connection.prepareStatement(preparedSql);
+            JdbcUtil.setSqlParams(statement, params, argNames);
             close = close.nest(statement);
             ResultSet resultSet = statement.executeQuery();
             close = close.nest(resultSet);
@@ -196,7 +193,7 @@ public abstract class JdbcSupport {
         return execute(preparedSql, sc -> {
             int i = 0;
             for (Map<String, Param> arg : args) {
-                JdbcUtil.registerParams(sc, arg, argNames);
+                JdbcUtil.setSqlParams(sc, arg, argNames);
                 i += sc.executeUpdate();
             }
             log.info("{} rows updated!", i);
@@ -249,7 +246,7 @@ public abstract class JdbcSupport {
             int i = 0;
             for (DataRow row : args) {
                 Map<String, Param> arg = row.toMap(Param::IN);
-                JdbcUtil.registerParams(sc, arg, argNames);
+                JdbcUtil.setSqlParams(sc, arg, argNames);
                 i += sc.executeUpdate();
             }
             log.info("{} rows updated!", i);
@@ -278,28 +275,31 @@ public abstract class JdbcSupport {
      * 语句形如原生jdbc，只是将?号改为命名参数（:参数名）：
      * <blockquote>
      * <pre>
-     *         {call test.func1(:arg1, :arg2, :result1, :result2)};
-     *         {call test.func2(:result::refcursor)}; //PostgreSQL
-     *         {:result = call test.func3()};
+     *         call test.func1(:arg1, :arg2, :result1, :result2);
+     *         call test.func2(:result::refcursor); //PostgreSQL
+     *         :result = call test.func3();
      *     </pre>
      * </blockquote>
      *
-     * @param sql  sql
-     * @param args 参数
+     * @param procedure 存储过程名
+     * @param args      参数
      * @return DataRow
      */
-    protected DataRow executeCall(final String sql, Map<String, Param> args) {
-        String sourceSql = SqlUtil.resolveSqlPart(getSql(sql), args);
-        log.debug("SQL：{}", sourceSql);
+    public DataRow executeCall(final String procedure, Map<String, Param> args) {
+        String sourceSql = SqlUtil.resolveSqlPart(getSql(procedure), args);
+        log.debug("Procedure：{}", sourceSql);
         log.debug("Args：{}", args);
 
         Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSqlAndIndexedArgNames(sourceSql);
         final String executeSql = preparedSqlAndArgNames.getItem1();
         final List<String> argNames = preparedSqlAndArgNames.getItem2();
 
-        return execute(executeSql, sc -> {
-            JdbcUtil.registerParams(sc, args, argNames);
-            sc.execute();
+        CallableStatement statement = null;
+        Connection connection = getConnection();
+        try {
+            statement = connection.prepareCall("{" + executeSql + "}");
+            JdbcUtil.setStoreParams(statement, args, argNames);
+            statement.execute();
             String[] names = argNames.stream().filter(n -> {
                 ParamMode mode = args.get(n).getParamMode();
                 return mode == ParamMode.OUT || mode == ParamMode.IN_OUT;
@@ -309,7 +309,7 @@ public abstract class JdbcSupport {
             int resultIndex = 0;
             for (int i = 0; i < argNames.size(); i++) {
                 if (args.get(argNames.get(i)).getParamMode() == ParamMode.OUT || args.get(argNames.get(i)).getParamMode() == ParamMode.IN_OUT) {
-                    Object result = sc.getObject(i + 1);
+                    Object result = statement.getObject(i + 1);
                     if (result instanceof ResultSet) {
                         List<DataRow> rows = JdbcUtil.resolveResultSet((ResultSet) result, -1);
                         values[resultIndex] = rows;
@@ -324,6 +324,14 @@ public abstract class JdbcSupport {
                 }
             }
             return DataRow.of(names, types, values);
-        });
+        } catch (SQLException e) {
+            JdbcUtil.closeStatement(statement);
+            statement = null;
+            releaseConnection(connection, getDataSource());
+            throw new RuntimeException(String.format("execute target procedure[%s]:%s", procedure, e.getMessage()));
+        } finally {
+            JdbcUtil.closeStatement(statement);
+            releaseConnection(connection, getDataSource());
+        }
     }
 }

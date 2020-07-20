@@ -1,6 +1,6 @@
 package rabbit.sql.support;
 
-import java.sql.CallableStatement;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
@@ -17,5 +17,5 @@ public interface StatementCallback<T> {
      * @return 任何想返回的类型
      * @throws SQLException sqlExp
      */
-    T doInStatement(CallableStatement statement) throws SQLException;
+    T doInStatement(PreparedStatement statement) throws SQLException;
 }

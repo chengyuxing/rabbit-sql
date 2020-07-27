@@ -160,6 +160,14 @@ public class Tests {
     }
 
     @Test
+    public void regex() throws Exception {
+        Matcher m = SqlUtil.ARG_PATTERN.matcher(":now = call test.now()");
+        while (m.find()) {
+            System.out.println(m.group("name"));
+        }
+    }
+
+    @Test
     public void regexTest() throws Exception {
         String str = "select t.id || 'number' || 'age:age,name:cyx', '{\"name\":\"user\"}'::jsonb from test.user where id =:id::integer and id >:idc and name=text:username";
 

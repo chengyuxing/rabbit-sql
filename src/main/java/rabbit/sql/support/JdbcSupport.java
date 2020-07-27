@@ -290,14 +290,14 @@ public abstract class JdbcSupport {
         log.debug("Procedure：{}", sourceSql);
         log.debug("Args：{}", args);
 
-        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSqlAndIndexedArgNames(sourceSql);
+        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSqlAndIndexedArgNames("{" + sourceSql + "}");
         final String executeSql = preparedSqlAndArgNames.getItem1();
         final List<String> argNames = preparedSqlAndArgNames.getItem2();
 
         CallableStatement statement = null;
         Connection connection = getConnection();
         try {
-            statement = connection.prepareCall("{" + executeSql + "}");
+            statement = connection.prepareCall(executeSql);
             JdbcUtil.setStoreParams(statement, args, argNames);
             statement.execute();
             String[] names = argNames.stream().filter(n -> {

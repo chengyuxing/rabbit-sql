@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.sql.*;
 import java.util.*;
+import java.util.regex.Matcher;
 import java.util.stream.Stream;
 
 import static rabbit.sql.utils.SqlUtil.getPreparedSqlAndIndexedArgNames;
@@ -52,7 +53,7 @@ public class MyTest {
     }
 
     @Test
-    public void jdbcTest() throws Exception{
+    public void jdbcTest() throws Exception {
         System.out.println(JdbcUtil.supportsNamedParameters(dataSource.getConnection()));
     }
 

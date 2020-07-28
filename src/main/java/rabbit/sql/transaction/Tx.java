@@ -70,7 +70,8 @@ public final class Tx {
             commit();
         } catch (Exception e) {
             rollback();
-            throw new RuntimeException("an error,transaction will rollback: " + e.getMessage());
+            log.error("transaction will rollback.");
+            e.printStackTrace();
         }
     }
 
@@ -83,14 +84,15 @@ public final class Tx {
      * @return 回调结果
      */
     public static <T> T using(Supplier<T> supplier, Definition definition) {
-        T result;
+        T result = null;
         try {
             begin(definition);
             result = supplier.get();
             commit();
         } catch (Exception e) {
             rollback();
-            throw new RuntimeException("an error,transaction will rollback: " + e.getMessage());
+            log.error("transaction will rollback.");
+            e.printStackTrace();
         }
         return result;
     }
@@ -137,7 +139,7 @@ public final class Tx {
                 try {
                     holder.getConnection().commit();
                 } catch (SQLException e) {
-                    log.error("transaction commit failed:{}", e.getMessage());
+                    log.error("transaction commit failed:{}", e.toString());
                 }
             }
         });
@@ -154,7 +156,7 @@ public final class Tx {
                 try {
                     holder.getConnection().rollback();
                 } catch (SQLException e) {
-                    log.error("transaction rollback failed:{}", e.getMessage());
+                    log.error("transaction rollback failed:{}", e.toString());
                 }
             }
         });

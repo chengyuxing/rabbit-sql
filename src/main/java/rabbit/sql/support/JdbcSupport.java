@@ -310,7 +310,10 @@ public abstract class JdbcSupport {
             for (int i = 0; i < argNames.size(); i++) {
                 if (args.get(argNames.get(i)).getParamMode() == ParamMode.OUT || args.get(argNames.get(i)).getParamMode() == ParamMode.IN_OUT) {
                     Object result = statement.getObject(i + 1);
-                    if (result instanceof ResultSet) {
+                    if (null == result) {
+                        values[resultIndex] = null;
+                        types[resultIndex] = "unKnow";
+                    } else if (result instanceof ResultSet) {
                         List<DataRow> rows = JdbcUtil.resolveResultSet((ResultSet) result, -1);
                         values[resultIndex] = rows;
                         types[resultIndex] = "java.util.ArrayList<DataRow>";

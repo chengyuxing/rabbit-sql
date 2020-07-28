@@ -188,6 +188,19 @@ public class MyTest {
     }
 
     @Test
+    public void multi_res_function() throws Exception {
+        Tx.using(()->{
+            DataRow row = light.function("call test.multi_res(12, :success, :res, :msg)",
+                    ParamMap.create()
+                            .putOut("success", OUTParamType.BOOLEAN)
+                            .putOut("res", OUTParamType.REF_CURSOR)
+                            .putOut("msg", OUTParamType.VARCHAR)
+            );
+            System.out.println(row.get(0).toString());
+        });
+    }
+
+    @Test
     public void callTest() throws Exception {
         DataRow row = light.function("call test.now3(101,55,:r,:n)",
                 ParamMap.create()

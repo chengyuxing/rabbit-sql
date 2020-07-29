@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rabbit.common.types.DataRow;
 import rabbit.sql.dao.Wrap;
-import rabbit.sql.support.JdbcSupport;
 import rabbit.sql.types.Param;
 import rabbit.sql.types.ParamMode;
 
@@ -22,7 +21,7 @@ import static rabbit.sql.utils.SqlUtil.unwrapValue;
  * JDBC工具类
  */
 public class JdbcUtil {
-    private final static Logger log = LoggerFactory.getLogger(JdbcSupport.class);
+    private final static Logger log = LoggerFactory.getLogger(JdbcUtil.class);
 
     /**
      * 获取result结果

@@ -14,6 +14,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * SQL文件解析管理器<br>
@@ -28,13 +30,8 @@ public final class SQLFileManager {
     private final String basePath;
     private boolean checkModified;
 
-    private static final String NAME_OPEN = "/*[";
-    private static final String NAME_CLOSE = "]*/";
-    private static final String PART_OPEN = "/*{";
-    private static final String PART_CLOSE = "}*/";
-    private static final String ANNOTATION_START = "/*";
-    private static final String ANNOTATION_END = "*/";
-    private static final String SEPARATOR = ";";
+    private static final Pattern NAME_PATTERN = Pattern.compile("/\\* *\\[ *(?<name>[\\w\\d.():$\\-+=?@!#%~|]+) *] *\\*/");
+    private static final Pattern PART_PATTERN = Pattern.compile("/\\* *\\{ *(?<part>[\\w\\d.():$\\-+=?@!#%~|]+) *} *\\*/");
 
     /**
      * 构造函数
@@ -62,28 +59,30 @@ public final class SQLFileManager {
             while ((line = reader.readLine()) != null) {
                 String trimLine = line.trim();
                 if (!trimLine.isEmpty()) {
-                    if (trimLine.startsWith(NAME_OPEN) && trimLine.endsWith(NAME_CLOSE)) {
-                        previousSqlName = prefix + trimLine.substring(3, trimLine.length() - 3);
+                    Matcher m_name = NAME_PATTERN.matcher(trimLine);
+                    Matcher m_part = PART_PATTERN.matcher(trimLine);
+                    if (m_name.matches()) {
+                        previousSqlName = prefix + m_name.group("name");
                         singleResource.put(previousSqlName, "");
-                    } else if (trimLine.startsWith(PART_OPEN) && trimLine.endsWith(PART_CLOSE)) {
-                        previousSqlName = "${" + prefix + trimLine.substring(3, trimLine.length() - 3) + "}";
+                    } else if (m_part.matches()) {
+                        previousSqlName = "${" + prefix + m_part.group("part") + "}";
                         singleResource.put(previousSqlName, "");
                     } else {
                         // 排除单行注释
                         if (!trimLine.startsWith("--")) {
                             // 排除块注释
-                            if (trimLine.startsWith(ANNOTATION_START)) {
+                            if (trimLine.startsWith("/*")) {
                                 // 没有找到块注释结束 则标记下面的代码都是注释
-                                if (!trimLine.endsWith(ANNOTATION_END)) {
+                                if (!trimLine.endsWith("*/")) {
                                     isAnnotation = true;
                                 }
                                 // 直到找到块注释结束符号，标记注释结束
-                            } else if (trimLine.endsWith(ANNOTATION_END)) {
+                            } else if (trimLine.endsWith("*/")) {
                                 isAnnotation = false;
                             } else if (!isAnnotation && !previousSqlName.equals("")) {
                                 String prepareLine = singleResource.get(previousSqlName) + line;
-                                if (trimLine.endsWith(SEPARATOR)) {
-                                    singleResource.put(previousSqlName, prepareLine.substring(0, prepareLine.lastIndexOf(SEPARATOR)));
+                                if (trimLine.endsWith(";")) {
+                                    singleResource.put(previousSqlName, prepareLine.substring(0, prepareLine.lastIndexOf(";")));
                                     log.debug("scan to get SQL [{}]：{}", previousSqlName, singleResource.get(previousSqlName));
                                 } else {
                                     singleResource.put(previousSqlName, prepareLine.concat("\n"));
@@ -183,9 +182,7 @@ public final class SQLFileManager {
      * 查看sql资源
      */
     public void look() {
-        RESOURCE.forEach((k, v) -> {
-            System.out.println("[" + k + "] -> " + v);
-        });
+        RESOURCE.forEach((k, v) -> System.out.println("[" + k + "] -> " + v));
     }
 
     /**

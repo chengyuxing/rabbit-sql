@@ -10,7 +10,7 @@ public class SqlFileTest {
         SQLFileManager sqlFileManager = new SQLFileManager("pgsql");
         sqlFileManager.init();
         sqlFileManager.look();
-
+        System.out.println("------------");
         System.out.println(sqlFileManager.get("other.other"));
 
     }

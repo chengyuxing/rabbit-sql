@@ -5,12 +5,12 @@ from test."user" t --用户表
     ${part1};
 
 /*插入语句。*/
-/*[insert]*/
+/*  [   great.insert  ]  */
 insert into test."user" (id, name, password)
 values (:id, :name, :password);
 
 /*第一部分*/
-/*{part1}*/
+/*{x.part1}  */
 where id = :id
 ${order};
 

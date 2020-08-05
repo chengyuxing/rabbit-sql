@@ -121,7 +121,7 @@ public abstract class JdbcSupport {
                 sourceSql += ICondition.getSql();
             }
             sourceSql = SqlUtil.resolveSqlPart(sourceSql, params);
-            log.debug("SQL：{}", sourceSql);
+            log.debug("SQL:{}", sourceSql);
             log.debug("Args:{}", params);
 
             Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSqlAndIndexedArgNames(sourceSql);
@@ -287,8 +287,8 @@ public abstract class JdbcSupport {
      */
     public DataRow executeCall(final String procedure, Map<String, Param> args) {
         String sourceSql = SqlUtil.resolveSqlPart(getSql(procedure), args);
-        log.debug("Procedure：{}", sourceSql);
-        log.debug("Args：{}", args);
+        log.debug("Procedure:{}", sourceSql);
+        log.debug("Args:{}", args);
 
         Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSqlAndIndexedArgNames("{" + sourceSql + "}");
         final String executeSql = preparedSqlAndArgNames.getItem1();

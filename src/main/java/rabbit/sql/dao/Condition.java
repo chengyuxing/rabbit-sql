@@ -44,7 +44,7 @@ public class Condition implements IOrderBy {
     public static Condition where(IFilter filter) {
         Condition condition = create();
         if (condition.where.equals("")) {
-            condition.where = "where ";
+            condition.where = " where ";
         }
         return condition.concatFilterBy("", filter);
     }

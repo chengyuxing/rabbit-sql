@@ -287,10 +287,6 @@ public class MyTest {
     @Test
     public void ConditionTest() {
         ICondition conditions = Condition.where(Filter.eq("id", 25))
-                .and(Filter.eq("password", "123456"),
-                        Filter.eq("name", "admin"),
-                        Filter.gtEq("id", 2),
-                        Filter.isNull("name"))
                 .and(Filter.isNotNull("name"))
                 .or(Filter.eq("id", 88))
                 .or(Filter.notLike("name", "%admin"))

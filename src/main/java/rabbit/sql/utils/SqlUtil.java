@@ -1,6 +1,7 @@
 package rabbit.sql.utils;
 
 import rabbit.common.tuple.Pair;
+import rabbit.common.utils.StringUtil;
 import rabbit.sql.dao.Wrap;
 import rabbit.sql.types.Ignore;
 import rabbit.sql.types.Param;
@@ -158,8 +159,10 @@ public class SqlUtil {
         args.keySet().forEach(k -> {
             ParamMode pm = args.get(k).getParamMode();
             if (pm == ParamMode.TEMPLATE) {
+                String sql = sourceSqlRef.get();
                 String v = args.get(k).getValue().toString() + " ";
-                sourceSqlRef.set(sourceSqlRef.get().replace("${" + k + "}", v));
+                String key = "${" + k + "}";
+                sourceSqlRef.set(sql.replace(key, v));
             } else if (pm == ParamMode.IN || pm == ParamMode.IN_OUT) {
                 Object v = args.get(k).getValue();
                 if (v instanceof Wrap) {

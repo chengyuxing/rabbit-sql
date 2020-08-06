@@ -205,7 +205,6 @@ public class Tests {
     public void CndTest() throws Exception {
         ICondition condition = Condition.where(Filter.eq("id", 5))
                 .and(Filter.gt("age", Wrap.wrapEnd(26, "::text")))
-                .and(Filter.eq("name", "chengyuxing"), Filter.isNotNull("address"))
                 .or(Filter.endsWith("name", "jack"))
                 .and(Filter.gt("id", Wrap.wrapStart("interval", "7 minutes")))
                 .and(new JsonIncludeFilter())
@@ -215,11 +214,8 @@ public class Tests {
         Condition xc = Condition.create();
 
         int a = 1;
-        if (a == 1) {
-            xc.and(Filter.eq("name", "xyc"), Filter.like("name", "aaa")).asc("ddd");
-        }
         if (a > 0) {
-            xc.and(Filter.gt("age", 27)).expression("(select * from user)").and(Filter.eq("a", 1)).desc("age");
+            xc.and(Filter.gt("age", 27)).expression("and (select * from user)").and(Filter.eq("a", 1)).desc("age");
         }
 
         ICondition orderc = Condition.orderBy().asc("name").desc("id");
@@ -347,7 +343,6 @@ public class Tests {
 
     @Test
     public void asd() throws Exception {
-        System.out.println(StringUtil.moveSpecialChars("test.user      t"));
     }
 
     @Test

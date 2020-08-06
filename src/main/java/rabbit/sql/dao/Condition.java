@@ -9,8 +9,6 @@ import rabbit.sql.utils.SqlUtil;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static rabbit.sql.utils.SqlUtil.unwrapValue;
 
@@ -19,9 +17,8 @@ import static rabbit.sql.utils.SqlUtil.unwrapValue;
  */
 public class Condition implements IOrderBy {
     private final Map<String, Param> params = new HashMap<>();
-
-    private String where = "";
     private final StringBuilder conditions = new StringBuilder();
+    private String where = "";
     private IOrderBy orderBy;
     private int arg_index = 0;
 
@@ -47,7 +44,7 @@ public class Condition implements IOrderBy {
     public static Condition where(IFilter filter) {
         Condition condition = create();
         if (condition.where.equals("")) {
-            condition.where = " where ";
+            condition.where = "where ";
         }
         return condition.concatFilterBy("", filter);
     }
@@ -84,7 +81,7 @@ public class Condition implements IOrderBy {
      * @return 条件拼接器
      */
     public Condition expression(String sql) {
-        conditions.append(" ").append(sql).append(" ");
+        conditions.append(sql).append(" ");
         return this;
     }
 
@@ -92,22 +89,20 @@ public class Condition implements IOrderBy {
      * and
      *
      * @param filter 过滤器
-     * @param more   更多过滤器
      * @return 条件拼接器
      */
-    public Condition and(IFilter filter, IFilter... more) {
-        return concatFilterBy(" and ", filter, more);
+    public Condition and(IFilter filter) {
+        return concatFilterBy("and ", filter);
     }
 
     /**
      * or
      *
      * @param filter 过滤器
-     * @param more   更多过滤器
      * @return 条件拼接器
      */
-    public Condition or(IFilter filter, IFilter... more) {
-        return concatFilterBy(" or ", filter, more);
+    public Condition or(IFilter filter) {
+        return concatFilterBy("or ", filter);
     }
 
     /**
@@ -115,33 +110,16 @@ public class Condition implements IOrderBy {
      *
      * @param s      连接字符串
      * @param filter 过滤器
-     * @param more   更多过滤器
      * @return 条件拼接器
      */
-    private Condition concatFilterBy(String s, IFilter filter, IFilter... more) {
-        if (more.length == 0) {
-            if (filter.getValue() != IFilter.IGNORE_VALUE) {
-                Pair<String, String> sf = getSpecialField(filter.getField(), filter.getValue());
-                conditions.append(s).append(filter.getField()).append(filter.getOperator()).append(sf.getItem2());
-                params.put(sf.getItem1(), Param.IN(unwrapValue(filter.getValue())));
-            } else {
-                conditions.append(s).append(filter.getField()).append(filter.getOperator());
-            }
-            return this;
+    private Condition concatFilterBy(String s, IFilter filter) {
+        if (filter.getValue() != IFilter.IGNORE_VALUE) {
+            Pair<String, String> sf = getSpecialField(filter.getField(), filter.getValue());
+            conditions.append(s).append(filter.getField()).append(filter.getOperator()).append(sf.getItem2()).append(" ");
+            params.put(sf.getItem1(), Param.IN(unwrapValue(filter.getValue())));
+        } else {
+            conditions.append(s).append(filter.getField()).append(filter.getOperator());
         }
-        IFilter[] filters = new IFilter[1 + more.length];
-        filters[0] = filter;
-        System.arraycopy(more, 0, filters, 1, more.length);
-        String childAndGroup = Stream.of(filters).map(f -> {
-            if (f.getValue() != IFilter.IGNORE_VALUE) {
-                Pair<String, String> sf = getSpecialField(f.getField(), f.getValue());
-                String and = f.getField() + f.getOperator() + sf.getItem2();
-                params.put(sf.getItem1(), Param.IN(unwrapValue(f.getValue())));
-                return and;
-            }
-            return f.getField() + f.getOperator();
-        }).collect(Collectors.joining(s, "(", ")"));
-        conditions.append(s).append(childAndGroup);
         return this;
     }
 
@@ -156,7 +134,11 @@ public class Condition implements IOrderBy {
         String s = field + SqlUtil.SEP + arg_index++;
         if (value instanceof Wrap) {
             Wrap wrapV = (Wrap) value;
-            return Pair.of(s, wrapV.getStart() + " :" + s + wrapV.getEnd());
+            String prefix = wrapV.getStart();
+            if (!prefix.equals("")) {
+                prefix += " ";
+            }
+            return Pair.of(s, prefix + ":" + s + wrapV.getEnd());
         }
         return Pair.of(s, ":" + s);
     }
@@ -173,8 +155,10 @@ public class Condition implements IOrderBy {
             return "";
         }
         if (orderBy != null) {
-            if (cnds.startsWith(" and ")) {
-                cnds = cnds.substring(5);
+            if (cnds.startsWith("and ")) {
+                cnds = cnds.substring(4);
+            } else if (cnds.startsWith("or ")) {
+                cnds = cnds.substring(3);
             }
             return "\n" + where + cnds + orderBy.getSql();
         }

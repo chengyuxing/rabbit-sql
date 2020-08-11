@@ -68,7 +68,7 @@ public class SqlUtil {
                 .filter(ignoreValueFilter(data, ignore))
                 .map(key -> ":" + key)
                 .collect(Collectors.joining(",", "(", ")"));
-        return "insert into " + tableName + fields + " values " + holders;
+        return "insert into " + tableName + fields + " \nvalues " + holders;
     }
 
     /**
@@ -82,8 +82,8 @@ public class SqlUtil {
         String sets = data.keySet().stream()
                 .filter(key -> !key.contains(SEP))
                 .map(key -> key + " = :" + key)
-                .collect(Collectors.joining(", "));
-        return "update " + tableName + " set " + sets;
+                .collect(Collectors.joining(", \n\t"));
+        return "update " + tableName + " \nset " + sets;
     }
 
     /**

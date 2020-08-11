@@ -303,6 +303,7 @@ public class Tests {
         Object[] values = new Object[]{"chengyuxing", 26, true};
         DataRow row = DataRow.of(names, values);
         System.out.println(row);
+        System.out.println(SqlUtil.generateUpdate("test.user", row.toMap(Param::IN)) + Condition.where(Filter.eq("id", 2)).getSql());
     }
 
     @Test

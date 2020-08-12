@@ -1,10 +1,13 @@
 package tests;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zaxxer.hikari.HikariDataSource;
 import func.FCondition;
 import func.FFilter;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.postgresql.jdbc.PgArray;
 import rabbit.common.tuple.Pair;
 import rabbit.common.types.DataRow;
 import rabbit.sql.dao.*;
@@ -35,6 +38,8 @@ public class MyTest {
     private static HikariDataSource dataSource;
     private static HikariDataSource dataSource2;
 
+    private static final ObjectMapper json = new ObjectMapper();
+
     @BeforeClass
     public static void init() throws IOException, URISyntaxException {
         dataSource = new HikariDataSource();
@@ -59,15 +64,18 @@ public class MyTest {
 
     @Test
     public void array() throws Exception {
-        light.fetch("select array [1,2,3.3,5.67,8]:: integer[]")
+        light.fetch("select array [12,13,11,4,5,6.7]:: integer[]")
                 .ifPresent(r -> {
-                    Array arr = r.get(0);
                     try {
-                        Integer[] ints = (Integer[]) arr.getArray();
-                        System.out.println(Arrays.toString(ints));
-                    } catch (SQLException e) {
+                        System.out.println(r);
+                        System.out.println(json.writeValueAsString(r.toMap()));
+                    } catch (JsonProcessingException e) {
                         e.printStackTrace();
                     }
+
+//                        Array arr = r.get(0);
+//                        Integer[] ints = (Integer[]) arr.getArray();
+//                        System.out.println(Arrays.toString(ints));
                 });
     }
 

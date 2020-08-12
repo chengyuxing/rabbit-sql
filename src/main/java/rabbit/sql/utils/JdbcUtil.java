@@ -9,6 +9,8 @@ import rabbit.sql.types.ParamMode;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.sql.*;
 import java.time.*;
 import java.util.ArrayList;
@@ -44,6 +46,13 @@ public class JdbcUtil {
             obj = clob.getSubString(0, (int) clob.length());
         } else if ("org.postgresql.util.PGobject".equals(className)) {
             obj = resultSet.getString(index);
+        } else if ("org.postgresql.jdbc.PgArray".equals(className)) {
+            try {
+                Method method = obj.getClass().getDeclaredMethod("getArray");
+                obj = method.invoke(obj);
+            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
+                log.error("invoke PgArray.getArray() with wrong:{}", e.getMessage());
+            }
         } else if ("oracle.sql.TIMESTAMP".equals(className) || "oracle.sql.TIMESTAMPTZ".equals(className)) {
             obj = resultSet.getTimestamp(index);
         } else if (className != null && className.startsWith("oracle.sql.DATE")) {

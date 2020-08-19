@@ -25,13 +25,4 @@ public class OracleTest {
         dataSource2.setDriverClassName("oracle.jdbc.OracleDriver");
         light = LightDao.of(dataSource2);
     }
-
-    @Test
-    public void pageTest() throws Exception {
-        Pageable<Map<String, Object>> data = light.query("select price,fruitName from fruit;\r\n;;\r\n;",
-                DataRow::toMap,
-                Condition.where(Filter.gt("price", 500)).desc("price"),
-                OraclePageHelper.of(1, 100));
-        System.out.println(data);
-    }
 }

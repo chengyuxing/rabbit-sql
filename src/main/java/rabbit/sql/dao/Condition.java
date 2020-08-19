@@ -1,9 +1,8 @@
 package rabbit.sql.dao;
 
 import rabbit.common.tuple.Pair;
+import rabbit.sql.support.ICondition;
 import rabbit.sql.support.IFilter;
-import rabbit.sql.support.IOrderBy;
-import rabbit.sql.types.Order;
 import rabbit.sql.types.Param;
 import rabbit.sql.utils.SqlUtil;
 
@@ -15,11 +14,10 @@ import static rabbit.sql.utils.SqlUtil.unwrapValue;
 /**
  * SQL条件拼装器
  */
-public class Condition implements IOrderBy {
+public class Condition implements ICondition {
     private final Map<String, Param> params = new HashMap<>();
     private final StringBuilder conditions = new StringBuilder();
     private String where = "";
-    private IOrderBy orderBy;
     private int arg_index = 0;
 
     Condition() {
@@ -47,31 +45,6 @@ public class Condition implements IOrderBy {
             condition.where = " where ";
         }
         return condition.concatFilterBy("", filter);
-    }
-
-    /**
-     * 返回一个OrderBy实例
-     *
-     * @return orderly
-     */
-    public static IOrderBy orderBy() {
-        return new OrderBy();
-    }
-
-    /**
-     * 排序
-     *
-     * @param field 字段名
-     * @param order 排序枚举
-     * @return 条件拼接器
-     */
-    @Override
-    public IOrderBy orderBy(String field, Order order) {
-        if (orderBy == null) {
-            orderBy = new OrderBy();
-        }
-        orderBy.orderBy(field, order);
-        return this;
     }
 
     /**
@@ -154,13 +127,10 @@ public class Condition implements IOrderBy {
         if (cnds.equals("")) {
             return "";
         }
-        if (orderBy != null) {
-            if (cnds.startsWith("and ")) {
-                cnds = cnds.substring(4);
-            } else if (cnds.startsWith("or ")) {
-                cnds = cnds.substring(3);
-            }
-            return "\n" + where + cnds + orderBy.getSql();
+        if (cnds.startsWith("and ")) {
+            cnds = cnds.substring(4);
+        } else if (cnds.startsWith("or ")) {
+            cnds = cnds.substring(3);
         }
         return "\n" + where + cnds;
     }

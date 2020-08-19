@@ -121,15 +121,6 @@ public interface Light {
     Stream<DataRow> query(String sql, Map<String, Param> args);
 
     /**
-     * 查询<br>
-     *
-     * @param sql        查询sql
-     * @param ICondition 参数
-     * @return 收集为流的结果集
-     */
-    Stream<DataRow> query(String sql, ICondition ICondition);
-
-    /**
      * 分页查询
      *
      * @param recordQuery 查询SQL
@@ -141,31 +132,6 @@ public interface Light {
      * @return 分页的结果集
      */
     <T> Pageable<T> query(String recordQuery, String countQuery, Function<DataRow, T> convert, Map<String, Param> args, AbstractPageHelper page);
-
-    /**
-     * 分页查询
-     *
-     * @param recordQuery 查询SQL
-     * @param countQuery  查询记录数SQL
-     * @param convert     行转换
-     * @param ICondition  条件拼接器
-     * @param page        分页对象
-     * @param <T>         目标类型
-     * @return 分页的结果集
-     */
-    <T> Pageable<T> query(String recordQuery, String countQuery, Function<DataRow, T> convert, ICondition ICondition, AbstractPageHelper page);
-
-    /**
-     * 分页查询
-     *
-     * @param recordQuery 查询SQL
-     * @param convert     行转换
-     * @param ICondition  条件拼接器
-     * @param page        分页对象
-     * @param <T>         目标类型
-     * @return 分页的结果集
-     */
-    <T> Pageable<T> query(String recordQuery, Function<DataRow, T> convert, ICondition ICondition, AbstractPageHelper page);
 
     /**
      * 分页查询
@@ -190,15 +156,6 @@ public interface Light {
     /**
      * 获取一条<br>
      *
-     * @param sql        查询sql
-     * @param ICondition 条件
-     * @return 空或一条
-     */
-    Optional<DataRow> fetch(String sql, ICondition ICondition);
-
-    /**
-     * 获取一条<br>
-     *
      * @param sql  查询sql
      * @param args 参数
      * @return 空或一条
@@ -212,15 +169,6 @@ public interface Light {
      * @return 是否存在
      */
     boolean exists(String sql);
-
-    /**
-     * 判断是否存在数据行
-     *
-     * @param sql        sql
-     * @param ICondition 条件
-     * @return 是否存在
-     */
-    boolean exists(String sql, ICondition ICondition);
 
     /**
      * 判断是否存在数据行

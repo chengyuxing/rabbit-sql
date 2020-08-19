@@ -207,19 +207,9 @@ public class Tests {
                 .and(Filter.gt("age", Wrap.wrapEnd(26, "::text")))
                 .or(Filter.endsWith("name", "jack"))
                 .and(Filter.gt("id", Wrap.wrapStart("interval", "7 minutes")))
-                .and(new JsonIncludeFilter())
-                .asc("id")
-                .orderBy("px", Order.DESC);
+                .and(new JsonIncludeFilter());
 
         Condition xc = Condition.create();
-
-        int a = 1;
-        if (a > 0) {
-            xc.and(Filter.gt("age", 27)).expression("and (select * from user)").and(Filter.eq("a", 1)).desc("age");
-        }
-
-        ICondition orderc = Condition.orderBy().asc("name").desc("id");
-        System.out.println(orderc.getSql());
 
 //        Map<String, Param> params = Params.builder()
 //                .putIn("name", "cyx")

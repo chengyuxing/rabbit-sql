@@ -58,6 +58,14 @@ public class MyTest {
     }
 
     @Test
+    public void dynamicSqlTest() throws Exception {
+        light.query("&data.logical", ParamMap.create()
+                .putIn("age", 27)
+                .putIn("name", "null")
+        ).forEach(System.out::println);
+    }
+
+    @Test
     public void jdbcTest() throws Exception {
         System.out.println(JdbcUtil.supportsNamedParameters(dataSource.getConnection()));
     }
@@ -101,18 +109,6 @@ public class MyTest {
     }
 
     @Test
-    public void pageTest2() {
-        Pageable<Map<String, Object>> pageable = light.query(
-                "&data.fruit",
-//                "select count(1) from test.student t",
-                DataRow::toMap,
-//                Params.empty(),
-                Condition.where(Filter.lt("age", 27)),
-                PGPageHelper.of(1, 10));
-        System.out.println(pageable);
-    }
-
-    @Test
     public void manager() throws Exception {
         SQLFileManager manager = new SQLFileManager("pgsql");
         manager.init();
@@ -153,15 +149,6 @@ public class MyTest {
     }
 
     @Test
-    public void testQuery() throws SQLException {
-        light.query("select * from test.user",
-                Condition.where(Filter.eq("password", "123456"))
-                        .and(Filter.gtEq("id", 4))
-                        .orderBy("id", Order.ASC))
-                .forEach(System.out::println);
-    }
-
-    @Test
     public void jsonSyntax() throws Exception {
         String json = "{\n" +
                 "  \"name\": \"json\",\n" +
@@ -197,7 +184,7 @@ public class MyTest {
 
     @Test
     public void multi_res_function() throws Exception {
-        Tx.using(()->{
+        Tx.using(() -> {
             DataRow row = light.function("call test.multi_res(12, :success, :res, :msg)",
                     ParamMap.create()
                             .putOut("success", OUTParamType.BOOLEAN)
@@ -297,9 +284,7 @@ public class MyTest {
         ICondition conditions = Condition.where(Filter.eq("id", 25))
                 .and(Filter.isNotNull("name"))
                 .or(Filter.eq("id", 88))
-                .or(Filter.notLike("name", "%admin"))
-                .orderBy("id", Order.DESC)
-                .orderBy("name", Order.ASC);
+                .or(Filter.notLike("name", "%admin"));
 
         System.out.println(conditions);
     }

@@ -1,7 +1,6 @@
 package rabbit.sql.utils;
 
 import rabbit.common.tuple.Pair;
-import rabbit.common.utils.StringUtil;
 import rabbit.sql.dao.Wrap;
 import rabbit.sql.types.Ignore;
 import rabbit.sql.types.Param;

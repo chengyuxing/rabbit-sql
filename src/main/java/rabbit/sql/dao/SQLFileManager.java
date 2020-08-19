@@ -69,7 +69,8 @@ public final class SQLFileManager {
                         singleResource.put(previousSqlName, "");
                     } else {
                         // 排除单行注释
-                        if (!trimLine.startsWith("--")) {
+                        // --#if和--#fi此类扩展注释作为表达式做逻辑判断，不过滤
+                        if (!trimLine.startsWith("--") || trimLine.startsWith("--#if") || trimLine.startsWith("--#fi")) {
                             // 排除块注释
                             if (trimLine.startsWith("/*")) {
                                 // 没有找到块注释结束 则标记下面的代码都是注释

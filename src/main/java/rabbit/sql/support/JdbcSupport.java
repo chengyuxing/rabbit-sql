@@ -63,10 +63,11 @@ public abstract class JdbcSupport {
     /**
      * 提供一个抽象方法供实现类对单前要执行的sql做一些准备操作
      *
-     * @param sql sql
+     * @param sql    sql
+     * @param params 占位符参数字典
      * @return 处理后的sql
      */
-    protected abstract String getSql(String sql);
+    protected abstract String prepareSql(String sql, Map<String, Param> params);
 
     /**
      * 执行一句sql
@@ -113,7 +114,7 @@ public abstract class JdbcSupport {
         UncheckedCloseable close = null;
         try {
             Map<String, Param> params = new HashMap<>();
-            String sourceSql = getSql(sql);
+            String sourceSql = prepareSql(sql, args);
             if (args != null && !args.isEmpty())
                 params.putAll(args);
             if (ICondition != null) {
@@ -182,7 +183,7 @@ public abstract class JdbcSupport {
             throw new NoSuchElementException("args is null or length less than 1.");
         }
         Map<String, Param> firstArg = args.stream().findFirst().get();
-        String sourceSql = SqlUtil.resolveSqlPart(getSql(sql), firstArg);
+        String sourceSql = SqlUtil.resolveSqlPart(prepareSql(sql, firstArg), firstArg);
         log.debug("SQL:{}", sourceSql);
         log.debug("Args:{}", args);
 
@@ -234,7 +235,7 @@ public abstract class JdbcSupport {
         Map<String, Param> firstArg = args.stream()
                 .map(r -> r.toMap(Param::IN))
                 .findFirst().get();
-        String sourceSql = SqlUtil.resolveSqlPart(getSql(sql), firstArg);
+        String sourceSql = SqlUtil.resolveSqlPart(prepareSql(sql, firstArg), firstArg);
         log.debug("SQL:{}", sourceSql);
         log.debug("Args:{}", args);
 
@@ -286,7 +287,7 @@ public abstract class JdbcSupport {
      * @return DataRow
      */
     public DataRow executeCall(final String procedure, Map<String, Param> args) {
-        String sourceSql = SqlUtil.resolveSqlPart(getSql(procedure), args);
+        String sourceSql = SqlUtil.resolveSqlPart(prepareSql(procedure, args), args);
         log.debug("Procedure:{}", sourceSql);
         log.debug("Args:{}", args);
 

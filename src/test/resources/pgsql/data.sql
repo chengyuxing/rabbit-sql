@@ -31,4 +31,17 @@ select *
 from test.student;
 
 /*[fruitCount]*/
-select count(*) from test.student;
+select count(*)
+from test.student;
+
+/*[logical]*/
+select *
+from test.student t
+where t.age > 21
+  --#if :name != null
+  and t.id < 19
+  --#fi
+  --#if :age != blank
+  and age < 90
+  --#fi
+  and t.id > 2;

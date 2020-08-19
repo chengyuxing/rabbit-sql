@@ -122,19 +122,6 @@ public class LightSessionTest {
     }
 
     @Test
-    public void testQuery() throws Exception {
-        try (Stream<DataRow> s = light.query("select * from test.user",
-                Condition.where(Filter.startsWith("name", "c"))
-                        .and(Filter.gt("id", Wrap.wrapEnd("1000", "::integer"))).desc("id"))) {
-            s.limit(30)
-                    .forEach(System.out::println);
-        }
-
-
-        ;
-    }
-
-    @Test
     public void insert() throws Exception {
 //        Transaction transaction = light.getTransaction();
         light.insert("test.user",
@@ -158,12 +145,6 @@ public class LightSessionTest {
                         .putIn("grade", Wrap.wrapEnd("15", "::integer")),
                 Condition.where(Filter.eq("id", Wrap.wrapEnd("7", "::integer")))
         );
-    }
-
-    @Test
-    public void fetchTest() throws Exception {
-        orclLight.fetch("select * from fruit", Condition.where(Filter.gt("price", 800)))
-                .ifPresent(System.out::println);
     }
 
     @Test

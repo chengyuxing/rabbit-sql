@@ -1,5 +1,6 @@
 package rabbit.sql.dao;
 
+import rabbit.common.types.CExpression;
 import rabbit.sql.Light;
 import rabbit.common.types.DataRow;
 import rabbit.sql.datasource.DataSourceUtil;
@@ -9,6 +10,7 @@ import rabbit.sql.support.ICondition;
 import rabbit.sql.support.JdbcSupport;
 import rabbit.sql.types.Ignore;
 import rabbit.sql.types.Param;
+import rabbit.sql.types.ParamMode;
 import rabbit.sql.utils.SqlUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -19,10 +21,7 @@ import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -147,20 +146,10 @@ public class LightDao extends JdbcSupport implements Light {
     }
 
     @Override
-    public Stream<DataRow> query(String sql, ICondition ICondition) {
-        try {
-            return executeQueryStream(sql, null, ICondition);
-        } catch (SQLException ex) {
-            log.error(ex.toString());
-        }
-        return Stream.empty();
-    }
-
-    @Override
     public <T> Pageable<T> query(String recordQuery, String countQuery, Function<DataRow, T> convert, Map<String, Param> args, AbstractPageHelper pager) {
         return fetch(countQuery, args).map(cn -> {
             pager.init(Optional.ofNullable(cn.getInt(0)).orElse(0));
-            try (Stream<DataRow> s = query(pager.wrapPagedSql(getSql(recordQuery)), args)) {
+            try (Stream<DataRow> s = query(pager.wrapPagedSql(prepareSql(recordQuery, args)), args)) {
                 List<T> data = s.map(convert).collect(Collectors.toList());
                 return Pageable.of(pager, data);
             }
@@ -168,20 +157,8 @@ public class LightDao extends JdbcSupport implements Light {
     }
 
     @Override
-    public <T> Pageable<T> query(String recordQuery, String countQuery, Function<DataRow, T> convert, ICondition ICondition, AbstractPageHelper page) {
-        String cnd = ICondition.getSql();
-        String countCnd = cnd;
-        int orderExist = cnd.lastIndexOf("order by");
-        if (orderExist != -1) {
-            countCnd = cnd.substring(0, cnd.lastIndexOf("order by"));
-        }
-        Map<String, Param> paramMap = ICondition.getParams();
-        return query(getSql(recordQuery) + cnd, getSql(countQuery) + countCnd, convert, paramMap, page);
-    }
-
-    @Override
     public <T> Pageable<T> query(String recordQuery, Function<DataRow, T> convert, Map<String, Param> args, AbstractPageHelper page) {
-        String query = getSql(recordQuery);
+        String query = prepareSql(recordQuery, args);
         String countQuery = "select count(*) " + query.substring(query.toLowerCase().lastIndexOf("from"));
         if (countQuery.toLowerCase().lastIndexOf("order by") != -1) {
             countQuery = countQuery.substring(0, countQuery.lastIndexOf("order by"));
@@ -190,22 +167,8 @@ public class LightDao extends JdbcSupport implements Light {
     }
 
     @Override
-    public <T> Pageable<T> query(String recordQuery, Function<DataRow, T> convert, ICondition ICondition, AbstractPageHelper page) {
-        String query = getSql(recordQuery);
-        String countQuery = "select count(*) " + query.substring(query.toLowerCase().lastIndexOf("from"));
-        return query(query, countQuery, convert, ICondition, page);
-    }
-
-    @Override
     public Optional<DataRow> fetch(String sql) {
         return fetch(sql, ParamMap.empty());
-    }
-
-    @Override
-    public Optional<DataRow> fetch(String sql, ICondition iCondition) {
-        try (Stream<DataRow> s = query(sql, iCondition)) {
-            return s.findFirst();
-        }
     }
 
     @Override
@@ -218,11 +181,6 @@ public class LightDao extends JdbcSupport implements Light {
     @Override
     public boolean exists(String sql) {
         return fetch(sql).isPresent();
-    }
-
-    @Override
-    public boolean exists(String sql, ICondition ICondition) {
-        return fetch(sql, ICondition).isPresent();
     }
 
     @Override
@@ -276,24 +234,68 @@ public class LightDao extends JdbcSupport implements Light {
     }
 
     /**
-     * 如果使用取地址符"&amp;sql文件名.sql名"则获取sql文件中已加载的sql
+     * 如果使用取地址符"&amp;sql文件名.sql名"则获取sql文件中已缓存的sql
      *
-     * @param sql sql或sql名
+     * @param sql    sql或sql名
+     * @param params sql占位符参数
      * @return sql
      */
     @Override
-    protected String getSql(String sql) {
+    protected String prepareSql(String sql, Map<String, Param> params) {
+        String trimEndedSql = SqlUtil.trimEnd(sql);
         if (sql.startsWith("&")) {
             if (sqlFileManager != null) {
                 try {
-                    return SqlUtil.trimEnd(sqlFileManager.get(sql.substring(1)));
+                    trimEndedSql = SqlUtil.trimEnd(sqlFileManager.get(sql.substring(1)));
                 } catch (IOException | URISyntaxException e) {
                     log.error("get SQL failed:{}", e.getMessage());
                 }
+            } else {
+                throw new NullPointerException("can not find property 'sqlPath' or SQLFileManager init failed!");
             }
-            throw new NullPointerException("can not find property 'sqlPath' or SQLFileManager init failed!");
         }
-        return SqlUtil.trimEnd(sql);
+        return dynamicSql(trimEndedSql, params);
+    }
+
+    /**
+     * 根据解析条件表达式的结果动态生成sql
+     *
+     * @param sql       sql
+     * @param paramsMap 参数字典
+     * @return 解析后的sql
+     */
+    private String dynamicSql(String sql, Map<String, Param> paramsMap) {
+        if (!sql.contains("--#if") || !sql.contains("--#fi")) {
+            return sql;
+        }
+        if (paramsMap == null || paramsMap.size() == 0) {
+            return sql;
+        }
+        Map<String, Object> params = paramsMap.keySet().stream()
+                .filter(k -> paramsMap.get(k).getParamMode() == ParamMode.IN)
+                .collect(HashMap::new,
+                        (current, k) -> current.put(k, SqlUtil.unwrapValue(paramsMap.get(k).getValue())),
+                        HashMap::putAll);
+        String[] lines = sql.split("\n");
+        StringBuilder sb = new StringBuilder();
+        boolean skip = true;
+        for (String line : lines) {
+            String trimLine = line.trim();
+            if (trimLine.startsWith("--#if")) {
+                String filter = trimLine.substring(6);
+                CExpression expression = CExpression.of(filter);
+                skip = expression.getResult(params);
+                continue;
+            }
+            if (trimLine.startsWith("--#fi")) {
+                skip = true;
+                continue;
+            }
+            if (skip) {
+                sb.append(line).append("\n");
+            }
+        }
+        return sb.toString();
     }
 
     @Override

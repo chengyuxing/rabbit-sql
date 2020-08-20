@@ -42,22 +42,14 @@ import static rabbit.sql.utils.SqlUtil.SEP;
 
 public class Tests {
 
-    static class JsonIncludeFilter implements IFilter {
+    @Test
+    public void xyz() throws Exception{
+        String a = "我的";
+        String e = new String(Base64.getUrlEncoder().encode(a.getBytes()));
+        System.out.println(e);
+        String d = new String(Base64.getUrlDecoder().decode(e));
+        System.out.println(d);
 
-        @Override
-        public String getField() {
-            return "json";
-        }
-
-        @Override
-        public String getOperator() {
-            return " @> ";
-        }
-
-        @Override
-        public Object getValue() {
-            return "'{aaa}'";
-        }
     }
 
     @Test
@@ -207,7 +199,7 @@ public class Tests {
                 .and(Filter.gt("age", Wrap.wrapEnd(26, "::text")))
                 .or(Filter.endsWith("name", "jack"))
                 .and(Filter.gt("id", Wrap.wrapStart("interval", "7 minutes")))
-                .and(new JsonIncludeFilter());
+                ;
 
         Condition xc = Condition.create();
 

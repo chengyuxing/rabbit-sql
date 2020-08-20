@@ -14,8 +14,8 @@
 - sql文件将优先寻找sql文件内的sql片段
 ## 对 *IntelliJ IDEA* 的友好支持
 - 配置了数据源的情况下，可以直接选中需要执行的sql右键，点击`Execute`执行sql，参数占位符(`:name`)和sql片段占位符(`${part}`)都会弹出输入框方便填写，直接进行测试sql
-![](/img/p.png)
-![](/img/p2.png)
+![](img/p.png)
+![](img/p2.png)
 ## Excaple
 
 ### 初始化

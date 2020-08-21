@@ -209,21 +209,6 @@ public abstract class JdbcSupport {
      * <pre>insert into table (a,b,c) values (:v1,:v2,:v3)</pre>
      * </blockquote>
      *
-     * @param sql sql
-     * @param arg 参数
-     * @return 受影响的行数
-     */
-    protected int executeNonQuery(final String sql, final Map<String, Param> arg) {
-        return executeNonQuery(sql, Collections.singletonList(arg));
-    }
-
-    /**
-     * 执行一句非查询语句(insert，update，delete)<br>
-     * e.g.
-     * <blockquote>
-     * <pre>insert into table (a,b,c) values (:v1,:v2,:v3)</pre>
-     * </blockquote>
-     *
      * @param sql  sql
      * @param args 一组参数
      * @return 受影响的行数
@@ -253,21 +238,6 @@ public abstract class JdbcSupport {
             log.info("{} rows updated!", i);
             return i;
         });
-    }
-
-    /**
-     * 执行一句非查询语句(insert，update，delete)<br>
-     * e.g.
-     * <blockquote>
-     * <pre>insert into table (a,b,c) values (:v1,:v2,:v3)</pre>
-     * </blockquote>
-     *
-     * @param sql sql
-     * @param arg 参数
-     * @return 受影响的行数
-     */
-    protected int executeNonQueryOfDataRow(final String sql, final DataRow arg) {
-        return executeNonQueryOfDataRow(sql, Collections.singletonList(arg));
     }
 
     /**

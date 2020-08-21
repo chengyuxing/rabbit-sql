@@ -82,12 +82,12 @@ public class LightDao extends JdbcSupport implements Light {
 
     @Override
     public long execute(String sql) {
-        return executeNonQuery(sql, ParamMap.empty());
+        return executeNonQuery(sql, Collections.emptyList());
     }
 
     @Override
     public long execute(String sql, Map<String, Param> params) {
-        return executeNonQuery(sql, params);
+        return executeNonQuery(sql, Collections.singletonList(params));
     }
 
     @Override
@@ -97,7 +97,7 @@ public class LightDao extends JdbcSupport implements Light {
 
     @Override
     public int insert(String tableName, Map<String, Param> data, Ignore ignore) {
-        return executeNonQuery(SqlUtil.generateInsert(tableName, data, ignore), data);
+        return executeNonQuery(SqlUtil.generateInsert(tableName, data, ignore), Collections.singletonList(data));
     }
 
     @Override
@@ -107,7 +107,7 @@ public class LightDao extends JdbcSupport implements Light {
 
     @Override
     public int insert(String tableName, DataRow row, Ignore ignore) {
-        return executeNonQueryOfDataRow(SqlUtil.generateInsert(tableName, row.toMap(Param::IN), ignore), row);
+        return executeNonQueryOfDataRow(SqlUtil.generateInsert(tableName, row.toMap(Param::IN), ignore), Collections.singletonList(row));
     }
 
     @Override
@@ -121,13 +121,13 @@ public class LightDao extends JdbcSupport implements Light {
 
     @Override
     public int delete(String tableName, ICondition ICondition) {
-        return executeNonQuery("delete from " + tableName + " " + ICondition.getSql(), ICondition.getParams());
+        return executeNonQuery("delete from " + tableName + " " + ICondition.getSql(), Collections.singletonList(ICondition.getParams()));
     }
 
     @Override
     public int update(String tableName, Map<String, Param> data, ICondition ICondition) {
         data.putAll(ICondition.getParams());
-        return executeNonQuery(SqlUtil.generateUpdate(tableName, data) + ICondition.getSql(), data);
+        return executeNonQuery(SqlUtil.generateUpdate(tableName, data) + ICondition.getSql(), Collections.singletonList(data));
     }
 
     @Override

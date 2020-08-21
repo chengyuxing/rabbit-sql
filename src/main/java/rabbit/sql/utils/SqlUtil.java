@@ -10,7 +10,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -33,25 +32,6 @@ public class SqlUtil {
     public static final Pattern CHILD_STR_PATTERN = Pattern.compile("'[^']*'", Pattern.MULTILINE);
 
     /**
-     * 忽略值过滤器
-     *
-     * @param data   数据
-     * @param ignore 忽略类型
-     * @return 过滤器
-     */
-    public static Predicate<String> ignoreValueFilter(final Map<String, Param> data, Ignore ignore) {
-        return k -> {
-            if (ignore == Ignore.NULL) {
-                return data.get(k).getValue() != null;
-            }
-            if (ignore == Ignore.BLANK) {
-                return data.get(k).getValue() != null && !data.get(k).getValue().equals("");
-            }
-            return true;
-        };
-    }
-
-    /**
      * 构建一个插入语句
      *
      * @param tableName 表名
@@ -60,14 +40,21 @@ public class SqlUtil {
      * @return 插入语句
      */
     public static String generateInsert(final String tableName, final Map<String, Param> data, final Ignore ignore) {
-        String fields = data.keySet().stream()
-                .filter(ignoreValueFilter(data, ignore))
-                .collect(Collectors.joining(",", "(", ")"));
-        String holders = data.keySet().stream()
-                .filter(ignoreValueFilter(data, ignore))
-                .map(key -> ":" + key)
-                .collect(Collectors.joining(",", "(", ")"));
-        return "insert into " + tableName + fields + " \nvalues " + holders;
+        String[] fh = data.keySet().stream()
+                .filter(k -> {
+                    if (ignore == Ignore.NULL) {
+                        return data.get(k).getValue() != null;
+                    }
+                    if (ignore == Ignore.BLANK) {
+                        return data.get(k).getValue() != null && !data.get(k).getValue().equals("");
+                    }
+                    return true;
+                }).reduce(new String[]{"", ""}, (acc, current) -> {
+                    acc[0] += current + ", ";
+                    acc[1] += ":" + current + ", ";
+                    return acc;
+                }, (a, b) -> a);
+        return "insert into " + tableName + "(" + fh[0].substring(0, fh[0].length() - 2) + ") \nvalues (" + fh[1].substring(0, fh[1].length() - 2) + ")";
     }
 
     /**

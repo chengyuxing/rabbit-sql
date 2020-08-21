@@ -232,7 +232,7 @@ public class Tests {
                 .putIn("d", null)
                 .putIn("e", "1");
 
-        System.out.println(SqlUtil.generateInsert("test.user", paramMap, Ignore.BLANK));
+        System.out.println(SqlUtil.generateInsert("test.user", paramMap, Ignore.NULL));
     }
 
     @Test

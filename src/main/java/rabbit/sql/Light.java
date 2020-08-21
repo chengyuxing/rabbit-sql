@@ -1,7 +1,7 @@
 package rabbit.sql;
 
 import rabbit.common.types.DataRow;
-import rabbit.sql.page.AbstractPageHelper;
+import rabbit.sql.page.PageHelper;
 import rabbit.sql.page.Pageable;
 import rabbit.sql.support.ICondition;
 import rabbit.sql.types.Ignore;
@@ -131,7 +131,7 @@ public interface Light {
      * @param <T>         目标类型
      * @return 分页的结果集
      */
-    <T> Pageable<T> query(String recordQuery, String countQuery, Function<DataRow, T> convert, Map<String, Param> args, AbstractPageHelper page);
+    <T> Pageable<T> query(String recordQuery, String countQuery, Function<DataRow, T> convert, Map<String, Param> args, PageHelper page);
 
     /**
      * 分页查询
@@ -143,7 +143,7 @@ public interface Light {
      * @param <T>         目标类型
      * @return 分页的结果集
      */
-    <T> Pageable<T> query(String recordQuery, Function<DataRow, T> convert, Map<String, Param> args, AbstractPageHelper page);
+    <T> Pageable<T> query(String recordQuery, Function<DataRow, T> convert, Map<String, Param> args, PageHelper page);
 
     /**
      * 获取一条<br>

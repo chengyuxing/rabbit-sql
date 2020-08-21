@@ -106,24 +106,16 @@ public abstract class JdbcSupport {
      *
      * @param sql        e.g. <code>select * from test.user where id = :id</code>
      * @param args       参数 （占位符名字，参数对象）
-     * @param ICondition 条件
      * @return Stream数据流
      * @throws SQLException sqlEx
      */
-    public Stream<DataRow> executeQueryStream(final String sql, Map<String, Param> args, ICondition ICondition) throws SQLException {
+    public Stream<DataRow> executeQueryStream(final String sql, Map<String, Param> args) throws SQLException {
         UncheckedCloseable close = null;
         try {
-            Map<String, Param> params = new HashMap<>();
             String sourceSql = prepareSql(sql, args);
-            if (args != null && !args.isEmpty())
-                params.putAll(args);
-            if (ICondition != null) {
-                params.putAll(ICondition.getParams());
-                sourceSql += ICondition.getSql();
-            }
-            sourceSql = SqlUtil.resolveSqlPart(sourceSql, params);
+            sourceSql = SqlUtil.resolveSqlPart(sourceSql, args);
             log.debug("SQL:{}", sourceSql);
-            log.debug("Args:{}", params);
+            log.debug("Args:{}", args);
 
             Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSqlAndIndexedArgNames(sourceSql);
             final List<String> argNames = preparedSqlAndArgNames.getItem2();
@@ -132,7 +124,7 @@ public abstract class JdbcSupport {
             Connection connection = getConnection();
             close = UncheckedCloseable.wrap(connection);
             PreparedStatement statement = connection.prepareStatement(preparedSql);
-            JdbcUtil.setSqlParams(statement, params, argNames);
+            JdbcUtil.setSqlParams(statement, args, argNames);
             close = close.nest(statement);
             ResultSet resultSet = statement.executeQuery();
             close = close.nest(resultSet);

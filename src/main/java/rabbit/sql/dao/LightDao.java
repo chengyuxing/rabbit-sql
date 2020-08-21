@@ -4,7 +4,7 @@ import rabbit.common.types.CExpression;
 import rabbit.sql.Light;
 import rabbit.common.types.DataRow;
 import rabbit.sql.datasource.DataSourceUtil;
-import rabbit.sql.page.AbstractPageHelper;
+import rabbit.sql.page.PageHelper;
 import rabbit.sql.page.Pageable;
 import rabbit.sql.support.ICondition;
 import rabbit.sql.support.JdbcSupport;
@@ -138,7 +138,7 @@ public class LightDao extends JdbcSupport implements Light {
     @Override
     public Stream<DataRow> query(String sql, Map<String, Param> args) {
         try {
-            return executeQueryStream(sql, args, null);
+            return executeQueryStream(sql, args);
         } catch (SQLException ex) {
             log.error(ex.toString());
         }
@@ -146,7 +146,7 @@ public class LightDao extends JdbcSupport implements Light {
     }
 
     @Override
-    public <T> Pageable<T> query(String recordQuery, String countQuery, Function<DataRow, T> convert, Map<String, Param> args, AbstractPageHelper pager) {
+    public <T> Pageable<T> query(String recordQuery, String countQuery, Function<DataRow, T> convert, Map<String, Param> args, PageHelper pager) {
         return fetch(countQuery, args).map(cn -> {
             pager.init(Optional.ofNullable(cn.getInt(0)).orElse(0));
             try (Stream<DataRow> s = query(pager.wrapPagedSql(prepareSql(recordQuery, args)), args)) {
@@ -157,13 +157,13 @@ public class LightDao extends JdbcSupport implements Light {
     }
 
     @Override
-    public <T> Pageable<T> query(String recordQuery, Function<DataRow, T> convert, Map<String, Param> args, AbstractPageHelper page) {
+    public <T> Pageable<T> query(String recordQuery, Function<DataRow, T> convert, Map<String, Param> args, PageHelper pager) {
         String query = prepareSql(recordQuery, args);
         String countQuery = "select count(*) " + query.substring(query.toLowerCase().lastIndexOf("from"));
         if (countQuery.toLowerCase().lastIndexOf("order by") != -1) {
             countQuery = countQuery.substring(0, countQuery.lastIndexOf("order by"));
         }
-        return query(query, countQuery, convert, args, page);
+        return query(query, countQuery, convert, args, pager);
     }
 
     @Override

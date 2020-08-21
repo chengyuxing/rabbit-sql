@@ -3,7 +3,7 @@ package rabbit.sql.page;
 /**
  * 抽象分页工具
  */
-public abstract class AbstractPageHelper {
+public abstract class PageHelper {
     private final int pageNumber;
     private final int pageSize;
     private int pageCount;
@@ -15,7 +15,7 @@ public abstract class AbstractPageHelper {
      * @param pageNumber 当前页码
      * @param pageSize   每页大小
      */
-    public AbstractPageHelper(int pageNumber, int pageSize) {
+    public PageHelper(int pageNumber, int pageSize) {
         this.pageNumber = pageNumber;
         this.pageSize = pageSize;
     }

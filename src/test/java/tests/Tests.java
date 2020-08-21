@@ -11,15 +11,12 @@ import rabbit.common.types.DataRow;
 import rabbit.common.types.ImmutableList;
 import rabbit.common.types.UncheckedCloseable;
 import rabbit.common.utils.ResourceUtil;
-import rabbit.common.utils.StringUtil;
 import rabbit.sql.dao.*;
 import rabbit.sql.support.ICondition;
-import rabbit.sql.support.IFilter;
-import rabbit.sql.page.AbstractPageHelper;
+import rabbit.sql.page.PageHelper;
 import rabbit.sql.page.impl.OraclePageHelper;
 import rabbit.sql.page.Pageable;
 import rabbit.sql.types.Ignore;
-import rabbit.sql.types.Order;
 import rabbit.sql.types.Param;
 import rabbit.sql.utils.SqlUtil;
 
@@ -36,7 +33,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 import static rabbit.sql.utils.SqlUtil.SEP;
 
@@ -330,7 +326,7 @@ public class Tests {
 
     @Test
     public void pageTest() throws Exception {
-        AbstractPageHelper page = OraclePageHelper.of(12, 10);
+        PageHelper page = OraclePageHelper.of(12, 10);
         page.init(100);
         Pageable<Integer> pageable = Pageable.of(page, Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9));
         System.out.println(pageable);

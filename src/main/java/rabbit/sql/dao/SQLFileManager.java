@@ -36,7 +36,7 @@ public final class SQLFileManager {
     /**
      * 构造函数
      *
-     * @param basePath sql基本目录
+     * @param basePath classPath基本目录
      */
     public SQLFileManager(String basePath) {
         this.basePath = basePath;
@@ -134,30 +134,36 @@ public final class SQLFileManager {
      * 如果有检测到文件修改过，则重新加载已修改过的sql文件
      */
     private void reloadIfNecessary() throws IOException, URISyntaxException {
-        if (!LAST_MODIFIED.isEmpty())
-            ResourceUtil.getClassPathResources(basePath, ".sql")
-                    .filter(p -> {
+        lock.lock();
+        try {
+            if (!LAST_MODIFIED.isEmpty()) {
+                ResourceUtil.getClassPathResources(basePath, ".sql")
+                        .filter(p -> {
+                            File f = p.toFile();
+                            // 如果有文件并且文件修改过
+                            if (LAST_MODIFIED.containsKey(f.getName())) {
+                                long timestamp = LAST_MODIFIED.get(f.getName());
+                                return timestamp != f.lastModified();
+                            }
+                            // 如果是新文件则不过滤
+                            return true;
+                        }).forEach(p -> {
+                    try {
+                        log.debug("removing expired SQL cache...");
+                        resolveSqlContent(p);
                         File f = p.toFile();
-                        // 如果有文件并且文件修改过
-                        if (LAST_MODIFIED.containsKey(f.getName())) {
-                            long timestamp = LAST_MODIFIED.get(f.getName());
-                            return timestamp != f.lastModified();
-                        }
-                        // 如果是新文件则不过滤
-                        return true;
-                    }).forEach(p -> {
-                try {
-                    log.debug("removing expired SQL cache...");
-                    resolveSqlContent(p);
-                    File f = p.toFile();
-                    String name = f.getName();
-                    //更新最后一次修改的时间
-                    LAST_MODIFIED.put(name, f.lastModified());
-                    log.debug("reload modified sql file:{}", name);
-                } catch (IOException e) {
-                    log.error("resolve SQL file with an error:{}", e.getMessage());
-                }
-            });
+                        String name = f.getName();
+                        //更新最后一次修改的时间
+                        LAST_MODIFIED.put(name, f.lastModified());
+                        log.debug("reload modified sql file:{}", name);
+                    } catch (IOException e) {
+                        log.error("resolve SQL file with an error:{}", e.getMessage());
+                    }
+                });
+            }
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -196,23 +202,12 @@ public final class SQLFileManager {
      */
     public String get(String name) throws IOException, URISyntaxException {
         if (checkModified) {
-            lock.lock();
             reloadIfNecessary();
-            lock.unlock();
         }
         if (RESOURCE.containsKey(name)) {
             return RESOURCE.get(name);
         }
         throw new NoSuchElementException(String.format("no SQL named [%s] was found.", name));
-    }
-
-    /**
-     * 获取基本目录
-     *
-     * @return 基本目录
-     */
-    public String getBasePath() {
-        return basePath;
     }
 
     /**

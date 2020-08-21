@@ -154,6 +154,9 @@ public class SqlUtil {
      * @return 替换模版占位符后的sql
      */
     public static String resolveSqlPart(final String sourceSql, Map<String, Param> args) {
+        if (args == null || args.size() == 0) {
+            return sourceSql;
+        }
         AtomicReference<String> sourceSqlRef = new AtomicReference<>(sourceSql);
         args.keySet().forEach(k -> {
             ParamMode pm = args.get(k).getParamMode();

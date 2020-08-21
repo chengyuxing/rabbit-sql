@@ -1,11 +1,11 @@
 package rabbit.sql.page.impl;
 
-import rabbit.sql.page.AbstractPageHelper;
+import rabbit.sql.page.PageHelper;
 
 /**
  * oracle分页工具
  */
-public class OraclePageHelper extends AbstractPageHelper {
+public class OraclePageHelper extends PageHelper {
     private OraclePageHelper(int page, int size) {
         super(page, size);
     }

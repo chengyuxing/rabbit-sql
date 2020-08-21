@@ -9,10 +9,10 @@ import java.util.List;
  * @param <T> 类型参数
  */
 public final class Pageable<T> {
-    private AbstractPageHelper pager;
+    private PageHelper pager;
     private List<T> data;
 
-    private Pageable(AbstractPageHelper pager, List<T> data) {
+    private Pageable(PageHelper pager, List<T> data) {
         this.pager = pager;
         this.data = data;
     }
@@ -25,7 +25,7 @@ public final class Pageable<T> {
      * @param <T>   类型参数
      * @return 分页的数据
      */
-    public static <T> Pageable<T> of(AbstractPageHelper pager, List<T> data) {
+    public static <T> Pageable<T> of(PageHelper pager, List<T> data) {
         return new Pageable<>(pager, data);
     }
 
@@ -43,7 +43,7 @@ public final class Pageable<T> {
         this.data = data;
     }
 
-    void setPager(AbstractPageHelper pager) {
+    void setPager(PageHelper pager) {
         this.pager = pager;
     }
 
@@ -51,7 +51,7 @@ public final class Pageable<T> {
         return data;
     }
 
-    public AbstractPageHelper getPager() {
+    public PageHelper getPager() {
         return pager;
     }
 

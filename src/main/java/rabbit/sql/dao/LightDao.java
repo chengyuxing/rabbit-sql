@@ -279,16 +279,19 @@ public class LightDao extends JdbcSupport implements Light {
         String[] lines = sql.split("\n");
         StringBuilder sb = new StringBuilder();
         boolean skip = true;
+        boolean start = false;
         for (String line : lines) {
             String trimLine = line.trim();
-            if (trimLine.startsWith("--#if")) {
-                String filter = trimLine.substring(6);
+            if (trimLine.startsWith("--#if") && !start) {
+                String filter = trimLine.substring(5);
                 CExpression expression = CExpression.of(filter);
                 skip = expression.getResult(params);
+                start = true;
                 continue;
             }
-            if (trimLine.startsWith("--#fi")) {
+            if (trimLine.startsWith("--#fi") && start) {
                 skip = true;
+                start = false;
                 continue;
             }
             if (skip) {

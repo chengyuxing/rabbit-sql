@@ -61,7 +61,7 @@ public class MyTest {
     public void dynamicSqlTest() throws Exception {
         light.query("&data.logical", ParamMap.create()
                 .putIn("age", 27)
-                .putIn("name", "null")
+                .putIn("name", null)
         ).forEach(System.out::println);
     }
 

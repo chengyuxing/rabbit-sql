@@ -197,8 +197,6 @@ public class Tests {
                 .and(Filter.gt("id", Wrap.wrapStart("interval", "7 minutes")))
                 ;
 
-        Condition xc = Condition.create();
-
 //        Map<String, Param> params = Params.builder()
 //                .putIn("name", "cyx")
 //                .putIn("age", ValueWrap.wrapEnd("21", "::integer"))
@@ -210,9 +208,6 @@ public class Tests {
 
         System.out.println(condition.getSql());
         System.out.println(condition.getParams());
-
-        System.out.println(xc.getSql());
-        System.out.println(xc.getParams());
 
 //        System.out.println(insert);
 //        System.out.println(update);

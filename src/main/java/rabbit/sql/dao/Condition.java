@@ -17,20 +17,10 @@ import static rabbit.sql.utils.SqlUtil.unwrapValue;
 public class Condition implements ICondition {
     private final Map<String, Param> params = new HashMap<>();
     private final StringBuilder conditions = new StringBuilder();
-    private String where = "";
     private int arg_index = 0;
 
     Condition() {
 
-    }
-
-    /**
-     * 创建一个条件拼接器实例
-     *
-     * @return 空的条件拼接器
-     */
-    public static Condition create() {
-        return new Condition();
     }
 
     /**
@@ -40,11 +30,8 @@ public class Condition implements ICondition {
      * @return 条件拼接器
      */
     public static Condition where(IFilter filter) {
-        Condition condition = create();
-        if (condition.where.equals("")) {
-            condition.where = " where ";
-        }
-        return condition.concatFilterBy("", filter);
+        Condition cnd = new Condition();
+        return cnd.concatFilterBy("", filter);
     }
 
     /**
@@ -116,22 +103,29 @@ public class Condition implements ICondition {
         return Pair.of(s, ":" + s);
     }
 
+    /**
+     * 获取参数
+     *
+     * @return 参数
+     */
     @Override
     public Map<String, Param> getParams() {
         return params;
     }
 
+    /**
+     * 获取拼接的where子句
+     *
+     * @return where子句
+     */
     @Override
     public String getSql() {
         String cnds = conditions.toString();
-        if (cnds.equals("")) {
-            return "";
-        }
         if (cnds.startsWith("and ")) {
             cnds = cnds.substring(4);
         } else if (cnds.startsWith("or ")) {
             cnds = cnds.substring(3);
         }
-        return "\n" + where + cnds;
+        return "\n where " + cnds;
     }
 }

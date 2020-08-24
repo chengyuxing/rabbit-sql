@@ -54,10 +54,11 @@ public class MyTest {
 
     @Test
     public void dynamicSqlTest() throws Exception {
-        light.query("&data.logical", ParamMap.create()
-                .putIn("age", 27)
-                .putIn("name", null)
-        ).forEach(System.out::println);
+        try (Stream<DataRow> s = light.query("&data.logical", ParamMap.create()
+                .putIn("age", 91)
+                .putIn("name", "小"))) {
+            s.forEach(System.out::println);
+        }
     }
 
     @Test
@@ -152,13 +153,6 @@ public class MyTest {
     }
 
     @Test
-    public void funTest() throws Exception {
-        DataRow row = light.function(":now = call test.now()",
-                ParamMap.create().putOut("now", OUTParamType.TIMESTAMP));
-        System.out.println(row);
-    }
-
-    @Test
     public void testCall() throws Exception {
         List<DataRow> rows = Tx.using(() -> light.function("call test.fun_query(:c::refcursor)",
                 ParamMap.create().putInOut("c", "result", OUTParamType.REF_CURSOR))
@@ -186,7 +180,7 @@ public class MyTest {
                             .putOut("res", OUTParamType.REF_CURSOR)
                             .putOut("msg", OUTParamType.VARCHAR)
             );
-            System.out.println(row.get(0).toString());
+            System.out.println(row);
         });
     }
 

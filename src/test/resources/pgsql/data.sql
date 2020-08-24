@@ -39,9 +39,9 @@ select *
 from test.student t
 where t.age > 21
   --#if :name != null
-  and t.id < 19
+  and t.name ~ :name
   --#fi
-  --#if :age != blank
+  --#if :age <> blank && :age < 90
   and age < 90
   --#fi
   and t.id > 2;

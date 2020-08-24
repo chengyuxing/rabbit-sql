@@ -104,8 +104,8 @@ public abstract class JdbcSupport {
      *         }</pre>
      * </blockquote>
      *
-     * @param sql        e.g. <code>select * from test.user where id = :id</code>
-     * @param args       参数 （占位符名字，参数对象）
+     * @param sql  e.g. <code>select * from test.user where id = :id</code>
+     * @param args 参数 （占位符名字，参数对象）
      * @return Stream数据流
      * @throws SQLException sqlEx
      */
@@ -275,7 +275,7 @@ public abstract class JdbcSupport {
                     Object result = statement.getObject(i + 1);
                     if (null == result) {
                         values[resultIndex] = null;
-                        types[resultIndex] = "unKnow";
+                        types[resultIndex] = null;
                     } else if (result instanceof ResultSet) {
                         List<DataRow> rows = JdbcUtil.resolveResultSet((ResultSet) result, -1);
                         values[resultIndex] = rows;

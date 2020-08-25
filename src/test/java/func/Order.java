@@ -1,4 +1,4 @@
-package rabbit.sql.types;
+package func;
 
 public enum Order {
     ASC("asc"),

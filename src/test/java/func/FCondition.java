@@ -1,6 +1,5 @@
 package func;
 
-import rabbit.sql.types.Order;
 import rabbit.sql.types.Param;
 
 import java.lang.reflect.InvocationTargetException;

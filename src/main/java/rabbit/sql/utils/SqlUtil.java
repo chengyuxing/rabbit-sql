@@ -6,9 +6,7 @@ import rabbit.sql.types.Ignore;
 import rabbit.sql.types.Param;
 import rabbit.sql.types.ParamMode;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

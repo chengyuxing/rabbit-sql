@@ -39,7 +39,28 @@ import static rabbit.sql.utils.SqlUtil.SEP;
 public class Tests {
 
     @Test
-    public void xyz() throws Exception{
+    public void types() throws Exception {
+        Object a = Arrays.asList("a", "b", "c");
+        Object b = Arrays.asList(1, 2, 3);
+        Object c = new Integer[]{11, 22, 33};
+        System.out.println(a instanceof List);
+
+        List<Object> aa = (List<Object>) a;
+        List<Object> bb = (List<Object>) b;
+        Object[] cc = (Object[]) c;
+        System.out.println(cc);
+    }
+
+    @Test
+    public void mf() throws Exception{
+        Pattern p = Pattern.compile("\\d");
+        Matcher m = p.matcher("123abc");
+        System.out.println(m.matches());
+        System.out.println(m.find());
+    }
+
+    @Test
+    public void xyz() throws Exception {
         String a = "我的";
         String e = new String(Base64.getUrlEncoder().encode(a.getBytes()));
         System.out.println(e);
@@ -194,8 +215,7 @@ public class Tests {
         ICondition condition = Condition.where(Filter.eq("id", 5))
                 .and(Filter.gt("age", Wrap.wrapEnd(26, "::text")))
                 .or(Filter.endsWith("name", "jack"))
-                .and(Filter.gt("id", Wrap.wrapStart("interval", "7 minutes")))
-                ;
+                .and(Filter.gt("id", Wrap.wrapStart("interval", "7 minutes")));
 
 //        Map<String, Param> params = Params.builder()
 //                .putIn("name", "cyx")

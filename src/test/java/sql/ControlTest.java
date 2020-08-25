@@ -3,11 +3,11 @@ package sql;
 import org.junit.Test;
 import rabbit.common.types.CExpression;
 
-import java.io.StringReader;
-import java.time.Instant;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
 import static rabbit.common.types.CExpression.boolCalc;
 
@@ -78,6 +78,7 @@ public class ControlTest {
         params.put("age", 21);
         params.put("name", " ");
         params.put("enable", true);
+        params.put("types", "a1b2c3");
 
         System.out.println(params.get("a"));
 
@@ -85,6 +86,19 @@ public class ControlTest {
 
         System.out.println(expression.getResult(params));
 
+    }
+
+    @Test
+    public void regex() throws Exception{
+        Map<String, Object> params = new HashMap<>();
+        params.put("enable", true);
+        params.put("types", "a1b2c3");
+
+        System.out.println(params.get("a"));
+
+        CExpression expression = CExpression.of(":enable = true && :types @ \"\\w+\"");
+
+        System.out.println(expression.getResult(params));
     }
 
     @Test

@@ -16,3 +16,17 @@ where id = :id ${order};
 
 /*{order}*/
 order by id;
+
+/*动态sql，根据条件表达式来确定最终允许的sql，效果等同于mybatis的if标签*/
+/*以--#if开始，--#fi结束，必须成对出现*/
+/*[get_user]*/
+select *
+from test.student t
+where t.age > 21
+  --#if :name == null
+  and t.id < 19
+  --#fi
+  --#if :age != blank
+  and age < 90
+  --#fi
+  and t.id > 2;

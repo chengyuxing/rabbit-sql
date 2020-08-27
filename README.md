@@ -26,7 +26,7 @@ dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
 dataSource.setUsername("chengyuxing");
 dataSource.setDriverClassName("org.postgresql.Driver");
 
-SQLFileManager manager = new SQLFileManager("pgsql");
+SQLFileManager manager = new SQLFileManager("pgsql/data.sql", "pgsql/other.sql");
 
 LightDao light = new LightDao(dataSource);
 light.setSqlFileManager(manager);

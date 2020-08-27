@@ -1,8 +1,10 @@
 package rabbit.sql.dao;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import rabbit.common.types.CExpression;
-import rabbit.sql.Light;
 import rabbit.common.types.DataRow;
+import rabbit.sql.Light;
 import rabbit.sql.datasource.DataSourceUtil;
 import rabbit.sql.page.PageHelper;
 import rabbit.sql.page.Pageable;
@@ -12,8 +14,6 @@ import rabbit.sql.types.Ignore;
 import rabbit.sql.types.Param;
 import rabbit.sql.types.ParamMode;
 import rabbit.sql.utils.SqlUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.io.IOException;
@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * <p>如果配置了{@link SQLFileManager },则接口所有方法都可以通过 <b>&amp;文件名.sql</b> 名来获取sql文件内的sql,通过<b>&amp;</b>
+ * <p>如果配置了{@link SQLFileManager },则接口所有方法都可以通过 <b>&amp;文件夹名.文件名.sql</b> 名来获取sql文件内的sql,通过<b>&amp;</b>
  * 前缀符号来判断如果是sql名则获取sql否则当作sql直接执行</p>
  * 指定sql名执行：
  * <blockquote>

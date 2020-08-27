@@ -282,9 +282,6 @@ public class Tests {
 
     @Test
     public void testFile() throws IOException, URISyntaxException {
-        Path p = ResourceUtil.getClassPathResources("pgsql/data.sql", ".sql")
-                .findFirst().get();
-        System.out.println(p);
     }
 
     @Test

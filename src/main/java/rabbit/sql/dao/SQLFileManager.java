@@ -2,14 +2,13 @@ package rabbit.sql.dao;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import rabbit.common.utils.ClassPathResource;
 import rabbit.common.utils.ResourceUtil;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -22,12 +21,12 @@ import java.util.regex.Pattern;
  * 格式参考data.sql.template
  */
 public final class SQLFileManager {
-    private final static Logger log = LoggerFactory.getLogger(LightDao.class);
+    private final static Logger log = LoggerFactory.getLogger(SQLFileManager.class);
     private final ReentrantLock lock = new ReentrantLock();
-    static final Map<String, String> RESOURCE = new HashMap<>();
-    static final Map<String, Long> LAST_MODIFIED = new HashMap<>();
+    private static final Map<String, String> RESOURCE = new HashMap<>();
+    private static final Map<String, Long> LAST_MODIFIED = new HashMap<>();
 
-    private final String basePath;
+    private final String[] paths;
     private boolean checkModified;
 
     private static final Pattern NAME_PATTERN = Pattern.compile("/\\* *\\[ *(?<name>[\\w\\d.():$\\-+=?@!#%~|]+) *] *\\*/");
@@ -36,25 +35,28 @@ public final class SQLFileManager {
     /**
      * 构造函数
      *
-     * @param basePath classPath基本目录
+     * @param path classPath基本目录
      */
-    public SQLFileManager(String basePath) {
-        this.basePath = basePath;
+    public SQLFileManager(String path, String... paths) {
+        String[] pathArr = new String[1 + paths.length];
+        pathArr[0] = path;
+        System.arraycopy(paths, 0, pathArr, 1, paths.length);
+        this.paths = pathArr;
     }
 
     /**
      * 解析sql文件
      *
-     * @param path 路径
+     * @param resource 类路径sql资源
      * @throws IOException IOexp
      */
-    private void resolveSqlContent(Path path) throws IOException {
+    private void resolveSqlContent(ClassPathResource resource) throws IOException {
         Map<String, String> singleResource = new HashMap<>();
-        String fileName = path.getFileName().toString();
-        String prefix = fileName.substring(0, fileName.length() - 3);
+        String pkgPath = ResourceUtil.path2package(resource.getPath());
+        String prefix = pkgPath.substring(0, pkgPath.length() - 3);
         String previousSqlName = "";
         boolean isAnnotation = false;
-        try (BufferedReader reader = Files.newBufferedReader(path)) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 String trimLine = line.trim();
@@ -94,7 +96,7 @@ public final class SQLFileManager {
                 }
             }
         }
-        mergeSqlPartIfNecessary(singleResource);
+        mergeSqlPartIfNecessary(singleResource, prefix);
         RESOURCE.putAll(singleResource);
     }
 
@@ -103,31 +105,32 @@ public final class SQLFileManager {
      *
      * @param partName sql片段名
      */
-    private void doMergeSqlPart(final String partName, Map<String, String> sqlResource) {
-        String pn = "${" + partName.substring(partName.indexOf(".") + 1);
+    private void doMergeSqlPart(final String partName, final String prefix, Map<String, String> sqlResource) {
+        // 此处排除sql的包名和sql名，sql片段内部合并以sql片段的名字为准
+        String pn = "${" + partName.substring(prefix.length() + 2);
         boolean has = false;
+        // 片段内也可以包含片段
         for (String key : sqlResource.keySet()) {
-            if (!key.startsWith("${")) {
-                if (sqlResource.get(key).contains(pn)) {
-                    sqlResource.put(key, sqlResource.get(key).replace(pn, sqlResource.get(partName)));
-                }
-                if (sqlResource.get(key).contains(pn)) {
-                    has = true;
-                }
+            if (sqlResource.get(key).contains(pn)) {
+                sqlResource.put(key, sqlResource.get(key).replace(pn, sqlResource.get(partName)));
+            }
+            //直到sql内不再包含片段为止
+            if (sqlResource.get(key).contains(pn)) {
+                has = true;
             }
         }
         if (has) {
-            doMergeSqlPart(partName, sqlResource);
+            doMergeSqlPart(partName, prefix, sqlResource);
         }
     }
 
     /**
      * 合并SQL可复用片段到包含片段名的SQL中
      */
-    private void mergeSqlPartIfNecessary(Map<String, String> sqlResource) {
+    private void mergeSqlPartIfNecessary(Map<String, String> sqlResource, String prefix) {
         sqlResource.keySet().stream()
                 .filter(k -> k.startsWith("${"))
-                .forEach(k -> doMergeSqlPart(k, sqlResource));
+                .forEach(k -> doMergeSqlPart(k, prefix, sqlResource));
     }
 
     /**
@@ -137,29 +140,25 @@ public final class SQLFileManager {
         lock.lock();
         try {
             if (!LAST_MODIFIED.isEmpty()) {
-                ResourceUtil.getClassPathResources(basePath, ".sql")
-                        .filter(p -> {
-                            File f = p.toFile();
-                            // 如果有文件并且文件修改过
-                            if (LAST_MODIFIED.containsKey(f.getName())) {
-                                long timestamp = LAST_MODIFIED.get(f.getName());
-                                return timestamp != f.lastModified();
+                for (String path : paths) {
+                    ClassPathResource cr = ClassPathResource.of(path);
+                    if (cr.exists()) {
+                        String suffix = cr.getFilenameExtension();
+                        if (suffix != null && suffix.equals("sql")) {
+                            String fileName = cr.getFileName();
+                            if (LAST_MODIFIED.containsKey(fileName)) {
+                                long timestamp = LAST_MODIFIED.get(fileName);
+                                long lastModified = cr.getLastModified();
+                                if (timestamp != -1 && timestamp != 0 && timestamp != lastModified) {
+                                    log.debug("removing expired SQL cache...");
+                                    resolveSqlContent(cr);
+                                    LAST_MODIFIED.put(fileName, lastModified);
+                                    log.debug("reload modified sql file:{}", fileName);
+                                }
                             }
-                            // 如果是新文件则不过滤
-                            return true;
-                        }).forEach(p -> {
-                    try {
-                        log.debug("removing expired SQL cache...");
-                        resolveSqlContent(p);
-                        File f = p.toFile();
-                        String name = f.getName();
-                        //更新最后一次修改的时间
-                        LAST_MODIFIED.put(name, f.lastModified());
-                        log.debug("reload modified sql file:{}", name);
-                    } catch (IOException e) {
-                        log.error("resolve SQL file with an error:{}", e.getMessage());
+                        }
                     }
-                });
+                }
             }
         } finally {
             lock.unlock();
@@ -173,16 +172,16 @@ public final class SQLFileManager {
      * @throws URISyntaxException URIExp
      */
     public void init() throws IOException, URISyntaxException {
-        ResourceUtil.getClassPathResources(basePath, ".sql")
-                .forEach(p -> {
-                    try {
-                        resolveSqlContent(p);
-                    } catch (IOException e) {
-                        log.error("resolve SQL file with an error:{}", e.getMessage());
-                    }
-                    File f = p.toFile();
-                    LAST_MODIFIED.put(f.getName(), f.lastModified());
-                });
+        for (String path : paths) {
+            ClassPathResource cr = ClassPathResource.of(path);
+            if (cr.exists()) {
+                String suffix = cr.getFilenameExtension();
+                if (suffix != null && suffix.equals("sql")) {
+                    resolveSqlContent(cr);
+                    LAST_MODIFIED.put(cr.getFileName(), cr.getLastModified());
+                }
+            }
+        }
     }
 
     /**

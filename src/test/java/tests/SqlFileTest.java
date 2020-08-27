@@ -50,7 +50,7 @@ public class SqlFileTest {
 
     @Test
     public void sqlTest() throws Exception {
-        SQLFileManager sqlFileManager = new SQLFileManager("pgsql");
+        SQLFileManager sqlFileManager = new SQLFileManager("pgsql/data.sql", "pgsql/other.sql");
         sqlFileManager.init();
         sqlFileManager.look();
         System.out.println("------------");

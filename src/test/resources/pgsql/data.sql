@@ -2,7 +2,7 @@
 /*[query]*/
 select ${field}
 from test."user" t --用户表
-    ${part1};
+    ${x.part1};
 
 /*插入语句。*/
 /*  [   great.insert  ]  */
@@ -28,7 +28,7 @@ from test.user;
 
 /*[fruit]*/
 select *
-from test.student;
+from test.student where ${cnd};
 
 /*[fruitCount]*/
 select count(*)

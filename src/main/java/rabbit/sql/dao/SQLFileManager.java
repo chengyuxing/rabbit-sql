@@ -2,7 +2,7 @@ package rabbit.sql.dao;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rabbit.common.utils.ClassPathResource;
+import rabbit.common.io.ClassPathResource;
 import rabbit.common.utils.ResourceUtil;
 
 import java.io.BufferedReader;

@@ -54,7 +54,7 @@ public class SqlFileTest {
         sqlFileManager.init();
         sqlFileManager.look();
         System.out.println("------------");
-        System.out.println(sqlFileManager.get("data.logical"));
+        System.out.println(sqlFileManager.get("pgsql.data.logical"));
 
     }
 

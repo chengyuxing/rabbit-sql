@@ -33,9 +33,11 @@ public final class SQLFileManager {
     private static final Pattern PART_PATTERN = Pattern.compile("/\\* *\\{ *(?<part>[\\w\\d.():$\\-+=?@!#%~|]+) *} *\\*/");
 
     /**
-     * 构造函数
+     * Sql文件解析器实例<br>
+     * 文件名必须从classpath目录开始到文件名(包含后缀.sql)
      *
-     * @param path classPath基本目录
+     * @param path  文件名
+     * @param paths 多个文件名
      */
     public SQLFileManager(String path, String... paths) {
         String[] pathArr = new String[1 + paths.length];

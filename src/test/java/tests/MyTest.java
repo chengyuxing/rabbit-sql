@@ -54,7 +54,7 @@ public class MyTest {
 
     @Test
     public void pagerTest() throws Exception {
-        PagedResource<DataRow> res = light.<DataRow>query("select * from test.user where id > :id", 1, 10)
+        PagedResource<DataRow> res = light.<DataRow>query("&pgsql.data.select_user", 1, 10)
                 .params(ParamMap.create().putIn("id", 35))
                 .collect(d -> d);
         System.out.println(res);

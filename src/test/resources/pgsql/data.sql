@@ -22,9 +22,9 @@ t.id,t.name,t.password;
 /*排序*/
 order by id;
 
-/*[select_all]*/
+/*[select_user]*/
 select *
-from test.user;
+from test.user where id < :id;
 
 /*[fruit]*/
 select *

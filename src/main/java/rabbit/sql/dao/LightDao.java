@@ -6,8 +6,7 @@ import rabbit.common.types.CExpression;
 import rabbit.common.types.DataRow;
 import rabbit.sql.Light;
 import rabbit.sql.datasource.DataSourceUtil;
-import rabbit.sql.page.PageHelper;
-import rabbit.sql.page.Pageable;
+import rabbit.sql.page.IPageable;
 import rabbit.sql.support.ICondition;
 import rabbit.sql.support.JdbcSupport;
 import rabbit.sql.types.Ignore;
@@ -22,8 +21,6 @@ import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -146,24 +143,8 @@ public class LightDao extends JdbcSupport implements Light {
     }
 
     @Override
-    public <T> Pageable<T> query(String recordQuery, String countQuery, Function<DataRow, T> convert, Map<String, Param> args, PageHelper pager) {
-        return fetch(countQuery, args).map(cn -> {
-            pager.init(Optional.ofNullable(cn.getInt(0)).orElse(0));
-            try (Stream<DataRow> s = query(pager.wrapPagedSql(prepareSql(recordQuery, args)), args)) {
-                List<T> data = s.map(convert).collect(Collectors.toList());
-                return Pageable.of(pager, data);
-            }
-        }).orElseGet(Pageable::empty);
-    }
-
-    @Override
-    public <T> Pageable<T> query(String recordQuery, Function<DataRow, T> convert, Map<String, Param> args, PageHelper pager) {
-        String query = prepareSql(recordQuery, args);
-        String countQuery = "select count(*) " + query.substring(query.toLowerCase().lastIndexOf("from"));
-        if (countQuery.toLowerCase().lastIndexOf("order by") != -1) {
-            countQuery = countQuery.substring(0, countQuery.lastIndexOf("order by"));
-        }
-        return query(query, countQuery, convert, args, pager);
+    public <T> IPageable<T> query(String recordQuery, int page, int size) {
+        return new Pageable<>(this, recordQuery, page, size);
     }
 
     @Override

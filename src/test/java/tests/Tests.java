@@ -10,12 +10,11 @@ import rabbit.common.tuple.Pair;
 import rabbit.common.types.DataRow;
 import rabbit.common.types.ImmutableList;
 import rabbit.common.types.UncheckedCloseable;
-import rabbit.common.utils.ResourceUtil;
 import rabbit.sql.dao.*;
 import rabbit.sql.support.ICondition;
 import rabbit.sql.page.PageHelper;
 import rabbit.sql.page.impl.OraclePageHelper;
-import rabbit.sql.page.Pageable;
+import rabbit.sql.page.PagedResource;
 import rabbit.sql.types.Ignore;
 import rabbit.sql.types.Param;
 import rabbit.sql.utils.SqlUtil;
@@ -25,7 +24,6 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
-import java.nio.file.Path;
 import java.sql.Date;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -340,10 +338,10 @@ public class Tests {
     public void pageTest() throws Exception {
         PageHelper page = OraclePageHelper.of(12, 10);
         page.init(100);
-        Pageable<Integer> pageable = Pageable.of(page, Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9));
-        System.out.println(pageable);
-        System.out.println(Json.toJson(pageable));
+        PagedResource<Integer> pagedResource = PagedResource.of(page, Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9));
+        System.out.println(pagedResource);
+        System.out.println(Json.toJson(pagedResource));
         ObjectMapper mapper = new ObjectMapper();
-        System.out.println(mapper.writeValueAsString(pageable));
+        System.out.println(mapper.writeValueAsString(pagedResource));
     }
 }

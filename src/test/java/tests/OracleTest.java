@@ -2,16 +2,8 @@ package tests;
 
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
-import org.junit.Test;
-import rabbit.common.types.DataRow;
 import rabbit.sql.Light;
-import rabbit.sql.dao.Condition;
-import rabbit.sql.dao.Filter;
 import rabbit.sql.dao.LightDao;
-import rabbit.sql.page.Pageable;
-import rabbit.sql.page.impl.OraclePageHelper;
-
-import java.util.Map;
 
 public class OracleTest {
     static Light light;

@@ -1,8 +1,7 @@
 package rabbit.sql;
 
 import rabbit.common.types.DataRow;
-import rabbit.sql.page.PageHelper;
-import rabbit.sql.page.Pageable;
+import rabbit.sql.page.IPageable;
 import rabbit.sql.support.ICondition;
 import rabbit.sql.types.Ignore;
 import rabbit.sql.types.Param;
@@ -12,7 +11,6 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
@@ -123,27 +121,13 @@ public interface Light {
     /**
      * 分页查询
      *
-     * @param recordQuery 查询SQL
-     * @param countQuery  查询记录数SQL
-     * @param convert     行转换
-     * @param args        参数
-     * @param page        分页对象
-     * @param <T>         目标类型
-     * @return 分页的结果集
+     * @param query 查询sql
+     * @param page  当前页
+     * @param size  分页大小
+     * @param <T>   类型参数
+     * @return 分页构建器
      */
-    <T> Pageable<T> query(String recordQuery, String countQuery, Function<DataRow, T> convert, Map<String, Param> args, PageHelper page);
-
-    /**
-     * 分页查询
-     *
-     * @param recordQuery 查询SQL
-     * @param convert     行转换
-     * @param args        参数
-     * @param page        分页对象
-     * @param <T>         目标类型
-     * @return 分页的结果集
-     */
-    <T> Pageable<T> query(String recordQuery, Function<DataRow, T> convert, Map<String, Param> args, PageHelper page);
+    <T> IPageable<T> query(String query, int page, int size);
 
     /**
      * 获取一条<br>

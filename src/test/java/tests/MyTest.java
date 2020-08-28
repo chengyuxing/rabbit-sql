@@ -10,7 +10,7 @@ import org.junit.Test;
 import rabbit.common.tuple.Pair;
 import rabbit.common.types.DataRow;
 import rabbit.sql.dao.*;
-import rabbit.sql.Light;
+import rabbit.sql.page.PagedResource;
 import rabbit.sql.support.ICondition;
 import rabbit.sql.transaction.Tx;
 import rabbit.sql.types.OUTParamType;
@@ -28,8 +28,8 @@ import static rabbit.sql.utils.SqlUtil.getPreparedSqlAndIndexedArgNames;
 
 public class MyTest {
 
-    private static Light light;
-    private static Light light2;
+    private static LightDao light;
+    private static LightDao light2;
     private static HikariDataSource dataSource;
     private static HikariDataSource dataSource2;
 
@@ -50,6 +50,14 @@ public class MyTest {
         light2 = LightDao.of(dataSource);
 //        lightDao.setSqlPath("pgsql");
 //        light2 = new LightDao(dataSource2);
+    }
+
+    @Test
+    public void pagerTest() throws Exception {
+        PagedResource<DataRow> res = light.<DataRow>query("select * from test.user where id > :id", 1, 10)
+                .params(ParamMap.create().putIn("id", 35))
+                .collect(d -> d);
+        System.out.println(res);
     }
 
     @Test

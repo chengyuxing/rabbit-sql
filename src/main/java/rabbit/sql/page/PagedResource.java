@@ -8,11 +8,11 @@ import java.util.List;
  *
  * @param <T> 类型参数
  */
-public final class Pageable<T> {
+public final class PagedResource<T> {
     private PageHelper pager;
     private List<T> data;
 
-    private Pageable(PageHelper pager, List<T> data) {
+    private PagedResource(PageHelper pager, List<T> data) {
         this.pager = pager;
         this.data = data;
     }
@@ -25,8 +25,8 @@ public final class Pageable<T> {
      * @param <T>   类型参数
      * @return 分页的数据
      */
-    public static <T> Pageable<T> of(PageHelper pager, List<T> data) {
-        return new Pageable<>(pager, data);
+    public static <T> PagedResource<T> of(PageHelper pager, List<T> data) {
+        return new PagedResource<>(pager, data);
     }
 
     /**
@@ -35,8 +35,8 @@ public final class Pageable<T> {
      * @param <T> 类型参数
      * @return 空的分页
      */
-    public static <T> Pageable<T> empty() {
-        return new Pageable<>(null, Collections.emptyList());
+    public static <T> PagedResource<T> empty() {
+        return new PagedResource<>(null, Collections.emptyList());
     }
 
     void setData(List<T> data) {

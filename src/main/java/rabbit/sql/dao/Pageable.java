@@ -85,9 +85,9 @@ public class Pageable<T> implements IPageable<T> {
         return light.fetch(cq, params).map(cn -> {
             PageHelper pageHelper = customPageHelper;
             if (pageHelper == null) {
-                pageHelper = defaultPager(page, size);
+                pageHelper = defaultPager();
             }
-            pageHelper.init(Optional.ofNullable(cn.getInt(0)).orElse(0));
+            pageHelper.init(page, size, Optional.ofNullable(cn.getInt(0)).orElse(0));
             try (Stream<DataRow> s = light.query(pageHelper.wrapPagedSql(query), params)) {
                 List<T> list = s.map(rowConvert).collect(Collectors.toList());
                 return PagedResource.of(pageHelper, list);
@@ -112,19 +112,17 @@ public class Pageable<T> implements IPageable<T> {
     /**
      * 根据数据库名字自动选择合适的默认分页帮助类
      *
-     * @param page 当前页
-     * @param size 分页大小
      * @return 分页帮助类
      */
-    private PageHelper defaultPager(int page, int size) {
+    private PageHelper defaultPager() {
         try {
             String dbName = light.getMetaData().getDatabaseProductName().toLowerCase();
             switch (dbName) {
                 case "oracle":
-                    return OraclePageHelper.of(page, size);
+                    return new OraclePageHelper();
                 case "postgresql":
                 case "sqlite":
-                    return PGPageHelper.of(page, size);
+                    return new PGPageHelper();
                 default:
                     throw new UnsupportedOperationException("pager of \"" + dbName + "\" not support currently!");
             }

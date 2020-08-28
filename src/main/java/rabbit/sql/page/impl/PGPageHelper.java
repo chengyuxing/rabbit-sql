@@ -7,14 +7,6 @@ import rabbit.sql.page.PageHelper;
  */
 public class PGPageHelper extends PageHelper {
 
-    private PGPageHelper(int page, int size) {
-        super(page, size);
-    }
-
-    public static PGPageHelper of(int page, int size) {
-        return new PGPageHelper(page, size);
-    }
-
     public int limit() {
         return getPageSize();
     }

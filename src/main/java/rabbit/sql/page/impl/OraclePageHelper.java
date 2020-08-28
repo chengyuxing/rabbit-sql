@@ -6,14 +6,6 @@ import rabbit.sql.page.PageHelper;
  * oracle分页工具
  */
 public class OraclePageHelper extends PageHelper {
-    private OraclePageHelper(int page, int size) {
-        super(page, size);
-    }
-
-    public static OraclePageHelper of(int page, int size) {
-        return new OraclePageHelper(page, size);
-    }
-
     public int end() {
         int end = getPageNumber() * getPageSize();
         if (end > getRecordCount())

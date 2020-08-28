@@ -50,7 +50,7 @@ public class Tests {
     }
 
     @Test
-    public void mf() throws Exception{
+    public void mf() throws Exception {
         Pattern p = Pattern.compile("\\d");
         Matcher m = p.matcher("123abc");
         System.out.println(m.matches());
@@ -336,8 +336,10 @@ public class Tests {
 
     @Test
     public void pageTest() throws Exception {
-        PageHelper page = OraclePageHelper.of(12, 10);
-        page.init(100);
+        OraclePageHelper page = new OraclePageHelper();
+        page.init(5, 12, 100);
+        System.out.println(page.start());
+        System.out.println(page.end());
         PagedResource<Integer> pagedResource = PagedResource.of(page, Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9));
         System.out.println(pagedResource);
         System.out.println(Json.toJson(pagedResource));

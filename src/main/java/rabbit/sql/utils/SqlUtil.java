@@ -160,4 +160,26 @@ public class SqlUtil {
         });
         return sourceSqlRef.get();
     }
+
+    /**
+     * 通过查询sql大致的构建出查询条数的sql
+     *
+     * @param recordQuery 查询sql
+     * @return 条数查询sql
+     */
+    public static String generateCountQuery(String recordQuery) {
+        String from2end = recordQuery.substring(recordQuery.toLowerCase().lastIndexOf("from"));
+        String countQuery = "select count(*) " + from2end;
+        if (recordQuery.trim().startsWith("with")) {
+            Pattern p = Pattern.compile("with *\\w+ as *\\([\\s\\S]+\\)[\\t\\n\\r ]*select");
+            Matcher m = p.matcher(recordQuery);
+            if (m.find()) {
+                countQuery = recordQuery.substring(0, m.end()) + " count(*) " + from2end;
+            }
+        }
+        if (countQuery.toLowerCase().lastIndexOf("order by") != -1) {
+            countQuery = countQuery.substring(0, countQuery.lastIndexOf("order by"));
+        }
+        return countQuery;
+    }
 }

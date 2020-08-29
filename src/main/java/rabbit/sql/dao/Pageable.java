@@ -4,9 +4,11 @@ import rabbit.common.types.DataRow;
 import rabbit.sql.page.IPageable;
 import rabbit.sql.page.PageHelper;
 import rabbit.sql.page.PagedResource;
+import rabbit.sql.page.impl.MysqlPageHelper;
 import rabbit.sql.page.impl.OraclePageHelper;
 import rabbit.sql.page.impl.PGPageHelper;
 import rabbit.sql.types.Param;
+import rabbit.sql.utils.SqlUtil;
 
 import java.sql.SQLException;
 import java.util.Collections;
@@ -80,7 +82,7 @@ public class Pageable<T> implements IPageable<T> {
         String cq = countQuery;
         String query = light.prepareSql(recordQuery, params);
         if (cq == null) {
-            cq = generateCountQuery(query);
+            cq = SqlUtil.generateCountQuery(query);
         }
         return light.fetch(cq, params).map(cn -> {
             PageHelper pageHelper = customPageHelper;
@@ -93,20 +95,6 @@ public class Pageable<T> implements IPageable<T> {
                 return PagedResource.of(pageHelper, list);
             }
         }).orElseGet(PagedResource::empty);
-    }
-
-    /**
-     * 通过查询sql创建合适的条数查询sql
-     *
-     * @param recordQuery 查询sql
-     * @return 条数查询sql
-     */
-    private String generateCountQuery(String recordQuery) {
-        String countQuery = "select count(*) " + recordQuery.substring(recordQuery.toLowerCase().lastIndexOf("from"));
-        if (countQuery.toLowerCase().lastIndexOf("order by") != -1) {
-            countQuery = countQuery.substring(0, countQuery.lastIndexOf("order by"));
-        }
-        return countQuery;
     }
 
     /**
@@ -123,6 +111,8 @@ public class Pageable<T> implements IPageable<T> {
                 case "postgresql":
                 case "sqlite":
                     return new PGPageHelper();
+                case "mysql":
+                    return new MysqlPageHelper();
                 default:
                     throw new UnsupportedOperationException("pager of \"" + dbName + "\" not support currently!");
             }

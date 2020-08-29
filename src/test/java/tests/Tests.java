@@ -335,6 +335,13 @@ public class Tests {
     }
 
     @Test
+    public void sql() throws Exception{
+        String sql = "select * from test.region where id > 15;";
+        String cq = SqlUtil.generateCountQuery(sql);
+        System.out.println(cq);
+    }
+
+    @Test
     public void pageTest() throws Exception {
         OraclePageHelper page = new OraclePageHelper();
         page.init(5, 12, 100);

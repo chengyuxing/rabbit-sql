@@ -168,28 +168,38 @@ public class SqlUtil {
      * @return 条数查询sql
      */
     public static String generateCountQuery(final String recordQuery) {
-        /// from to end
+        /// part of from to end
         // temp sql to get keyword index only.
-        String tempRql = recordQuery.toLowerCase();
+        String tempRql = recordQuery.toLowerCase().trim();
         String from2end = recordQuery.substring(tempRql.lastIndexOf("from"));
+        String select2from = "select count(*) ";
 
-        //if is PostgreSQL lateral statement
-        Pattern lateralP = Pattern.compile(",\\s*lateral\\s*\\(select");
-        Matcher lateralM = lateralP.matcher(tempRql);
-        if (lateralM.find()) {
-            int fromIdx = tempRql.lastIndexOf("from", lateralM.end());
-            from2end = recordQuery.substring(tempRql.lastIndexOf("from", fromIdx));
-        }
-        /// select to from
-        String countQuery = "select count(*) " + from2end;
-        // if is common expression (with).
-        if (tempRql.trim().startsWith("with")) {
+        // if target table is child query
+        Pattern childP = Pattern.compile("^select\\s*[\\S\\s]*(?<fromIdx>from)\\s\\(");
+        Matcher childM = childP.matcher(tempRql);
+        if (childM.find()) {
+            from2end = recordQuery.substring(childM.start("fromIdx"));
+            // if is common expression (with).
+        } else if (tempRql.startsWith("with")) {
             Pattern p = Pattern.compile("^\\s*with\\s*\\w+\\s*as\\s*\\([\\s\\S]+\\)\\s*select");
             Matcher m = p.matcher(tempRql);
             if (m.find()) {
-                countQuery = recordQuery.substring(0, m.end()) + " count(*) " + from2end;
+                select2from = recordQuery.substring(0, m.end()) + " count(*) ";
             }
         }
+
+        // if is PostgreSQL lateral statement
+        if (tempRql.contains("lateral")) {
+            Pattern lateralP = Pattern.compile(",\\s*(?<lateralIdx>lateral)\\s*\\(select");
+            Matcher lateralM = lateralP.matcher(tempRql);
+            if (lateralM.find()) {
+                int fromIdx = tempRql.lastIndexOf("from", lateralM.start("lateralIdx"));
+                from2end = recordQuery.substring(tempRql.lastIndexOf("from", fromIdx));
+            }
+        }
+
+        /// part of select to from
+        String countQuery = select2from + from2end;
         // if has order by statement
         int orderByIdx = countQuery.toLowerCase().lastIndexOf("order by");
         if (orderByIdx != -1) {

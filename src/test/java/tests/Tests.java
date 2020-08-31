@@ -336,9 +336,18 @@ public class Tests {
 
     @Test
     public void sql() throws Exception{
-        String sql = "select s.name, s.class, sc.subject, sc.grade\n" +
-                "from test.student s,\n" +
-                "     lateral (select * from test.score where student_id = s.id) sc";
+        String sql = "with recursive cte(id, name, pid) as (\n" +
+                "    select id, name, pid\n" +
+                "    from test.region\n" +
+                "    where id = 4\n" +
+                "    union all\n" +
+                "    select t.id, t.name, t.pid\n" +
+                "    from cte c,\n" +
+                "         test.region t\n" +
+                "    where t.pid = c.id\n" +
+                ")\n" +
+                "select *\n" +
+                "from cte;";
         String cq = SqlUtil.generateCountQuery(sql);
         System.out.println(cq);
     }

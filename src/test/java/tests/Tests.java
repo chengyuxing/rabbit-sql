@@ -336,7 +336,9 @@ public class Tests {
 
     @Test
     public void sql() throws Exception{
-        String sql = "select * from test.region where id > 15;";
+        String sql = "select s.name, s.class, sc.subject, sc.grade\n" +
+                "from test.student s,\n" +
+                "     lateral (select * from test.score where student_id = s.id) sc";
         String cq = SqlUtil.generateCountQuery(sql);
         System.out.println(cq);
     }

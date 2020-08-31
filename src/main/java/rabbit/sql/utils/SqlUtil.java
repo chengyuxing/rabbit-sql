@@ -167,18 +167,33 @@ public class SqlUtil {
      * @param recordQuery 查询sql
      * @return 条数查询sql
      */
-    public static String generateCountQuery(String recordQuery) {
-        String from2end = recordQuery.substring(recordQuery.toLowerCase().lastIndexOf("from"));
+    public static String generateCountQuery(final String recordQuery) {
+        /// from to end
+        // temp sql to get keyword index only.
+        String tempRql = recordQuery.toLowerCase();
+        String from2end = recordQuery.substring(tempRql.lastIndexOf("from"));
+
+        //if is PostgreSQL lateral statement
+        Pattern lateralP = Pattern.compile(",\\s*lateral\\s*\\(select");
+        Matcher lateralM = lateralP.matcher(tempRql);
+        if (lateralM.find()) {
+            int fromIdx = tempRql.lastIndexOf("from", lateralM.end());
+            from2end = recordQuery.substring(tempRql.lastIndexOf("from", fromIdx));
+        }
+        /// select to from
         String countQuery = "select count(*) " + from2end;
-        if (recordQuery.trim().startsWith("with")) {
-            Pattern p = Pattern.compile("with *\\w+ as *\\([\\s\\S]+\\)[\\t\\n\\r ]*select");
-            Matcher m = p.matcher(recordQuery);
+        // if is common expression (with).
+        if (tempRql.trim().startsWith("with")) {
+            Pattern p = Pattern.compile("^\\s*with\\s*\\w+\\s*as\\s*\\([\\s\\S]+\\)\\s*select");
+            Matcher m = p.matcher(tempRql);
             if (m.find()) {
                 countQuery = recordQuery.substring(0, m.end()) + " count(*) " + from2end;
             }
         }
-        if (countQuery.toLowerCase().lastIndexOf("order by") != -1) {
-            countQuery = countQuery.substring(0, countQuery.lastIndexOf("order by"));
+        // if has order by statement
+        int orderByIdx = countQuery.toLowerCase().lastIndexOf("order by");
+        if (orderByIdx != -1) {
+            countQuery = countQuery.substring(0, orderByIdx);
         }
         return countQuery;
     }

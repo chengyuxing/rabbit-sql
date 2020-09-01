@@ -175,7 +175,7 @@ public class SqlUtil {
         String select2from = "select count(*) ";
 
         // if target table is child query
-        Pattern childP = Pattern.compile("^select\\s*[\\S\\s]*(?<fromIdx>from)\\s\\(");
+        Pattern childP = Pattern.compile("^select\\s*[\\S\\s]*(?<fromIdx>from)\\s*\\(");
         Matcher childM = childP.matcher(tempRql);
         if (childM.find()) {
             from2end = recordQuery.substring(childM.start("fromIdx"));

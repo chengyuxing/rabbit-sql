@@ -56,6 +56,8 @@ public abstract class PageHelper {
     /**
      * 初始化
      *
+     * @param page  当前页
+     * @param size  页大小
      * @param count 记录条数
      */
     public void init(int page, int size, int count) {

@@ -1,8 +1,12 @@
 package tests;
 
 import org.junit.Test;
+import rabbit.sql.dao.ParamMap;
 import rabbit.sql.dao.SQLFileManager;
 import rabbit.sql.utils.SqlUtil;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SqlFileTest {
 
@@ -54,8 +58,16 @@ public class SqlFileTest {
         sqlFileManager.init();
         sqlFileManager.look();
         System.out.println("------------");
-        System.out.println(sqlFileManager.get("pgsql.data.logical"));
 
+        String sql = sqlFileManager.get("pgsql.data.logical");
+        System.out.println(sql);
+        String dynamicSql = SqlUtil.dynamicSql(sql, ParamMap.create()
+                .putIn("name", null)
+                .putIn("age", null)
+                .putIn("address", null)
+                .putIn("id", null));
+        System.out.println("-------------");
+        System.out.println(dynamicSql);
     }
 
     @Test

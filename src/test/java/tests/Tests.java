@@ -332,6 +332,12 @@ public class Tests {
 
     @Test
     public void asd() throws Exception {
+
+    }
+
+    @Test
+    public void trimEnds() throws Exception{
+        System.out.println(SqlUtil.trimEnd("where id = 10\r\n;  ;;;\t\r\n"));
     }
 
     @Test

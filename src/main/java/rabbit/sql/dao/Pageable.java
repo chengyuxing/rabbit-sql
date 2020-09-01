@@ -65,6 +65,9 @@ public class Pageable<T> implements IPageable<T> {
      *
      * @param pageHelper 分页帮助类
      * @return 分页构建器
+     * @see OraclePageHelper
+     * @see PGPageHelper
+     * @see MysqlPageHelper
      */
     @Override
     public IPageable<T> pageHelper(PageHelper pageHelper) {

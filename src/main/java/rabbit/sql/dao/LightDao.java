@@ -2,7 +2,6 @@ package rabbit.sql.dao;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rabbit.common.types.CExpression;
 import rabbit.common.types.DataRow;
 import rabbit.sql.Light;
 import rabbit.sql.datasource.DataSourceUtil;
@@ -11,7 +10,6 @@ import rabbit.sql.support.ICondition;
 import rabbit.sql.support.JdbcSupport;
 import rabbit.sql.types.Ignore;
 import rabbit.sql.types.Param;
-import rabbit.sql.types.ParamMode;
 import rabbit.sql.utils.SqlUtil;
 
 import javax.sql.DataSource;
@@ -22,6 +20,8 @@ import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Stream;
+
+import static rabbit.sql.utils.SqlUtil.dynamicSql;
 
 /**
  * <p>如果配置了{@link SQLFileManager },则接口所有方法都可以通过 <b>&amp;文件夹名.文件名.sql</b> 名来获取sql文件内的sql,通过<b>&amp;</b>
@@ -236,50 +236,6 @@ public class LightDao extends JdbcSupport implements Light {
             }
         }
         return dynamicSql(trimEndedSql, params);
-    }
-
-    /**
-     * 根据解析条件表达式的结果动态生成sql
-     *
-     * @param sql       sql
-     * @param paramsMap 参数字典
-     * @return 解析后的sql
-     */
-    private String dynamicSql(String sql, Map<String, Param> paramsMap) {
-        if (!sql.contains("--#if") || !sql.contains("--#fi")) {
-            return sql;
-        }
-        if (paramsMap == null || paramsMap.size() == 0) {
-            return sql;
-        }
-        Map<String, Object> params = paramsMap.keySet().stream()
-                .filter(k -> paramsMap.get(k).getParamMode() == ParamMode.IN)
-                .collect(HashMap::new,
-                        (current, k) -> current.put(k, SqlUtil.unwrapValue(paramsMap.get(k).getValue())),
-                        HashMap::putAll);
-        String[] lines = sql.split("\n");
-        StringBuilder sb = new StringBuilder();
-        boolean skip = true;
-        boolean start = false;
-        for (String line : lines) {
-            String trimLine = line.trim();
-            if (trimLine.startsWith("--#if") && !start) {
-                String filter = trimLine.substring(5);
-                CExpression expression = CExpression.of(filter);
-                skip = expression.getResult(params);
-                start = true;
-                continue;
-            }
-            if (trimLine.startsWith("--#fi") && start) {
-                skip = true;
-                start = false;
-                continue;
-            }
-            if (skip) {
-                sb.append(line).append("\n");
-            }
-        }
-        return sb.toString();
     }
 
     @Override

@@ -37,11 +37,29 @@ from test.student;
 /*[logical]*/
 select *
 from test.student t
-where t.age > 21
-  --#if :name != null
-  and t.name ~ :name
-  --#fi
-  --#if :age <> blank && :age < 90
-  and age < 90
-  --#fi
-  and t.id > 2;
+WHERE
+--#if :age !=null
+t.age > 21
+--#fi
+--#if :name != null
+and t.name ~ :name
+--#fi
+--#if :age <> blank && :age < 90
+and age < 90
+--#fi
+;
+
+/* [ update ] */
+update test.user
+set
+--#if :name <> blank
+name = :name,
+--#fi
+--#if :age <100
+age = :age,
+--#fi
+--#if :address != null
+address = :address
+--#fi
+where id = 10
+;

@@ -1,6 +1,7 @@
 package rabbit.sql.utils;
 
 import rabbit.common.tuple.Pair;
+import rabbit.common.types.CExpression;
 import rabbit.sql.dao.Wrap;
 import rabbit.sql.types.Ignore;
 import rabbit.sql.types.Param;
@@ -128,7 +129,7 @@ public class SqlUtil {
      * @return 去除分号后的sql
      */
     public static String trimEnd(String sql) {
-        return sql.replaceAll("([^\\w'\"})\\]]+)$", "");
+        return sql.replaceAll("([\\s;]*)$", "");
     }
 
     /**
@@ -159,6 +160,74 @@ public class SqlUtil {
             }
         });
         return sourceSqlRef.get();
+    }
+
+    /**
+     * 根据解析条件表达式的结果动态生成sql<br>
+     * e.g. data.sql.template
+     *
+     * @param sql       sql
+     * @param paramsMap 参数字典
+     * @return 解析后的sql
+     * @see CExpression
+     */
+    public static String dynamicSql(String sql, Map<String, Param> paramsMap) {
+        if (!sql.contains("--#if") || !sql.contains("--#fi")) {
+            return sql;
+        }
+        if (paramsMap == null || paramsMap.size() == 0) {
+            return sql;
+        }
+        Map<String, Object> params = paramsMap.keySet().stream()
+                .filter(k -> paramsMap.get(k).getParamMode() == ParamMode.IN)
+                .collect(HashMap::new,
+                        (current, k) -> current.put(k, SqlUtil.unwrapValue(paramsMap.get(k).getValue())),
+                        HashMap::putAll);
+        String[] lines = sql.split("\n");
+        StringBuilder sb = new StringBuilder();
+        boolean skip = true;
+        boolean start = false;
+        boolean first = true;
+        for (String line : lines) {
+            String trimLine = line.trim();
+            if (trimLine.startsWith("--#if") && !start) {
+                if (first) {
+                    first = false;
+                }
+                String filter = trimLine.substring(5);
+                CExpression expression = CExpression.of(filter);
+                skip = expression.getResult(params);
+                start = true;
+                continue;
+            }
+            if (trimLine.startsWith("--#fi") && start) {
+                skip = true;
+                start = false;
+                continue;
+            }
+            if (skip) {
+                sb.append(line).append("\n");
+            }
+        }
+        String dSql = sb.toString();
+        // update statement
+        Pattern p = Pattern.compile(",\\s*where", Pattern.CASE_INSENSITIVE);
+        Matcher m = p.matcher(dSql);
+        if (m.find()) {
+            return dSql.substring(0, m.start()).concat(dSql.substring(m.start() + 1));
+        }
+        // where and statement
+        p = Pattern.compile("where\\s*and", Pattern.CASE_INSENSITIVE);
+        m = p.matcher(dSql);
+        if (m.find()) {
+            return dSql.substring(0, m.start() + 5).concat(dSql.substring(m.end()));
+        }
+        p = Pattern.compile("where\\s*$", Pattern.CASE_INSENSITIVE);
+        m = p.matcher(dSql);
+        if (m.find()) {
+            return dSql.substring(0, m.start());
+        }
+        return dSql;
     }
 
     /**

@@ -171,7 +171,7 @@ public class SqlUtil {
      * @return 解析后的sql
      * @see CExpression
      */
-    public static String dynamicSql(String sql, Map<String, Param> paramsMap) {
+    public static String dynamicSql(final String sql, Map<String, Param> paramsMap) {
         if (!sql.contains("--#if") || !sql.contains("--#fi")) {
             return sql;
         }
@@ -206,11 +206,11 @@ public class SqlUtil {
             }
         }
         String dSql = sb.toString();
-        // update statement
+        // if update statement
         Pattern p = Pattern.compile(",\\s*where", Pattern.CASE_INSENSITIVE);
         Matcher m = p.matcher(dSql);
         if (m.find()) {
-            return dSql.substring(0, m.start()).concat(dSql.substring(m.start() + 1));
+            dSql = dSql.substring(0, m.start()).concat(dSql.substring(m.start() + 1));
         }
         // where and statement
         p = Pattern.compile("where\\s*and", Pattern.CASE_INSENSITIVE);

@@ -187,13 +187,9 @@ public class SqlUtil {
         StringBuilder sb = new StringBuilder();
         boolean skip = true;
         boolean start = false;
-        boolean first = true;
         for (String line : lines) {
             String trimLine = line.trim();
             if (trimLine.startsWith("--#if") && !start) {
-                if (first) {
-                    first = false;
-                }
                 String filter = trimLine.substring(5);
                 CExpression expression = CExpression.of(filter);
                 skip = expression.getResult(params);

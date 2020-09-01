@@ -181,7 +181,7 @@ public class SqlUtil {
             from2end = recordQuery.substring(childM.start("fromIdx"));
             // if is common expression (with).
         } else if (tempRql.startsWith("with")) {
-            Pattern p = Pattern.compile("^\\s*with\\s*\\w+\\s*as\\s*\\([\\s\\S]+\\)\\s*select");
+            Pattern p = Pattern.compile("^\\s*with[\\s\\S]+\\s+as\\s*\\([\\s\\S]+\\)\\s*select");
             Matcher m = p.matcher(tempRql);
             if (m.find()) {
                 select2from = recordQuery.substring(0, m.end()) + " count(*) ";

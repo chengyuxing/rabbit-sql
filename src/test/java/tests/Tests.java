@@ -37,76 +37,6 @@ import static rabbit.sql.utils.SqlUtil.SEP;
 public class Tests {
 
     @Test
-    public void types() throws Exception {
-        Object a = Arrays.asList("a", "b", "c");
-        Object b = Arrays.asList(1, 2, 3);
-        Object c = new Integer[]{11, 22, 33};
-        System.out.println(a instanceof List);
-
-        List<Object> aa = (List<Object>) a;
-        List<Object> bb = (List<Object>) b;
-        Object[] cc = (Object[]) c;
-        System.out.println(cc);
-    }
-
-    @Test
-    public void mf() throws Exception {
-        Pattern p = Pattern.compile("\\d");
-        Matcher m = p.matcher("123abc");
-        System.out.println(m.matches());
-        System.out.println(m.find());
-    }
-
-    @Test
-    public void xyz() throws Exception {
-        String a = "我的";
-        String e = new String(Base64.getUrlEncoder().encode(a.getBytes()));
-        System.out.println(e);
-        String d = new String(Base64.getUrlDecoder().decode(e));
-        System.out.println(d);
-
-    }
-
-    @Test
-    public void substrTest() throws Exception {
-        String s = "aaaaoo";
-        System.out.println(s.substring(3, s.length() - 3));
-    }
-
-    @Test
-    public void nestTest() throws Exception {
-        UncheckedCloseable close = null;
-        close = UncheckedCloseable.wrap(new FileInputStream("D:\\logs\\debug.log"));
-        close = close.nest(new FileInputStream("D:\\logs\\debug-1.log"));
-        close = close.nest(new FileInputStream("D:\\logs\\debug-2.log"));
-        close = close.nest(new FileInputStream("D:\\logs\\debug-3.log"));
-
-        close.run();
-    }
-
-    @Test
-    public void numberIn() throws Exception {
-        BigDecimal n = new BigDecimal(100);
-        System.out.println(Double.parseDouble(n.toString()));
-    }
-
-    public static void main(String[] args) throws InterruptedException {
-        AtomicInteger x = new AtomicInteger(50);
-        List<Runnable> runnables = new ArrayList<>();
-        for (int j = 0; j < 5; j++) {
-            Runnable runnable = () -> {
-                for (int i = 0; i < 10; i++) {
-                    x.getAndDecrement();
-                }
-            };
-            runnables.add(runnable);
-        }
-        runnables.forEach(r -> new Thread(r).start());
-        Thread.sleep(1000);
-        System.out.println(x.get());
-    }
-
-    @Test
     public void Datarows() throws Exception {
         Map<Integer, Object> map = new HashMap<>();
         map.put(1, "a");
@@ -189,39 +119,8 @@ public class Tests {
     public void orderByTest() throws Exception {
     }
 
-    @Test
-    public void paramTest() throws Exception {
-        Args<Object> arg = Args.create()
-                .set("a", 12)
-                .set("b", "aaa");
-        System.out.println(arg);
-    }
-
     public static void printMap(Map<String, Param> map) {
         System.out.println(map);
-    }
-
-    @Test
-    public void CndTest() throws Exception {
-        ICondition condition = Condition.where(Filter.eq("id", 5))
-                .and(Filter.gt("age", Wrap.wrapEnd(26, "::text")))
-                .or(Filter.endsWith("name", "jack"))
-                .and(Filter.gt("id", Wrap.wrapStart("interval", "7 minutes")));
-
-//        Map<String, Param> args = Args.builder()
-//                .putIn("name", "cyx")
-//                .putIn("age", ValueWrap.wrapEnd("21", "::integer"))
-//                .putIn("time", ValueWrap.wrapStart("timestamp", "1993-5-10"))
-//                .build();
-
-//        String insert = SqlUtil.generateInsert("test.user", args);
-//        String update = SqlUtil.generateUpdate("test.user", args);
-
-        System.out.println(condition.getSql());
-        System.out.println(condition.getArgs());
-
-//        System.out.println(insert);
-//        System.out.println(update);
     }
 
     @Test
@@ -247,44 +146,10 @@ public class Tests {
     }
 
     @Test
-    public void replaceTest() throws Exception {
-        Map<String, Object> args = new HashMap<>();
-        args.put("name", Wrap.wrapEnd("cyx", "::text"));
-        args.put("age", Wrap.wrapStart("integer", 26));
-        args.put("address", "kunming");
-
-        AtomicReference<String> sql = new AtomicReference<>("select * from test.user where id = :id and name = :name or age = :age");
-
-        args.keySet().forEach(k -> {
-            if (args.get(k) instanceof Wrap) {
-                Wrap v = (Wrap) args.get(k);
-                sql.set(sql.get().replace(":" + k, v.getStart() + " :" + k + v.getEnd()));
-            }
-        });
-        System.out.println(sql.get());
-    }
-
-    @Test
     public void recordTest() throws Exception {
         Record record = new Record();
         record.put("name", "cyx");
         System.out.println(record.getString("age"));
-    }
-
-    @Test
-    public void testFile() throws IOException, URISyntaxException {
-    }
-
-    @Test
-    public void javaType() throws Exception {
-        byte[] bytes = new byte[1];
-        System.out.println(Date.class.getName());
-
-        String[] names = new String[]{"name", "age", "boy"};
-        Object[] values = new Object[]{"chengyuxing", 26, true};
-        DataRow row = DataRow.of(names, values);
-        System.out.println(row);
-        System.out.println(SqlUtil.generateUpdate("test.user", row.toMap(Param::IN)) + Condition.where(Filter.eq("id", 2)).getSql());
     }
 
     @Test

@@ -1,7 +1,6 @@
 package rabbit.sql.page;
 
 import rabbit.common.types.DataRow;
-import rabbit.sql.types.Param;
 
 import java.util.Map;
 import java.util.function.Function;
@@ -15,10 +14,10 @@ public interface IPageable<T> {
     /**
      * 参数
      *
-     * @param params 参数
+     * @param args 参数
      * @return 分页构建器
      */
-    IPageable<T> params(Map<String, Param> params);
+    IPageable<T> args(Map<String, Object> args);
 
     /**
      * 记录条数查询sql

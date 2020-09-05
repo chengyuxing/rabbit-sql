@@ -191,17 +191,10 @@ public class Tests {
 
     @Test
     public void paramTest() throws Exception {
-        ParamMap map = new ParamMap().putIn("name", "cyx")
-                .putIn("age", 21)
-                .putIn("address", "昆明市");
-        printMap(map);
-        System.out.println(ParamMap.empty());
-        Map<String, Object> map1 = new HashMap<>();
-        map1.put("a", 1);
-        map1.put("b", 2);
-        map1.put("c", true);
-
-        System.out.println(ParamMap.from(map1));
+        Args<Object> arg = Args.create()
+                .set("a", 12)
+                .set("b", "aaa");
+        System.out.println(arg);
     }
 
     public static void printMap(Map<String, Param> map) {
@@ -215,17 +208,17 @@ public class Tests {
                 .or(Filter.endsWith("name", "jack"))
                 .and(Filter.gt("id", Wrap.wrapStart("interval", "7 minutes")));
 
-//        Map<String, Param> params = Params.builder()
+//        Map<String, Param> args = Args.builder()
 //                .putIn("name", "cyx")
 //                .putIn("age", ValueWrap.wrapEnd("21", "::integer"))
 //                .putIn("time", ValueWrap.wrapStart("timestamp", "1993-5-10"))
 //                .build();
 
-//        String insert = SqlUtil.generateInsert("test.user", params);
-//        String update = SqlUtil.generateUpdate("test.user", params);
+//        String insert = SqlUtil.generateInsert("test.user", args);
+//        String update = SqlUtil.generateUpdate("test.user", args);
 
         System.out.println(condition.getSql());
-        System.out.println(condition.getParams());
+        System.out.println(condition.getArgs());
 
 //        System.out.println(insert);
 //        System.out.println(update);
@@ -236,7 +229,7 @@ public class Tests {
         ICondition condition = Condition.where(Filter.eq("t.id", Wrap.wrapEnd("7", "::integer")))
                 .or(Filter.gt("id", Wrap.wrapEnd("100", "::integer")));
         System.out.println(condition.getSql());
-        System.out.println(condition.getParams());
+        System.out.println(condition.getArgs());
 
         Condition condition1 = Condition.where(Filter.eq("id", Wrap.wrapEnd("7", "::integer")));
         System.out.println(condition1.getSql());
@@ -244,11 +237,11 @@ public class Tests {
 
     @Test
     public void generateSql() throws Exception {
-        ParamMap paramMap = ParamMap.create().putIn("a", null)
-                .putIn("b", "v")
-                .putIn("c", "")
-                .putIn("d", null)
-                .putIn("e", "1");
+        Args<Object> paramMap = Args.create("a", null)
+                .set("b", "v")
+                .set("c", "")
+                .set("d", null)
+                .set("e", "1");
 
         System.out.println(SqlUtil.generateInsert("test.user", paramMap, Ignore.NULL));
     }

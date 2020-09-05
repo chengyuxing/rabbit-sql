@@ -32,9 +32,9 @@ public class ControlTest {
                 "  --#fi\n" +
                 "  and t.id > 2";
 
-        Map<String, Object> params = new HashMap<>();
-        params.put("name", "jack");
-        params.put("age", "201");
+        Map<String, Object> args = new HashMap<>();
+        args.put("name", "jack");
+        args.put("age", "201");
 
         String[] sqls = sql.split("\n");
         StringBuilder sb = new StringBuilder();
@@ -44,7 +44,7 @@ public class ControlTest {
             if (trimLine.startsWith("--#if")) {
                 String filter = trimLine.substring(6);
                 CExpression expression = CExpression.of(filter);
-                skip = expression.getResult(params);
+                skip = expression.getResult(args);
                 continue;
             }
             if (trimLine.startsWith("--#fi")) {
@@ -73,32 +73,32 @@ public class ControlTest {
 
         System.out.println((id > 0 || (age < 15 && name.equals(""))) || id == 15);
 
-        Map<String, Object> params = new HashMap<>();
-        params.put("id", 15);
-        params.put("age", 21);
-        params.put("name", " ");
-        params.put("enable", true);
-        params.put("types", "a1b2c3");
+        Map<String, Object> args = new HashMap<>();
+        args.put("id", 15);
+        args.put("age", 21);
+        args.put("name", " ");
+        args.put("enable", true);
+        args.put("types", "a1b2c3");
 
-        System.out.println(params.get("a"));
+        System.out.println(args.get("a"));
 
         CExpression expression = CExpression.of(":enable = true && :name = blank && :age<=21");
 
-        System.out.println(expression.getResult(params));
+        System.out.println(expression.getResult(args));
 
     }
 
     @Test
     public void regex() throws Exception{
-        Map<String, Object> params = new HashMap<>();
-        params.put("enable", true);
-        params.put("types", "a1b2c3");
+        Map<String, Object> args = new HashMap<>();
+        args.put("enable", true);
+        args.put("types", "a1b2c3");
 
-        System.out.println(params.get("a"));
+        System.out.println(args.get("a"));
 
         CExpression expression = CExpression.of(":enable = true && :types @ \"\\w+\"");
 
-        System.out.println(expression.getResult(params));
+        System.out.println(expression.getResult(args));
     }
 
     @Test

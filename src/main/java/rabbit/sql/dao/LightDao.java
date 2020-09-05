@@ -83,17 +83,17 @@ public class LightDao extends JdbcSupport implements Light {
     }
 
     @Override
-    public long execute(String sql, Map<String, Param> params) {
-        return executeNonQuery(sql, Collections.singletonList(params));
+    public long execute(String sql, Map<String, Object> args) {
+        return executeNonQuery(sql, Collections.singletonList(args));
     }
 
     @Override
-    public int insert(String tableName, Map<String, Param> data) {
+    public int insert(String tableName, Map<String, Object> data) {
         return insert(tableName, data, null);
     }
 
     @Override
-    public int insert(String tableName, Map<String, Param> data, Ignore ignore) {
+    public int insert(String tableName, Map<String, Object> data, Ignore ignore) {
         return executeNonQuery(SqlUtil.generateInsert(tableName, data, ignore), Collections.singletonList(data));
     }
 
@@ -104,13 +104,13 @@ public class LightDao extends JdbcSupport implements Light {
 
     @Override
     public int insert(String tableName, DataRow row, Ignore ignore) {
-        return executeNonQueryOfDataRow(SqlUtil.generateInsert(tableName, row.toMap(Param::IN), ignore), Collections.singletonList(row));
+        return executeNonQueryOfDataRow(SqlUtil.generateInsert(tableName, row.toMap(), ignore), Collections.singletonList(row));
     }
 
     @Override
-    public int insert(String tableName, Collection<Map<String, Param>> data) {
+    public int insert(String tableName, Collection<Map<String, Object>> data) {
         if (data != null && data.size() > 0) {
-            Map<String, Param> first = data.stream().findFirst().get();
+            Map<String, Object> first = data.stream().findFirst().get();
             return executeNonQuery(SqlUtil.generateInsert(tableName, first, null), data);
         }
         return -1;
@@ -118,22 +118,22 @@ public class LightDao extends JdbcSupport implements Light {
 
     @Override
     public int delete(String tableName, ICondition ICondition) {
-        return executeNonQuery("delete from " + tableName + " " + ICondition.getSql(), Collections.singletonList(ICondition.getParams()));
+        return executeNonQuery("delete from " + tableName + " " + ICondition.getSql(), Collections.singletonList(ICondition.getArgs()));
     }
 
     @Override
-    public int update(String tableName, Map<String, Param> data, ICondition ICondition) {
-        data.putAll(ICondition.getParams());
+    public int update(String tableName, Map<String, Object> data, ICondition ICondition) {
+        data.putAll(ICondition.getArgs());
         return executeNonQuery(SqlUtil.generateUpdate(tableName, data) + ICondition.getSql(), Collections.singletonList(data));
     }
 
     @Override
     public Stream<DataRow> query(String sql) {
-        return query(sql, ParamMap.empty());
+        return query(sql, Args.create());
     }
 
     @Override
-    public Stream<DataRow> query(String sql, Map<String, Param> args) {
+    public Stream<DataRow> query(String sql, Map<String, Object> args) {
         try {
             return executeQueryStream(sql, args);
         } catch (SQLException ex) {
@@ -149,11 +149,11 @@ public class LightDao extends JdbcSupport implements Light {
 
     @Override
     public Optional<DataRow> fetch(String sql) {
-        return fetch(sql, ParamMap.empty());
+        return fetch(sql, Args.create());
     }
 
     @Override
-    public Optional<DataRow> fetch(String sql, Map<String, Param> args) {
+    public Optional<DataRow> fetch(String sql, Map<String, Object> args) {
         try (Stream<DataRow> s = query(sql, args)) {
             return s.findFirst();
         }
@@ -165,7 +165,7 @@ public class LightDao extends JdbcSupport implements Light {
     }
 
     @Override
-    public boolean exists(String sql, Map<String, Param> args) {
+    public boolean exists(String sql, Map<String, Object> args) {
         return fetch(sql, args).isPresent();
     }
 
@@ -176,11 +176,8 @@ public class LightDao extends JdbcSupport implements Light {
      * <pre>
      *  {@link List}&lt;{@link DataRow}&gt; rows = {@link rabbit.sql.transaction.Tx}.using(() -&gt;
      *    light.function("call test.func2(:c::refcursor)",
-     *       Params.builder()
-     *         .put("c",Param.IN_OUT("result", OUTParamType.REF_CURSOR))
-     *         .build())
-     *         .get(0);
-     *       );
+     *       Args.create("c",Param.IN_OUT("result", OUTParamType.REF_CURSOR))
+     *       ).get(0));
      *   </pre>
      * </blockquote>
      *
@@ -217,12 +214,11 @@ public class LightDao extends JdbcSupport implements Light {
     /**
      * 如果使用取地址符"&amp;sql文件名.sql名"则获取sql文件中已缓存的sql
      *
-     * @param sql    sql或sql名
-     * @param params sql占位符参数
+     * @param sql sql或sql名
      * @return sql
      */
     @Override
-    protected String prepareSql(String sql, Map<String, Param> params) {
+    protected String prepareSql(String sql, Map<String, Object> args) {
         String trimEndedSql = SqlUtil.trimEnd(sql);
         if (sql.startsWith("&")) {
             if (sqlFileManager != null) {
@@ -235,7 +231,7 @@ public class LightDao extends JdbcSupport implements Light {
                 throw new NullPointerException("can not find property 'sqlPath' or SQLFileManager init failed!");
             }
         }
-        return dynamicSql(trimEndedSql, params);
+        return dynamicSql(trimEndedSql, args);
     }
 
     @Override

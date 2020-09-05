@@ -57,16 +57,16 @@ public class MyTest {
     @Test
     public void pagerTest() throws Exception {
         PagedResource<DataRow> res = light.<DataRow>query("&pgsql.data.select_user", 1, 10)
-                .params(ParamMap.create().putIn("id", 35))
+                .args(Args.create().set("id", 35))
                 .collect(d -> d);
         System.out.println(res);
     }
 
     @Test
     public void dynamicSqlTest() throws Exception {
-        try (Stream<DataRow> s = light.query("&data.logical", ParamMap.create()
-                .putIn("age", 91)
-                .putIn("name", "小"))) {
+        try (Stream<DataRow> s = light.query("&data.logical", Args.create()
+                .set("age", 91)
+                .set("name", "小"))) {
             s.forEach(System.out::println);
         }
     }
@@ -106,7 +106,7 @@ public class MyTest {
         map.put("productplace", "bbb");
         map.put("price", 1000);
 
-        int i = light.insert("test.fruit", ParamMap.from(map));
+        int i = light.insert("test.fruit", map);
         System.out.println(i);
     }
 
@@ -140,7 +140,7 @@ public class MyTest {
     @Test
     public void testSqlFile() {
         try (Stream<DataRow> s = light.query("&data.query",
-                ParamMap.create().putIn("id", 4))) {
+                Args.create().set("id", 4))) {
             s.map(DataRow::toMap).forEach(System.out::println);
         }
     }
@@ -165,13 +165,9 @@ public class MyTest {
     @Test
     public void testCall() throws Exception {
         List<DataRow> rows = Tx.using(() -> light.function("call test.fun_query(:c::refcursor)",
-                ParamMap.create().putInOut("c", "result", OUTParamType.REF_CURSOR))
+                Args.create("c", Param.IN_OUT("result", OUTParamType.REF_CURSOR)))
                 .get(0));
         rows.forEach(System.out::println);
-//        for (int i = 0; i < 10; i++) {
-//            TimeUnit.SECONDS.sleep(10);
-//            System.out.println(i);
-//        }
     }
 
     @Test
@@ -185,10 +181,9 @@ public class MyTest {
     public void multi_res_function() throws Exception {
         Tx.using(() -> {
             DataRow row = light.function("call test.multi_res(12, :success, :res, :msg)",
-                    ParamMap.create()
-                            .putOut("success", OUTParamType.BOOLEAN)
-                            .putOut("res", OUTParamType.REF_CURSOR)
-                            .putOut("msg", OUTParamType.VARCHAR)
+                    Args.create("success", Param.OUT(OUTParamType.BOOLEAN))
+                            .set("res", Param.OUT(OUTParamType.REF_CURSOR))
+                            .set("msg", Param.OUT(OUTParamType.VARCHAR))
             );
             System.out.println(row);
         });
@@ -197,11 +192,8 @@ public class MyTest {
     @Test
     public void callTest() throws Exception {
         DataRow row = light.function("call test.now3(101,55,:r,:n)",
-                ParamMap.create()
-//                        .putIn("a", 101)
-//                        .putIn("b", 55)
-                        .putOut("r", OUTParamType.TIMESTAMP)
-                        .putOut("n", OUTParamType.INTEGER));
+                Args.create("r", Param.OUT(OUTParamType.TIMESTAMP))
+                        .set("n", Param.OUT(OUTParamType.INTEGER)));
         Timestamp dt = row.get("r");
         System.out.println(dt.toLocalDateTime());
         System.out.println(row);
@@ -222,12 +214,12 @@ public class MyTest {
 //        Transaction.begin();
         try {
             int i = Tx.using(() -> {
-                int x = light.insert("test.user", ParamMap.create()
-                        .putIn("name", "chengyuxing_outer_transaction")
-                        .putIn("password", "1993510"));
-                int y = light2.insert("test.user", ParamMap.create()
-                        .putIn("name", "jackson_outer_transaction")
-                        .putIn("password", "new Date("));
+                int x = light.insert("test.user", Args.create().
+                        set("name", "chengyuxing_outer_transaction")
+                        .set("password", "1993510"));
+                int y = light2.insert("test.user", Args.create()
+                        .set("name", "jackson_outer_transaction")
+                        .set("password", "new Date("));
                 return x + y;
             });
             System.out.println(i);
@@ -241,11 +233,11 @@ public class MyTest {
 
     @Test
     public void testInsertBatch() throws SQLException {
-        List<Map<String, Param>> list = new ArrayList<>();
+        List<Map<String, Object>> list = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
-            list.add(ParamMap.create()
-                    .putIn("name", "batch" + i)
-                    .putIn("password", "123456"));
+            list.add(Args.create()
+                    .set("name", "batch" + i)
+                    .set("password", "123456"));
         }
         int i = light.insert("test.user", list);
         System.out.println(i);
@@ -260,7 +252,7 @@ public class MyTest {
     @Test
     public void testUpdate() throws SQLException {
         int i = light.update("test.user t",
-                ParamMap.create().putIn("name", Param.IN("SQLFileManager")),
+                Args.create().set("name", Param.IN("SQLFileManager")),
                 Condition.where(Filter.eq("id", 5)));
         System.out.println(i);
     }
@@ -296,12 +288,12 @@ public class MyTest {
                 .or(FFilter.like(User::getName, "%admin"))
                 .orderBy(User::getAge);
 
-        System.out.println(f.getParams());
+        System.out.println(f.getArgs());
         System.out.println(f.toString());
     }
 
     @Test
-    public void ParamsTest() {
+    public void ArgsTest() {
 
     }
 }

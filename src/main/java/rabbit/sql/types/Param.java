@@ -54,19 +54,6 @@ public final class Param {
         return param;
     }
 
-    /**
-     * 指定SQL模版代码段插入到指定位置
-     *
-     * @param template SQL模版
-     * @return param
-     */
-    public static Param TEMPLATE(String template) {
-        Param param = new Param();
-        param.paramMode = ParamMode.TEMPLATE;
-        param.value = template;
-        return param;
-    }
-
     public Object getValue() {
         return value;
     }

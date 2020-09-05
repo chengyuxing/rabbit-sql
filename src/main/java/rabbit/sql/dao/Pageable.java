@@ -7,7 +7,6 @@ import rabbit.sql.page.PagedResource;
 import rabbit.sql.page.impl.MysqlPageHelper;
 import rabbit.sql.page.impl.OraclePageHelper;
 import rabbit.sql.page.impl.PGPageHelper;
-import rabbit.sql.types.Param;
 import rabbit.sql.utils.SqlUtil;
 
 import java.sql.SQLException;
@@ -26,7 +25,7 @@ import java.util.stream.Stream;
  */
 public class Pageable<T> implements IPageable<T> {
     private final LightDao light;
-    private Map<String, Param> params = Collections.emptyMap();
+    private Map<String, Object> args = Collections.emptyMap();
     private final String recordQuery;
     private String countQuery;
     private final int page;
@@ -49,8 +48,8 @@ public class Pageable<T> implements IPageable<T> {
     }
 
     @Override
-    public IPageable<T> params(Map<String, Param> params) {
-        this.params = params;
+    public IPageable<T> args(Map<String, Object> args) {
+        this.args = args;
         return this;
     }
 
@@ -83,17 +82,17 @@ public class Pageable<T> implements IPageable<T> {
     @Override
     public PagedResource<T> collect(Function<DataRow, T> rowConvert) {
         String cq = countQuery;
-        String query = light.prepareSql(recordQuery, params);
+        String query = light.prepareSql(recordQuery, args);
         if (cq == null) {
             cq = SqlUtil.generateCountQuery(query);
         }
-        return light.fetch(cq, params).map(cn -> {
+        return light.fetch(cq, args).map(cn -> {
             PageHelper pageHelper = customPageHelper;
             if (pageHelper == null) {
                 pageHelper = defaultPager();
             }
             pageHelper.init(page, size, Optional.ofNullable(cn.getInt(0)).orElse(0));
-            try (Stream<DataRow> s = light.query(pageHelper.wrapPagedSql(query), params)) {
+            try (Stream<DataRow> s = light.query(pageHelper.wrapPagedSql(query), args)) {
                 List<T> list = s.map(rowConvert).collect(Collectors.toList());
                 return PagedResource.of(pageHelper, list);
             }

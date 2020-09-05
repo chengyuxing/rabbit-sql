@@ -5,8 +5,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import rabbit.common.types.DataRow;
 import rabbit.sql.Light;
+import rabbit.sql.dao.Args;
 import rabbit.sql.dao.LightDao;
-import rabbit.sql.dao.ParamMap;
 
 import java.io.File;
 import java.io.IOException;
@@ -45,7 +45,7 @@ public class SqliteTest {
 
     @Test
     public void query() {
-        light.query("select * from user where age > :age", ParamMap.create().putIn("age", 25))
+        light.query("select * from user where age > :age", Args.create().set("age", 25))
                 .forEach(System.out::println);
     }
 }

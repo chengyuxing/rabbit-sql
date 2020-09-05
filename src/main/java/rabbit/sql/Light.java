@@ -30,10 +30,10 @@ public interface Light {
      * 执行一条原始sql
      *
      * @param sql    原始sql
-     * @param params 参数
+     * @param args 参数
      * @return 如果执行成功，DML语句返回1，DDL语句返回0
      */
-    long execute(String sql, Map<String, Param> params);
+    long execute(String sql, Map<String, Object> args);
 
     /**
      * 插入
@@ -42,7 +42,7 @@ public interface Light {
      * @param data      数据
      * @return 受影响的行数
      */
-    int insert(String tableName, Map<String, Param> data);
+    int insert(String tableName, Map<String, Object> data);
 
     /**
      * 插入
@@ -52,7 +52,7 @@ public interface Light {
      * @param ignore    忽略插入的值类型
      * @return 受影响的行数
      */
-    int insert(String tableName, Map<String, Param> data, Ignore ignore);
+    int insert(String tableName, Map<String, Object> data, Ignore ignore);
 
     /**
      * 插入
@@ -80,7 +80,7 @@ public interface Light {
      * @param data      数据
      * @return 受影响的行数
      */
-    int insert(String tableName, Collection<Map<String, Param>> data);
+    int insert(String tableName, Collection<Map<String, Object>> data);
 
     /**
      * 删除
@@ -99,7 +99,7 @@ public interface Light {
      * @param ICondition 条件
      * @return 受影响的行数
      */
-    int update(String tableName, Map<String, Param> data, ICondition ICondition);
+    int update(String tableName, Map<String, Object> data, ICondition ICondition);
 
     /**
      * 查询<br>
@@ -116,7 +116,7 @@ public interface Light {
      * @param args 参数
      * @return 收集为流的结果集
      */
-    Stream<DataRow> query(String sql, Map<String, Param> args);
+    Stream<DataRow> query(String sql, Map<String, Object> args);
 
     /**
      * 分页查询
@@ -144,7 +144,7 @@ public interface Light {
      * @param args 参数
      * @return 空或一条
      */
-    Optional<DataRow> fetch(String sql, Map<String, Param> args);
+    Optional<DataRow> fetch(String sql, Map<String, Object> args);
 
     /**
      * 判断是否存在数据行
@@ -161,7 +161,7 @@ public interface Light {
      * @param args 参数
      * @return 是否存在
      */
-    boolean exists(String sql, Map<String, Param> args);
+    boolean exists(String sql, Map<String, Object> args);
 
     /**
      * 执行存储过程

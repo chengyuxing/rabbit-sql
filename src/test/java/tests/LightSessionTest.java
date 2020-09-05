@@ -78,7 +78,7 @@ public class LightSessionTest {
                     System.out.println(r);
                     byte[] bytes = r.get("file");
                     System.out.println(bytes.length);
-//                    light.update("test.files", Params.builder()
+//                    light.update("test.files", Args.builder()
 //                                    .putIn("name", "cyx's file")
 //                                    .build(),
 //                            Cnd.New().where(Filter.eq("id", r.getInt("id"))));
@@ -125,24 +125,24 @@ public class LightSessionTest {
     public void insert() throws Exception {
 //        Transaction transaction = light.getTransaction();
         light.insert("test.user",
-                ParamMap.create().putIn("name", "chengyuxing")
-                        .putIn("password", "123456")
-                        .putIn("id_card", "530111199305107030"));
+                Args.create().set("name", "dynamic")
+                        .set("password", "123456")
+                        .set("id_card", "530111199305107030"));
 //        transaction.commit();
     }
 
     @Test
     public void valueWrapTest() throws Exception {
-        light.insert("test.score", ParamMap.create()
-                .putIn("student_id", Wrap.wrapEnd(7, "::integer"))
-                .putIn("subject", "政治")
-                .putIn("grade", Wrap.wrapEnd("88", "::integer")));
+        light.insert("test.score", Args.create()
+                .set("student_id", Wrap.wrapEnd(7, "::integer"))
+                .set("subject", "政治")
+                .set("grade", Wrap.wrapEnd("88", "::integer")));
     }
 
     @Test
     public void valueWrapTest2() throws Exception {
-        light.update("test.score", ParamMap.create()
-                        .putIn("grade", Wrap.wrapEnd("15", "::integer")),
+        light.update("test.score", Args.create()
+                        .set("grade", Wrap.wrapEnd("15", "::integer")),
                 Condition.where(Filter.eq("id", Wrap.wrapEnd("7", "::integer")))
         );
     }
@@ -165,10 +165,10 @@ public class LightSessionTest {
 
     @Test
     public void dateTimeTest() throws Exception {
-        light.insert("test.datetime", ParamMap.create()
-                .putIn("ts", LocalDateTime.now())
-                .putIn("dt", LocalDate.now())
-                .putIn("tm", LocalTime.now()));
+        light.insert("test.datetime", Args.create()
+                .set("ts", LocalDateTime.now())
+                .set("dt", LocalDate.now())
+                .set("tm", LocalTime.now()));
     }
 
     @Test

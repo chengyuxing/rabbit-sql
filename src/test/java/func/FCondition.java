@@ -11,7 +11,7 @@ public class FCondition<T> {
     private List<String> orderByes;
     private List<String> ands;
     private List<String> ors;
-    private Map<String, Param> params = new HashMap<>();
+    private Map<String, Param> args = new HashMap<>();
 
     private FCondition() {
 
@@ -24,7 +24,7 @@ public class FCondition<T> {
     public FCondition<T> where(FFilter<T> filter) {
         where = " where" + filter.getSql();
         if (filter.value() != null)
-            params.put(filter.field(), Param.IN(filter.value()));
+            args.put(filter.field(), Param.IN(filter.value()));
         return this;
     }
 
@@ -50,7 +50,7 @@ public class FCondition<T> {
             ands = new ArrayList<>();
         if (more.length == 0) {
             if (filter.value() != null)
-                params.put(filter.field(), Param.IN(filter.value()));
+                args.put(filter.field(), Param.IN(filter.value()));
             ands.add(filter.getSql());
             return this;
         }
@@ -60,7 +60,7 @@ public class FCondition<T> {
         String andGroup = filters.stream()
                 .map(f -> {
                     if (f.value() != null)
-                        params.put(f.field(), Param.IN(f.value()));
+                        args.put(f.field(), Param.IN(f.value()));
                     return f.getSql();
                 }).collect(Collectors.joining(" and "));
         ands.add(String.format("(%s)", andGroup));
@@ -72,7 +72,7 @@ public class FCondition<T> {
             ors = new ArrayList<>();
         if (more.length == 0) {
             if (filter.value() != null)
-                params.put(filter.field(), Param.IN(filter.value()));
+                args.put(filter.field(), Param.IN(filter.value()));
             ors.add(filter.getSql());
             return this;
         }
@@ -82,7 +82,7 @@ public class FCondition<T> {
         String andGroup = filters.stream()
                 .map(f -> {
                     if (f.value() != null)
-                        params.put(f.field(), Param.IN(f.value()));
+                        args.put(f.field(), Param.IN(f.value()));
                     return f.getSql();
                 }).collect(Collectors.joining(" or "));
         ors.add(String.format("(%s)", andGroup));
@@ -111,8 +111,8 @@ public class FCondition<T> {
      *
      * @return 参数
      */
-    public Map<String, Param> getParams() {
+    public Map<String, Param> getArgs() {
         FFilter.integer.set(0);
-        return params;
+        return args;
     }
 }

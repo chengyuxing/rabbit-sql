@@ -64,10 +64,10 @@ public abstract class JdbcSupport {
      * 提供一个抽象方法供实现类对单前要执行的sql做一些准备操作
      *
      * @param sql    sql
-     * @param params 占位符参数字典
+     * @param args 参数
      * @return 处理后的sql
      */
-    protected abstract String prepareSql(String sql, Map<String, Param> params);
+    protected abstract String prepareSql(String sql, Map<String, Object> args);
 
     /**
      * 执行一句sql
@@ -109,7 +109,7 @@ public abstract class JdbcSupport {
      * @return Stream数据流
      * @throws SQLException sqlEx
      */
-    public Stream<DataRow> executeQueryStream(final String sql, Map<String, Param> args) throws SQLException {
+    public Stream<DataRow> executeQueryStream(final String sql, Map<String, Object> args) throws SQLException {
         UncheckedCloseable close = null;
         try {
             String sourceSql = prepareSql(sql, args);
@@ -124,7 +124,7 @@ public abstract class JdbcSupport {
             Connection connection = getConnection();
             close = UncheckedCloseable.wrap(connection);
             PreparedStatement statement = connection.prepareStatement(preparedSql);
-            JdbcUtil.setSqlParams(statement, args, argNames);
+            JdbcUtil.setSqlArgs(statement, args, argNames);
             close = close.nest(statement);
             ResultSet resultSet = statement.executeQuery();
             close = close.nest(resultSet);
@@ -170,11 +170,11 @@ public abstract class JdbcSupport {
      * @param args 数据
      * @return 总的受影响的行数
      */
-    protected int executeNonQuery(final String sql, final Collection<Map<String, Param>> args) {
+    protected int executeNonQuery(final String sql, final Collection<Map<String, Object>> args) {
         if (args == null || args.size() < 1) {
             throw new NoSuchElementException("args is null or length less than 1.");
         }
-        Map<String, Param> firstArg = args.stream().findFirst().get();
+        Map<String, Object> firstArg = args.stream().findFirst().get();
         String sourceSql = SqlUtil.resolveSqlPart(prepareSql(sql, firstArg), firstArg);
         log.debug("SQL:{}", sourceSql);
         log.debug("Args:{}", args);
@@ -185,8 +185,8 @@ public abstract class JdbcSupport {
 
         return execute(preparedSql, sc -> {
             int i = 0;
-            for (Map<String, Param> arg : args) {
-                JdbcUtil.setSqlParams(sc, arg, argNames);
+            for (Map<String, Object> arg : args) {
+                JdbcUtil.setSqlArgs(sc, arg, argNames);
                 i += sc.executeUpdate();
             }
             log.info("{} rows updated!", i);
@@ -209,9 +209,7 @@ public abstract class JdbcSupport {
         if (args == null || args.size() < 1) {
             throw new NoSuchElementException("args is null or length less than 1.");
         }
-        Map<String, Param> firstArg = args.stream()
-                .map(r -> r.toMap(Param::IN))
-                .findFirst().get();
+        Map<String, Object> firstArg = args.stream().map(DataRow::toMap).findFirst().get();
         String sourceSql = SqlUtil.resolveSqlPart(prepareSql(sql, firstArg), firstArg);
         log.debug("SQL:{}", sourceSql);
         log.debug("Args:{}", args);
@@ -223,8 +221,7 @@ public abstract class JdbcSupport {
         return execute(preparedSql, sc -> {
             int i = 0;
             for (DataRow row : args) {
-                Map<String, Param> arg = row.toMap(Param::IN);
-                JdbcUtil.setSqlParams(sc, arg, argNames);
+                JdbcUtil.setSqlArgs(sc, row.toMap(), argNames);
                 i += sc.executeUpdate();
             }
             log.info("{} rows updated!", i);
@@ -249,7 +246,7 @@ public abstract class JdbcSupport {
      * @return DataRow
      */
     public DataRow executeCall(final String procedure, Map<String, Param> args) {
-        String sourceSql = SqlUtil.resolveSqlPart(prepareSql(procedure, args), args);
+        String sourceSql = prepareSql(procedure, Collections.emptyMap());
         log.debug("Procedure:{}", sourceSql);
         log.debug("Args:{}", args);
 
@@ -261,7 +258,7 @@ public abstract class JdbcSupport {
         Connection connection = getConnection();
         try {
             statement = connection.prepareCall(executeSql);
-            JdbcUtil.setStoreParams(statement, args, argNames);
+            JdbcUtil.setStoreArgs(statement, args, argNames);
             statement.execute();
             String[] names = argNames.stream().filter(n -> {
                 ParamMode mode = args.get(n).getParamMode();

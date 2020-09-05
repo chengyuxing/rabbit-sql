@@ -15,9 +15,5 @@ public enum ParamMode {
     /**
      * 出入参
      */
-    IN_OUT,
-    /**
-     * SQL模版代码片段
-     */
-    TEMPLATE
+    IN_OUT
 }

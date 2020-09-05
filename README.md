@@ -82,7 +82,7 @@ try (Stream<DataRow> fruits = orclLight.query("select * from fruit")) {
 ### 分页查询
 ```java
 PagedResource<DataRow> res = light.<DataRow>query("&pgsql.data.select_user", 1, 10)
-                .params(ParamMap.create().putIn("id", 35))
+                .args(Args.create().set("id", 35))
                 .collect(d -> d);
 ```
 
@@ -91,8 +91,7 @@ PagedResource<DataRow> res = light.<DataRow>query("&pgsql.data.select_user", 1, 
 ```java
 List<DataRow> rows = Tx.using(() -> {
   DataRow row = light.function("call test.fun_query(:c::refcursor)",
-                           ParamMap.create()
-                           .put("c", Param.IN_OUT("result", OUTParamType.REF_CURSOR)));
+                           Args.create("c", Param.IN_OUT("result", OUTParamType.REF_CURSOR)));
   return row.get(0);
 });
 rows.forEach(System.out::println);

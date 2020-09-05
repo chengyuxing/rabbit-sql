@@ -3,7 +3,6 @@ package rabbit.sql.dao;
 import rabbit.common.tuple.Pair;
 import rabbit.sql.support.ICondition;
 import rabbit.sql.support.IFilter;
-import rabbit.sql.types.Param;
 import rabbit.sql.utils.SqlUtil;
 
 import java.util.HashMap;
@@ -15,7 +14,7 @@ import static rabbit.sql.utils.SqlUtil.unwrapValue;
  * SQL条件拼装器
  */
 public class Condition implements ICondition {
-    private final Map<String, Param> params = new HashMap<>();
+    private final Map<String, Object> args = new HashMap<>();
     private final StringBuilder conditions = new StringBuilder();
     private int arg_index = 0;
 
@@ -76,7 +75,7 @@ public class Condition implements ICondition {
         if (filter.getValue() != IFilter.IGNORE_VALUE) {
             Pair<String, String> sf = getSpecialField(filter.getField(), filter.getValue());
             conditions.append(s).append(filter.getField()).append(filter.getOperator()).append(sf.getItem2()).append(" ");
-            params.put(sf.getItem1(), Param.IN(unwrapValue(filter.getValue())));
+            args.put(sf.getItem1(), unwrapValue(filter.getValue()));
         } else {
             conditions.append(s).append(filter.getField()).append(filter.getOperator());
         }
@@ -109,8 +108,8 @@ public class Condition implements ICondition {
      * @return 参数
      */
     @Override
-    public Map<String, Param> getParams() {
-        return params;
+    public Map<String, Object> getArgs() {
+        return args;
     }
 
     /**

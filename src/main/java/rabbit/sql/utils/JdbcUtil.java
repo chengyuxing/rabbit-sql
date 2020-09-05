@@ -293,15 +293,13 @@ public class JdbcUtil {
      * @param names     占位符参数名
      * @throws SQLException ex
      */
-    public static void setSqlParams(PreparedStatement statement, Map<String, Param> args, List<String> names) throws SQLException {
+    public static void setSqlArgs(PreparedStatement statement, Map<String, Object> args, List<String> names) throws SQLException {
         if (args != null && !args.isEmpty()) {
             for (int i = 0; i < names.size(); i++) {
                 if (args.containsKey(names.get(i))) {
                     int index = i + 1;
-                    Param param = args.get(names.get(i));
-                    if (param.getParamMode() == ParamMode.IN) {
-                        setStatementValue(statement, index, param.getValue());
-                    }
+                    Object param = args.get(names.get(i));
+                    setStatementValue(statement, index, param);
                 }
             }
         }
@@ -315,7 +313,7 @@ public class JdbcUtil {
      * @param names     占位符参数名
      * @throws SQLException ex
      */
-    public static void setStoreParams(CallableStatement statement, Map<String, Param> args, List<String> names) throws SQLException {
+    public static void setStoreArgs(CallableStatement statement, Map<String, Param> args, List<String> names) throws SQLException {
         if (args != null && !args.isEmpty()) {
             for (int i = 0; i < names.size(); i++) {
                 if (args.containsKey(names.get(i))) {

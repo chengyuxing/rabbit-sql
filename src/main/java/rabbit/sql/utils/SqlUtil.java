@@ -4,11 +4,10 @@ import rabbit.common.tuple.Pair;
 import rabbit.common.types.CExpression;
 import rabbit.sql.dao.Wrap;
 import rabbit.sql.types.Ignore;
-import rabbit.sql.types.Param;
-import rabbit.sql.types.ParamMode;
 
-import java.util.*;
-import java.util.concurrent.atomic.AtomicReference;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -38,14 +37,14 @@ public class SqlUtil {
      * @param ignore    忽略类型
      * @return 插入语句
      */
-    public static String generateInsert(final String tableName, final Map<String, Param> data, final Ignore ignore) {
+    public static String generateInsert(final String tableName, final Map<String, Object> data, final Ignore ignore) {
         String[] fh = data.keySet().stream()
                 .filter(k -> {
                     if (ignore == Ignore.NULL) {
-                        return data.get(k).getValue() != null;
+                        return data.get(k) != null;
                     }
                     if (ignore == Ignore.BLANK) {
-                        return data.get(k).getValue() != null && !data.get(k).getValue().equals("");
+                        return data.get(k) != null && !data.get(k).equals("");
                     }
                     return true;
                 }).reduce(new String[]{"", ""}, (acc, current) -> {
@@ -63,7 +62,7 @@ public class SqlUtil {
      * @param data      数据
      * @return 更新语句
      */
-    public static String generateUpdate(String tableName, Map<String, Param> data) {
+    public static String generateUpdate(String tableName, Map<String, Object> data) {
         String sets = data.keySet().stream()
                 .filter(key -> !key.contains(SEP))
                 .map(key -> key + " = :" + key)
@@ -139,27 +138,24 @@ public class SqlUtil {
      * @param args      参数
      * @return 替换模版占位符后的sql
      */
-    public static String resolveSqlPart(final String sourceSql, Map<String, Param> args) {
+    public static String resolveSqlPart(final String sourceSql, Map<String, Object> args) {
         if (args == null || args.size() == 0) {
             return sourceSql;
         }
-        AtomicReference<String> sourceSqlRef = new AtomicReference<>(sourceSql);
-        args.keySet().forEach(k -> {
-            ParamMode pm = args.get(k).getParamMode();
-            if (pm == ParamMode.TEMPLATE) {
-                String sql = sourceSqlRef.get();
-                String v = args.get(k).getValue().toString() + " ";
-                String key = "${" + k + "}";
-                sourceSqlRef.set(sql.replace(key, v));
-            } else if (pm == ParamMode.IN || pm == ParamMode.IN_OUT) {
-                Object v = args.get(k).getValue();
+        String sql = sourceSql;
+        for (String key : args.keySet()) {
+            if (key.startsWith("${") && key.endsWith("}")) {
+                String v = " " + args.get(key).toString() + " ";
+                sql = sql.replace(key, v);
+            } else {
+                Object v = args.get(key);
                 if (v instanceof Wrap) {
                     Wrap wrapV = (Wrap) v;
-                    sourceSqlRef.set(sourceSqlRef.get().replace(":" + k, wrapV.getStart() + " :" + k + wrapV.getEnd()));
+                    sql = sql.replace(":" + key, wrapV.getStart() + " :" + key + wrapV.getEnd());
                 }
             }
-        });
-        return sourceSqlRef.get();
+        }
+        return sql;
     }
 
     /**
@@ -167,22 +163,17 @@ public class SqlUtil {
      * e.g. data.sql.template
      *
      * @param sql       sql
-     * @param paramsMap 参数字典
+     * @param argsMap 参数字典
      * @return 解析后的sql
      * @see CExpression
      */
-    public static String dynamicSql(final String sql, Map<String, Param> paramsMap) {
+    public static String dynamicSql(final String sql, Map<String, Object> argsMap) {
+        if (argsMap == null || argsMap.isEmpty()) {
+            return sql;
+        }
         if (!sql.contains("--#if") || !sql.contains("--#fi")) {
             return sql;
         }
-        if (paramsMap == null || paramsMap.size() == 0) {
-            return sql;
-        }
-        Map<String, Object> params = paramsMap.keySet().stream()
-                .filter(k -> paramsMap.get(k).getParamMode() == ParamMode.IN)
-                .collect(HashMap::new,
-                        (current, k) -> current.put(k, SqlUtil.unwrapValue(paramsMap.get(k).getValue())),
-                        HashMap::putAll);
         String[] lines = sql.split("\n");
         StringBuilder sb = new StringBuilder();
         boolean skip = true;
@@ -192,7 +183,7 @@ public class SqlUtil {
             if (trimLine.startsWith("--#if") && !start) {
                 String filter = trimLine.substring(5);
                 CExpression expression = CExpression.of(filter);
-                skip = expression.getResult(params);
+                skip = expression.getResult(argsMap);
                 start = true;
                 continue;
             }

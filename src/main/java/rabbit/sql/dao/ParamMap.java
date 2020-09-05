@@ -5,7 +5,6 @@ import rabbit.sql.types.Param;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
 
 /**

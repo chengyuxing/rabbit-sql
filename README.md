@@ -12,11 +12,50 @@
 - sql文件名格式为``/*[name]*/``，sql文件中可以嵌套sql片段，使用`${片段名}`指定
 - sql片段名格式化``/*{name}*/``，sql片段中可以嵌套sql片段，使用`${片段名}`指定
 - sql文件将优先寻找sql文件内的sql片段
+## 动态SQL
+
+- 结构类似于Mybatis的if标签，--#if和--#fi必须成对出现
+
+- 支持的运算符：
+
+  | 运算符 | 说明           |
+  | ------ | -------------- |
+  | <      | 大于           |
+  | >      | 小于           |
+  | >=     | 大于等于       |
+  | <=     | 小于等于       |
+  | ==     | 等于，同 =     |
+  | !=     | 不等于，同 <>  |
+  | ~      | 正则表查找包含 |
+  | !~     | 正则查找不包含 |
+  | @      | 正则匹配       |
+  | !@     | 正则不匹配     |
+
+- 内置常量：`null` , `blank`(null或空白字符) , `true` , `false`
+
+### 例子
+
+```sql
+select *
+from test.student t
+WHERE
+--#if :age !=null
+t.age > 21
+--#fi
+--#if :name != null
+and t.name ~ :name
+--#fi
+--#if :age <> blank && :age < 90
+and age < 90
+--#fi
+;
+```
+
 ## 对 *IntelliJ IDEA* 的友好支持
 - 配置了数据源的情况下，可以直接选中需要执行的sql右键，点击`Execute`执行sql，参数占位符(`:name`)和sql片段占位符(`${part}`)都会弹出输入框方便填写，直接进行测试sql
 ![](img/p.jpg)
 ![](img/p2.png)
-## Excaple
+## Example
 
 ### 初始化
 
@@ -32,7 +71,7 @@ LightDao light = new LightDao(dataSource);
 light.setSqlFileManager(manager);
 ```
 
-### query
+### 查询
 
 ```java
 try (Stream<DataRow> fruits = orclLight.query("select * from fruit")) {
@@ -40,15 +79,20 @@ try (Stream<DataRow> fruits = orclLight.query("select * from fruit")) {
         }
 ```
 
-### call Function
+### 分页查询
+```java
+PagedResource<DataRow> res = light.<DataRow>query("&pgsql.data.select_user", 1, 10)
+                .params(ParamMap.create().putIn("id", 35))
+                .collect(d -> d);
+```
+
+### 存储过程
 
 ```java
 List<DataRow> rows = Tx.using(() -> {
   DataRow row = light.function("call test.fun_query(:c::refcursor)",
-                           Params.builder()
-                           .put("c", Param.IN_OUT("result", OUTParamType.REF_CURSOR))
-                           .build());
-  System.out.println(row);
+                           ParamMap.create()
+                           .put("c", Param.IN_OUT("result", OUTParamType.REF_CURSOR)));
   return row.get(0);
 });
 rows.forEach(System.out::println);

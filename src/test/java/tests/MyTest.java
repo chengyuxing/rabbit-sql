@@ -64,7 +64,7 @@ public class MyTest {
 
     @Test
     public void dynamicSqlTest() throws Exception {
-        try (Stream<DataRow> s = light.query("&data.logical", Args.create()
+        try (Stream<DataRow> s = light.query("&pgsql.data.logical", Args.create()
                 .set("age", 91)
                 .set("name", "小"))) {
             s.forEach(System.out::println);

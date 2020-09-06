@@ -204,7 +204,7 @@ public class SqlUtil {
             dSql = dSql.substring(0, m.start()).concat(dSql.substring(m.start() + 1));
         }
         // where and statement
-        p = Pattern.compile("where\\s*and", Pattern.CASE_INSENSITIVE);
+        p = Pattern.compile("where\\s*(and|or)", Pattern.CASE_INSENSITIVE);
         m = p.matcher(dSql);
         if (m.find()) {
             return dSql.substring(0, m.start() + 5).concat(dSql.substring(m.end()));

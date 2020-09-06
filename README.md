@@ -1,5 +1,16 @@
 # rabbit-sql 使用说明
+
 - 对JDBC的一个薄封装工具类，提供基本的增删改查操作。
+
+- maven dependency (jdk1.8)
+
+  ```xml
+  <dependency>
+      <groupId>com.github.chengyuxing</groupId>
+      <artifactId>rabbit-sql</artifactId>
+      <version>4.1.0</version>
+  </dependency>
+  ```
 ## 参数占位符说明
 - `:name` (jdbc标准的传名参数写法，参数将被预编译安全处理)
 - `${part}` (通用的字符串模版占位符，不进行预编译，用于动态sql的拼接)

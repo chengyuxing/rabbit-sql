@@ -2,6 +2,10 @@
 
 - 对JDBC的一个薄封装工具类，提供基本的增删改查操作。
 
+- 此库以追求简单稳定高效为目标，做到几乎不使用反射，不支持查询结果实体映射，返回对象类型统一为[`DataRow`](https://github.com/chengyuxing/rabbit-common/blob/master/src/main/java/rabbit/common/types/DataRow.java)，若需要实体映射，可自行轻松通过[`DataRow`](https://github.com/chengyuxing/rabbit-common/blob/master/src/main/java/rabbit/common/types/DataRow.java)来实现。
+
+- 此库核心非ORM，而是最大限度的接近以原生JDBC的性能执行sql，高度自由化的定制优化sql，调试sql一气呵成。
+
 - maven dependency (jdk1.8)
 
   ```xml

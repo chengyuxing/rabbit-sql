@@ -164,10 +164,12 @@ public class MyTest {
 
     @Test
     public void testCall() throws Exception {
-        List<DataRow> rows = Tx.using(() -> light.function("call test.fun_query(:c::refcursor)",
-                Args.create("c", Param.IN_OUT("result", OUTParamType.REF_CURSOR)))
-                .get(0));
-        rows.forEach(System.out::println);
+        Tx.using(() -> light.function("call test.fun_query(:c::refcursor)",
+                Args.of("c", Param.IN_OUT("result", OUTParamType.REF_CURSOR)))
+                .<List<DataRow>>get(0)
+                .stream()
+                .map(DataRow::toMap)
+                .forEach(System.out::println));
     }
 
     @Test
@@ -181,7 +183,7 @@ public class MyTest {
     public void multi_res_function() throws Exception {
         Tx.using(() -> {
             DataRow row = light.function("call test.multi_res(12, :success, :res, :msg)",
-                    Args.create("success", Param.OUT(OUTParamType.BOOLEAN))
+                    Args.of("success", Param.OUT(OUTParamType.BOOLEAN))
                             .set("res", Param.OUT(OUTParamType.REF_CURSOR))
                             .set("msg", Param.OUT(OUTParamType.VARCHAR))
             );
@@ -192,7 +194,7 @@ public class MyTest {
     @Test
     public void callTest() throws Exception {
         DataRow row = light.function("call test.now3(101,55,:r,:n)",
-                Args.create("r", Param.OUT(OUTParamType.TIMESTAMP))
+                Args.of("r", Param.OUT(OUTParamType.TIMESTAMP))
                         .set("n", Param.OUT(OUTParamType.INTEGER)));
         Timestamp dt = row.get("r");
         System.out.println(dt.toLocalDateTime());

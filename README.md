@@ -104,11 +104,11 @@ PagedResource<DataRow> res = light.<DataRow>query("&pgsql.data.select_user", 1, 
 ### 存储过程
 
 ```java
-List<DataRow> rows = Tx.using(() -> {
-  DataRow row = light.function("call test.fun_query(:c::refcursor)",
-                           Args.create("c", Param.IN_OUT("result", OUTParamType.REF_CURSOR)));
-  return row.get(0);
-});
-rows.forEach(System.out::println);
+Tx.using(() -> light.function("call test.fun_query(:c::refcursor)",
+                Args.of("c", Param.IN_OUT("result", OUTParamType.REF_CURSOR)))
+                .<List<DataRow>>get(0)
+                .stream()
+                .map(DataRow::toMap)
+                .forEach(System.out::println));
 ```
 

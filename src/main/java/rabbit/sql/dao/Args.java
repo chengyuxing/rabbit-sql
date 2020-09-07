@@ -26,7 +26,7 @@ public class Args<V> extends HashMap<String, V> {
      * @param <V>   值类型参数
      * @return 有初始值的参数集合
      */
-    public static <V> Args<V> create(String key, V value) {
+    public static <V> Args<V> of(String key, V value) {
         Args<V> args = new Args<>();
         args.set(key, value);
         return args;

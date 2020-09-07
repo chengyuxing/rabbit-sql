@@ -136,7 +136,8 @@ public class Tests {
 
     @Test
     public void generateSql() throws Exception {
-        Args<Object> paramMap = Args.create("a", null)
+        Args<Object> paramMap = Args.create()
+                .set("a", null)
                 .set("b", "v")
                 .set("c", "")
                 .set("d", null)
@@ -194,12 +195,12 @@ public class Tests {
     }
 
     @Test
-    public void trimEnds() throws Exception{
+    public void trimEnds() throws Exception {
         System.out.println(SqlUtil.trimEnd("where id = 10\r\n;  ;;;\t\r\n"));
     }
 
     @Test
-    public void sql() throws Exception{
+    public void sql() throws Exception {
         String sql = "with recursive cte(id, name, pid) as (\n" +
                 "    select id, name, pid\n" +
                 "    from test.region\n" +

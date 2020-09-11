@@ -8,8 +8,13 @@ import rabbit.sql.utils.SqlUtil;
 public class SqlFileTest {
 
     @Test
+    public void trimTest() throws Exception{
+        System.out.println("  data.sql\n\t    \n".trim());
+    }
+
+    @Test
     public void sqlTest() throws Exception {
-        SQLFileManager sqlFileManager = new SQLFileManager("pgsql/data.sql", "pgsql/other.sql");
+        SQLFileManager sqlFileManager = new SQLFileManager("pgsql/data.sql");
         sqlFileManager.init();
         sqlFileManager.look();
         System.out.println("------------");

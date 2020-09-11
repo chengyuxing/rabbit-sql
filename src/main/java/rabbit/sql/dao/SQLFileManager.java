@@ -36,14 +36,10 @@ public final class SQLFileManager {
      * Sql文件解析器实例<br>
      * 文件名必须从classpath目录开始到文件名(包含后缀.sql)
      *
-     * @param path  文件名
      * @param paths 多个文件名
      */
-    public SQLFileManager(String path, String... paths) {
-        String[] pathArr = new String[1 + paths.length];
-        pathArr[0] = path;
-        System.arraycopy(paths, 0, pathArr, 1, paths.length);
-        this.paths = pathArr;
+    public SQLFileManager(String paths) {
+        this.paths = paths.split(",");
     }
 
     /**
@@ -143,7 +139,7 @@ public final class SQLFileManager {
         try {
             if (!LAST_MODIFIED.isEmpty()) {
                 for (String path : paths) {
-                    ClassPathResource cr = ClassPathResource.of(path);
+                    ClassPathResource cr = ClassPathResource.of(path.trim());
                     if (cr.exists()) {
                         String suffix = cr.getFilenameExtension();
                         if (suffix != null && suffix.equals("sql")) {
@@ -175,7 +171,7 @@ public final class SQLFileManager {
      */
     public void init() throws IOException, URISyntaxException {
         for (String path : paths) {
-            ClassPathResource cr = ClassPathResource.of(path);
+            ClassPathResource cr = ClassPathResource.of(path.trim());
             if (cr.exists()) {
                 String suffix = cr.getFilenameExtension();
                 if (suffix != null && suffix.equals("sql")) {

@@ -34,7 +34,7 @@ public final class SQLFileManager {
 
     /**
      * Sql文件解析器实例<br>
-     * 文件名必须从classpath目录开始到文件名(包含后缀.sql)
+     * 文件名必须从classpath目录开始到文件名(包含后缀.sql)，多个sql文件以逗号(,)分割
      *
      * @param paths 多个文件名
      */

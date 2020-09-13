@@ -14,7 +14,7 @@ public class SqlFileTest {
 
     @Test
     public void sqlTest() throws Exception {
-        SQLFileManager sqlFileManager = new SQLFileManager("pgsql/data.sql");
+        SQLFileManager sqlFileManager = new SQLFileManager("pgsql/data.sql","psql/other.sql");
         sqlFileManager.init();
         sqlFileManager.look();
         System.out.println("------------");

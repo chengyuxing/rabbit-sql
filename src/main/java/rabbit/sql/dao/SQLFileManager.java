@@ -43,6 +43,19 @@ public final class SQLFileManager {
     }
 
     /**
+     * Sql文件解析器实例，文件名必须从classpath目录开始到文件名(包含后缀.sql)
+     *
+     * @param path  sql文件名
+     * @param paths 更多sql文件名
+     */
+    public SQLFileManager(String path, String... paths) {
+        String[] pathArr = new String[1 + paths.length];
+        pathArr[0] = path;
+        System.arraycopy(paths, 0, pathArr, 1, paths.length);
+        this.paths = pathArr;
+    }
+
+    /**
      * 解析sql文件
      *
      * @param resource 类路径sql资源

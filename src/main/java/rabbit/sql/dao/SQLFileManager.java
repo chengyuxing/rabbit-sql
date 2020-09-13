@@ -6,6 +6,7 @@ import rabbit.common.io.ClassPathResource;
 import rabbit.common.utils.ResourceUtil;
 
 import java.io.BufferedReader;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URISyntaxException;
@@ -89,11 +90,25 @@ public final class SQLFileManager {
                                 // 没有找到块注释结束 则标记下面的代码都是注释
                                 if (!trimLine.endsWith("*/")) {
                                     isAnnotation = true;
+                                    // 如果注释结束在单行sql中间，截取注释后的sql，并标记注释结束
+                                    if (trimLine.contains("*/")) {
+                                        String partOfLine = singleResource.get(previousSqlName) + line.substring(line.indexOf("*/") + 2);
+                                        singleResource.put(previousSqlName, partOfLine.concat("\n"));
+                                        isAnnotation = false;
+                                    }
                                 }
-                                // 直到找到块注释结束符号，标记注释结束
-                            } else if (trimLine.endsWith("*/")) {
-                                isAnnotation = false;
-                            } else if (!isAnnotation && !previousSqlName.equals("")) {
+                                // 如果是在注释块内
+                            } else if (isAnnotation) {
+                                // 如果注释此行结尾是注释，则标记为注释结束
+                                if (trimLine.endsWith("*/")) {
+                                    isAnnotation = false;
+                                    // 如果注释结束在此行的中间，截取注释后的sql，并标记注释结束
+                                } else if (trimLine.contains("*/")) {
+                                    String partOfLine = singleResource.get(previousSqlName) + line.substring(line.indexOf("*/") + 2);
+                                    singleResource.put(previousSqlName, partOfLine.concat("\n"));
+                                    isAnnotation = false;
+                                }
+                            } else if (!previousSqlName.equals("")) {
                                 String prepareLine = singleResource.get(previousSqlName) + line;
                                 if (trimLine.endsWith(";")) {
                                     singleResource.put(previousSqlName, prepareLine.substring(0, prepareLine.lastIndexOf(";")));
@@ -168,6 +183,8 @@ public final class SQLFileManager {
                                 }
                             }
                         }
+                    } else {
+                        throw new FileNotFoundException("sql file '" + path + "' not found!");
                     }
                 }
             }
@@ -191,6 +208,8 @@ public final class SQLFileManager {
                     resolveSqlContent(cr);
                     LAST_MODIFIED.put(cr.getFileName(), cr.getLastModified());
                 }
+            } else {
+                throw new FileNotFoundException("sql file '" + path + "' not found!");
             }
         }
     }

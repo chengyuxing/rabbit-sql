@@ -2,7 +2,7 @@
 
 - 对JDBC的一个薄封装工具类，提供基本的增删改查操作。
 
-- 在最久远的版本中实际上做过实体解析映射sql，实现过jpa的一部分，至于后来为什么移除了，其中一个原因是实体如果用不好，修改表结构很麻烦，有风险，再者，对于关系数据库，实体映射生成的sql几乎都是简单的标准sql，这并不能作为跨数据库的亮点，该手写的还是得手写，干脆不以最简单为目标，其他交给大家去扩展好了。
+- 在最久远的版本中实际上做过实体解析映射sql，实现过jpa的一部分，至于后来为什么移除了，其中一个原因是实体如果用不好，修改表结构很麻烦，有风险，再者，对于关系数据库，实体映射生成的sql几乎都是简单的标准sql，这并不能作为跨数据库的亮点，该手写的还是得手写，干脆以最简单为目标，其他交给大家去扩展好了。
 
 - 此库以追求简单稳定高效为目标，做到几乎不使用反射，不支持查询结果实体映射，返回对象类型统一为[`DataRow`](https://github.com/chengyuxing/rabbit-common/blob/master/src/main/java/rabbit/common/types/DataRow.java)，若需要实体映射，可自行轻松通过[`DataRow`](https://github.com/chengyuxing/rabbit-common/blob/master/src/main/java/rabbit/common/types/DataRow.java)来实现。
 

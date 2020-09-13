@@ -29,8 +29,8 @@ public final class SQLFileManager {
     private final String[] paths;
     private boolean checkModified;
 
-    private static final Pattern NAME_PATTERN = Pattern.compile("/\\* *\\[ *(?<name>[\\w\\d.():$\\-+=?@!#%~|]+) *] *\\*/");
-    private static final Pattern PART_PATTERN = Pattern.compile("/\\* *\\{ *(?<part>[\\w\\d.():$\\-+=?@!#%~|]+) *} *\\*/");
+    private static final Pattern NAME_PATTERN = Pattern.compile("/\\*\\s*\\[\\s*(?<name>\\S+) *]\\s*\\*/");
+    private static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+) *}\\s*\\*/");
 
     /**
      * Sql文件解析器实例<br>

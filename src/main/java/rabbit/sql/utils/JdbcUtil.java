@@ -242,7 +242,7 @@ public class JdbcUtil {
      * @return 以流包装的结果集
      * @throws SQLException ex
      */
-    public static List<DataRow> resolveResultSet(final ResultSet resultSet, final long fetchSize) throws SQLException {
+    public static List<DataRow> createDataRows(final ResultSet resultSet, final long fetchSize) throws SQLException {
         List<DataRow> list = new ArrayList<>();
         String[] names = null;
         long size = fetchSize;

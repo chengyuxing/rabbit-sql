@@ -55,6 +55,20 @@ public class MyTest {
     }
 
     @Test
+    public void executeAny() throws Exception {
+        DataRow row = light.execute("(select current_date, current_time)");
+        System.out.println(row);
+        row.<List<DataRow>>get(0)
+                .forEach(System.out::println);
+
+//        DataRow row1 = light.execute("insert into test.tb(a,b) values (:a,:b)", Args.<Object>of("a", 5).set("b", 5));
+//        System.out.println(row1);
+//
+//        DataRow row2 = light.execute("create index idx_a on test.tb(a)");
+//        System.out.println(row2);
+    }
+
+    @Test
     public void pagerTest() throws Exception {
         PagedResource<DataRow> res = light.<DataRow>query("&pgsql.data.select_user", 1, 10)
                 .args(Args.create().set("id", 35))

@@ -78,13 +78,13 @@ public class LightDao extends JdbcSupport implements Light {
     }
 
     @Override
-    public long execute(String sql) {
-        return executeNonQuery(sql, Collections.emptyList());
+    public DataRow execute(String sql) {
+        return executeAny(sql, Collections.emptyMap());
     }
 
     @Override
-    public long execute(String sql, Map<String, Object> args) {
-        return executeNonQuery(sql, Collections.singletonList(args));
+    public DataRow execute(String sql, Map<String, Object> args) {
+        return executeAny(sql, args);
     }
 
     @Override
@@ -104,7 +104,7 @@ public class LightDao extends JdbcSupport implements Light {
 
     @Override
     public int insert(String tableName, DataRow row, Ignore ignore) {
-        return executeNonQueryOfDataRow(SqlUtil.generateInsert(tableName, row.toMap(), ignore), Collections.singletonList(row));
+        return insert(tableName, row.toMap(), ignore);
     }
 
     @Override

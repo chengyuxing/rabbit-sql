@@ -24,7 +24,7 @@ public interface Light {
      * @param sql 原始sql
      * @return 如果执行成功，DML语句返回1，DDL语句返回0
      */
-    long execute(String sql);
+    DataRow execute(String sql);
 
     /**
      * 执行一条原始sql
@@ -33,7 +33,7 @@ public interface Light {
      * @param args 参数
      * @return 如果执行成功，DML语句返回1，DDL语句返回0
      */
-    long execute(String sql, Map<String, Object> args);
+    DataRow execute(String sql, Map<String, Object> args);
 
     /**
      * 插入

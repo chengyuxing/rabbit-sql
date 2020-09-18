@@ -63,11 +63,23 @@ public abstract class JdbcSupport {
     /**
      * 提供一个抽象方法供实现类对单前要执行的sql做一些准备操作
      *
-     * @param sql    sql
+     * @param sql  sql
      * @param args 参数
      * @return 处理后的sql
      */
     protected abstract String prepareSql(String sql, Map<String, Object> args);
+
+    /**
+     * 获取经过解析处理后的sql
+     *
+     * @param sql  sql
+     * @param args 参数
+     * @return 最终要执行的sql
+     */
+    private String getSourceSql(String sql, Map<String, Object> args) {
+        String preparedSql = prepareSql(sql, args);
+        return SqlUtil.resolveSqlPart(preparedSql, args);
+    }
 
     /**
      * 执行一句sql
@@ -95,6 +107,49 @@ public abstract class JdbcSupport {
     }
 
     /**
+     * 执行query语句，ddl或dml语句
+     *
+     * @param sql  sql
+     * @param args 参数
+     * @return 包含各种结果的行数据类型
+     */
+    public DataRow executeAny(final String sql, Map<String, Object> args) {
+        String sourceSql = sql;
+        boolean hasArgs = args != null && !args.isEmpty();
+        if (hasArgs) {
+            sourceSql = getSourceSql(sql, args);
+        }
+        log.debug("SQL:{}", sourceSql);
+        log.debug("Args:{}", args);
+
+        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSqlAndIndexedArgNames(sourceSql);
+        final List<String> argNames = preparedSqlAndArgNames.getItem2();
+        final String preparedSql = preparedSqlAndArgNames.getItem1();
+
+        return execute(preparedSql, sc -> {
+            if (hasArgs) {
+                JdbcUtil.setSqlArgs(sc, args, argNames);
+            }
+            boolean isQuery = sc.execute();
+            DataRow result;
+            if (isQuery) {
+                List<DataRow> rows = JdbcUtil.createDataRows(sc.getResultSet(), -1);
+                result = DataRow.of(new String[]{"result", "type"},
+                        new String[]{"java.util.ArrayList<DataRow>", "java.lang.String"},
+                        new Object[]{rows, "query"});
+            } else {
+                int count = sc.getUpdateCount();
+                if (count <= 0) {
+                    result = DataRow.fromList(Arrays.asList(0, "DDL statement"), "result", "type");
+                } else {
+                    result = DataRow.fromList(Arrays.asList(count, "DML statement"), "result", "type");
+                }
+            }
+            return result;
+        });
+    }
+
+    /**
      * 惰性执行一句查询，只有调用终端操作和短路操作才会真正开始执行<br>
      * 使用完请务必关闭流，否则将一直占用连接对象直到连接池耗尽<br>
      * 使用{@code try-with-resource}进行包裹：
@@ -112,8 +167,10 @@ public abstract class JdbcSupport {
     public Stream<DataRow> executeQueryStream(final String sql, Map<String, Object> args) throws SQLException {
         UncheckedCloseable close = null;
         try {
-            String sourceSql = prepareSql(sql, args);
-            sourceSql = SqlUtil.resolveSqlPart(sourceSql, args);
+            if (args == null) {
+                args = Collections.emptyMap();
+            }
+            String sourceSql = getSourceSql(sql, args);
             log.debug("SQL:{}", sourceSql);
             log.debug("Args:{}", args);
 
@@ -170,12 +227,13 @@ public abstract class JdbcSupport {
      * @param args 数据
      * @return 总的受影响的行数
      */
-    protected int executeNonQuery(final String sql, final Collection<Map<String, Object>> args) {
-        if (args == null || args.size() < 1) {
-            throw new NoSuchElementException("args is null or length less than 1.");
+    public int executeNonQuery(final String sql, final Collection<Map<String, Object>> args) {
+        String sourceSql = sql;
+        boolean hasArgs = args != null && !args.isEmpty();
+        if (hasArgs) {
+            Map<String, Object> firstArg = args.stream().findFirst().get();
+            sourceSql = getSourceSql(sql, firstArg);
         }
-        Map<String, Object> firstArg = args.stream().findFirst().get();
-        String sourceSql = SqlUtil.resolveSqlPart(prepareSql(sql, firstArg), firstArg);
         log.debug("SQL:{}", sourceSql);
         log.debug("Args:{}", args);
 
@@ -185,44 +243,13 @@ public abstract class JdbcSupport {
 
         return execute(preparedSql, sc -> {
             int i = 0;
-            for (Map<String, Object> arg : args) {
-                JdbcUtil.setSqlArgs(sc, arg, argNames);
-                i += sc.executeUpdate();
-            }
-            log.info("{} rows updated!", i);
-            return i;
-        });
-    }
-
-    /**
-     * 执行一句非查询语句(insert，update，delete)<br>
-     * e.g.
-     * <blockquote>
-     * <pre>insert into table (a,b,c) values (:v1,:v2,:v3)</pre>
-     * </blockquote>
-     *
-     * @param sql  sql
-     * @param args 一组参数
-     * @return 受影响的行数
-     */
-    protected int executeNonQueryOfDataRow(final String sql, final Collection<DataRow> args) {
-        if (args == null || args.size() < 1) {
-            throw new NoSuchElementException("args is null or length less than 1.");
-        }
-        Map<String, Object> firstArg = args.stream().map(DataRow::toMap).findFirst().get();
-        String sourceSql = SqlUtil.resolveSqlPart(prepareSql(sql, firstArg), firstArg);
-        log.debug("SQL:{}", sourceSql);
-        log.debug("Args:{}", args);
-
-        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSqlAndIndexedArgNames(sourceSql);
-        final List<String> argNames = preparedSqlAndArgNames.getItem2();
-        final String preparedSql = preparedSqlAndArgNames.getItem1();
-
-        return execute(preparedSql, sc -> {
-            int i = 0;
-            for (DataRow row : args) {
-                JdbcUtil.setSqlArgs(sc, row.toMap(), argNames);
-                i += sc.executeUpdate();
+            if (hasArgs) {
+                for (Map<String, Object> arg : args) {
+                    JdbcUtil.setSqlArgs(sc, arg, argNames);
+                    i += sc.executeUpdate();
+                }
+            } else {
+                i = sc.executeUpdate();
             }
             log.info("{} rows updated!", i);
             return i;
@@ -274,7 +301,7 @@ public abstract class JdbcSupport {
                         values[resultIndex] = null;
                         types[resultIndex] = null;
                     } else if (result instanceof ResultSet) {
-                        List<DataRow> rows = JdbcUtil.resolveResultSet((ResultSet) result, -1);
+                        List<DataRow> rows = JdbcUtil.createDataRows((ResultSet) result, -1);
                         values[resultIndex] = rows;
                         types[resultIndex] = "java.util.ArrayList<DataRow>";
                         log.info("boxing a result with type: cursor, convert to ArrayList<DataRow>, get result by name:{} or index:{}!", names[resultIndex], resultIndex);

@@ -11,8 +11,6 @@ import rabbit.common.tuple.Pair;
 import rabbit.common.types.DataRow;
 import rabbit.sql.dao.*;
 import rabbit.sql.page.PagedResource;
-import rabbit.sql.page.impl.OraclePageHelper;
-import rabbit.sql.page.impl.PGPageHelper;
 import rabbit.sql.support.ICondition;
 import rabbit.sql.transaction.Tx;
 import rabbit.sql.types.OUTParamType;
@@ -296,16 +294,14 @@ public class MyTest {
         System.out.println(conditions);
     }
 
-    @SuppressWarnings("unchecked")
     @Test
     public void FConditionTest() throws Exception {
-        FCondition<User> f = FCondition.<User>builder().where(FFilter.eq(User::getName, "cyx"))
-                .and(FFilter.eq(User::getPassword, "123456"), FFilter.eq(User::getName, "admin"))
-                .or(FFilter.like(User::getName, "%admin"))
-                .orderBy(User::getAge);
+        FCondition<User> f = FCondition.where(FFilter.eq(User::getName, "cyx"))
+                .and(FFilter.eq(User::getPassword, "123456"))
+                .or(FFilter.like(User::getName, "%admin"));
 
         System.out.println(f.getArgs());
-        System.out.println(f.toString());
+        System.out.println(f.getSql());
     }
 
     @Test

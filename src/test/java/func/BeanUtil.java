@@ -8,7 +8,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class BeanUtil {
-    private static Map<Class<?>, SerializedLambda> CLASS_LAMBDA = new ConcurrentHashMap<>();
+    private static final Map<Class<?>, SerializedLambda> CLASS_LAMBDA = new ConcurrentHashMap<>();
 
     public static <T> String convert2fieldName(FieldFunc<T> func) throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
         SerializedLambda lambda = getLambda(func);

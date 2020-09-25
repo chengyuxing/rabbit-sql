@@ -1,101 +1,168 @@
 package func;
 
-import rabbit.common.tuple.Triple;
+import rabbit.sql.dao.Wrap;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.concurrent.atomic.AtomicInteger;
-
-import static rabbit.sql.utils.SqlUtil.SEP;
 
 public class FFilter<T> {
-    static final AtomicInteger integer = new AtomicInteger();
-    private final Triple<String, String, Object> filter;
+    private final String operator;    // 操作符
+    private final FieldFunc<T> field;       // 字段名
+    private final Object value;       // 字段值
 
-    private static <T> String getField(String field) {
-        int idx = integer.getAndIncrement();
-        return String.format("%s%s%s", field, SEP, idx);
+    FFilter(FieldFunc<T> field, String operator, Object value) {
+        this.field = field;
+        this.operator = operator;
+        this.value = value;
     }
 
-    FFilter(Triple<String, String, Object> filter) {
-        this.filter = filter;
+    /**
+     * 定义一个过滤器
+     *
+     * @param field    字段名
+     * @param operator 操作符
+     * @param value    字段值
+     * @return 过滤器
+     */
+    public static <T> FFilter<T> of(FieldFunc<T> field, String operator, Object value) {
+        return new FFilter<>(field, operator, value);
     }
 
-    public static <T> FFilter<T> eq(FieldFunc<T> fieldFunc, Object value) {
-        String field = getFieldName(fieldFunc);
-        String _field = getField(field);
-        return new FFilter<>(Triple.of(String.format(" %s = :%s", field, _field), _field, value));
+    /**
+     * 定义一个过滤器
+     *
+     * @param field    字段名
+     * @param operator 操作符
+     * @param value    包装类型的字段值
+     * @return 过滤器
+     */
+    public static <T> FFilter<T> ofWrap(FieldFunc<T> field, String operator, Wrap value) {
+        return of(field, operator, value);
     }
 
-    public static <T> FFilter<T> neq(FieldFunc<T> fieldFunc, Object value) {
-        String field = getFieldName(fieldFunc);
-        String _field = getField(field);
-        return new FFilter<>(Triple.of(String.format(" %s != :%s", field, _field), _field, value));
+    /**
+     * 等于
+     *
+     * @param field 字段名
+     * @param value 字段值
+     * @return 过滤器
+     */
+    public static <T> FFilter<T> eq(FieldFunc<T> field, Object value) {
+        return of(field, " = ", value);
     }
 
-    public static <T> FFilter<T> gt(FieldFunc<T> fieldFunc, Object value) {
-        String field = getFieldName(fieldFunc);
-        String _field = getField(field);
-        return new FFilter<>(Triple.of(String.format(" %s > :%s", field, _field), _field, value));
+    /**
+     * 不等于
+     *
+     * @param field 字段名
+     * @param value 字段值
+     * @return 过滤器
+     */
+    public static <T> FFilter<T> neq(FieldFunc<T> field, Object value) {
+        return of(field, " != ", value);
     }
 
-    public static <T> FFilter<T> lt(FieldFunc<T> fieldFunc, Object value) {
-        String field = getFieldName(fieldFunc);
-        String _field = getField(field);
-        return new FFilter<>(Triple.of(String.format(" %s < :%s", field, _field), _field, value));
+    /**
+     * 大于
+     *
+     * @param field 字段名
+     * @param value 字段值
+     * @return 过滤器
+     */
+    public static <T> FFilter<T> gt(FieldFunc<T> field, Object value) {
+        return of(field, " > ", value);
     }
 
-    public static <T> FFilter<T> gtEq(FieldFunc<T> fieldFunc, Object value) {
-        String field = getFieldName(fieldFunc);
-        String _field = getField(field);
-        return new FFilter<>(Triple.of(String.format(" %s >= :%s", field, _field), _field, value));
+    /**
+     * 小于
+     *
+     * @param field 字段名
+     * @param value 字段值
+     * @return 过滤器
+     */
+    public static <T> FFilter<T> lt(FieldFunc<T> field, Object value) {
+        return of(field, " < ", value);
     }
 
-    public static <T> FFilter<T> ltEq(FieldFunc<T> fieldFunc, Object value) {
-        String field = getFieldName(fieldFunc);
-        String _field = getField(field);
-        return new FFilter<>(Triple.of(String.format(" %s <= :%s", field, _field), _field, value));
+    /**
+     * 大于等于
+     *
+     * @param field 字段名
+     * @param value 字段值
+     * @return 过滤器
+     */
+    public static <T> FFilter<T> gtEq(FieldFunc<T> field, Object value) {
+        return of(field, " >= ", value);
     }
 
-    public static <T> FFilter<T> like(FieldFunc<T> fieldFunc, Object value) {
-        String field = getFieldName(fieldFunc);
-        String _field = getField(field);
-        return new FFilter<>(Triple.of(String.format(" %s like :%s", field, _field), _field, value));
+    /**
+     * 小于等于
+     *
+     * @param field 字段名
+     * @param value 字段值
+     * @return 过滤器
+     */
+    public static <T> FFilter<T> ltEq(FieldFunc<T> field, Object value) {
+        return of(field, " <= ", value);
     }
 
-    public static <T> FFilter<T> notLike(FieldFunc<T> fieldFunc, Object value) {
-        String field = getFieldName(fieldFunc);
-        String _field = getField(field);
-        return new FFilter<>(Triple.of(String.format(" %s not like :%s", _field, _field), field, value));
+    /**
+     * 模糊匹配
+     *
+     * @param field 字段名
+     * @param value 字段值
+     * @return 过滤器
+     */
+    public static <T> FFilter<T> like(FieldFunc<T> field, Object value) {
+        return of(field, " like ", value);
     }
 
-    public static <T> FFilter<T> isNotNull(FieldFunc<T> fieldFunc) {
-        String field = getFieldName(fieldFunc);
-        return new FFilter<>(Triple.of(String.format(" %s is not null", field), field, null));
+    /**
+     * 模糊匹配前面
+     *
+     * @param field 字段名
+     * @param value 字段值
+     * @return 过滤器
+     */
+    public static <T> FFilter<T> startsWith(FieldFunc<T> field, Object value) {
+        return like(field, value + "%");
     }
 
-    public static <T> FFilter<T> isNull(FieldFunc<T> fieldFunc) {
-        String field = getFieldName(fieldFunc);
-        return new FFilter<>(Triple.of(String.format(" %s is null", field), field, null));
+    /**
+     * 模糊匹配后面
+     *
+     * @param field 字段名
+     * @param value 字段值
+     * @return 过滤器
+     */
+    public static <T> FFilter<T> endsWith(FieldFunc<T> field, Object value) {
+        return like(field, "%" + value);
     }
 
-    public String getSql() {
-        return filter.getItem1();
+    /**
+     * 模糊不匹配
+     *
+     * @param field 字段名
+     * @param value 字段值
+     * @return 过滤器
+     */
+    public static <T> FFilter<T> notLike(FieldFunc<T> field, Object value) {
+        return of(field, " not like ", value);
     }
 
-    public Object value() {
-        return filter.getItem3();
-    }
-
-    public String field() {
-        return filter.getItem2();
-    }
-
-    private static <T> String getFieldName(FieldFunc<T> fieldFunc) {
+    public String getField() {
         try {
-            return BeanUtil.convert2fieldName(fieldFunc);
+            return BeanUtil.convert2fieldName(field);
         } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
             e.printStackTrace();
             return "";
         }
+    }
+
+    public String getOperator() {
+        return operator;
+    }
+
+    public Object getValue() {
+        return value;
     }
 }

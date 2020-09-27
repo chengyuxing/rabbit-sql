@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
-import static rabbit.common.types.CExpression.boolCalc;
 
 public class ControlTest {
 
@@ -44,7 +43,7 @@ public class ControlTest {
             if (trimLine.startsWith("--#if")) {
                 String filter = trimLine.substring(6);
                 CExpression expression = CExpression.of(filter);
-                skip = expression.getResult(args);
+                skip = expression.calc(args);
                 continue;
             }
             if (trimLine.startsWith("--#fi")) {
@@ -84,7 +83,7 @@ public class ControlTest {
 
         CExpression expression = CExpression.of(":enable = true && :name = blank && :age<=21");
 
-        System.out.println(expression.getResult(args));
+        System.out.println(expression.calc(args));
 
     }
 
@@ -96,30 +95,14 @@ public class ControlTest {
 
         System.out.println(args.get("a"));
 
-        CExpression expression = CExpression.of(":enable = true && :types @ \"\\w+\"");
+        CExpression expression = CExpression.of(":enable = false && :types @ \"\\w+\"");
 
-        System.out.println(expression.getResult(args));
+        System.out.println(expression.calc(args));
     }
 
     @Test
     public void number() throws Exception {
         Pattern p = Pattern.compile("-?([0-9]|(0\\.\\d+)|([1-9]+\\.?\\d+))");
         System.out.println("-99.0".matches(p.pattern()));
-    }
-
-    @Test
-    public void boolTest() {
-        List<Boolean> bools = new ArrayList<>();
-        bools.add(true);
-        bools.add(false);
-        bools.add(true);
-
-        List<String> ops = new ArrayList<>();
-        ops.add("&&");
-        ops.add("&&");
-
-        System.out.println(boolCalc(bools, ops));
-
-        System.out.println(true && false && true);
     }
 }

@@ -183,7 +183,7 @@ public class SqlUtil {
             if (trimLine.startsWith("--#if") && !start) {
                 String filter = trimLine.substring(5);
                 CExpression expression = CExpression.of(filter);
-                skip = expression.getResult(argsMap);
+                skip = expression.calc(argsMap);
                 start = true;
                 continue;
             }

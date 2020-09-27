@@ -124,6 +124,11 @@ public class MyTest {
 
     @Test
     public void pageTest() throws Exception {
+        light.query("select * from test.region")
+                .skip(5)
+                .limit(10)
+                .map(d -> d.getNullable(1).orElse(""))
+                .forEach(System.out::println);
     }
 
     @Test

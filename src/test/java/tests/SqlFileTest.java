@@ -1,20 +1,30 @@
 package tests;
 
 import org.junit.Test;
+import rabbit.common.tuple.Pair;
 import rabbit.sql.dao.Args;
 import rabbit.sql.dao.SQLFileManager;
 import rabbit.sql.utils.SqlUtil;
 
+import java.util.List;
+
 public class SqlFileTest {
 
     @Test
-    public void trimTest() throws Exception{
+    public void ref() throws Exception {
+        Pair<String, List<String>> pair = SqlUtil.getPreparedSql(":res = call getUser(:id, :name)");
+        System.out.println(pair.getItem1());
+        System.out.println(pair.getItem2());
+    }
+
+    @Test
+    public void trimTest() throws Exception {
         System.out.println("  data.sql\n\t    \n".trim());
     }
 
     @Test
     public void sqlTest() throws Exception {
-        SQLFileManager sqlFileManager = new SQLFileManager("pgsql/data.sql","pgsql/other.sql");
+        SQLFileManager sqlFileManager = new SQLFileManager("pgsql/data.sql", "pgsql/other.sql");
         sqlFileManager.init();
         sqlFileManager.look();
         System.out.println("------------");

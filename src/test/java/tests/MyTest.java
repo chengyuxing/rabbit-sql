@@ -24,7 +24,6 @@ import java.sql.*;
 import java.util.*;
 import java.util.stream.Stream;
 
-import static rabbit.sql.utils.SqlUtil.getPreparedSqlAndIndexedArgNames;
 
 public class MyTest {
 
@@ -190,11 +189,14 @@ public class MyTest {
     }
 
     @Test
-    public void Var() throws Exception {
-        Pair<String, List<String>> a = SqlUtil.getPreparedSqlAndIndexedArgNames("call test.now3(:a,:b,:r,:n)");
-        System.out.println(a.getItem1());
-        System.out.println(a.getItem2());
+    public void testCall2() throws Exception{
+        light.function(":num = call test.get_grade(:id)",
+                Args.of("num", Param.OUT(OUTParamType.INTEGER))
+                        .set("id", Param.IN(5)))
+        .getNullable("num")
+        .ifPresent(System.out::println);
     }
+
 
     @Test
     public void multi_res_function() throws Exception {
@@ -274,11 +276,6 @@ public class MyTest {
                 Args.create().set("name", Param.IN("SQLFileManager")),
                 Condition.where(Filter.eq("id", 5)));
         System.out.println(i);
-    }
-
-    @Test
-    public void placeholder() {
-        System.out.println(getPreparedSqlAndIndexedArgNames("select * from test.user t where t.id = #{id} and t.name = #{name}"));
     }
 
     @Test

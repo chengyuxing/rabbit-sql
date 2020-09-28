@@ -122,7 +122,7 @@ public abstract class JdbcSupport {
         log.debug("SQL:{}", sourceSql);
         log.debug("Args:{}", args);
 
-        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSqlAndIndexedArgNames(sourceSql);
+        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSql(sourceSql);
         final List<String> argNames = preparedSqlAndArgNames.getItem2();
         final String preparedSql = preparedSqlAndArgNames.getItem1();
 
@@ -174,7 +174,7 @@ public abstract class JdbcSupport {
             log.debug("SQL:{}", sourceSql);
             log.debug("Args:{}", args);
 
-            Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSqlAndIndexedArgNames(sourceSql);
+            Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSql(sourceSql);
             final List<String> argNames = preparedSqlAndArgNames.getItem2();
             final String preparedSql = preparedSqlAndArgNames.getItem1();
 
@@ -237,7 +237,7 @@ public abstract class JdbcSupport {
         log.debug("SQL:{}", sourceSql);
         log.debug("Args:{}", args);
 
-        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSqlAndIndexedArgNames(sourceSql);
+        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSql(sourceSql);
         final List<String> argNames = preparedSqlAndArgNames.getItem2();
         final String preparedSql = preparedSqlAndArgNames.getItem1();
 
@@ -273,11 +273,17 @@ public abstract class JdbcSupport {
      * @return DataRow
      */
     public DataRow executeCall(final String procedure, Map<String, Param> args) {
-        String sourceSql = prepareSql(procedure, Collections.emptyMap());
+        String sourceSql = procedure;
+        boolean hasArgs = args != null && !args.isEmpty();
+        if (hasArgs) {
+            Map<String, Object> pArgs = new HashMap<>();
+            args.forEach((k, v) -> pArgs.put(k, v.getValue()));
+            sourceSql = getSourceSql(procedure, pArgs);
+        }
         log.debug("Procedure:{}", sourceSql);
         log.debug("Args:{}", args);
 
-        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSqlAndIndexedArgNames("{" + sourceSql + "}");
+        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSql("{" + sourceSql + "}");
         final String executeSql = preparedSqlAndArgNames.getItem1();
         final List<String> argNames = preparedSqlAndArgNames.getItem2();
 
@@ -287,33 +293,38 @@ public abstract class JdbcSupport {
             statement = connection.prepareCall(executeSql);
             JdbcUtil.setStoreArgs(statement, args, argNames);
             statement.execute();
-            String[] names = argNames.stream().filter(n -> {
-                ParamMode mode = args.get(n).getParamMode();
-                return mode == ParamMode.OUT || mode == ParamMode.IN_OUT;
-            }).toArray(String[]::new);
-            Object[] values = new Object[names.length];
-            String[] types = new String[names.length];
-            int resultIndex = 0;
-            for (int i = 0; i < argNames.size(); i++) {
-                if (args.get(argNames.get(i)).getParamMode() == ParamMode.OUT || args.get(argNames.get(i)).getParamMode() == ParamMode.IN_OUT) {
-                    Object result = statement.getObject(i + 1);
-                    if (null == result) {
-                        values[resultIndex] = null;
-                        types[resultIndex] = null;
-                    } else if (result instanceof ResultSet) {
-                        List<DataRow> rows = JdbcUtil.createDataRows((ResultSet) result, -1);
-                        values[resultIndex] = rows;
-                        types[resultIndex] = "java.util.ArrayList<DataRow>";
-                        log.info("boxing a result with type: cursor, convert to ArrayList<DataRow>, get result by name:{} or index:{}!", names[resultIndex], resultIndex);
-                    } else {
-                        values[resultIndex] = result;
-                        types[resultIndex] = result.getClass().getName();
-                        log.info("boxing a result with type:{}, get result by name:{} or index:{}!", types[resultIndex], names[resultIndex], resultIndex);
+            if (hasArgs) {
+                String[] names = argNames.stream().filter(n -> {
+                    ParamMode mode = args.get(n).getParamMode();
+                    return mode == ParamMode.OUT || mode == ParamMode.IN_OUT;
+                }).toArray(String[]::new);
+                if (names.length > 0) {
+                    Object[] values = new Object[names.length];
+                    String[] types = new String[names.length];
+                    int resultIndex = 0;
+                    for (int i = 0; i < argNames.size(); i++) {
+                        if (args.get(argNames.get(i)).getParamMode() == ParamMode.OUT || args.get(argNames.get(i)).getParamMode() == ParamMode.IN_OUT) {
+                            Object result = statement.getObject(i + 1);
+                            if (null == result) {
+                                values[resultIndex] = null;
+                                types[resultIndex] = null;
+                            } else if (result instanceof ResultSet) {
+                                List<DataRow> rows = JdbcUtil.createDataRows((ResultSet) result, -1);
+                                values[resultIndex] = rows;
+                                types[resultIndex] = "java.util.ArrayList<DataRow>";
+                                log.info("boxing a result with type: cursor, convert to ArrayList<DataRow>, get result by name:{} or index:{}!", names[resultIndex], resultIndex);
+                            } else {
+                                values[resultIndex] = result;
+                                types[resultIndex] = result.getClass().getName();
+                                log.info("boxing a result with type:{}, get result by name:{} or index:{}!", types[resultIndex], names[resultIndex], resultIndex);
+                            }
+                            resultIndex++;
+                        }
                     }
-                    resultIndex++;
+                    return DataRow.of(names, types, values);
                 }
             }
-            return DataRow.of(names, types, values);
+            return DataRow.empty();
         } catch (SQLException e) {
             JdbcUtil.closeStatement(statement);
             statement = null;

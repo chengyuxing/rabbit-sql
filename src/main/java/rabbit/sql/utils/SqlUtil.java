@@ -71,12 +71,12 @@ public class SqlUtil {
     }
 
     /**
-     * 解析获取预编译的SQL和按顺序的参数占位符名字
+     * 获取处理参数占位符预编译的SQL
      *
      * @param sql 带参数占位符的SQL
      * @return 预编译SQL和参数名的集合
      */
-    public static Pair<String, List<String>> getPreparedSqlAndIndexedArgNames(final String sql) {
+    public static Pair<String, List<String>> getPreparedSql(final String sql) {
         // 首先处理一下sql，先暂时将sql中的单引号内子字符串去除
         String _sql = sql;
         List<String> strChildren = new ArrayList<>();
@@ -162,7 +162,7 @@ public class SqlUtil {
      * 根据解析条件表达式的结果动态生成sql<br>
      * e.g. data.sql.template
      *
-     * @param sql       sql
+     * @param sql     sql
      * @param argsMap 参数字典
      * @return 解析后的sql
      * @see CExpression

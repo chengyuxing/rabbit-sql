@@ -127,7 +127,7 @@ public class MyTest {
         light.query("select * from test.region")
                 .skip(5)
                 .limit(10)
-                .map(d -> d.getNullable(1).orElse(""))
+                .map(r->String.join("<>",r.getNames()))
                 .forEach(System.out::println);
     }
 

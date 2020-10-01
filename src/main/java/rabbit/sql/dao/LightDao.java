@@ -123,8 +123,9 @@ public class LightDao extends JdbcSupport implements Light {
 
     @Override
     public int update(String tableName, Map<String, Object> data, ICondition ICondition) {
+        String update = SqlUtil.generateUpdate(tableName, data);
         data.putAll(ICondition.getArgs());
-        return executeNonQuery(SqlUtil.generateUpdate(tableName, data) + ICondition.getSql(), Collections.singletonList(data));
+        return executeNonQuery(update + ICondition.getSql(), Collections.singletonList(data));
     }
 
     @Override

@@ -74,7 +74,10 @@ public class Condition implements ICondition {
     private Condition concatFilterBy(String s, IFilter filter) {
         if (filter.getValue() != IFilter.IGNORE_VALUE) {
             Pair<String, String> sf = getSpecialField(filter.getField(), filter.getValue());
-            conditions.append(s).append(filter.getField()).append(filter.getOperator()).append(sf.getItem2()).append(" ");
+            conditions.append(s)
+                    .append(filter.getField())
+                    .append(filter.getOperator())
+                    .append(sf.getItem2()).append(" ");
             args.put(sf.getItem1(), unwrapValue(filter.getValue()));
         } else {
             conditions.append(s).append(filter.getField()).append(filter.getOperator());

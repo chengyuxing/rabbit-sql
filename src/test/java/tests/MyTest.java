@@ -7,7 +7,6 @@ import func.FCondition;
 import func.FFilter;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import rabbit.common.tuple.Pair;
 import rabbit.common.types.DataRow;
 import rabbit.sql.dao.*;
 import rabbit.sql.page.PagedResource;
@@ -16,11 +15,12 @@ import rabbit.sql.transaction.Tx;
 import rabbit.sql.types.OUTParamType;
 import rabbit.sql.types.Param;
 import rabbit.sql.utils.JdbcUtil;
-import rabbit.sql.utils.SqlUtil;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -39,7 +39,6 @@ public class MyTest {
         dataSource = new HikariDataSource();
         dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
         dataSource.setUsername("chengyuxing");
-        dataSource.setDriverClassName("org.postgresql.Driver");
 
         SQLFileManager manager = new SQLFileManager("pgsql/data.sql");
 

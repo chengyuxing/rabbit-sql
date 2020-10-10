@@ -18,14 +18,13 @@ where id = 5;
 /*ddddddd
 cmd
 ddddddd*/
-/*[getAllFile]*/
-/*asdfghjllk*/
+/*[asdfghjllk]*/
 select * from test.files;
 
-/*{field}*/
+/*field*/
 a.id, a.name, a.date;
 
-/*[test.Annotation]*/
+/*test.Annotation*/
 select count(*),
        count(*) filter ( where grade > 90 )               greate,
        count(*) filter ( where grade < 90 and grade > 60) good,

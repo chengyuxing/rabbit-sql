@@ -112,6 +112,7 @@ public final class SQLFileManager {
                                 String prepareLine = singleResource.get(previousSqlName) + line;
                                 if (trimLine.endsWith(";")) {
                                     singleResource.put(previousSqlName, prepareLine.substring(0, prepareLine.lastIndexOf(";")));
+                                    previousSqlName = "";
                                     log.debug("scan to get SQL [{}]：{}", previousSqlName, singleResource.get(previousSqlName));
                                 } else {
                                     singleResource.put(previousSqlName, prepareLine.concat("\n"));

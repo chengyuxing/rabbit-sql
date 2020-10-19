@@ -176,10 +176,16 @@ public class SqlUtil {
         }
         String[] lines = sql.split("\n");
         StringBuilder sb = new StringBuilder();
+        String firstLine = "";
+        boolean first = true;
         boolean skip = true;
         boolean start = false;
         for (String line : lines) {
             String trimLine = line.trim();
+            if (first) {
+                firstLine = trimLine;
+                first = false;
+            }
             if (trimLine.startsWith("--#if") && !start) {
                 String filter = trimLine.substring(5);
                 CExpression expression = CExpression.of(filter);
@@ -197,18 +203,29 @@ public class SqlUtil {
             }
         }
         String dSql = sb.toString();
+        Pattern p;
+        Matcher m;
         // if update statement
-        Pattern p = Pattern.compile(",\\s*where", Pattern.CASE_INSENSITIVE);
-        Matcher m = p.matcher(dSql);
-        if (m.find()) {
-            dSql = dSql.substring(0, m.start()).concat(dSql.substring(m.start() + 1));
+        if (firstLine.startsWith("update")) {
+            p = Pattern.compile(",\\s*where", Pattern.CASE_INSENSITIVE);
+            m = p.matcher(dSql);
+            if (m.find()) {
+                dSql = dSql.substring(0, m.start()).concat(dSql.substring(m.start() + 1));
+            }
         }
-        // where and statement
-        p = Pattern.compile("where\\s*(and|or)", Pattern.CASE_INSENSITIVE);
+        // "where and" statement
+        p = Pattern.compile("where\\s+(and|or)\\s+", Pattern.CASE_INSENSITIVE);
         m = p.matcher(dSql);
         if (m.find()) {
-            return dSql.substring(0, m.start() + 5).concat(dSql.substring(m.end()));
+            return dSql.substring(0, m.start() + 6).concat(dSql.substring(m.end()));
         }
+        // if "where order by ..." statement
+        p = Pattern.compile("where\\s+(order by|limit|group by|union)\\s+", Pattern.CASE_INSENSITIVE);
+        m = p.matcher(dSql);
+        if (m.find()) {
+            return dSql.substring(0, m.start()).concat(dSql.substring(m.start() + 6));
+        }
+        // if "where" at end
         p = Pattern.compile("where\\s*$", Pattern.CASE_INSENSITIVE);
         m = p.matcher(dSql);
         if (m.find()) {

@@ -60,6 +60,20 @@ public class Tests {
     }
 
     @Test
+    public void sqlTest() throws Exception{
+        String sql = "select id, filename, title\n" +
+                "from test.user\n" +
+                "where\n" +
+                "--#if :title <> blank\n" +
+                "and title = :title\n" +
+                "--#fi\n" +
+                "order by sj desc";
+        String dq = SqlUtil.dynamicSql(sql, Args.of("title", "op"));
+        System.out.println(dq);
+        System.out.println(SqlUtil.generateCountQuery(dq));
+    }
+
+    @Test
     public void iteratorTest() throws Exception {
         while (immutableList.hasNext()) {
             System.out.println(immutableList.next());

@@ -262,9 +262,9 @@ public abstract class JdbcSupport {
      * 语句形如原生jdbc，只是将?号改为命名参数（:参数名）：
      * <blockquote>
      * <pre>
-     *         call test.func1(:arg1, :arg2, :result1, :result2);
-     *         call test.func2(:result::refcursor); //PostgreSQL
-     *         :result = call test.func3();
+     *         {call test.func1(:arg1, :arg2, :result1, :result2)};
+     *         {call test.func2(:result::refcursor)}; //PostgreSQL
+     *         {:result = call test.func3()};
      *     </pre>
      * </blockquote>
      *
@@ -283,7 +283,7 @@ public abstract class JdbcSupport {
         log.debug("Procedure:{}", sourceSql);
         log.debug("Args:{}", args);
 
-        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSql("{" + sourceSql + "}");
+        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSql(sourceSql);
         final String executeSql = preparedSqlAndArgNames.getItem1();
         final List<String> argNames = preparedSqlAndArgNames.getItem2();
 

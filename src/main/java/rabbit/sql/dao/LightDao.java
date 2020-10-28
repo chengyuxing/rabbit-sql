@@ -171,12 +171,12 @@ public class LightDao extends JdbcSupport implements Light {
     }
 
     /**
-     * 执行一个存储过程<br>
+     * 执行一个存储过程或函数<br>
      * PostgreSQL执行获取一个游标类型的结果：
      * <blockquote>
      * <pre>
      *  {@link List}&lt;{@link DataRow}&gt; rows = {@link rabbit.sql.transaction.Tx}.using(() -&gt;
-     *    light.function("call test.func2(:c::refcursor)",
+     *    light.function("{call test.func2(:c::refcursor)}",
      *       Args.create("c",Param.IN_OUT("result", OUTParamType.REF_CURSOR))
      *       ).get(0));
      *   </pre>
@@ -187,21 +187,8 @@ public class LightDao extends JdbcSupport implements Light {
      * @return 包含至少一个结果的DataRow结果集
      */
     @Override
-    public DataRow procedure(String name, Map<String, Param> args) {
+    public DataRow call(String name, Map<String, Param> args) {
         return executeCall(name, args);
-    }
-
-    /**
-     * 执行一个函数<br>
-     * 同{@code procedure(String name, Map<String, Param> args)}方法
-     *
-     * @param name 函数名
-     * @param args 参数（占位符名字，参数对象）
-     * @return 包含至少一个结果的DataRow结果集
-     */
-    @Override
-    public DataRow function(String name, Map<String, Param> args) {
-        return procedure(name, args);
     }
 
     @Override

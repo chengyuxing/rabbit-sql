@@ -11,6 +11,7 @@ import rabbit.common.types.DataRow;
 import rabbit.sql.dao.*;
 import rabbit.sql.page.PagedResource;
 import rabbit.sql.support.ICondition;
+import rabbit.sql.support.IOutParam;
 import rabbit.sql.transaction.Tx;
 import rabbit.sql.types.OUTParamType;
 import rabbit.sql.types.Param;
@@ -18,9 +19,7 @@ import rabbit.sql.utils.JdbcUtil;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.util.*;
 import java.util.stream.Stream;
 
@@ -125,7 +124,7 @@ public class MyTest {
         light.query("select * from test.region")
                 .skip(5)
                 .limit(10)
-                .map(r->String.join("<>",r.getNames()))
+                .map(r -> String.join("<>", r.getNames()))
                 .forEach(System.out::println);
     }
 
@@ -178,9 +177,14 @@ public class MyTest {
     }
 
     @Test
+    public void testProcedure() throws Exception {
+        light.call("call test.transaction()", Args.create());
+    }
+
+    @Test
     public void testCall() throws Exception {
-        Tx.using(() -> light.function("call test.fun_query(:c::refcursor)",
-                Args.of("c", Param.IN_OUT("result", OUTParamType.REF_CURSOR)))
+        Tx.using(() -> light.call("{:res = call test.fun_query()}",
+                Args.of("res", Param.OUT(OUTParamType.REF_CURSOR)))
                 .<List<DataRow>>get(0)
                 .stream()
                 .map(DataRow::toMap)
@@ -188,19 +192,19 @@ public class MyTest {
     }
 
     @Test
-    public void testCall2() throws Exception{
-        light.function(":num = call test.get_grade(:id)",
+    public void testCall2() throws Exception {
+        light.call(":num = call test.get_grade(:id)",
                 Args.of("num", Param.OUT(OUTParamType.INTEGER))
                         .set("id", Param.IN(5)))
-        .getNullable("num")
-        .ifPresent(System.out::println);
+                .getNullable("num")
+                .ifPresent(System.out::println);
     }
 
 
     @Test
     public void multi_res_function() throws Exception {
         Tx.using(() -> {
-            DataRow row = light.function("call test.multi_res(12, :success, :res, :msg)",
+            DataRow row = light.call("call test.multi_res(12, :success, :res, :msg)",
                     Args.of("success", Param.OUT(OUTParamType.BOOLEAN))
                             .set("res", Param.OUT(OUTParamType.REF_CURSOR))
                             .set("msg", Param.OUT(OUTParamType.VARCHAR))
@@ -211,12 +215,27 @@ public class MyTest {
 
     @Test
     public void callTest() throws Exception {
-        DataRow row = light.function("call test.now3(101,55,:r,:n)",
-                Args.of("r", Param.OUT(OUTParamType.TIMESTAMP))
-                        .set("n", Param.OUT(OUTParamType.INTEGER)));
-        Timestamp dt = row.get("r");
+        class TIME implements IOutParam {
+
+            @Override
+            public int getTypeNumber() {
+                return Types.TIME;
+            }
+
+            @Override
+            public String getName() {
+                return "time";
+            }
+        }
+        DataRow row = light.call("{call test.fun_now(101, 55, :sum, :dt, :tm)}",
+                Args.of("dt", Param.OUT(OUTParamType.TIMESTAMP))
+                        .set("sum", Param.OUT(OUTParamType.INTEGER))
+                        .set("tm", Param.OUT(new TIME())));
+        Timestamp dt = row.get("dt");
         System.out.println(dt.toLocalDateTime());
         System.out.println(row);
+        System.out.println((int) row.get("sum"));
+        System.out.println((Time) row.get("tm"));
     }
 
 //    @Test

@@ -105,7 +105,7 @@ public class Tests {
         String sql = "insert into test.user(idd,name,id,age,address) values (:id,:name::integer,:idd" + SEP + "::float,integer :age,date :address)";
 //        String sql2 = "select * from test.user where id = '1' and tag = '1' and num = '1' and name = :name";
 //        String jsonSql = "select '{\"a\":[1,2,3],\"b\":[4,5,6]}'::json #>> '{b,1}'";
-        Pair<String, List<String>> pair = SqlUtil.getPreparedSql(str);
+        Pair<String, List<String>> pair = SqlUtil.getPreparedSql(sql);
         System.out.println(pair.getItem1());
         System.out.println(pair.getItem2());
     }

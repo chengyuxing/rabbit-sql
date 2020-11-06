@@ -241,43 +241,7 @@ public class SqlUtil {
      * @return 条数查询sql
      */
     public static String generateCountQuery(final String recordQuery) {
-        /// part of from to end
-        // temp sql to get keyword index only.
-        String tempRql = recordQuery.toLowerCase().trim();
-        String from2end = recordQuery.substring(tempRql.lastIndexOf("from"));
-        String select2from = "select count(*) ";
-
-        // if target table is child query
-        Pattern childP = Pattern.compile("^select\\s*[\\S\\s]*(?<fromIdx>from)\\s*\\(");
-        Matcher childM = childP.matcher(tempRql);
-        if (childM.find()) {
-            from2end = recordQuery.substring(childM.start("fromIdx"));
-            // if is common expression (with).
-        } else if (tempRql.startsWith("with")) {
-            Pattern p = Pattern.compile("^\\s*with[\\s\\S]+\\s+as\\s*\\([\\s\\S]+\\)\\s*select");
-            Matcher m = p.matcher(tempRql);
-            if (m.find()) {
-                select2from = recordQuery.substring(0, m.end()) + " count(*) ";
-            }
-        }
-
-        // if is PostgreSQL lateral statement
-        if (tempRql.contains("lateral")) {
-            Pattern lateralP = Pattern.compile(",\\s*(?<lateralIdx>lateral)\\s*\\(select");
-            Matcher lateralM = lateralP.matcher(tempRql);
-            if (lateralM.find()) {
-                int fromIdx = tempRql.lastIndexOf("from", lateralM.start("lateralIdx"));
-                from2end = recordQuery.substring(tempRql.lastIndexOf("from", fromIdx));
-            }
-        }
-
-        /// part of select to from
-        String countQuery = select2from + from2end;
-        // if has order by statement
-        int orderByIdx = countQuery.toLowerCase().lastIndexOf("order by");
-        if (orderByIdx != -1) {
-            countQuery = countQuery.substring(0, orderByIdx);
-        }
-        return countQuery;
+        // for 0 errors, sorry!!!
+        return "select count(*) from (" + recordQuery + ") _data";
     }
 }

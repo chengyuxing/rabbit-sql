@@ -7,6 +7,8 @@ import func.FCondition;
 import func.FFilter;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.postgresql.jdbc.PgArray;
+import org.postgresql.util.PGobject;
 import rabbit.common.types.DataRow;
 import rabbit.sql.dao.*;
 import rabbit.sql.page.PagedResource;
@@ -18,6 +20,7 @@ import rabbit.sql.types.Param;
 import rabbit.sql.utils.JdbcUtil;
 
 import java.io.IOException;
+import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.sql.*;
 import java.util.*;
@@ -236,6 +239,16 @@ public class MyTest {
         System.out.println(row);
         System.out.println((int) row.get("sum"));
         System.out.println((Time) row.get("tm"));
+        PGobject obj = new PGobject();
+    }
+
+    @Test
+    public void jackson() throws Exception{
+        Class<?> clazz = Class.forName("com.fasterxml.jackson.databind.ObjectMapper");
+        Object objectMapper = clazz.newInstance();
+        Method method = clazz.getDeclaredMethod("writeValueAsString",Object.class);
+        Object jsonStr = method.invoke(objectMapper, Arrays.asList(1, 2, 3));
+
     }
 
 //    @Test

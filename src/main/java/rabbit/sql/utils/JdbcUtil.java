@@ -228,7 +228,7 @@ public class JdbcUtil {
             if (values[i] == null) {
                 types[i] = metaData.getColumnClassName(i + 1);
             } else {
-                types[i] = values[i].getClass().getName();
+                types[i] = values[i].getClass().getTypeName();
             }
         }
         return DataRow.of(names, types, values);

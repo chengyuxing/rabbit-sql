@@ -90,14 +90,10 @@ public class MyTest {
 
     @Test
     public void array() throws Exception {
-        light.fetch("select array [12,13,11,4,5,6.7]:: integer[]")
+        light.fetch("select array [12,13,11,4,5,6.7]:: varchar[], '{\"a\":\"chengyuxing\"}'::jsonb")
                 .ifPresent(r -> {
-                    try {
-                        System.out.println(r);
-                        System.out.println(json.writeValueAsString(r.toMap()));
-                    } catch (JsonProcessingException e) {
-                        e.printStackTrace();
-                    }
+                    System.out.println(r);
+                    System.out.println(r.getType(0));
 
 //                        Array arr = r.get(0);
 //                        Integer[] ints = (Integer[]) arr.getArray();

@@ -2,19 +2,33 @@ package tests;
 
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
-import rabbit.sql.Light;
-import rabbit.sql.dao.LightDao;
+import org.junit.Test;
+import rabbit.sql.Baki;
+import rabbit.sql.dao.Args;
+import rabbit.sql.dao.BakiDao;
+
+import java.util.Date;
 
 public class OracleTest {
-    static Light light;
+    static Baki baki;
 
     @BeforeClass
     public static void init() {
         HikariDataSource dataSource2 = new HikariDataSource();
-        dataSource2.setJdbcUrl("jdbc:oracle:thin:@127.0.0.1:1521/orcl");
-        dataSource2.setUsername("chengyuxing");
-        dataSource2.setPassword("123456");
+        dataSource2.setJdbcUrl("jdbc:oracle:thin:@192.168.1.109:1521/orcl");
+        dataSource2.setUsername("system");
+        dataSource2.setPassword("system");
         dataSource2.setDriverClassName("oracle.jdbc.OracleDriver");
-        light = LightDao.of(dataSource2);
+        baki = BakiDao.of(dataSource2);
+    }
+
+    @Test
+    public void insert() throws Exception{
+        baki.insert("nutzbook.tb",
+                Args.create().set("a", 12)
+                        .set("b", 33)
+                        .set("str", "cyx")
+                        .set("dt", new Date())
+                        .set("tm", new Date()));
     }
 }

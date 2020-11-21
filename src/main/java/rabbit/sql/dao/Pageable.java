@@ -24,7 +24,7 @@ import java.util.stream.Stream;
  * @param <T> 结果类型参数
  */
 public class Pageable<T> implements IPageable<T> {
-    private final LightDao light;
+    private final BakiDao baki;
     private Map<String, Object> args = Collections.emptyMap();
     private final String recordQuery;
     private String countQuery;
@@ -35,13 +35,13 @@ public class Pageable<T> implements IPageable<T> {
     /**
      * 分页构建器构造函数
      *
-     * @param light       light对象
+     * @param baki       baki对象
      * @param recordQuery 查询sql
      * @param page        当前页
      * @param size        页大小
      */
-    public Pageable(LightDao light, String recordQuery, int page, int size) {
-        this.light = light;
+    public Pageable(BakiDao baki, String recordQuery, int page, int size) {
+        this.baki = baki;
         this.recordQuery = recordQuery;
         this.page = page;
         this.size = size;
@@ -82,17 +82,17 @@ public class Pageable<T> implements IPageable<T> {
     @Override
     public PagedResource<T> collect(Function<DataRow, T> rowConvert) {
         String cq = countQuery;
-        String query = light.prepareSql(recordQuery, args);
+        String query = baki.prepareSql(recordQuery, args);
         if (cq == null) {
             cq = SqlUtil.generateCountQuery(query);
         }
-        return light.fetch(cq, args).map(cn -> {
+        return baki.fetch(cq, args).map(cn -> {
             PageHelper pageHelper = customPageHelper;
             if (pageHelper == null) {
                 pageHelper = defaultPager();
             }
             pageHelper.init(page, size, Optional.ofNullable(cn.getInt(0)).orElse(0));
-            try (Stream<DataRow> s = light.query(pageHelper.wrapPagedSql(query), args)) {
+            try (Stream<DataRow> s = baki.query(pageHelper.wrapPagedSql(query), args)) {
                 List<T> list = s.map(rowConvert).collect(Collectors.toList());
                 return PagedResource.of(pageHelper, list);
             }
@@ -106,7 +106,7 @@ public class Pageable<T> implements IPageable<T> {
      */
     private PageHelper defaultPager() {
         try {
-            String dbName = light.getMetaData().getDatabaseProductName().toLowerCase();
+            String dbName = baki.getMetaData().getDatabaseProductName().toLowerCase();
             switch (dbName) {
                 case "oracle":
                     return new OraclePageHelper();

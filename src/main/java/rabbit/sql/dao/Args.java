@@ -28,7 +28,7 @@ public class Args<V> extends HashMap<String, V> {
      */
     public static <V> Args<V> of(String key, V value) {
         Args<V> args = new Args<>();
-        args.set(key, value);
+        args.add(key, value);
         return args;
     }
 
@@ -39,7 +39,7 @@ public class Args<V> extends HashMap<String, V> {
      * @param value 值
      * @return 参数集合
      */
-    public Args<V> set(String key, V value) {
+    public Args<V> add(String key, V value) {
         put(key, value);
         return this;
     }

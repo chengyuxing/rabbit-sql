@@ -2,7 +2,6 @@ package rabbit.sql.utils;
 
 import rabbit.common.tuple.Pair;
 import rabbit.common.types.CExpression;
-import rabbit.sql.dao.Wrap;
 import rabbit.sql.types.Ignore;
 
 import java.util.ArrayList;
@@ -109,19 +108,6 @@ public class SqlUtil {
     }
 
     /**
-     * 如果是值包装类型，就解除包装获取真实值
-     *
-     * @param value 值或包装类型值
-     * @return 真实值
-     */
-    public static Object unwrapValue(Object value) {
-        if (value instanceof Wrap) {
-            return ((Wrap) value).getValue();
-        }
-        return value;
-    }
-
-    /**
      * 排除sql字符串尾部的非sql语句部分的其他字符
      *
      * @param sql sql字符串
@@ -147,12 +133,6 @@ public class SqlUtil {
             if (key.startsWith("${") && key.endsWith("}")) {
                 String v = " " + args.get(key).toString() + " ";
                 sql = sql.replace(key, v);
-            } else {
-                Object v = args.get(key);
-                if (v instanceof Wrap) {
-                    Wrap wrapV = (Wrap) v;
-                    sql = sql.replace(":" + key, wrapV.getStart() + " :" + key + wrapV.getEnd());
-                }
             }
         }
         return sql;

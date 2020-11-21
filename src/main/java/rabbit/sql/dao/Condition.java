@@ -8,8 +8,6 @@ import rabbit.sql.utils.SqlUtil;
 import java.util.HashMap;
 import java.util.Map;
 
-import static rabbit.sql.utils.SqlUtil.unwrapValue;
-
 /**
  * SQL条件拼装器
  */
@@ -34,13 +32,23 @@ public class Condition implements ICondition {
     }
 
     /**
+     * where
+     *
+     * @param sql sql字符串
+     * @return 条件拼接器
+     */
+    public static Condition where(String sql) {
+        return new Condition().expression(sql);
+    }
+
+    /**
      * 一段原生sql表达式
      *
      * @param sql sql
      * @return 条件拼接器
      */
     public Condition expression(String sql) {
-        conditions.append(sql).append(" ");
+        conditions.append(" ").append(sql).append(" ");
         return this;
     }
 
@@ -73,12 +81,12 @@ public class Condition implements ICondition {
      */
     private Condition concatFilterBy(String s, IFilter filter) {
         if (filter.getValue() != IFilter.IGNORE_VALUE) {
-            Pair<String, String> sf = getSpecialField(filter.getField(), filter.getValue());
+            Pair<String, String> sf = getSpecialField(filter.getField());
             conditions.append(s)
                     .append(filter.getField())
                     .append(filter.getOperator())
                     .append(sf.getItem2()).append(" ");
-            args.put(sf.getItem1(), unwrapValue(filter.getValue()));
+            args.put(sf.getItem1(), filter.getValue());
         } else {
             conditions.append(s).append(filter.getField()).append(filter.getOperator());
         }
@@ -89,19 +97,10 @@ public class Condition implements ICondition {
      * 获取经过特殊字符和自动编号处理的字段名占位符
      *
      * @param field 字段名
-     * @param value 字段值
      * @return (字段名, 字段名占位符)
      */
-    private Pair<String, String> getSpecialField(String field, Object value) {
+    private Pair<String, String> getSpecialField(String field) {
         String s = field + SqlUtil.SEP + arg_index++;
-        if (value instanceof Wrap) {
-            Wrap wrapV = (Wrap) value;
-            String prefix = wrapV.getStart();
-            if (!prefix.equals("")) {
-                prefix += " ";
-            }
-            return Pair.of(s, prefix + ":" + s + wrapV.getEnd());
-        }
         return Pair.of(s, ":" + s);
     }
 

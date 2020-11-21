@@ -1,6 +1,5 @@
 package rabbit.sql.types;
 
-import rabbit.sql.dao.Wrap;
 import rabbit.sql.support.IOutParam;
 
 /**

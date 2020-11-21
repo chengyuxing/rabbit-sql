@@ -10,6 +10,7 @@ import rabbit.common.tuple.Pair;
 import rabbit.common.types.DataRow;
 import rabbit.common.types.ImmutableList;
 import rabbit.common.types.UncheckedCloseable;
+import rabbit.common.utils.DateTimes;
 import rabbit.sql.dao.*;
 import rabbit.sql.support.ICondition;
 import rabbit.sql.page.PageHelper;
@@ -24,7 +25,8 @@ import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.net.URISyntaxException;
-import java.sql.Date;
+import java.time.*;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -35,6 +37,29 @@ import java.util.regex.Pattern;
 import static rabbit.sql.utils.SqlUtil.SEP;
 
 public class Tests {
+
+    @Test
+    public void dtTest() throws Exception {
+        System.out.println(new java.sql.Time(DateTimes.toEpochMilli("2020-12-11 11:22:33")));
+        System.out.println(LocalDateTime.class.getTypeName());
+    }
+
+    @Test
+    public void dtTest2() throws Exception {
+        String ts = "12月11 23:12:55";
+        String dt = "2020-12-11";
+        String tm = "23时12分55秒";
+
+        System.out.println(DateTimes.toDate(ts));
+    }
+
+    @Test
+    public void formatDt() throws Exception {
+        System.out.println(DateTimes.of(new Date()).toString("yyyy年MM月dd日 HH:mm:ss"));
+        for (int i = 0; i < 12; i++) {
+            System.out.println(new Date(LocalDateTime.now().plusMonths(i).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
+        }
+    }
 
     @Test
     public void Datarows() throws Exception {
@@ -60,7 +85,7 @@ public class Tests {
     }
 
     @Test
-    public void sqlTest() throws Exception{
+    public void sqlTest() throws Exception {
         String sql = "select id, filename, title\n" +
                 "from test.user\n" +
                 "where\n" +
@@ -138,24 +163,13 @@ public class Tests {
     }
 
     @Test
-    public void Condition2() throws Exception {
-        ICondition condition = Condition.where(Filter.eq("t.id", Wrap.wrapEnd("7", "::integer")))
-                .or(Filter.gt("id", Wrap.wrapEnd("100", "::integer")));
-        System.out.println(condition.getSql());
-        System.out.println(condition.getArgs());
-
-        Condition condition1 = Condition.where(Filter.eq("id", Wrap.wrapEnd("7", "::integer")));
-        System.out.println(condition1.getSql());
-    }
-
-    @Test
     public void generateSql() throws Exception {
         Args<Object> paramMap = Args.create()
-                .set("a", null)
-                .set("b", "v")
-                .set("c", "")
-                .set("d", null)
-                .set("e", "1");
+                .add("a", null)
+                .add("b", "v")
+                .add("c", "")
+                .add("d", null)
+                .add("e", "1");
 
         System.out.println(SqlUtil.generateInsert("test.user", paramMap, Ignore.NULL));
     }

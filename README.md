@@ -27,7 +27,7 @@
 - sql文件中可以包含任意符合标准的注释
 - sql文件结尾以`.sql`结尾
 - sql文件格式参考```data.sql.template```
-- LightDao中如果配置了属性```setSqlFileManager```,则接口中需要写sql的所有方法都可以使用``&文件名.sql名``取地址符来获取sql文件中的sql
+- BakiDao中如果配置了属性```setSqlFileManager```,则接口中需要写sql的所有方法都可以使用``&文件名.sql名``取地址符来获取sql文件中的sql
 - sql文件名格式为``/*[name]*/``，sql文件中可以嵌套sql片段，使用`${片段名}`指定
 - sql片段名格式化``/*{name}*/``，sql片段中可以嵌套sql片段，使用`${片段名}`指定
 - sql文件将优先寻找sql文件内的sql片段
@@ -86,21 +86,21 @@ dataSource.setDriverClassName("org.postgresql.Driver");
 
 SQLFileManager manager = new SQLFileManager("pgsql/data.sql", "pgsql/other.sql");
 
-LightDao light = new LightDao(dataSource);
-light.setSqlFileManager(manager);
+BakiDao baki = new BakiDao(dataSource);
+baki.setSqlFileManager(manager);
 ```
 
 ### 查询
 
 ```java
-try (Stream<DataRow> fruits = orclLight.query("select * from fruit")) {
+try (Stream<DataRow> fruits = baki.query("select * from fruit")) {
             fruits.limit(10).forEach(System.out::println);
         }
 ```
 
 ### 分页查询
 ```java
-PagedResource<DataRow> res = light.<DataRow>query("&pgsql.data.select_user", 1, 10)
+PagedResource<DataRow> res = baki.<DataRow>query("&pgsql.data.select_user", 1, 10)
                 .args(Args.create().set("id", 35))
                 .collect(d -> d);
 ```
@@ -108,7 +108,7 @@ PagedResource<DataRow> res = light.<DataRow>query("&pgsql.data.select_user", 1, 
 ### 存储过程
 
 ```java
-Tx.using(() -> light.function("call test.fun_query(:c::refcursor)",
+Tx.using(() -> baki.call("{call test.fun_query(:c::refcursor)}",
                 Args.of("c", Param.IN_OUT("result", OUTParamType.REF_CURSOR)))
                 .<List<DataRow>>get(0)
                 .stream()

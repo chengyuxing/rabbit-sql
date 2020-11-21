@@ -4,9 +4,9 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import rabbit.common.types.DataRow;
-import rabbit.sql.Light;
+import rabbit.sql.Baki;
 import rabbit.sql.dao.Args;
-import rabbit.sql.dao.LightDao;
+import rabbit.sql.dao.BakiDao;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,7 +14,7 @@ import java.util.Arrays;
 
 public class SqliteTest {
 
-    static Light light;
+    static Baki baki;
 
     @BeforeClass
     public static void init() throws IOException {
@@ -30,22 +30,22 @@ public class SqliteTest {
         ds.setDriverClassName("org.sqlite.JDBC");
         ds.setJdbcUrl("jdbc:sqlite:" + dsPath);
 
-        light = LightDao.of(ds);
+        baki = BakiDao.of(ds);
     }
 
     @Test
     public void test1() throws Exception {
-        light.execute("create table user(id int primary key, name varchar(50), age int)");
+        baki.execute("create table user(id int primary key, name varchar(50), age int)");
     }
 
     @Test
     public void insert() throws Exception {
-        light.insert("user", DataRow.fromList(Arrays.asList(2, "admin", 23), "id", "name", "age"));
+        baki.insert("user", DataRow.fromList(Arrays.asList(2, "admin", 23), "id", "name", "age"));
     }
 
     @Test
     public void query() {
-        light.query("select * from user where age > :age", Args.create().set("age", 25))
+        baki.query("select * from user where age > :age", Args.create().set("age", 25))
                 .forEach(System.out::println);
     }
 }

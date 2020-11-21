@@ -5,7 +5,7 @@ import rabbit.sql.dao.*;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import rabbit.sql.Light;
+import rabbit.sql.Baki;
 
 import java.sql.Date;
 import java.sql.Time;
@@ -14,10 +14,10 @@ import java.time.*;
 import java.util.stream.Stream;
 
 
-public class LightSessionTest {
+public class BakiSessionTest {
 
-    static Light light;
-    static LightDao orclLight;
+    static Baki baki;
+    static BakiDao orclLight;
     static HikariDataSource dataSource;
 
     @BeforeClass
@@ -26,7 +26,7 @@ public class LightSessionTest {
         dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
         dataSource.setUsername("chengyuxing");
         dataSource.setDriverClassName("org.postgresql.Driver");
-        light = LightDao.of(dataSource);
+        baki = BakiDao.of(dataSource);
 
     }
 
@@ -60,12 +60,12 @@ public class LightSessionTest {
 //        boolean ex = orclLight.tableExists("chengyuxing.fruit");
 //        System.out.println(ex);
 
-        System.out.println(light.execute("drop table test.me"));
+        System.out.println(baki.execute("drop table test.me"));
     }
 
     @Test
     public void oracleBlobTest() throws Exception {
-        light.query("select * from nutzbook.files")
+        baki.query("select * from nutzbook.files")
                 .forEach(r -> {
                     String a = r.getString(0);
                 });
@@ -73,12 +73,12 @@ public class LightSessionTest {
 
     @Test
     public void fileTest() throws Exception {
-        light.query("select * from test.files")
+        baki.query("select * from test.files")
                 .forEach(r -> {
                     System.out.println(r);
                     byte[] bytes = r.get("file");
                     System.out.println(bytes.length);
-//                    light.update("test.files", Args.builder()
+//                    baki.update("test.files", Args.builder()
 //                                    .putIn("name", "cyx's file")
 //                                    .build(),
 //                            Cnd.New().where(Filter.eq("id", r.getInt("id"))));
@@ -87,7 +87,7 @@ public class LightSessionTest {
 
     @Test
     public void jsonTest() throws Exception {
-        light.query("select '{\n" +
+        baki.query("select '{\n" +
                 "      \"guid\": \"9c36adc1-7fb5-4d5b-83b4-90356a46061a\",\n" +
                 "      \"name\": \"Angela Barton\",\n" +
                 "      \"is_active\": true,\n" +
@@ -109,7 +109,7 @@ public class LightSessionTest {
                     System.out.println(res.getClass());
                 });
 
-        light.query("select t.a -> 'name', t.a -> 'age'\n" +
+        baki.query("select t.a -> 'name', t.a -> 'age'\n" +
                 "from (\n" +
                 "         select '{\n" +
                 "           \"name\": \"cyx\",\n" +
@@ -118,13 +118,13 @@ public class LightSessionTest {
                 "         }'::json) t(a)")
                 .forEach(System.out::println);
 
-        light.fetch("select array [4,5] || array [1,2,3]").ifPresent(System.out::println);
+        baki.fetch("select array [4,5] || array [1,2,3]").ifPresent(System.out::println);
     }
 
     @Test
     public void insert() throws Exception {
-//        Transaction transaction = light.getTransaction();
-        light.insert("test.user",
+//        Transaction transaction = baki.getTransaction();
+        baki.insert("test.user",
                 Args.create().set("name", "dynamic")
                         .set("password", "123456")
                         .set("id_card", "530111199305107030"));
@@ -132,24 +132,8 @@ public class LightSessionTest {
     }
 
     @Test
-    public void valueWrapTest() throws Exception {
-        light.insert("test.score", Args.create()
-                .set("student_id", Wrap.wrapEnd(7, "::integer"))
-                .set("subject", "政治")
-                .set("grade", Wrap.wrapEnd("88", "::integer")));
-    }
-
-    @Test
-    public void valueWrapTest2() throws Exception {
-        light.update("test.score", Args.create()
-                        .set("grade", Wrap.wrapEnd("15", "::integer")),
-                Condition.where(Filter.eq("id", Wrap.wrapEnd("7", "::integer")))
-        );
-    }
-
-    @Test
     public void jsonTests() throws Exception {
-        light.fetch("select '{\n" +
+        baki.fetch("select '{\n" +
                 "  \"a\": 1,\n" +
                 "  \"b\": 2,\n" +
                 "  \"c\": 3\n" +
@@ -159,13 +143,13 @@ public class LightSessionTest {
 
     @Test
     public void boolTest() throws Exception {
-        light.fetch("select 'a',true,current_timestamp,current_date,current_time")
+        baki.fetch("select 'a',true,current_timestamp,current_date,current_time")
                 .ifPresent(System.out::println);
     }
 
     @Test
     public void dateTimeTest() throws Exception {
-        light.insert("test.datetime", Args.create()
+        baki.insert("test.datetime", Args.create()
                 .set("ts", LocalDateTime.now())
                 .set("dt", LocalDate.now())
                 .set("tm", LocalTime.now()));

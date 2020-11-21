@@ -3,27 +3,32 @@ package rabbit.sql.utils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rabbit.common.types.DataRow;
-import rabbit.sql.dao.Wrap;
+import rabbit.common.utils.DateTimes;
+import rabbit.common.utils.ReflectUtil;
 import rabbit.sql.types.Param;
 import rabbit.sql.types.ParamMode;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.*;
 import java.time.*;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
-
-import static rabbit.sql.utils.SqlUtil.unwrapValue;
 
 /**
  * JDBC工具类
  */
 public class JdbcUtil {
     private final static Logger log = LoggerFactory.getLogger(JdbcUtil.class);
+
+    private static Class<?> jacksonClass;
+    private static Object jackson;
+    private static Class<?> pgObjClass;
+    private static Method pgObjSetValue;
+    private static Method pgObjSetType;
 
     /**
      * 获取result结果
@@ -260,6 +265,54 @@ public class JdbcUtil {
     }
 
     /**
+     * 对象转json字符串（需要jackson库）
+     *
+     * @param obj 对象
+     * @return json
+     */
+    public static String obj2Json(Object obj) {
+        try {
+            // it's not necessary use sync block
+            if (jackson == null) {
+                jacksonClass = Class.forName("com.fasterxml.jackson.databind.ObjectMapper");
+                jackson = jacksonClass.newInstance();
+            }
+            Method method = jacksonClass.getDeclaredMethod("writeValueAsString", Object.class);
+            Object jsonStr = method.invoke(jackson, obj);
+            return jsonStr.toString();
+        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
+            throw new RuntimeException("convert to json error: ", e);
+        }
+    }
+
+    /**
+     * 创建PostgreSQL的对象类型数据
+     *
+     * @param type  字段类型
+     * @param value 值
+     * @return PostgreSQL对象
+     */
+    public static Object createPgObject(String type, String value) {
+        try {
+            if (pgObjClass == null) {
+                pgObjClass = Class.forName("org.postgresql.util.PGobject");
+            }
+            if (pgObjSetType == null) {
+                pgObjSetType = pgObjClass.getDeclaredMethod("setType", String.class);
+            }
+            if (pgObjSetValue == null) {
+                pgObjSetValue = pgObjClass.getDeclaredMethod("setValue", String.class);
+            }
+            Object pgObj = pgObjClass.newInstance();
+            pgObjSetType.invoke(pgObj, type);
+            pgObjSetValue.invoke(pgObj, value);
+            return pgObj;
+        } catch (IllegalAccessException | NoSuchMethodException | ClassNotFoundException | InvocationTargetException | InstantiationException e) {
+            throw new RuntimeException("create postgresql object type error:", e);
+        }
+    }
+
+    /**
      * 设置预编译sql的参数值
      *
      * @param statement statement
@@ -268,20 +321,65 @@ public class JdbcUtil {
      * @throws SQLException sqlExp
      */
     public static void setStatementValue(PreparedStatement statement, int index, Object value) throws SQLException {
-        if (value instanceof java.util.Date) {
-            statement.setObject(index, new Date(((java.util.Date) value).getTime()));
-        } else if (value instanceof LocalDateTime) {
-            statement.setObject(index, new Timestamp(((LocalDateTime) value).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
-        } else if (value instanceof LocalDate) {
-            statement.setObject(index, new Date(((LocalDate) value).atStartOfDay(ZoneOffset.systemDefault()).toInstant().toEpochMilli()));
-        } else if (value instanceof LocalTime) {
-            statement.setObject(index, new Time(((LocalTime) value).atDate(LocalDate.now()).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
-        } else if (value instanceof Instant) {
-            statement.setObject(index, new Timestamp(((Instant) value).toEpochMilli()));
-        } else if (value instanceof Wrap) {
-            statement.setObject(index, unwrapValue(value));
+        String pClass = statement.getParameterMetaData().getParameterClassName(index);
+        String pType = statement.getParameterMetaData().getParameterTypeName(index);
+        String valueType = value.getClass().getTypeName();
+        // if postgresql, save as json(b) type
+        // if column is json type
+        if (pType.equals("json") || pType.equals("jsonb")) {
+            if (value instanceof String) {
+                statement.setObject(index, createPgObject(pType, value.toString()));
+            } else {
+                statement.setObject(index, createPgObject(pType, obj2Json(value)));
+            }
+        } else if (pClass.equals("java.lang.String") && !ReflectUtil.isBasicType(value)) {
+            // if is text column type and value is not basic type, write value as json string.
+            if (value instanceof Map || value instanceof Collection) {
+                statement.setObject(index, obj2Json(value));
+                // maybe Date, LocalDateTime, UUID, BigDecimal...
+            } else if (valueType.startsWith("java.")) {
+                statement.setObject(index, value.toString());
+            } else {
+                // maybe is java bean
+                statement.setObject(index, obj2Json(value));
+            }
+            // if is postgresql array
+        } else if (pClass.equals("java.sql.Array") && value instanceof Collection) {
+            statement.setObject(index, ((Collection<?>) value).toArray());
+        } else if (pClass.equals("java.sql.Date") && value instanceof String) {
+            statement.setObject(index, new Date(DateTimes.toEpochMilli((String) value)));
+        } else if (pClass.equals("java.sql.Time") && value instanceof String) {
+            statement.setObject(index, new Time(DateTimes.toEpochMilli((String) value)));
+        } else if (pClass.equals("java.sql.Timestamp") && value instanceof String) {
+            statement.setObject(index, new Timestamp(DateTimes.toEpochMilli((String) value)));
         } else {
-            statement.setObject(index, value);
+            if (value instanceof java.util.Date) {
+                statement.setObject(index, new Date(((java.util.Date) value).getTime()));
+            } else if (value instanceof LocalDateTime) {
+                statement.setObject(index, new Timestamp(((LocalDateTime) value).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
+            } else if (value instanceof LocalDate) {
+                statement.setObject(index, new Date(((LocalDate) value).atStartOfDay(ZoneOffset.systemDefault()).toInstant().toEpochMilli()));
+            } else if (value instanceof LocalTime) {
+                statement.setObject(index, new Time(((LocalTime) value).atDate(LocalDate.now()).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
+            } else if (value instanceof Instant) {
+                statement.setObject(index, new Timestamp(((Instant) value).toEpochMilli()));
+            } else if (value instanceof InputStream) {
+                try (BufferedInputStream in = new BufferedInputStream((InputStream) value)) {
+                    ByteArrayOutputStream out = new ByteArrayOutputStream();
+                    BufferedOutputStream bo = new BufferedOutputStream(out);
+                    int i;
+                    while ((i = in.read()) != -1) {
+                        bo.write(i);
+                    }
+                    bo.flush();
+                    statement.setObject(index, out.toByteArray());
+                    bo.close();
+                } catch (IOException e) {
+                    throw new RuntimeException("convert inputstream error:", e);
+                }
+            } else {
+                statement.setObject(index, value);
+            }
         }
     }
 

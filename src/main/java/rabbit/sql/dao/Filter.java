@@ -29,18 +29,6 @@ public final class Filter implements IFilter {
     }
 
     /**
-     * 定义一个过滤器
-     *
-     * @param field    字段名
-     * @param operator 操作符
-     * @param value    包装类型的字段值
-     * @return 过滤器
-     */
-    public static Filter ofWrap(String field, String operator, Wrap value) {
-        return of(field, operator, value);
-    }
-
-    /**
      * 等于
      *
      * @param field 字段名

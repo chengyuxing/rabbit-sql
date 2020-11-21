@@ -3,7 +3,7 @@ package rabbit.sql.dao;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rabbit.common.types.DataRow;
-import rabbit.sql.Light;
+import rabbit.sql.Baki;
 import rabbit.sql.datasource.DataSourceUtil;
 import rabbit.sql.page.IPageable;
 import rabbit.sql.support.ICondition;
@@ -28,16 +28,16 @@ import static rabbit.sql.utils.SqlUtil.dynamicSql;
  * 前缀符号来判断如果是sql名则获取sql否则当作sql直接执行</p>
  * 指定sql名执行：
  * <blockquote>
- * <pre>try ({@link Stream}&lt;{@link DataRow}&gt; s = light.query("&amp;data.query")) {
+ * <pre>try ({@link Stream}&lt;{@link DataRow}&gt; s = baki.query("&amp;data.query")) {
  *     s.map({@link DataRow}::toMap).forEach(System.out::println);
  *   }</pre>
  * </blockquote>
  *
  * @see rabbit.sql.support.JdbcSupport
- * @see rabbit.sql.Light
+ * @see Baki
  */
-public class LightDao extends JdbcSupport implements Light {
-    private final static Logger log = LoggerFactory.getLogger(LightDao.class);
+public class BakiDao extends JdbcSupport implements Baki {
+    private final static Logger log = LoggerFactory.getLogger(BakiDao.class);
     private final DataSource dataSource;
     private SQLFileManager sqlFileManager;
     private DatabaseMetaData metaData;
@@ -47,18 +47,18 @@ public class LightDao extends JdbcSupport implements Light {
      *
      * @param dataSource 数据源
      */
-    public LightDao(DataSource dataSource) {
+    public BakiDao(DataSource dataSource) {
         this.dataSource = dataSource;
     }
 
     /**
-     * 实例化一个LightDao对象
+     * 实例化一个BakiDao对象
      *
      * @param dataSource 数据源
-     * @return LightDao实例
+     * @return BakiDao实例
      */
-    public static LightDao of(DataSource dataSource) {
-        return new LightDao(dataSource);
+    public static BakiDao of(DataSource dataSource) {
+        return new BakiDao(dataSource);
     }
 
     /**
@@ -176,7 +176,7 @@ public class LightDao extends JdbcSupport implements Light {
      * <blockquote>
      * <pre>
      *  {@link List}&lt;{@link DataRow}&gt; rows = {@link rabbit.sql.transaction.Tx}.using(() -&gt;
-     *    light.function("{call test.func2(:c::refcursor)}",
+     *    baki.function("{call test.func2(:c::refcursor)}",
      *       Args.create("c",Param.IN_OUT("result", OUTParamType.REF_CURSOR))
      *       ).get(0));
      *   </pre>

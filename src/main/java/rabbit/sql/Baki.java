@@ -16,7 +16,7 @@ import java.util.stream.Stream;
 /**
  * dao接口
  */
-public interface Light {
+public interface Baki {
 
     /**
      * 执行一条原始sql

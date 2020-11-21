@@ -45,7 +45,7 @@ public class SqliteTest {
 
     @Test
     public void query() {
-        baki.query("select * from user where age > :age", Args.create().set("age", 25))
+        baki.query("select * from user where age > :age", Args.create().add("age", 25))
                 .forEach(System.out::println);
     }
 }

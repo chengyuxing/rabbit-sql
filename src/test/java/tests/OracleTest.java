@@ -25,10 +25,10 @@ public class OracleTest {
     @Test
     public void insert() throws Exception{
         baki.insert("nutzbook.tb",
-                Args.create().set("a", 12)
-                        .set("b", 33)
-                        .set("str", "cyx")
-                        .set("dt", new Date())
-                        .set("tm", new Date()));
+                Args.create().add("a", 12)
+                        .add("b", 33)
+                        .add("str", "cyx")
+                        .add("dt", new Date())
+                        .add("tm", new Date()));
     }
 }

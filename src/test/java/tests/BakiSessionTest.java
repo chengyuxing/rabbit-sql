@@ -125,9 +125,9 @@ public class BakiSessionTest {
     public void insert() throws Exception {
 //        Transaction transaction = baki.getTransaction();
         baki.insert("test.user",
-                Args.create().set("name", "dynamic")
-                        .set("password", "123456")
-                        .set("id_card", "530111199305107030"));
+                Args.create().add("name", "dynamic")
+                        .add("password", "123456")
+                        .add("id_card", "530111199305107030"));
 //        transaction.commit();
     }
 
@@ -150,9 +150,9 @@ public class BakiSessionTest {
     @Test
     public void dateTimeTest() throws Exception {
         baki.insert("test.datetime", Args.create()
-                .set("ts", LocalDateTime.now())
-                .set("dt", LocalDate.now())
-                .set("tm", LocalTime.now()));
+                .add("ts", LocalDateTime.now())
+                .add("dt", LocalDate.now())
+                .add("tm", LocalTime.now()));
     }
 
     @Test

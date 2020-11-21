@@ -18,14 +18,13 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import static rabbit.common.utils.ReflectUtil.obj2Json;
+
 /**
  * JDBC工具类
  */
 public class JdbcUtil {
     private final static Logger log = LoggerFactory.getLogger(JdbcUtil.class);
-
-    private static Class<?> jacksonClass;
-    private static Object jackson;
     private static Class<?> pgObjClass;
     private static Method pgObjSetValue;
     private static Method pgObjSetType;
@@ -49,8 +48,6 @@ public class JdbcUtil {
         } else if (obj instanceof Clob) {
             Clob clob = (Clob) obj;
             obj = clob.getSubString(0, (int) clob.length());
-        } else if ("org.postgresql.util.PGobject".equals(className)) {
-            obj = resultSet.getString(index);
         } else if ("org.postgresql.jdbc.PgArray".equals(className)) {
             try {
                 Method method = obj.getClass().getDeclaredMethod("getArray");
@@ -262,27 +259,6 @@ public class JdbcUtil {
         }
         closeResultSet(resultSet);
         return list;
-    }
-
-    /**
-     * 对象转json字符串（需要jackson库）
-     *
-     * @param obj 对象
-     * @return json
-     */
-    public static String obj2Json(Object obj) {
-        try {
-            // it's not necessary use sync block
-            if (jackson == null) {
-                jacksonClass = Class.forName("com.fasterxml.jackson.databind.ObjectMapper");
-                jackson = jacksonClass.newInstance();
-            }
-            Method method = jacksonClass.getDeclaredMethod("writeValueAsString", Object.class);
-            Object jsonStr = method.invoke(jackson, obj);
-            return jsonStr.toString();
-        } catch (ClassNotFoundException | IllegalAccessException | InstantiationException | NoSuchMethodException | InvocationTargetException e) {
-            throw new RuntimeException("convert to json error: ", e);
-        }
     }
 
     /**

@@ -32,10 +32,10 @@ public class SqlFileTest {
         String sql = sqlFileManager.get("pgsql.data.logical");
         System.out.println(sql);
         String dynamicSql = SqlUtil.dynamicSql(sql, Args.create()
-                .set("name", "null")
-                .set("age", null)
-                .set("address", null)
-                .set("id", null));
+                .add("name", "null")
+                .add("age", null)
+                .add("address", null)
+                .add("id", null));
         System.out.println("-------------");
         System.out.println(dynamicSql);
     }

@@ -17,9 +17,11 @@ import rabbit.sql.types.OUTParamType;
 import rabbit.sql.types.Param;
 import rabbit.sql.utils.JdbcUtil;
 
+import java.beans.IntrospectionException;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.sql.*;
@@ -62,19 +64,45 @@ public class MyTest {
         user.setPassword("1993510");
 
         List<Integer> ints = Arrays.asList(1, 66, 2, 3, 4);
-        DataRow row = DataRow.fromList(Arrays.asList(13, 14, ints, new String[]{"a", "b", "c", "d"}, "{\"age\":21}", "{\"age\":21}", "aaaaa", "txt",new Date()),
-                "a", "b", "ints", "strs", "js", "jsb", "str", "txt","dt");
+        DataRow row = DataRow.fromList(Arrays.asList(13, 14, ints, new String[]{"a", "b", "c", "d"}, "{\"age\":21}", "{\"age\":21}", "aaaaa", "txt", new Date()),
+                "a", "b", "ints", "strs", "js", "jsb", "str", "txt", "dt");
         int i = baki.insert("test.tb", row);
     }
 
     @Test
     public void selectTest() throws Exception {
-        baki.fetch("select * from test.tb where dt >= :dt", Args.of("dt", "2020-1-1"))
+        baki.fetch("select * from test.tb where blob is not null")
                 .ifPresent(System.out::println);
     }
 
     @Test
-    public void insert() throws Exception{
+    public void inserts() throws Exception {
+        baki.execute("insert into test.tb(strs)\n" +
+                "values ('{a,b,c}')");
+    }
+
+    @Test
+    public void toEntity() throws Exception {
+        baki.fetch("select * from test.tb")
+                .ifPresent(row -> {
+                    try {
+                        System.out.println(row.toEntity(Tb.class));
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                    } catch (InstantiationException e) {
+                        e.printStackTrace();
+                    } catch (IntrospectionException e) {
+                        e.printStackTrace();
+                    } catch (InvocationTargetException e) {
+                        e.printStackTrace();
+                    } catch (NoSuchMethodException e) {
+                        e.printStackTrace();
+                    }
+                });
+    }
+
+    @Test
+    public void insert() throws Exception {
         baki.insert("test.tb", Args.create()
                 .add("ts", "2020年2月12日 11:22:33")
                 .add("dt", "2020/12/23")
@@ -93,7 +121,7 @@ public class MyTest {
         row.<List<DataRow>>get(0)
                 .forEach(System.out::println);
 
-//        DataRow row1 = baki.execute("insert into test.tb(a,b) values (:a,:b)", Args.<Object>of("a", 5).set("b", 5));
+//        DataRow row1 = baki.execute("insert into test.tb(a,b) values (:a,:b)", Args.<Object>of("a", 5).add("b", 5));
 //        System.out.println(row1);
 //
 //        DataRow row2 = baki.execute("create index idx_a on test.tb(a)");
@@ -103,7 +131,7 @@ public class MyTest {
     @Test
     public void pagerTest() throws Exception {
         PagedResource<DataRow> res = baki.<DataRow>query("&pgsql.data.select_user", 1, 10)
-                .args(Args.create().set("id", 35))
+                .args(Args.create().add("id", 35))
                 .collect(d -> d);
         System.out.println(res);
     }
@@ -111,8 +139,8 @@ public class MyTest {
     @Test
     public void dynamicSqlTest() throws Exception {
         try (Stream<DataRow> s = baki.query("&pgsql.data.logical", Args.create()
-                .set("age", 91)
-                .set("name", "小"))) {
+                .add("age", 91)
+                .add("name", "小"))) {
             s.forEach(System.out::println);
         }
     }
@@ -187,7 +215,7 @@ public class MyTest {
     @Test
     public void testSqlFile() {
         try (Stream<DataRow> s = baki.query("&data.query",
-                Args.create().set("id", 4))) {
+                Args.create().add("id", 4))) {
             s.map(DataRow::toMap)
                     .forEach(System.out::println);
         }
@@ -229,7 +257,7 @@ public class MyTest {
     public void testCall2() throws Exception {
         baki.call(":num = call test.get_grade(:id)",
                 Args.of("num", Param.OUT(OUTParamType.INTEGER))
-                        .set("id", Param.IN(5)))
+                        .add("id", Param.IN(5)))
                 .getNullable("num")
                 .ifPresent(System.out::println);
     }
@@ -240,8 +268,8 @@ public class MyTest {
         Tx.using(() -> {
             DataRow row = baki.call("call test.multi_res(12, :success, :res, :msg)",
                     Args.of("success", Param.OUT(OUTParamType.BOOLEAN))
-                            .set("res", Param.OUT(OUTParamType.REF_CURSOR))
-                            .set("msg", Param.OUT(OUTParamType.VARCHAR))
+                            .add("res", Param.OUT(OUTParamType.REF_CURSOR))
+                            .add("msg", Param.OUT(OUTParamType.VARCHAR))
             );
             System.out.println(row);
         });
@@ -263,8 +291,8 @@ public class MyTest {
         }
         DataRow row = baki.call("{call test.fun_now(101, 55, :sum, :dt, :tm)}",
                 Args.of("dt", Param.OUT(OUTParamType.TIMESTAMP))
-                        .set("sum", Param.OUT(OUTParamType.INTEGER))
-                        .set("tm", Param.OUT(new TIME())));
+                        .add("sum", Param.OUT(OUTParamType.INTEGER))
+                        .add("tm", Param.OUT(new TIME())));
         Timestamp dt = row.get("dt");
         System.out.println(dt.toLocalDateTime());
         System.out.println(row);
@@ -298,11 +326,11 @@ public class MyTest {
         try {
             int i = Tx.using(() -> {
                 int x = baki.insert("test.user", Args.create().
-                        set("name", "chengyuxing_outer_transaction")
-                        .set("password", "1993510"));
+                        add("name", "chengyuxing_outer_transaction")
+                        .add("password", "1993510"));
                 int y = baki2.insert("test.user", Args.create()
-                        .set("name", "jackson_outer_transaction")
-                        .set("password", "new Date("));
+                        .add("name", "jackson_outer_transaction")
+                        .add("password", "new Date("));
                 return x + y;
             });
             System.out.println(i);
@@ -319,8 +347,8 @@ public class MyTest {
         List<Map<String, Object>> list = new ArrayList<>();
         for (int i = 0; i < 100; i++) {
             list.add(Args.create()
-                    .set("name", "batch" + i)
-                    .set("password", "123456"));
+                    .add("name", "batch" + i)
+                    .add("password", "123456"));
         }
         int i = baki.insert("test.user", list);
         System.out.println(i);
@@ -335,7 +363,7 @@ public class MyTest {
     @Test
     public void testUpdate() throws SQLException {
         int i = baki.update("test.user t",
-                Args.create().set("name", Param.IN("SQLFileManager")),
+                Args.create().add("name", Param.IN("SQLFileManager")),
                 Condition.where(Filter.eq("id", 5)));
         System.out.println(i);
     }

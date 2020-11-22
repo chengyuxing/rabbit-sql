@@ -85,19 +85,10 @@ public class MyTest {
     public void toEntity() throws Exception {
         baki.fetch("select * from test.tb")
                 .ifPresent(row -> {
-                    try {
-                        System.out.println(row.toEntity(Tb.class));
-                    } catch (IllegalAccessException e) {
-                        e.printStackTrace();
-                    } catch (InstantiationException e) {
-                        e.printStackTrace();
-                    } catch (IntrospectionException e) {
-                        e.printStackTrace();
-                    } catch (InvocationTargetException e) {
-                        e.printStackTrace();
-                    } catch (NoSuchMethodException e) {
-                        e.printStackTrace();
-                    }
+                    Tb tb = row.toEntity(Tb.class);
+                    System.out.println(tb);
+                    System.out.println(tb.getStrs().get(0));
+                    System.out.println(tb.getDt());
                 });
     }
 

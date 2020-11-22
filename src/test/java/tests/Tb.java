@@ -1,5 +1,6 @@
 package tests;
 
+import java.time.LocalDate;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
@@ -13,8 +14,9 @@ public class Tb {
     private List<Map<String, Object>> js;
     private String str;
     private Date ts;
-    private Date dt;
+    private LocalDate dt;
     private byte[] blob;
+    private String unKnow;
 
     @Override
     public String toString() {
@@ -28,7 +30,8 @@ public class Tb {
                 ", str='" + str + '\'' +
                 ", ts=" + ts +
                 ", dt=" + dt +
-                ", blob=" + blob +
+                ", blob=" + (blob) +
+                ", unKnow='" + unKnow + '\'' +
                 '}';
     }
 
@@ -96,11 +99,11 @@ public class Tb {
         this.ts = ts;
     }
 
-    public Date getDt() {
+    public LocalDate getDt() {
         return dt;
     }
 
-    public void setDt(Date dt) {
+    public void setDt(LocalDate dt) {
         this.dt = dt;
     }
 
@@ -110,5 +113,13 @@ public class Tb {
 
     public void setBlob(byte[] blob) {
         this.blob = blob;
+    }
+
+    public String getUnKnow() {
+        return unKnow;
+    }
+
+    public void setUnKnow(String unKnow) {
+        this.unKnow = unKnow;
     }
 }

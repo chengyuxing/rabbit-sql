@@ -389,17 +389,23 @@ public class JdbcUtil {
      */
     public static void setStoreArgs(CallableStatement statement, Map<String, Param> args, List<String> names) throws SQLException {
         if (args != null && !args.isEmpty()) {
+            // out and inout param first
             for (int i = 0; i < names.size(); i++) {
                 if (args.containsKey(names.get(i))) {
                     int index = i + 1;
                     Param param = args.get(names.get(i));
-                    if (param.getParamMode() == ParamMode.IN) {
-                        setStatementValue(statement, index, param.getValue());
-                    } else if (param.getParamMode() == ParamMode.OUT) {
+                    if (param.getParamMode() == ParamMode.OUT || param.getParamMode() == ParamMode.IN_OUT) {
                         statement.registerOutParameter(index, param.getType().getTypeNumber());
-                    } else if (param.getParamMode() == ParamMode.IN_OUT) {
+                    }
+                }
+            }
+            // in param first
+            for (int i = 0; i < names.size(); i++) {
+                if (args.containsKey(names.get(i))) {
+                    int index = i + 1;
+                    Param param = args.get(names.get(i));
+                    if (param.getParamMode() == ParamMode.IN || param.getParamMode() == ParamMode.IN_OUT) {
                         setStatementValue(statement, index, param.getValue());
-                        statement.registerOutParameter(index, param.getType().getTypeNumber());
                     }
                 }
             }

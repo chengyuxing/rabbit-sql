@@ -267,6 +267,18 @@ public class MyTest {
     }
 
     @Test
+    public void parameterMeta() throws Exception {
+        Connection connection = dataSource.getConnection();
+        CallableStatement statement = connection.prepareCall("{call test.func_now(1,2,?,?,?)}");
+        ParameterMetaData metaData = statement.getParameterMetaData();
+        System.out.println(metaData.getParameterTypeName(1));
+        System.out.println(metaData.getParameterTypeName(2));
+        System.out.println(metaData.getParameterTypeName(3));
+        System.out.println(metaData.getParameterTypeName(4));
+        System.out.println(metaData.getParameterTypeName(5));
+    }
+
+    @Test
     public void callTest() throws Exception {
         class TIME implements IOutParam {
 
@@ -280,8 +292,10 @@ public class MyTest {
                 return "time";
             }
         }
-        DataRow row = baki.call("{call test.fun_now(101, 55, :sum, :dt, :tm)}",
+        DataRow row = baki.call("{call test.fun_now(:a, :b, :sum, :dt, :tm)}",
                 Args.of("dt", Param.OUT(OUTParamType.TIMESTAMP))
+                        .add("a", Param.IN(11))
+                        .add("b", Param.IN(22))
                         .add("sum", Param.OUT(OUTParamType.INTEGER))
                         .add("tm", Param.OUT(new TIME())));
         Timestamp dt = row.get("dt");

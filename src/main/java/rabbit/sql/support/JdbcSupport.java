@@ -133,7 +133,7 @@ public abstract class JdbcSupport {
             boolean isQuery = sc.execute();
             DataRow result;
             if (isQuery) {
-                List<DataRow> rows = JdbcUtil.createDataRows(sc.getResultSet(), -1);
+                List<DataRow> rows = JdbcUtil.createDataRows(sc.getResultSet(), preparedSql, -1);
                 result = DataRow.of(new String[]{"result", "type"},
                         new String[]{"java.util.ArrayList<DataRow>", "java.lang.String"},
                         new Object[]{rows, "query"});
@@ -195,7 +195,7 @@ public abstract class JdbcSupport {
                             return false;
                         }
                         if (names == null) {
-                            names = JdbcUtil.createNames(resultSet);
+                            names = JdbcUtil.createNames(resultSet, preparedSql);
                         }
                         action.accept(JdbcUtil.createDataRow(names, resultSet));
                         return true;
@@ -310,7 +310,7 @@ public abstract class JdbcSupport {
                                 values[resultIndex] = null;
                                 types[resultIndex] = null;
                             } else if (result instanceof ResultSet) {
-                                List<DataRow> rows = JdbcUtil.createDataRows((ResultSet) result, -1);
+                                List<DataRow> rows = JdbcUtil.createDataRows((ResultSet) result, executeSql, -1);
                                 values[resultIndex] = rows;
                                 types[resultIndex] = "java.util.ArrayList<DataRow>";
                                 log.info("boxing a result with type: cursor, convert to ArrayList<DataRow>, get result by name:{} or index:{}!", outNames[resultIndex], resultIndex);

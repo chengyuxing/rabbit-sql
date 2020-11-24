@@ -23,6 +23,12 @@ public class OracleTest {
     }
 
     @Test
+    public void sss() throws Exception{
+        baki.fetch("select 1 A, 2 \"B\", sysdate DT, sys_guid() \"GuID\" from dual")
+        .ifPresent(System.out::println);
+    }
+
+    @Test
     public void insert() throws Exception{
         baki.insert("nutzbook.tb",
                 Args.create().add("a", 12)

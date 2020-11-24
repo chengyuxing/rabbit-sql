@@ -199,16 +199,23 @@ public class JdbcUtil {
     /**
      * 创建数据行表头
      *
-     * @param resultSet 结果集
+     * @param resultSet   结果集
+     * @param executedSql 将要执行的原生sql
      * @return 一组表头
      * @throws SQLException sqlEx
      */
-    public static String[] createNames(ResultSet resultSet) throws SQLException {
+    public static String[] createNames(ResultSet resultSet, final String executedSql) throws SQLException {
+        String sql = executedSql.toLowerCase();
         ResultSetMetaData metaData = resultSet.getMetaData();
         int columnCount = metaData.getColumnCount();
         String[] names = new String[columnCount];
         for (int i = 0; i < columnCount; i++) {
-            names[i] = metaData.getColumnName(i + 1).toLowerCase();
+            String columnName = metaData.getColumnName(i + 1);
+            if (sql.contains("\"" + columnName.toLowerCase() + "\"")) {
+                names[i] = columnName;
+            } else {
+                names[i] = columnName.toLowerCase();
+            }
         }
         return names;
     }
@@ -239,12 +246,13 @@ public class JdbcUtil {
     /**
      * 解析ResultSet
      *
-     * @param resultSet 结果集
-     * @param fetchSize 请求数据大小
+     * @param resultSet   结果集
+     * @param executedSql 将要执行的原生sql
+     * @param fetchSize   请求数据大小
      * @return 以流包装的结果集
      * @throws SQLException ex
      */
-    public static List<DataRow> createDataRows(final ResultSet resultSet, final long fetchSize) throws SQLException {
+    public static List<DataRow> createDataRows(final ResultSet resultSet, final String executedSql, final long fetchSize) throws SQLException {
         List<DataRow> list = new ArrayList<>();
         String[] names = null;
         long size = fetchSize;
@@ -252,7 +260,7 @@ public class JdbcUtil {
             if (size == 0)
                 break;
             if (names == null) {
-                names = createNames(resultSet);
+                names = createNames(resultSet, executedSql);
             }
             list.add(createDataRow(names, resultSet));
             size--;

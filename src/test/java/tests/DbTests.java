@@ -50,7 +50,7 @@ public class DbTests {
         boolean res = statement.execute();
         if (res) {
             ResultSet resultSet = statement.getResultSet();
-            List<DataRow> rows = JdbcUtil.createDataRows(resultSet, -1);
+            List<DataRow> rows = JdbcUtil.createDataRows(resultSet,"", -1);
             System.out.println(rows);
         } else {
             int count = statement.getUpdateCount();

@@ -93,11 +93,27 @@ public class MyTest {
     }
 
     @Test
+    public void testFieldCase() throws Exception {
+        baki.query("select 1 A, 2 \"B\", current_date DT, now() \"NoW\"")
+                .forEach(System.out::println);
+    }
+
+    @Test
     public void insert() throws Exception {
         baki.insert("test.tb", Args.create()
                 .add("ts", "2020年2月12日 11:22:33")
                 .add("dt", "2020/12/23")
                 .add("tm", "23时55分13秒"));
+    }
+
+    @Test
+    public void inertEntity() throws Exception {
+
+        Me me = new Me();
+        me.setAge(25);
+        me.setName("entity");
+
+        baki.insert("test.tb", Args.of("jsb", me));
     }
 
     @Test

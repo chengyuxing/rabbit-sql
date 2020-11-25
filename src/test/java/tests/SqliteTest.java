@@ -38,10 +38,6 @@ public class SqliteTest {
         baki.execute("create table user(id int primary key, name varchar(50), age int)");
     }
 
-    @Test
-    public void insert() throws Exception {
-        baki.insert("user", DataRow.fromList(Arrays.asList(2, "admin", 23), "id", "name", "age"));
-    }
 
     @Test
     public void query() {

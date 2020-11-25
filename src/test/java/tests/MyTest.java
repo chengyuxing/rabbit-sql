@@ -13,15 +13,15 @@ import rabbit.sql.page.PagedResource;
 import rabbit.sql.support.ICondition;
 import rabbit.sql.support.IOutParam;
 import rabbit.sql.transaction.Tx;
+import rabbit.sql.dao.Args;
+import rabbit.sql.types.DataFrame;
 import rabbit.sql.types.OUTParamType;
 import rabbit.sql.types.Param;
 import rabbit.sql.utils.JdbcUtil;
 
-import java.beans.IntrospectionException;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.sql.*;
@@ -56,20 +56,6 @@ public class MyTest {
     }
 
     @Test
-    public void record() throws Exception {
-
-        User user = new User();
-        user.setAge(27);
-        user.setName("chengyuxing");
-        user.setPassword("1993510");
-
-        List<Integer> ints = Arrays.asList(1, 66, 2, 3, 4);
-        DataRow row = DataRow.fromList(Arrays.asList(13, 14, ints, new String[]{"a", "b", "c", "d"}, "{\"age\":21}", "{\"age\":21}", "aaaaa", "txt", new Date()),
-                "a", "b", "ints", "strs", "js", "jsb", "str", "txt", "dt");
-        int i = baki.insert("test.tb", row);
-    }
-
-    @Test
     public void selectTest() throws Exception {
         baki.fetch("select * from test.tb where blob is not null")
                 .ifPresent(System.out::println);
@@ -100,10 +86,13 @@ public class MyTest {
 
     @Test
     public void insert() throws Exception {
-        baki.insert("test.tb", Args.create()
+        DataFrame dataFrame = DataFrame.of("test.tb", Args.create()
                 .add("ts", "2020年2月12日 11:22:33")
                 .add("dt", "2020/12/23")
-                .add("tm", "23时55分13秒"));
+                .add("tm", "23时55分13秒")
+                .add("bak", "ccc"));
+        dataFrame.setStrict(false);
+        baki.save(dataFrame);
     }
 
     @Test
@@ -112,13 +101,13 @@ public class MyTest {
         Me me = new Me();
         me.setAge(25);
         me.setName("entity");
-
-        baki.insert("test.tb", Args.of("jsb", me));
+        DataFrame frame = DataFrame.of("test.tb", Args.of("jsb", me));
+        baki.save(frame);
     }
 
     @Test
     public void insertFile() throws FileNotFoundException {
-        baki.insert("test.tb", Args.of("blob", new FileInputStream("/Users/chengyuxing/Downloads/istatmenus6.40.zip")));
+        baki.save(DataFrame.of("test.tb", Args.of("blob", new FileInputStream("/Users/chengyuxing/Downloads/istatmenus6.40.zip"))));
     }
 
     @Test
@@ -183,7 +172,7 @@ public class MyTest {
         map.put("productplace", "bbb");
         map.put("price", 1000);
 
-        int i = baki.insert("test.fruit", map);
+        int i = baki.save(DataFrame.of("test.fruit", map));
         System.out.println(i);
     }
 
@@ -340,40 +329,6 @@ public class MyTest {
 //                        .build());
 //        System.out.println(i);
 //    }
-
-    @Test
-    public void TestInert2() throws SQLException {
-//        Transaction.begin();
-        try {
-            int i = Tx.using(() -> {
-                int x = baki.insert("test.user", Args.create().
-                        add("name", "chengyuxing_outer_transaction")
-                        .add("password", "1993510"));
-                int y = baki2.insert("test.user", Args.create()
-                        .add("name", "jackson_outer_transaction")
-                        .add("password", "new Date("));
-                return x + y;
-            });
-            System.out.println(i);
-//            System.out.println(x + y);
-//            Transaction.commit();
-        } catch (Exception e) {
-//            Transaction.rollback();
-            e.printStackTrace();
-        }
-    }
-
-    @Test
-    public void testInsertBatch() throws SQLException {
-        List<Map<String, Object>> list = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
-            list.add(Args.create()
-                    .add("name", "batch" + i)
-                    .add("password", "123456"));
-        }
-        int i = baki.insert("test.user", list);
-        System.out.println(i);
-    }
 
     @Test
     public void TestDelete() throws SQLException {

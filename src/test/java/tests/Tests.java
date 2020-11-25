@@ -9,30 +9,24 @@ import org.nutz.json.Json;
 import rabbit.common.tuple.Pair;
 import rabbit.common.types.DataRow;
 import rabbit.common.types.ImmutableList;
-import rabbit.common.types.UncheckedCloseable;
 import rabbit.common.utils.DateTimes;
 import rabbit.sql.dao.*;
-import rabbit.sql.support.ICondition;
-import rabbit.sql.page.PageHelper;
 import rabbit.sql.page.impl.OraclePageHelper;
 import rabbit.sql.page.PagedResource;
+import rabbit.sql.dao.Args;
 import rabbit.sql.types.Ignore;
 import rabbit.sql.types.Param;
 import rabbit.sql.utils.SqlUtil;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
-import java.math.BigDecimal;
 import java.net.URISyntaxException;
 import java.time.*;
-import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 import static rabbit.sql.utils.SqlUtil.SEP;
 
@@ -156,6 +150,15 @@ public class Tests {
 
     @Test
     public void orderByTest() throws Exception {
+        String a = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+        String b = a.toLowerCase();
+        for (int i = 0; i < a.length(); i++) {
+            System.out.print((int) a.charAt(i) + ", ");
+        }
+        System.out.println();
+        for (int i = 0; i < a.length(); i++) {
+            System.out.print((int) b.charAt(i) + ", ");
+        }
     }
 
     public static void printMap(Map<String, Param> map) {
@@ -165,20 +168,35 @@ public class Tests {
     @Test
     public void generateSql() throws Exception {
         Args<Object> paramMap = Args.create()
-                .add("a", null)
+                .add("a", "cyx")
                 .add("b", "v")
                 .add("c", "")
                 .add("d", null)
                 .add("e", "1");
 
-        System.out.println(SqlUtil.generateInsert("test.user", paramMap, Ignore.NULL));
+//        String sql = SqlUtil.generateInsert("test.user", paramMap, Ignore.BLANK, Arrays.asList("c", "d", "a"));
+
+        String upd = SqlUtil.generateUpdate("test.user", paramMap);
+        System.out.println(upd);
     }
 
     @Test
     public void recordTest() throws Exception {
-        Record record = new Record();
-        record.put("name", "cyx");
-        System.out.println(record.getString("age"));
+        Map<String, Object> map = new HashMap<>();
+        map.put("a", 1);
+        map.put("b", 1);
+        map.put("c", 1);
+        map.put("d", 1);
+        map.put("e", 1);
+        Set<String> strings = new HashSet<>(map.keySet());
+
+        Iterator<String> iterator = strings.iterator();
+        if (iterator.hasNext()) {
+            String v = iterator.next();
+            iterator.remove();
+        }
+        System.out.println(strings);
+        System.out.println(map);
     }
 
     @Test

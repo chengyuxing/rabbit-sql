@@ -1,6 +1,7 @@
 package rabbit.sql;
 
 import rabbit.common.types.DataRow;
+import rabbit.sql.types.DataFrame;
 import rabbit.sql.page.IPageable;
 import rabbit.sql.support.ICondition;
 import rabbit.sql.types.Ignore;
@@ -29,7 +30,7 @@ public interface Baki {
     /**
      * 执行一条原始sql
      *
-     * @param sql    原始sql
+     * @param sql  原始sql
      * @param args 参数
      * @return 如果执行成功，DML语句返回1，DDL语句返回0
      */
@@ -38,49 +39,10 @@ public interface Baki {
     /**
      * 插入
      *
-     * @param tableName 表名
-     * @param data      数据
+     * @param dataFrame 表名
      * @return 受影响的行数
      */
-    int insert(String tableName, Map<String, Object> data);
-
-    /**
-     * 插入
-     *
-     * @param tableName 表名
-     * @param data      数据
-     * @param ignore    忽略插入的值类型
-     * @return 受影响的行数
-     */
-    int insert(String tableName, Map<String, Object> data, Ignore ignore);
-
-    /**
-     * 插入
-     *
-     * @param tableName 表名
-     * @param row       数据
-     * @return 受影响的行数
-     */
-    int insert(String tableName, DataRow row);
-
-    /**
-     * 插入
-     *
-     * @param tableName 表名
-     * @param row       数据
-     * @param ignore    忽略插入的值类型
-     * @return 受影响的行数
-     */
-    int insert(String tableName, DataRow row, Ignore ignore);
-
-    /**
-     * 批量插入
-     *
-     * @param tableName 表名
-     * @param data      数据
-     * @return 受影响的行数
-     */
-    int insert(String tableName, Collection<Map<String, Object>> data);
+    int save(DataFrame dataFrame);
 
     /**
      * 删除

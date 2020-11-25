@@ -99,7 +99,7 @@ public abstract class JdbcSupport {
             JdbcUtil.closeStatement(statement);
             statement = null;
             releaseConnection(connection, getDataSource());
-            throw new RuntimeException(String.format("execute target sql[%s]:%s", sql, e.getMessage()));
+            throw new RuntimeException("execute sql [" + sql + "] error: ", e);
         } finally {
             JdbcUtil.closeStatement(statement);
             releaseConnection(connection, getDataSource());
@@ -140,9 +140,9 @@ public abstract class JdbcSupport {
             } else {
                 int count = sc.getUpdateCount();
                 if (count <= 0) {
-                    result = DataRow.fromList(Arrays.asList(0, "DDL statement"), "result", "type");
+                    result = DataRow.fromPair("result", 0, "type", "DDL statement");
                 } else {
-                    result = DataRow.fromList(Arrays.asList(count, "DML statement"), "result", "type");
+                    result = DataRow.fromPair("result", count, "type", "DML statement");
                 }
             }
             return result;
@@ -251,7 +251,7 @@ public abstract class JdbcSupport {
             } else {
                 i = sc.executeUpdate();
             }
-            log.info("{} rows updated!", i);
+            log.debug("{} rows updated!", i);
             return i;
         });
     }
@@ -295,13 +295,16 @@ public abstract class JdbcSupport {
                 JdbcUtil.setStoreArgs(statement, args, argNames);
                 statement.execute();
 
-                String[] outNames = argNames.stream().filter(n -> {
-                    ParamMode mode = args.get(n).getParamMode();
-                    return mode == ParamMode.OUT || mode == ParamMode.IN_OUT;
-                }).toArray(String[]::new);
-                if (outNames.length > 0) {
-                    Object[] values = new Object[outNames.length];
-                    String[] types = new String[outNames.length];
+                List<String> outNames = new ArrayList<>();
+                for (String name : argNames) {
+                    ParamMode mode = args.get(name).getParamMode();
+                    if (mode == ParamMode.OUT || mode == ParamMode.IN_OUT) {
+                        outNames.add(name);
+                    }
+                }
+                if (outNames.size() > 0) {
+                    Object[] values = new Object[outNames.size()];
+                    String[] types = new String[values.length];
                     int resultIndex = 0;
                     for (int i = 0; i < argNames.size(); i++) {
                         if (args.get(argNames.get(i)).getParamMode() == ParamMode.OUT || args.get(argNames.get(i)).getParamMode() == ParamMode.IN_OUT) {
@@ -313,16 +316,16 @@ public abstract class JdbcSupport {
                                 List<DataRow> rows = JdbcUtil.createDataRows((ResultSet) result, executeSql, -1);
                                 values[resultIndex] = rows;
                                 types[resultIndex] = "java.util.ArrayList<DataRow>";
-                                log.info("boxing a result with type: cursor, convert to ArrayList<DataRow>, get result by name:{} or index:{}!", outNames[resultIndex], resultIndex);
+                                log.debug("boxing a result with type: cursor, convert to ArrayList<DataRow>, get result by name:{} or index:{}!", outNames.get(resultIndex), resultIndex);
                             } else {
                                 values[resultIndex] = result;
                                 types[resultIndex] = result.getClass().getName();
-                                log.info("boxing a result with type:{}, get result by name:{} or index:{}!", types[resultIndex], outNames[resultIndex], resultIndex);
+                                log.debug("boxing a result with type:{}, get result by name:{} or index:{}!", types[resultIndex], outNames.get(resultIndex), resultIndex);
                             }
                             resultIndex++;
                         }
                     }
-                    return DataRow.of(outNames, types, values);
+                    return DataRow.of(outNames.toArray(new String[0]), types, values);
                 }
             }
             return DataRow.empty();
@@ -330,7 +333,7 @@ public abstract class JdbcSupport {
             JdbcUtil.closeStatement(statement);
             statement = null;
             releaseConnection(connection, getDataSource());
-            throw new RuntimeException(String.format("execute target procedure[%s]:%s", procedure, e.getMessage()));
+            throw new RuntimeException("execute procedure [" + procedure + "] error:", e);
         } finally {
             JdbcUtil.closeStatement(statement);
             releaseConnection(connection, getDataSource());

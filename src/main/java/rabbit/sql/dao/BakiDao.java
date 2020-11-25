@@ -8,8 +8,9 @@ import rabbit.sql.datasource.DataSourceUtil;
 import rabbit.sql.page.IPageable;
 import rabbit.sql.support.ICondition;
 import rabbit.sql.support.JdbcSupport;
-import rabbit.sql.types.Ignore;
+import rabbit.sql.types.DataFrame;
 import rabbit.sql.types.Param;
+import rabbit.sql.utils.JdbcUtil;
 import rabbit.sql.utils.SqlUtil;
 
 import javax.sql.DataSource;
@@ -17,6 +18,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.stream.Stream;
@@ -88,30 +90,25 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public int insert(String tableName, Map<String, Object> data) {
-        return insert(tableName, data, null);
-    }
-
-    @Override
-    public int insert(String tableName, Map<String, Object> data, Ignore ignore) {
-        return executeNonQuery(SqlUtil.generateInsert(tableName, data, ignore), Collections.singletonList(data));
-    }
-
-    @Override
-    public int insert(String tableName, DataRow row) {
-        return insert(tableName, row, null);
-    }
-
-    @Override
-    public int insert(String tableName, DataRow row, Ignore ignore) {
-        return insert(tableName, row.toMap(), ignore);
-    }
-
-    @Override
-    public int insert(String tableName, Collection<Map<String, Object>> data) {
-        if (data != null && data.size() > 0) {
-            Map<String, Object> first = data.stream().findFirst().get();
-            return executeNonQuery(SqlUtil.generateInsert(tableName, first, null), data);
+    public int save(DataFrame dataFrame) {
+        Collection<Map<String, Object>> data = dataFrame.getRows();
+        Iterator<Map<String, Object>> iterator = data.iterator();
+        if (iterator.hasNext()) {
+            Map<String, Object> first = new HashMap<>(iterator.next());
+            List<String> tableFields = Collections.emptyList();
+            if (!dataFrame.isStrict()) {
+                log.debug("prepare for non-strict insert...");
+                tableFields = execute(dataFrame.getTableFieldsSql(), sc -> {
+                    sc.executeQuery();
+                    ResultSet fieldsResultSet = sc.getResultSet();
+                    List<String> fields = Arrays.asList(JdbcUtil.createNames(fieldsResultSet, ""));
+                    JdbcUtil.closeResultSet(fieldsResultSet);
+                    log.debug("all fields of table: {} {}", dataFrame.getTableName(), fields);
+                    return fields;
+                });
+            }
+            String insertSql = SqlUtil.generateInsert(dataFrame.getTableName(), first, dataFrame.getIgnore(), tableFields);
+            return executeNonQuery(insertSql, data);
         }
         return -1;
     }

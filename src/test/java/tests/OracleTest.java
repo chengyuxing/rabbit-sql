@@ -27,14 +27,4 @@ public class OracleTest {
         baki.fetch("select 1 A, 2 \"B\", sysdate DT, sys_guid() \"GuID\" from dual")
         .ifPresent(System.out::println);
     }
-
-    @Test
-    public void insert() throws Exception{
-        baki.insert("nutzbook.tb",
-                Args.create().add("a", 12)
-                        .add("b", 33)
-                        .add("str", "cyx")
-                        .add("dt", new Date())
-                        .add("tm", new Date()));
-    }
 }

@@ -4,12 +4,9 @@ import rabbit.common.tuple.Pair;
 import rabbit.common.types.CExpression;
 import rabbit.sql.types.Ignore;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 /**
  * SQL工具类
@@ -32,26 +29,48 @@ public class SqlUtil {
      * 构建一个插入语句
      *
      * @param tableName 表名
-     * @param data      数据
+     * @param row       数据
      * @param ignore    忽略类型
      * @return 插入语句
      */
-    public static String generateInsert(final String tableName, final Map<String, Object> data, final Ignore ignore) {
-        String[] fh = data.keySet().stream()
-                .filter(k -> {
-                    if (ignore == Ignore.NULL) {
-                        return data.get(k) != null;
-                    }
-                    if (ignore == Ignore.BLANK) {
-                        return data.get(k) != null && !data.get(k).equals("");
-                    }
-                    return true;
-                }).reduce(new String[]{"", ""}, (acc, current) -> {
-                    acc[0] += current + ", ";
-                    acc[1] += ":" + current + ", ";
-                    return acc;
-                }, (a, b) -> a);
-        return "insert into " + tableName + "(" + fh[0].substring(0, fh[0].length() - 2) + ") \nvalues (" + fh[1].substring(0, fh[1].length() - 2) + ")";
+    public static String generateInsert(final String tableName, final Map<String, Object> row, final Ignore ignore, List<String> fields) {
+        Set<String> keys = row.keySet();
+        if (fields != null && !fields.isEmpty()) {
+            Iterator<String> keyIterator = keys.iterator();
+            while (keyIterator.hasNext()) {
+                if (!fields.contains(keyIterator.next())) {
+                    keyIterator.remove();
+                }
+            }
+        }
+
+        Iterator<String> keyIterator = keys.iterator();
+        if (ignore == Ignore.NULL) {
+            while (keyIterator.hasNext()) {
+                if (row.get(keyIterator.next()) == null) {
+                    keyIterator.remove();
+                }
+            }
+        } else if (ignore == Ignore.BLANK) {
+            while (keyIterator.hasNext()) {
+                String k = keyIterator.next();
+                if (row.get(k) == null || row.get(k).equals("")) {
+                    keyIterator.remove();
+                }
+            }
+        }
+
+        if (keys.isEmpty()) {
+            throw new IllegalArgumentException("empty field set, generate insert sql error.");
+        }
+
+        StringBuilder f = new StringBuilder();
+        StringBuilder h = new StringBuilder();
+        for (String key : keys) {
+            f.append(key).append(", ");
+            h.append(":").append(key).append(", ");
+        }
+        return "insert into " + tableName + "(" + f.substring(0, f.length() - 2) + ") \nvalues (" + h.substring(0, h.length() - 2) + ")";
     }
 
     /**
@@ -62,11 +81,17 @@ public class SqlUtil {
      * @return 更新语句
      */
     public static String generateUpdate(String tableName, Map<String, Object> data) {
-        String sets = data.keySet().stream()
-                .filter(key -> !key.contains(SEP))
-                .map(key -> key + " = :" + key)
-                .collect(Collectors.joining(", \n\t"));
-        return "update " + tableName + " \nset " + sets;
+        Set<String> keys = data.keySet();
+        StringBuilder sb = new StringBuilder();
+        for (String key : keys) {
+            if (!key.contains(SEP)) {
+                sb.append(key).append(" = :").append(key).append(",\n\t");
+            }
+        }
+        if (keys.isEmpty()) {
+            throw new IllegalArgumentException("empty field set, generate update sql error.");
+        }
+        return "update " + tableName + " \nset " + sb.substring(0, sb.lastIndexOf(","));
     }
 
     /**

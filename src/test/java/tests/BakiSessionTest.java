@@ -6,6 +6,8 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import rabbit.sql.Baki;
+import rabbit.sql.dao.Args;
+import rabbit.sql.types.DataFrame;
 
 import java.sql.Date;
 import java.sql.Time;
@@ -122,16 +124,6 @@ public class BakiSessionTest {
     }
 
     @Test
-    public void insert() throws Exception {
-//        Transaction transaction = baki.getTransaction();
-        baki.insert("test.user",
-                Args.create().add("name", "dynamic")
-                        .add("password", "123456")
-                        .add("id_card", "530111199305107030"));
-//        transaction.commit();
-    }
-
-    @Test
     public void jsonTests() throws Exception {
         baki.fetch("select '{\n" +
                 "  \"a\": 1,\n" +
@@ -149,10 +141,11 @@ public class BakiSessionTest {
 
     @Test
     public void dateTimeTest() throws Exception {
-        baki.insert("test.datetime", Args.create()
+        DataFrame dataFrame = DataFrame.of("test.datetime", Args.create()
                 .add("ts", LocalDateTime.now())
                 .add("dt", LocalDate.now())
                 .add("tm", LocalTime.now()));
+        baki.save(dataFrame);
     }
 
     @Test

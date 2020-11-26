@@ -307,7 +307,6 @@ public class JdbcUtil {
     public static void setStatementValue(PreparedStatement statement, int index, Object value) throws SQLException {
         String pClass = statement.getParameterMetaData().getParameterClassName(index);
         String pType = statement.getParameterMetaData().getParameterTypeName(index);
-        String valueType = value.getClass().getTypeName();
         // if postgresql, save as json(b) type
         // if column is json type
         if (pType.equals("json") || pType.equals("jsonb")) {
@@ -316,12 +315,11 @@ public class JdbcUtil {
             } else {
                 statement.setObject(index, createPgObject(pType, obj2Json(value)));
             }
-        } else if (pClass.equals("java.lang.String") && !ReflectUtil.isBasicType(value)) {
-            // if is text column type and value is not basic type, write value as json string.
+        } else if (pClass.equals("java.lang.String") && !(value instanceof String)) {
             if (value instanceof Map || value instanceof Collection) {
                 statement.setObject(index, obj2Json(value));
-                // maybe Date, LocalDateTime, UUID, BigDecimal...
-            } else if (valueType.startsWith("java.")) {
+                // maybe Date, LocalDateTime, UUID, BigDecimal, Integer...
+            } else if (value.getClass().getTypeName().startsWith("java.")) {
                 statement.setObject(index, value.toString());
             } else {
                 // maybe is java bean

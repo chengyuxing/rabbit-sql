@@ -15,6 +15,7 @@ import rabbit.sql.support.IOutParam;
 import rabbit.sql.transaction.Tx;
 import rabbit.sql.dao.Args;
 import rabbit.sql.types.DataFrame;
+import rabbit.sql.types.Ignore;
 import rabbit.sql.types.OUTParamType;
 import rabbit.sql.types.Param;
 import rabbit.sql.utils.JdbcUtil;
@@ -88,10 +89,10 @@ public class MyTest {
     public void insert() throws Exception {
         DataFrame dataFrame = DataFrame.of("test.tb", Args.create()
                 .add("ts", "2020年2月12日 11:22:33")
-                .add("dt", "2020/12/23")
+                .add("dtm", "")
                 .add("tm", "23时55分13秒")
-                .add("bak", "ccc"));
-        dataFrame.setStrict(false);
+                .add("bak", "ccc"))
+                .strict(false);
         baki.save(dataFrame);
     }
 

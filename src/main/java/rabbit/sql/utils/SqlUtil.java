@@ -31,6 +31,7 @@ public class SqlUtil {
      * @param tableName 表名
      * @param row       数据
      * @param ignore    忽略类型
+     * @param fields    需要包含的字段集合
      * @return 插入语句
      */
     public static String generateInsert(final String tableName, final Map<String, Object> row, final Ignore ignore, List<String> fields) {

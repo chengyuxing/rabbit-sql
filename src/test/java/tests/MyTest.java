@@ -15,7 +15,6 @@ import rabbit.sql.support.IOutParam;
 import rabbit.sql.transaction.Tx;
 import rabbit.sql.dao.Args;
 import rabbit.sql.types.DataFrame;
-import rabbit.sql.types.Ignore;
 import rabbit.sql.types.OUTParamType;
 import rabbit.sql.types.Param;
 import rabbit.sql.utils.JdbcUtil;
@@ -27,7 +26,6 @@ import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.sql.*;
 import java.util.*;
-import java.util.Date;
 import java.util.stream.Stream;
 
 
@@ -93,7 +91,7 @@ public class MyTest {
                 .add("tm", "23时55分13秒")
                 .add("bak", "ccc"))
                 .strict(false);
-        baki.save(dataFrame);
+        baki.insert(dataFrame);
     }
 
     @Test
@@ -103,12 +101,12 @@ public class MyTest {
         me.setAge(25);
         me.setName("entity");
         DataFrame frame = DataFrame.of("test.tb", Args.of("jsb", me));
-        baki.save(frame);
+        baki.insert(frame);
     }
 
     @Test
     public void insertFile() throws FileNotFoundException {
-        baki.save(DataFrame.of("test.tb", Args.of("blob", new FileInputStream("/Users/chengyuxing/Downloads/istatmenus6.40.zip"))));
+        baki.insert(DataFrame.of("test.tb", Args.of("blob", new FileInputStream("/Users/chengyuxing/Downloads/istatmenus6.40.zip"))));
     }
 
     @Test
@@ -173,7 +171,7 @@ public class MyTest {
         map.put("productplace", "bbb");
         map.put("price", 1000);
 
-        int i = baki.save(DataFrame.of("test.fruit", map));
+        int i = baki.insert(DataFrame.of("test.fruit", map));
         System.out.println(i);
     }
 

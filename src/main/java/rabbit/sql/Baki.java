@@ -1,15 +1,13 @@
 package rabbit.sql;
 
 import rabbit.common.types.DataRow;
-import rabbit.sql.types.DataFrame;
 import rabbit.sql.page.IPageable;
 import rabbit.sql.support.ICondition;
-import rabbit.sql.types.Ignore;
+import rabbit.sql.types.DataFrame;
 import rabbit.sql.types.Param;
 
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -42,7 +40,7 @@ public interface Baki {
      * @param dataFrame 表名
      * @return 受影响的行数
      */
-    int save(DataFrame dataFrame);
+    int insert(DataFrame dataFrame);
 
     /**
      * 删除

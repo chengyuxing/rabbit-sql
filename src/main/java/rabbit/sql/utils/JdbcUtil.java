@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rabbit.common.types.DataRow;
 import rabbit.common.utils.DateTimes;
-import rabbit.common.utils.ReflectUtil;
 import rabbit.sql.types.Param;
 import rabbit.sql.types.ParamMode;
 
@@ -307,7 +306,7 @@ public class JdbcUtil {
     public static void setStatementValue(PreparedStatement statement, int index, Object value) throws SQLException {
         String pClass = statement.getParameterMetaData().getParameterClassName(index);
         String pType = statement.getParameterMetaData().getParameterTypeName(index);
-        // if postgresql, save as json(b) type
+        // if postgresql, insert as json(b) type
         // if column is json type
         if (pType.equals("json") || pType.equals("jsonb")) {
             if (value instanceof String) {

@@ -90,7 +90,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public int save(DataFrame dataFrame) {
+    public int insert(DataFrame dataFrame) {
         Collection<Map<String, Object>> data = dataFrame.getRows();
         Iterator<Map<String, Object>> iterator = data.iterator();
         if (iterator.hasNext()) {

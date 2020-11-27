@@ -145,7 +145,7 @@ public class BakiSessionTest {
                 .add("ts", LocalDateTime.now())
                 .add("dt", LocalDate.now())
                 .add("tm", LocalTime.now()));
-        baki.save(dataFrame);
+        baki.insert(dataFrame);
     }
 
     @Test

@@ -80,7 +80,7 @@ public class Condition implements ICondition {
      * @return 条件拼接器
      */
     private Condition concatFilterBy(String s, IFilter filter) {
-        if (filter.getValue() != IFilter.IGNORE_VALUE) {
+        if (!IFilter.IGNORE_VALUE.equals(filter.getValue())) {
             Pair<String, String> sf = getSpecialField(filter.getField());
             conditions.append(s)
                     .append(filter.getField())

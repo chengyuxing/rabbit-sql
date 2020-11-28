@@ -62,7 +62,7 @@ public interface Baki {
     int update(String tableName, Map<String, Object> data, ICondition ICondition);
 
     /**
-     * 查询<br>
+     * 查询
      *
      * @param sql 查询sql
      * @return 收集为流的结果集

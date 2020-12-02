@@ -1,6 +1,7 @@
 package tests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.zaxxer.hikari.HikariDataSource;
 import func.BeanUtil;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -36,6 +37,15 @@ public class Tests {
     public void dtTest() throws Exception {
         System.out.println(new java.sql.Time(DateTimes.toEpochMilli("2020-12-11 11:22:33")));
         System.out.println(LocalDateTime.class.getTypeName());
+    }
+
+    @Test
+    public void dsTest() throws Exception{
+        HikariDataSource dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
+        dataSource.setUsername("chengyuxing");
+
+        BakiDao bakiDao = BakiDao.of(dataSource);
     }
 
     @Test

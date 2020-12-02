@@ -7,7 +7,6 @@ import rabbit.sql.types.DataFrame;
 import rabbit.sql.types.Param;
 
 import java.sql.DatabaseMetaData;
-import java.sql.SQLException;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
@@ -136,7 +135,6 @@ public interface Baki {
      * 获取数据库的元数据信息
      *
      * @return 数据库的元数据信息
-     * @throws SQLException sql连接异常
      */
-    DatabaseMetaData getMetaData() throws SQLException;
+    DatabaseMetaData getMetaData();
 }

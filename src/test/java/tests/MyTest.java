@@ -56,8 +56,7 @@ public class MyTest {
 
     @Test
     public void selectTest() throws Exception {
-        baki.fetch("select * from test.tb where blob is not null")
-                .ifPresent(System.out::println);
+        System.out.println(JdbcUtil.supportStoredProcedure(dataSource.getConnection()));
     }
 
     @Test
@@ -106,7 +105,7 @@ public class MyTest {
 
     @Test
     public void insertFile() throws FileNotFoundException {
-        baki.insert(DataFrame.of("test.tb", Args.of("blob", new FileInputStream("/Users/chengyuxing/Downloads/istatmenus6.40.zip"))));
+        baki.insert(DataFrame.of("test.tb", Args.of("blob", new FileInputStream("/Users/chengyuxing/Downloads/Bob.app.zip"))));
     }
 
     @Test

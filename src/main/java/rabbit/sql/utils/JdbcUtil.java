@@ -345,19 +345,7 @@ public class JdbcUtil {
             } else if (value instanceof Instant) {
                 statement.setObject(index, new Timestamp(((Instant) value).toEpochMilli()));
             } else if (value instanceof InputStream) {
-                try (BufferedInputStream in = new BufferedInputStream((InputStream) value)) {
-                    ByteArrayOutputStream out = new ByteArrayOutputStream();
-                    BufferedOutputStream bo = new BufferedOutputStream(out);
-                    int i;
-                    while ((i = in.read()) != -1) {
-                        bo.write(i);
-                    }
-                    bo.flush();
-                    statement.setObject(index, out.toByteArray());
-                    bo.close();
-                } catch (IOException e) {
-                    throw new RuntimeException("convert inputstream error:", e);
-                }
+                statement.setBinaryStream(index, (InputStream) value);
             } else {
                 statement.setObject(index, value);
             }

@@ -189,11 +189,15 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public DatabaseMetaData getMetaData() throws SQLException {
-        if (metaData == null) {
-            metaData = getConnection().getMetaData();
+    public DatabaseMetaData getMetaData() {
+        try {
+            if (metaData == null) {
+                metaData = getConnection().getMetaData();
+            }
+            return metaData;
+        } catch (SQLException throwables) {
+            throw new RuntimeException("fail to get metadata: ", throwables);
         }
-        return metaData;
     }
 
     /**

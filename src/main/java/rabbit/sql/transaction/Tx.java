@@ -70,8 +70,7 @@ public final class Tx {
             commit();
         } catch (Exception e) {
             rollback();
-            log.error("transaction will rollback.");
-            e.printStackTrace();
+            log.error("transaction will rollback cause: ", e);
         }
     }
 
@@ -91,8 +90,7 @@ public final class Tx {
             commit();
         } catch (Exception e) {
             rollback();
-            log.error("transaction will rollback.");
-            e.printStackTrace();
+            log.error("transaction will rollback cause: ", e);
         }
         return result;
     }
@@ -139,7 +137,7 @@ public final class Tx {
                 try {
                     holder.getConnection().commit();
                 } catch (SQLException e) {
-                    log.error("transaction commit failed:{}", e.toString());
+                    throw new RuntimeException("transaction commit failed: ", e);
                 }
             }
         });
@@ -156,7 +154,7 @@ public final class Tx {
                 try {
                     holder.getConnection().rollback();
                 } catch (SQLException e) {
-                    log.error("transaction rollback failed:{}", e.toString());
+                    throw new RuntimeException("transaction rollback failed: ", e);
                 }
             }
         });

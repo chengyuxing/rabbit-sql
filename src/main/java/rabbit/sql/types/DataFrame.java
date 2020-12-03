@@ -4,7 +4,9 @@ import rabbit.common.types.DataRow;
 
 import java.util.Collection;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 用来进行插入操作的数据容器
@@ -101,8 +103,32 @@ public class DataFrame {
      * @param rows      行数据类型集合
      * @return DataFrame
      */
-    public static DataFrame of(String tableName, Collection<Map<String, Object>> rows) {
+    public static DataFrame ofMaps(String tableName, Collection<Map<String, Object>> rows) {
         return new DataFrame(tableName, rows);
+    }
+
+    /**
+     * 创建一个数据容器
+     *
+     * @param tableName 表名
+     * @param rows      行数据类型集合
+     * @return DataFrame
+     */
+    public static DataFrame ofRows(String tableName, Collection<DataRow> rows) {
+        List<Map<String, Object>> maps = rows.stream().map(DataRow::toMap).collect(Collectors.toList());
+        return ofMaps(tableName, maps);
+    }
+
+    /**
+     * 创建一个数据容器
+     *
+     * @param tableName 表名
+     * @param entities  行数据类型集合
+     * @return DataFrame
+     */
+    public static DataFrame ofEntities(String tableName, Collection<?> entities) {
+        List<DataRow> rows = entities.stream().map(DataRow::fromEntity).collect(Collectors.toList());
+        return ofRows(tableName, rows);
     }
 
     /**
@@ -113,7 +139,7 @@ public class DataFrame {
      * @return DataFrame
      */
     public static DataFrame of(String tableName, Map<String, Object> row) {
-        return of(tableName, Collections.singletonList(row));
+        return ofMaps(tableName, Collections.singletonList(row));
     }
 
     /**

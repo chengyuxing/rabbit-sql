@@ -30,7 +30,7 @@ from test.user where id < :id;
 select *
 from test.student where ${cnd};
 
-/*[fruitCount]*/
+/*[update2]*/
 select count(*)
 from test.student;
 

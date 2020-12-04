@@ -1,6 +1,9 @@
 package tests;
 
 import org.junit.Test;
+import org.nutz.ioc.Ioc;
+import org.nutz.ioc.impl.NutIoc;
+import org.nutz.ioc.loader.json.JsonLoader;
 import rabbit.common.tuple.Pair;
 import rabbit.sql.dao.Args;
 import rabbit.sql.dao.SQLFileManager;
@@ -23,21 +26,20 @@ public class SqlFileTest {
     }
 
     @Test
-    public void sqlTest() throws Exception {
-        SQLFileManager sqlFileManager = new SQLFileManager("pgsql/data.sql", "pgsql/other.sql");
+    public void nutzIoc() throws Exception {
+        Ioc ioc = new NutIoc(new JsonLoader("ioc.js"));
+        SQLFileManager sqlFileManager = ioc.get(SQLFileManager.class, "sqlFileManager");
         sqlFileManager.init();
         sqlFileManager.look();
-        System.out.println("------------");
+    }
 
-        String sql = sqlFileManager.get("pgsql.data.logical");
-        System.out.println(sql);
-        String dynamicSql = SqlUtil.dynamicSql(sql, Args.create()
-                .add("name", "null")
-                .add("age", null)
-                .add("address", null)
-                .add("id", null));
-        System.out.println("-------------");
-        System.out.println(dynamicSql);
+    @Test
+    public void sqlTest() throws Exception {
+        SQLFileManager sqlFileManager = new SQLFileManager("pgsql/data.sql");
+        sqlFileManager.addNamedPath("cyx", "pgsql/other.sql");
+        sqlFileManager.addNamedPath("mac", "file:/Users/chengyuxing/Downloads/local.sql");
+        sqlFileManager.init();
+        sqlFileManager.look();
     }
 
     @Test

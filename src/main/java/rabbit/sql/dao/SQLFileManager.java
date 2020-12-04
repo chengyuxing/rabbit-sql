@@ -2,7 +2,7 @@ package rabbit.sql.dao;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import rabbit.common.io.ClassPathResource;
+import rabbit.common.io.FileResource;
 import rabbit.common.utils.ResourceUtil;
 
 import java.io.BufferedReader;
@@ -10,28 +10,34 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URISyntaxException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
  * SQL文件解析管理器<br>
+ * 本地sql文件 (以file:...开头)，默认读取classpath下的sql文件<br>
  * 格式参考data.sql.template
  */
 public final class SQLFileManager {
     private final static Logger log = LoggerFactory.getLogger(SQLFileManager.class);
     private final ReentrantLock lock = new ReentrantLock();
-    private static final Map<String, String> RESOURCE = new HashMap<>();
-    private static final Map<String, Long> LAST_MODIFIED = new HashMap<>();
-
-    private final String[] paths;
-    private boolean checkModified;
+    private final Map<String, String> RESOURCE = new HashMap<>();
+    private Map<String, String> namedPaths;
+    private List<String> unnamedPaths;
+    private final AtomicInteger UN_NAMED_PATH_INDEX = new AtomicInteger();
+    private final String UN_NAMED_PATH_NAME = "UN_NAMED_SQL_";
+    private final Map<String, Long> LAST_MODIFIED = new HashMap<>();
+    private String[] paths;
+    private volatile boolean checkModified;
 
     private static final Pattern NAME_PATTERN = Pattern.compile("/\\*\\s*\\[\\s*(?<name>\\S+)\\s*]\\s*\\*/");
     private static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+)\\s*}\\s*\\*/");
+
+    public SQLFileManager() {
+    }
 
     /**
      * Sql文件解析器实例<br>
@@ -57,15 +63,61 @@ public final class SQLFileManager {
     }
 
     /**
+     * 添加命名的sql文件
+     *
+     * @param name 名称
+     * @param path sql文件全路径
+     */
+    public void addNamedPath(String name, String path) {
+        if (namedPaths == null) {
+            namedPaths = new HashMap<>();
+        }
+        namedPaths.put(name, path);
+    }
+
+    /**
+     * 设置命名的sql文件
+     *
+     * @param namedPaths 命名sql文件名和路径对应关系
+     */
+    public void setNamedPaths(Map<String, String> namedPaths) {
+        this.namedPaths = namedPaths;
+    }
+
+    /**
+     * 添加未命名的sql文件
+     *
+     * @param path sql文件全路径
+     */
+    public void addUnnamedPath(String path) {
+        if (path == null) {
+            unnamedPaths = new ArrayList<>();
+        }
+        unnamedPaths.add(path);
+    }
+
+    /**
+     * 设置未命名的sql文件
+     *
+     * @param unNamedPaths sql文件全路径列表
+     */
+    public void setUnnamedPaths(List<String> unNamedPaths) {
+        this.unnamedPaths = unNamedPaths;
+    }
+
+    /**
      * 解析sql文件
      *
      * @param resource 类路径sql资源
      * @throws IOException IOexp
      */
-    private void resolveSqlContent(ClassPathResource resource) throws IOException {
+    private void resolveSqlContent(String name, FileResource resource) throws IOException {
         Map<String, String> singleResource = new HashMap<>();
         String pkgPath = ResourceUtil.path2package(resource.getPath());
         String prefix = pkgPath.substring(0, pkgPath.length() - 3);
+        if (!name.startsWith(UN_NAMED_PATH_NAME)) {
+            prefix = name + ".";
+        }
         String previousSqlName = "";
         boolean isAnnotation = false;
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()))) {
@@ -77,9 +129,15 @@ public final class SQLFileManager {
                     Matcher m_part = PART_PATTERN.matcher(trimLine);
                     if (m_name.matches()) {
                         previousSqlName = prefix + m_name.group("name");
+                        if (singleResource.containsKey(previousSqlName) || RESOURCE.containsKey(previousSqlName)) {
+                            throw new RuntimeException("same sql name: " + previousSqlName);
+                        }
                         singleResource.put(previousSqlName, "");
                     } else if (m_part.matches()) {
                         previousSqlName = "${" + prefix + m_part.group("part") + "}";
+                        if (singleResource.containsKey(previousSqlName)) {
+                            throw new RuntimeException("same sql part: " + previousSqlName);
+                        }
                         singleResource.put(previousSqlName, "");
                     } else {
                         // 排除单行注释
@@ -161,14 +219,51 @@ public final class SQLFileManager {
     }
 
     /**
+     * 获取没有命名的防止重复的自增sql文件路径名
+     *
+     * @return sql路径名
+     */
+    private String getUnnamedPathName() {
+        return UN_NAMED_PATH_NAME + UN_NAMED_PATH_INDEX.getAndIncrement();
+    }
+
+    /**
+     * 整合所有命名和无命名Sql
+     *
+     * @return 所有sql
+     */
+    private Map<String, String> allPaths() {
+        AtomicInteger index = new AtomicInteger(0);
+        Map<String, String> pathMap = new HashMap<>();
+        // add unnamed paths
+        if (unnamedPaths != null && unnamedPaths.size() > 0) {
+            for (String path : unnamedPaths) {
+                pathMap.put(getUnnamedPathName(), path);
+            }
+        }
+        // add paths from constructor's args
+        if (paths != null && paths.length > 0) {
+            for (String path : paths) {
+                pathMap.put(getUnnamedPathName(), path);
+            }
+        }
+        // add named paths
+        if (namedPaths != null && namedPaths.size() > 0) {
+            pathMap.putAll(namedPaths);
+        }
+        return pathMap;
+    }
+
+    /**
      * 如果有检测到文件修改过，则重新加载已修改过的sql文件
      */
     private void reloadIfNecessary() throws IOException, URISyntaxException {
         lock.lock();
         try {
             if (!LAST_MODIFIED.isEmpty()) {
-                for (String path : paths) {
-                    ClassPathResource cr = ClassPathResource.of(path.trim());
+                Map<String, String> mappedPaths = allPaths();
+                for (String name : mappedPaths.keySet()) {
+                    FileResource cr = new FileResource(mappedPaths.get(name));
                     if (cr.exists()) {
                         String suffix = cr.getFilenameExtension();
                         if (suffix != null && suffix.equals("sql")) {
@@ -178,14 +273,14 @@ public final class SQLFileManager {
                                 long lastModified = cr.getLastModified();
                                 if (timestamp != -1 && timestamp != 0 && timestamp != lastModified) {
                                     log.debug("removing expired SQL cache...");
-                                    resolveSqlContent(cr);
+                                    resolveSqlContent(name, cr);
                                     LAST_MODIFIED.put(fileName, lastModified);
                                     log.debug("reload modified sql file:{}", fileName);
                                 }
                             }
                         }
                     } else {
-                        throw new FileNotFoundException("sql file '" + path + "' not found!");
+                        throw new FileNotFoundException("sql file of name'" + name + "' not found!");
                     }
                 }
             }
@@ -201,16 +296,17 @@ public final class SQLFileManager {
      * @throws URISyntaxException URIExp
      */
     public void init() throws IOException, URISyntaxException {
-        for (String path : paths) {
-            ClassPathResource cr = ClassPathResource.of(path.trim());
+        Map<String, String> mappedPaths = allPaths();
+        for (String name : mappedPaths.keySet()) {
+            FileResource cr = new FileResource(mappedPaths.get(name));
             if (cr.exists()) {
                 String suffix = cr.getFilenameExtension();
                 if (suffix != null && suffix.equals("sql")) {
-                    resolveSqlContent(cr);
+                    resolveSqlContent(name, cr);
                     LAST_MODIFIED.put(cr.getFileName(), cr.getLastModified());
                 }
             } else {
-                throw new FileNotFoundException("sql file '" + path + "' not found!");
+                throw new FileNotFoundException("sql file of name'" + name + "' not found!");
             }
         }
     }
@@ -219,7 +315,7 @@ public final class SQLFileManager {
      * 查看sql资源
      */
     public void look() {
-        RESOURCE.forEach((k, v) -> System.out.println("[" + k + "] -> " + v));
+        RESOURCE.forEach((k, v) -> System.out.println("\033[95m" + k + "\033[0m -> " + v));
     }
 
     /**

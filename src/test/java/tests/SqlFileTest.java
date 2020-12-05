@@ -1,5 +1,6 @@
 package tests;
 
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.nutz.ioc.Ioc;
 import org.nutz.ioc.impl.NutIoc;
@@ -12,6 +13,13 @@ import rabbit.sql.utils.SqlUtil;
 import java.util.List;
 
 public class SqlFileTest {
+
+    private static Ioc ioc;
+
+    @BeforeClass
+    public static void init() {
+        ioc = new NutIoc(new JsonLoader("ioc.js"));
+    }
 
     @Test
     public void ref() throws Exception {
@@ -27,19 +35,18 @@ public class SqlFileTest {
 
     @Test
     public void nutzIoc() throws Exception {
-        Ioc ioc = new NutIoc(new JsonLoader("ioc.js"));
         SQLFileManager sqlFileManager = ioc.get(SQLFileManager.class, "sqlFileManager");
-        sqlFileManager.init();
         sqlFileManager.look();
     }
 
     @Test
     public void sqlTest() throws Exception {
         SQLFileManager sqlFileManager = new SQLFileManager("pgsql/data.sql");
+        sqlFileManager.setCheckModified(true);
         sqlFileManager.addNamedPath("cyx", "pgsql/other.sql");
         sqlFileManager.addNamedPath("mac", "file:/Users/chengyuxing/Downloads/local.sql");
-        sqlFileManager.init();
-        sqlFileManager.look();
+
+        System.out.println(sqlFileManager.get("pgsql.data.update"));
     }
 
     @Test

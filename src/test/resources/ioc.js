@@ -11,6 +11,8 @@ var ioc = {
                 'pgsql/data.sql',
                 'pgsql/other.sql'
             ]
+        }, events: {
+            create: 'init'
         }
     }
 }

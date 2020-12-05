@@ -213,9 +213,11 @@ public final class SQLFileManager {
      * 合并SQL可复用片段到包含片段名的SQL中
      */
     private void mergeSqlPartIfNecessary(Map<String, String> sqlResource, String prefix) {
-        sqlResource.keySet().stream()
-                .filter(k -> k.startsWith("${"))
-                .forEach(k -> doMergeSqlPart(k, prefix, sqlResource));
+        for (String key : sqlResource.keySet()) {
+            if (key.startsWith("${")) {
+                doMergeSqlPart(key, prefix, sqlResource);
+            }
+        }
     }
 
     /**
@@ -233,7 +235,6 @@ public final class SQLFileManager {
      * @return 所有sql
      */
     private Map<String, String> allPaths() {
-        AtomicInteger index = new AtomicInteger(0);
         Map<String, String> pathMap = new HashMap<>();
         // add unnamed paths
         if (unnamedPaths != null && unnamedPaths.size() > 0) {
@@ -260,28 +261,30 @@ public final class SQLFileManager {
     private void reloadIfNecessary() throws IOException, URISyntaxException {
         lock.lock();
         try {
-            if (!LAST_MODIFIED.isEmpty()) {
-                Map<String, String> mappedPaths = allPaths();
-                for (String name : mappedPaths.keySet()) {
-                    FileResource cr = new FileResource(mappedPaths.get(name));
-                    if (cr.exists()) {
-                        String suffix = cr.getFilenameExtension();
-                        if (suffix != null && suffix.equals("sql")) {
-                            String fileName = cr.getFileName();
-                            if (LAST_MODIFIED.containsKey(fileName)) {
-                                long timestamp = LAST_MODIFIED.get(fileName);
-                                long lastModified = cr.getLastModified();
-                                if (timestamp != -1 && timestamp != 0 && timestamp != lastModified) {
-                                    log.debug("removing expired SQL cache...");
-                                    resolveSqlContent(name, cr);
-                                    LAST_MODIFIED.put(fileName, lastModified);
-                                    log.debug("reload modified sql file:{}", fileName);
-                                }
+            Map<String, String> mappedPaths = allPaths();
+            for (String name : mappedPaths.keySet()) {
+                FileResource cr = new FileResource(mappedPaths.get(name));
+                if (cr.exists()) {
+                    String suffix = cr.getFilenameExtension();
+                    if (suffix != null && suffix.equals("sql")) {
+                        String fileName = cr.getFileName();
+                        if (LAST_MODIFIED.containsKey(fileName)) {
+                            long timestamp = LAST_MODIFIED.get(fileName);
+                            long lastModified = cr.getLastModified();
+                            if (timestamp != -1 && timestamp != 0 && timestamp != lastModified) {
+                                log.debug("removing expired SQL cache...");
+                                resolveSqlContent(name, cr);
+                                LAST_MODIFIED.put(fileName, lastModified);
+                                log.debug("reload modified sql file:{}", fileName);
                             }
+                        } else {
+                            log.debug("load new sql file:{}", fileName);
+                            resolveSqlContent(name, cr);
+                            LAST_MODIFIED.put(fileName, cr.getLastModified());
                         }
-                    } else {
-                        throw new FileNotFoundException("sql file of name'" + name + "' not found!");
                     }
+                } else {
+                    throw new FileNotFoundException("sql file of name'" + name + "' not found!");
                 }
             }
         } finally {
@@ -309,6 +312,15 @@ public final class SQLFileManager {
                 throw new FileNotFoundException("sql file of name'" + name + "' not found!");
             }
         }
+    }
+
+    /**
+     * 是否已进行过初始化
+     *
+     * @return 初始化状态
+     */
+    public boolean isInitialized() {
+        return !RESOURCE.isEmpty() && !LAST_MODIFIED.isEmpty();
     }
 
     /**

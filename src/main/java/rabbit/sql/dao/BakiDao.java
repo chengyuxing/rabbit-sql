@@ -71,7 +71,9 @@ public class BakiDao extends JdbcSupport implements Baki {
     public void setSqlFileManager(SQLFileManager sqlFileManager) {
         this.sqlFileManager = sqlFileManager;
         try {
-            sqlFileManager.init();
+            if (!sqlFileManager.isInitialized()) {
+                sqlFileManager.init();
+            }
         } catch (IOException e) {
             log.error("sql file is not exists:{}", e.getMessage());
         } catch (URISyntaxException e) {

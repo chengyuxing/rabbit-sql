@@ -1,7 +1,5 @@
 package rabbit.sql.support;
 
-import rabbit.sql.types.Param;
-
 import java.util.Map;
 
 /**

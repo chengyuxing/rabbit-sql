@@ -6,7 +6,6 @@ import org.nutz.ioc.Ioc;
 import org.nutz.ioc.impl.NutIoc;
 import org.nutz.ioc.loader.json.JsonLoader;
 import rabbit.common.tuple.Pair;
-import rabbit.sql.dao.Args;
 import rabbit.sql.dao.SQLFileManager;
 import rabbit.sql.utils.SqlUtil;
 

@@ -2,12 +2,12 @@ var ioc = {
     sqlFileManager: {
         type: 'rabbit.sql.dao.SQLFileManager',
         fields: {
-            namedPaths: {
+            sqlMap: {
                 data: 'pgsql/data.sql',
                 other: 'pgsql/other.sql',
                 mac: 'file:/Users/chengyuxing/Downloads/local.sql'
             },
-            unnamedPaths: [
+            sqlList: [
                 'pgsql/data.sql',
                 'pgsql/other.sql'
             ]

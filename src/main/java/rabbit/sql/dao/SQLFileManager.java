@@ -25,16 +25,15 @@ public final class SQLFileManager {
     private final static Logger log = LoggerFactory.getLogger(SQLFileManager.class);
     private final ReentrantLock lock = new ReentrantLock();
     private final Map<String, String> RESOURCE = new HashMap<>();
-    private Map<String, String> namedPaths;
-    private List<String> unnamedPaths;
-    private final AtomicInteger UN_NAMED_PATH_INDEX = new AtomicInteger();
-    private final String UN_NAMED_PATH_NAME = "UN_NAMED_SQL_";
+    private final AtomicInteger UN_NAMED_SQL_INDEX = new AtomicInteger();
+    private final String UN_NAMED_SQL_NAME = "UN_NAMED_SQL_";
     private final Map<String, Long> LAST_MODIFIED = new HashMap<>();
-    private String[] paths;
-    private volatile boolean checkModified;
-
     private static final Pattern NAME_PATTERN = Pattern.compile("/\\*\\s*\\[\\s*(?<name>\\S+)\\s*]\\s*\\*/");
     private static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+)\\s*}\\s*\\*/");
+    private volatile boolean checkModified;
+    private String[] sqls;
+    private Map<String, String> sqlMap;
+    private List<String> sqlList;
 
     public SQLFileManager() {
     }
@@ -43,66 +42,66 @@ public final class SQLFileManager {
      * Sql文件解析器实例<br>
      * 文件名必须从classpath目录开始到文件名(包含后缀.sql)，多个sql文件以逗号(,)分割
      *
-     * @param paths 多个文件名
+     * @param sqls 多个文件名
      */
-    public SQLFileManager(String paths) {
-        this.paths = paths.split(",");
+    public SQLFileManager(String sqls) {
+        this.sqls = sqls.split(",");
     }
 
     /**
      * Sql文件解析器实例，文件名必须从classpath目录开始到文件名(包含后缀.sql)
      *
-     * @param path  sql文件名
-     * @param paths 更多sql文件名
+     * @param sql  sql文件名
+     * @param sqls 更多sql文件名
      */
-    public SQLFileManager(String path, String... paths) {
-        String[] pathArr = new String[1 + paths.length];
-        pathArr[0] = path;
-        System.arraycopy(paths, 0, pathArr, 1, paths.length);
-        this.paths = pathArr;
+    public SQLFileManager(String sql, String... sqls) {
+        String[] sqlArr = new String[1 + sqls.length];
+        sqlArr[0] = sql;
+        System.arraycopy(sqls, 0, sqlArr, 1, sqls.length);
+        this.sqls = sqlArr;
     }
 
     /**
      * 添加命名的sql文件
      *
-     * @param name 名称
-     * @param path sql文件全路径
+     * @param alias       sql文件别名
+     * @param sqlFileName sql文件全路径名
      */
-    public void addNamedPath(String name, String path) {
-        if (namedPaths == null) {
-            namedPaths = new HashMap<>();
+    public void add(String alias, String sqlFileName) {
+        if (sqlMap == null) {
+            sqlMap = new HashMap<>();
         }
-        namedPaths.put(name, path);
+        sqlMap.put(alias, sqlFileName);
     }
 
     /**
      * 设置命名的sql文件
      *
-     * @param namedPaths 命名sql文件名和路径对应关系
+     * @param sqlMap 命名sql文件名和路径对应关系
      */
-    public void setNamedPaths(Map<String, String> namedPaths) {
-        this.namedPaths = namedPaths;
+    public void setSqlMap(Map<String, String> sqlMap) {
+        this.sqlMap = sqlMap;
     }
 
     /**
      * 添加未命名的sql文件
      *
-     * @param path sql文件全路径
+     * @param sqlFileName sql文件全路径名
      */
-    public void addUnnamedPath(String path) {
-        if (path == null) {
-            unnamedPaths = new ArrayList<>();
+    public void add(String sqlFileName) {
+        if (sqlList == null) {
+            sqlList = new ArrayList<>();
         }
-        unnamedPaths.add(path);
+        sqlList.add(sqlFileName);
     }
 
     /**
      * 设置未命名的sql文件
      *
-     * @param unNamedPaths sql文件全路径列表
+     * @param sqlList sql文件全路径列表
      */
-    public void setUnnamedPaths(List<String> unNamedPaths) {
-        this.unnamedPaths = unNamedPaths;
+    public void setSqlList(List<String> sqlList) {
+        this.sqlList = sqlList;
     }
 
     /**
@@ -115,7 +114,7 @@ public final class SQLFileManager {
         Map<String, String> singleResource = new HashMap<>();
         String pkgPath = ResourceUtil.path2package(resource.getPath());
         String prefix = pkgPath.substring(0, pkgPath.length() - 3);
-        if (!name.startsWith(UN_NAMED_PATH_NAME)) {
+        if (!name.startsWith(UN_NAMED_SQL_NAME)) {
             prefix = name + ".";
         }
         String previousSqlName = "";
@@ -226,7 +225,7 @@ public final class SQLFileManager {
      * @return sql路径名
      */
     private String getUnnamedPathName() {
-        return UN_NAMED_PATH_NAME + UN_NAMED_PATH_INDEX.getAndIncrement();
+        return UN_NAMED_SQL_NAME + UN_NAMED_SQL_INDEX.getAndIncrement();
     }
 
     /**
@@ -237,20 +236,20 @@ public final class SQLFileManager {
     private Map<String, String> allPaths() {
         Map<String, String> pathMap = new HashMap<>();
         // add unnamed paths
-        if (unnamedPaths != null && unnamedPaths.size() > 0) {
-            for (String path : unnamedPaths) {
+        if (sqlList != null && sqlList.size() > 0) {
+            for (String path : sqlList) {
                 pathMap.put(getUnnamedPathName(), path);
             }
         }
         // add paths from constructor's args
-        if (paths != null && paths.length > 0) {
-            for (String path : paths) {
+        if (sqls != null && sqls.length > 0) {
+            for (String path : sqls) {
                 pathMap.put(getUnnamedPathName(), path);
             }
         }
         // add named paths
-        if (namedPaths != null && namedPaths.size() > 0) {
-            pathMap.putAll(namedPaths);
+        if (sqlMap != null && sqlMap.size() > 0) {
+            pathMap.putAll(sqlMap);
         }
         return pathMap;
     }

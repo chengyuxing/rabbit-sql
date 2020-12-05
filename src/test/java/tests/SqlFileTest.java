@@ -42,8 +42,8 @@ public class SqlFileTest {
     public void sqlTest() throws Exception {
         SQLFileManager sqlFileManager = new SQLFileManager("pgsql/data.sql");
         sqlFileManager.setCheckModified(true);
-        sqlFileManager.addNamedPath("cyx", "pgsql/other.sql");
-        sqlFileManager.addNamedPath("mac", "file:/Users/chengyuxing/Downloads/local.sql");
+        sqlFileManager.add("pgsql/other.sql");
+        sqlFileManager.add("mac", "file:/Users/chengyuxing/Downloads/local.sql");
 
         System.out.println(sqlFileManager.get("pgsql.data.update"));
     }
@@ -51,7 +51,7 @@ public class SqlFileTest {
     @Test
     public void strTest() throws Exception {
         String sql = "select * from user where 1=1 and id = 2)}];\n;; \t\n \r\n;; \n\n\t\r";
-//        System.out.println(SqlUtil.trimEnd(sql));
+        System.out.println(SqlUtil.trimEnd(sql));
         System.out.println(sql.trim());
     }
 }

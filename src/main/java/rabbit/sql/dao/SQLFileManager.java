@@ -49,19 +49,6 @@ public final class SQLFileManager {
     }
 
     /**
-     * Sql文件解析器实例，文件名必须从classpath目录开始到文件名(包含后缀.sql)
-     *
-     * @param sql  sql文件名
-     * @param sqls 更多sql文件名
-     */
-    public SQLFileManager(String sql, String... sqls) {
-        String[] sqlArr = new String[1 + sqls.length];
-        sqlArr[0] = sql;
-        System.arraycopy(sqls, 0, sqlArr, 1, sqls.length);
-        this.sqls = sqlArr;
-    }
-
-    /**
      * 添加命名的sql文件
      *
      * @param alias       sql文件别名
@@ -128,7 +115,7 @@ public final class SQLFileManager {
                     Matcher m_part = PART_PATTERN.matcher(trimLine);
                     if (m_name.matches()) {
                         previousSqlName = prefix + m_name.group("name");
-                        if (singleResource.containsKey(previousSqlName) || RESOURCE.containsKey(previousSqlName)) {
+                        if (singleResource.containsKey(previousSqlName)) {
                             throw new RuntimeException("same sql name: " + previousSqlName);
                         }
                         singleResource.put(previousSqlName, "");

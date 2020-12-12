@@ -102,6 +102,7 @@ public final class SQLFileManager {
     /**
      * 解析sql文件
      *
+     * @param name     sql文件自定义名
      * @param resource 类路径sql资源
      * @throws IOException IOexp
      */
@@ -163,7 +164,9 @@ public final class SQLFileManager {
     /**
      * 执行合并SQL片段
      *
-     * @param partName sql片段名
+     * @param partName    sql片段名
+     * @param prefix      sql名前缀，自定义名或sql文件路径名
+     * @param sqlResource sql字符串文件资源
      */
     private void doMergeSqlPart(final String partName, final String prefix, Map<String, String> sqlResource) {
         // inner sql part name like: ${filename.part1}
@@ -188,6 +191,9 @@ public final class SQLFileManager {
 
     /**
      * 合并SQL可复用片段到包含片段名的SQL中
+     *
+     * @param sqlResource sql字符串资源
+     * @param prefix      sql名前缀，自定义名或sql文件路径名
      */
     private void mergeSqlPartIfNecessary(Map<String, String> sqlResource, String prefix) {
         for (String key : sqlResource.keySet()) {

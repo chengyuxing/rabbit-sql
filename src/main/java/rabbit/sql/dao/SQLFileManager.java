@@ -155,6 +155,7 @@ public final class SQLFileManager {
             if (!previousSqlName.equals("")) {
                 String lastSql = singleResource.get(previousSqlName);
                 singleResource.put(previousSqlName, SqlUtil.removeAnnotationBlock(lastSql));
+                log.debug("scan to get SQL [{}]：{}", previousSqlName, lastSql);
             }
         }
         mergeSqlPartIfNecessary(singleResource, prefix);

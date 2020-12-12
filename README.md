@@ -82,7 +82,7 @@ dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
 dataSource.setUsername("chengyuxing");
 dataSource.setDriverClassName("org.postgresql.Driver");
 
-SQLFileManager manager = new SQLFileManager("pgsql/data.sql", "pgsql/other.sql");
+SQLFileManager manager = new SQLFileManager("pgsql/data.sql, pgsql/other.sql");
 
 BakiDao baki = new BakiDao(dataSource);
 baki.setSqlFileManager(manager);

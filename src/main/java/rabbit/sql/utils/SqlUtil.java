@@ -5,7 +5,6 @@ import rabbit.common.types.CExpression;
 import rabbit.sql.types.Ignore;
 
 import java.util.*;
-import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -94,29 +93,6 @@ public class SqlUtil {
             throw new IllegalArgumentException("empty field set, generate update sql error.");
         }
         return "update " + tableName + " \nset " + sb.substring(0, sb.lastIndexOf(","));
-    }
-
-    private static String specialNoneQuoteSql(final String sql, Function<String, String> noneQuoteSqlFunc) {
-        String _sql = sql;
-        List<String> strChildren = new ArrayList<>();
-        Matcher m1 = CHILD_STR_PATTERN.matcher(_sql);
-        // 检查是否有子字符串
-        int x = 0;
-        while (m1.find()) {
-            String strChild = m1.group();
-            // 为每个子字符串按顺序编号并放入缓存内
-            // 此处替换为特殊的占位符防止和用户写的冲突
-            _sql = _sql.replace(strChild, SEP + (x++) + SEP);
-            strChildren.add(strChild);
-        }
-
-        String backSql = noneQuoteSqlFunc.apply(_sql);
-
-        // 最后再将一开始移除的子字符串重新放回到sql中
-        for (int i = 0; i < strChildren.size(); i++) {
-            backSql = backSql.replace(SEP + i + SEP, strChildren.get(i));
-        }
-        return backSql;
     }
 
     /**

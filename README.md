@@ -1,14 +1,8 @@
 # rabbit-sql 使用说明
 
-- 对JDBC的一个薄封装工具类，提供基本的增删改查操作。
+- 对JDBC的一个薄封装工具类，提供基本的增删改查操作；
 
-- 在最久远的版本中实际上做过实体解析映射sql，实现过jpa的一部分，至于后来为什么移除了，其中一个原因是实体如果用不好，修改表结构很麻烦，有风险，再者，对于关系数据库，实体映射生成的sql几乎都是简单的标准sql，这并不能作为跨数据库的亮点，该手写的还是得手写，干脆以最简单为目标，其他交给大家去扩展好了。
-
-- Scala并不兼容Java的实体类，希望尽量能在Scala语言中用起来也不那么麻烦。
-
-- 此库以追求简单稳定高效为目标，做到几乎不使用反射，不支持查询结果实体映射，返回对象类型统一为[`DataRow`](https://github.com/chengyuxing/rabbit-common/blob/master/src/main/java/rabbit/common/types/DataRow.java)，若需要实体映射，可自行轻松通过[`DataRow`](https://github.com/chengyuxing/rabbit-common/blob/master/src/main/java/rabbit/common/types/DataRow.java)来实现。
-
-- 此库核心非ORM，而是最大限度的接近以原生JDBC的性能执行sql，高度自由化的定制优化sql，调试sql一气呵成。
+- 此库以追求简单稳定高效为目标，不支持查询结果实体映射，返回对象类型统一为[`DataRow`](https://github.com/chengyuxing/rabbit-common/blob/master/src/main/java/rabbit/common/types/DataRow.java)，[`DataRow`](https://github.com/chengyuxing/rabbit-common/blob/master/src/main/java/rabbit/common/types/DataRow.java)提供了了简单的实体互相转换，若需要复杂映射，可自行通过[`DataRow`](https://github.com/chengyuxing/rabbit-common/blob/master/src/main/java/rabbit/common/types/DataRow.java)来实现。
 
 - maven dependency (jdk1.8)
 
@@ -16,7 +10,7 @@
   <dependency>
       <groupId>com.github.chengyuxing</groupId>
       <artifactId>rabbit-sql</artifactId>
-      <version>4.3.5</version>
+      <version>4.3.6</version>
   </dependency>
   ```
 ## 参数占位符说明
@@ -33,7 +27,9 @@
 - sql文件将优先寻找sql文件内的sql片段
 ## 动态SQL
 
-- 结构类似于Mybatis的if标签，--#if和--#fi必须成对出现
+- 支持`--#if`和`--#fi`块标签，必须成对出现，类似于Mybatis的if标签；
+
+- 支持`--#choose`和`--#end`块标签，内部可以有多对`--#if`块判断，但只返回第一个条件满足的`--#if`块，效果类似于mybatis的`choose...when`标签；
 
 - 支持的运算符：
 
@@ -58,14 +54,16 @@
 select *
 from test.student t
 WHERE
---#if :age !=null
-t.age > 21
---#fi
+--#choose
+    --#if :age < 21
+    t.age = 21
+    --#fi
+    --#if :age <> blank && :age < 90
+    and age < 90
+    --#fi
+--#end
 --#if :name != null
 and t.name ~ :name
---#fi
---#if :age <> blank && :age < 90
-and age < 90
 --#fi
 ;
 ```

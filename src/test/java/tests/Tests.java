@@ -40,7 +40,7 @@ public class Tests {
     }
 
     @Test
-    public void dsTest() throws Exception{
+    public void dsTest() throws Exception {
         HikariDataSource dataSource = new HikariDataSource();
         dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
         dataSource.setUsername("chengyuxing");
@@ -90,23 +90,45 @@ public class Tests {
 
     @Test
     public void sqlTest() throws Exception {
-        String sql = "select id, filename, title\n" +
-                "from test.user\n" +
-                "where\n" +
-                "--#if :title <> blank\n" +
-                "and title = :title\n" +
+        String sql = "update test.user\n" +
+                "set\n" +
+                "--#if :name <> blank\n" +
+                "name    = :name,\n" +
                 "--#fi\n" +
-                "order by sj desc";
-        String dq = SqlUtil.dynamicSql(sql, Args.of("title", "op"));
+                "\n" +
+                "--#choose\n" +
+                "--#if :age <100\n" +
+                "age     = :age,\n" +
+                "--#fi\n" +
+                "--#if :age > 100\n" +
+                "age     = 100,\n" +
+                "--#fi\n" +
+                "--#if :age > 150\n" +
+                "age     = 101,\n" +
+                "--#fi\n" +
+                "--#end\n" +
+                "\n" +
+                "--#if :open <> ''\n" +
+                "family  = 'happy',\n" +
+                "--#fi\n" +
+                "\n" +
+                "--#choose\n" +
+                "--#if :address != null\n" +
+                "address = :address\n" +
+                "--#fi\n" +
+                "--#if :address == 'kunming'\n" +
+                "    address = 'kunming'\n" +
+                "--#fi\n" +
+                "--#if :address == \"beijing\"\n" +
+                "    address = '北京'\n" +
+                "--#fi\n" +
+                "--#end\n" +
+                "where id = 10";
+        String dq = SqlUtil.dynamicSql(sql, Args.<Object>of("name", "")
+                .add("age", 27)
+                .add("address", "beijing")
+                .add("open", "sad"));
         System.out.println(dq);
-        System.out.println(SqlUtil.generateCountQuery(dq));
-    }
-
-    @Test
-    public void iteratorTest() throws Exception {
-        while (immutableList.hasNext()) {
-            System.out.println(immutableList.next());
-        }
     }
 
     @Test
@@ -134,9 +156,13 @@ public class Tests {
         String sql = "insert into test.user(idd,name,id,age,address) values (:id,:name::integer,:idd" + SEP + "::float,integer :age,date :address)";
 //        String sql2 = "select * from test.user where id = '1' and tag = '1' and num = '1' and name = :name";
 //        String jsonSql = "select '{\"a\":[1,2,3],\"b\":[4,5,6]}'::json #>> '{b,1}'";
-        Pair<String, List<String>> pair = SqlUtil.getPreparedSql(sql);
+        Pair<String, List<String>> pair = SqlUtil.getPreparedSql(str);
         System.out.println(pair.getItem1());
         System.out.println(pair.getItem2());
+
+        Pair<String, Map<String, String>> stringMapPair = SqlUtil.replaceStrPartOfSql(str);
+        System.out.println(stringMapPair.getItem1());
+        System.out.println(stringMapPair.getItem2());
     }
 
     @Test

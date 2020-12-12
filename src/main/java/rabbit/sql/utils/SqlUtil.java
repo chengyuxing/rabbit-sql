@@ -5,6 +5,7 @@ import rabbit.common.types.CExpression;
 import rabbit.sql.types.Ignore;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -95,14 +96,7 @@ public class SqlUtil {
         return "update " + tableName + " \nset " + sb.substring(0, sb.lastIndexOf(","));
     }
 
-    /**
-     * 获取处理参数占位符预编译的SQL
-     *
-     * @param sql 带参数占位符的SQL
-     * @return 预编译SQL和参数名的集合
-     */
-    public static Pair<String, List<String>> getPreparedSql(final String sql) {
-        // 首先处理一下sql，先暂时将sql中的单引号内子字符串去除
+    private static String specialNoneQuoteSql(final String sql, Function<String, String> noneQuoteSqlFunc) {
         String _sql = sql;
         List<String> strChildren = new ArrayList<>();
         Matcher m1 = CHILD_STR_PATTERN.matcher(_sql);
@@ -115,22 +109,61 @@ public class SqlUtil {
             _sql = _sql.replace(strChild, SEP + (x++) + SEP);
             strChildren.add(strChild);
         }
-        // 开始安全的处理参数占位符
-        Matcher matcher = ARG_PATTERN.matcher(_sql);
+
+        String backSql = noneQuoteSqlFunc.apply(_sql);
+
+        // 最后再将一开始移除的子字符串重新放回到sql中
+        for (int i = 0; i < strChildren.size(); i++) {
+            backSql = backSql.replace(SEP + i + SEP, strChildren.get(i));
+        }
+        return backSql;
+    }
+
+    /**
+     * 处理一段sql，将sql内出现的字符串（单引号包裹的部分）替换为一个特殊的占位符，并将替换的字符串存储下来，可对原sql进行一些其他处理操作，而不受到字符串内容的影响
+     *
+     * @param sql sql字符串
+     * @return 替换字符串后带有特殊占位符的sql和占位符与字符串的映射
+     */
+    public static Pair<String, Map<String, String>> replaceStrPartOfSql(final String sql) {
+        String noneStrSql = sql;
+        Map<String, String> mapper = new HashMap<>();
+        Matcher m = CHILD_STR_PATTERN.matcher(sql);
+        int x = 0;
+        while (m.find()) {
+            // sql part of string
+            String str = m.group();
+            // indexed placeholder
+            String placeHolder = SEP + (x++) + SEP;
+            noneStrSql = noneStrSql.replace(str, placeHolder);
+            mapper.put(placeHolder, str);
+        }
+        return Pair.of(noneStrSql, mapper);
+    }
+
+    /**
+     * 获取处理参数占位符预编译的SQL
+     *
+     * @param sql 带参数占位符的SQL
+     * @return 预编译SQL和参数名的集合
+     */
+    public static Pair<String, List<String>> getPreparedSql(final String sql) {
+        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceStrPartOfSql(sql);
+        String noneStrSql = noneStrSqlAndHolder.getItem1();
+        Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
+        // safe to replace arg by name placeholder
+        Matcher matcher = ARG_PATTERN.matcher(noneStrSql);
         List<String> names = new ArrayList<>();
         while (matcher.find()) {
             String name = matcher.group("name");
             names.add(name);
-            // 只替换第一个的原因是为防止参数名的包含关系
-            _sql = _sql.replaceFirst(":" + name, "?");
+            noneStrSql = noneStrSql.replaceFirst(":" + name, "?");
         }
-
-        // 最后再将一开始移除的子字符串重新放回到sql中
-        for (int i = 0; i < strChildren.size(); i++) {
-            _sql = _sql.replace(SEP + i + SEP, strChildren.get(i));
+        // finally set placeholder into none-string-part sql
+        for (String key : placeholderMapper.keySet()) {
+            noneStrSql = noneStrSql.replace(key, placeholderMapper.get(key));
         }
-
-        return Pair.of(_sql, names);
+        return Pair.of(noneStrSql, names);
     }
 
     /**
@@ -165,6 +198,49 @@ public class SqlUtil {
     }
 
     /**
+     * 移除sql的块注释
+     *
+     * @param sql sql
+     * @return 去除块注释的sql
+     */
+    public static String removeAnnotationBlock(final String sql) {
+        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceStrPartOfSql(sql);
+        String noneStrSql = noneStrSqlAndHolder.getItem1();
+        Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
+        char[] chars = noneStrSql.toCharArray();
+        List<Character> characters = new ArrayList<>();
+        int count = 0;
+        for (int i = 0; i < chars.length; i++) {
+            int prev = i;
+            int next = i;
+            if (i > 0) {
+                prev = i - 1;
+            }
+            if (i < chars.length - 1) {
+                next = i + 1;
+            }
+            if (chars[i] == '/' && chars[next] == '*') {
+                count++;
+            } else if (chars[i] == '*' && chars[next] == '/') {
+                count--;
+            } else if (count == 0) {
+                if (chars[prev] != '*' && chars[i] != '/') {
+                    characters.add(chars[i]);
+                }
+            }
+        }
+        StringBuilder sb = new StringBuilder();
+        for (Character c : characters) {
+            sb.append(c);
+        }
+        String noneBSql = sb.toString().replaceAll("\n\\s*\n", "\n");
+        for (String key : placeholderMapper.keySet()) {
+            noneBSql = noneBSql.replace(key, placeholderMapper.get(key));
+        }
+        return noneBSql;
+    }
+
+    /**
      * 根据解析条件表达式的结果动态生成sql<br>
      * e.g. data.sql.template
      *
@@ -180,32 +256,61 @@ public class SqlUtil {
         if (!sql.contains("--#if") || !sql.contains("--#fi")) {
             return sql;
         }
-        String[] lines = sql.split("\n");
+        String nSql = removeAnnotationBlock(sql);
+        String[] lines = nSql.split("\n");
         StringBuilder sb = new StringBuilder();
         String firstLine = "";
         boolean first = true;
-        boolean skip = true;
+        boolean ok = true;
         boolean start = false;
+        boolean inBlock = false;
+        boolean blockFirstOk = false;
         for (String line : lines) {
             String trimLine = line.trim();
-            if (first) {
-                firstLine = trimLine;
-                first = false;
-            }
-            if (trimLine.startsWith("--#if") && !start) {
-                String filter = trimLine.substring(5);
-                CExpression expression = CExpression.of(filter);
-                skip = expression.calc(argsMap);
-                start = true;
-                continue;
-            }
-            if (trimLine.startsWith("--#fi") && start) {
-                skip = true;
-                start = false;
-                continue;
-            }
-            if (skip) {
-                sb.append(line).append("\n");
+            if (!trimLine.isEmpty()) {
+                if (first) {
+                    if (!trimLine.startsWith("--")) {
+                        firstLine = trimLine;
+                        first = false;
+                    }
+                }
+                if (trimLine.startsWith("--#choose")) {
+                    inBlock = true;
+                    continue;
+                }
+                if (trimLine.startsWith("--#end")) {
+                    inBlock = false;
+                    continue;
+                }
+                if (trimLine.startsWith("--#if") && !start) {
+                    start = true;
+                    if (inBlock) {
+                        if (!blockFirstOk) {
+                            String filter = trimLine.substring(5);
+                            CExpression expression = CExpression.of(filter);
+                            ok = expression.calc(argsMap);
+                            blockFirstOk = ok;
+                        } else {
+                            ok = false;
+                        }
+                    } else {
+                        String filter = trimLine.substring(5);
+                        CExpression expression = CExpression.of(filter);
+                        ok = expression.calc(argsMap);
+                    }
+                    continue;
+                }
+                if (trimLine.startsWith("--#fi") && start) {
+                    ok = true;
+                    start = false;
+                    continue;
+                }
+                if (ok) {
+                    sb.append(line).append("\n");
+                    if (!inBlock) {
+                        blockFirstOk = false;
+                    }
+                }
             }
         }
         String dSql = sb.toString();

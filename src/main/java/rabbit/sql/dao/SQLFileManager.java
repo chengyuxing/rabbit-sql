@@ -4,6 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rabbit.common.io.FileResource;
 import rabbit.common.utils.ResourceUtil;
+import rabbit.common.utils.StringUtil;
+import rabbit.sql.utils.SqlUtil;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -27,6 +29,12 @@ public final class SQLFileManager {
     private final Map<String, String> RESOURCE = new HashMap<>();
     private final AtomicInteger UN_NAMED_SQL_INDEX = new AtomicInteger();
     private final String UN_NAMED_SQL_NAME = "UN_NAMED_SQL_";
+    private static final String[] EXPRESSION_KEYWORDS = new String[]{
+            "--#if",
+            "--#fi",
+            "--#choose",
+            "--#end"
+    };
     private final Map<String, Long> LAST_MODIFIED = new HashMap<>();
     private static final Pattern NAME_PATTERN = Pattern.compile("/\\*\\s*\\[\\s*(?<name>\\S+)\\s*]\\s*\\*/");
     private static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+)\\s*}\\s*\\*/");
@@ -105,7 +113,6 @@ public final class SQLFileManager {
             prefix = name + ".";
         }
         String previousSqlName = "";
-        boolean isAnnotation = false;
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()))) {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -126,36 +133,13 @@ public final class SQLFileManager {
                         }
                         singleResource.put(previousSqlName, "");
                     } else {
-                        // 排除单行注释
-                        // --#if和--#fi此类扩展注释作为表达式做逻辑判断，不过滤
-                        if (!trimLine.startsWith("--") || trimLine.startsWith("--#if") || trimLine.startsWith("--#fi")) {
-                            // 排除块注释
-                            if (trimLine.startsWith("/*")) {
-                                // 没有找到块注释结束 则标记下面的代码都是注释
-                                if (!trimLine.endsWith("*/")) {
-                                    isAnnotation = true;
-                                    // 如果注释结束在单行sql中间，截取注释后的sql，并标记注释结束
-                                    if (trimLine.contains("*/")) {
-                                        String partOfLine = singleResource.get(previousSqlName) + line.substring(line.indexOf("*/") + 2);
-                                        singleResource.put(previousSqlName, partOfLine.concat("\n"));
-                                        isAnnotation = false;
-                                    }
-                                }
-                                // 如果是在注释块内
-                            } else if (isAnnotation) {
-                                // 如果注释此行结尾是注释，则标记为注释结束
-                                if (trimLine.endsWith("*/")) {
-                                    isAnnotation = false;
-                                    // 如果注释结束在此行的中间，截取注释后的sql，并标记注释结束
-                                } else if (trimLine.contains("*/")) {
-                                    String partOfLine = singleResource.get(previousSqlName) + line.substring(line.indexOf("*/") + 2);
-                                    singleResource.put(previousSqlName, partOfLine.concat("\n"));
-                                    isAnnotation = false;
-                                }
-                            } else if (!previousSqlName.equals("")) {
+                        // exclude single line annotation except expression keywords
+                        if (!trimLine.startsWith("--") || StringUtil.startsWiths(trimLine, EXPRESSION_KEYWORDS)) {
+                            if (!previousSqlName.equals("")) {
                                 String prepareLine = singleResource.get(previousSqlName) + line;
                                 if (trimLine.endsWith(";")) {
-                                    singleResource.put(previousSqlName, prepareLine.substring(0, prepareLine.lastIndexOf(";")));
+                                    String naSql = SqlUtil.removeAnnotationBlock(prepareLine);
+                                    singleResource.put(previousSqlName, naSql.substring(0, naSql.lastIndexOf(";")));
                                     log.debug("scan to get SQL [{}]：{}", previousSqlName, singleResource.get(previousSqlName));
                                     previousSqlName = "";
                                 } else {
@@ -165,6 +149,11 @@ public final class SQLFileManager {
                         }
                     }
                 }
+            }
+            // if last part of sql is not ends with ';' symbol
+            if (!previousSqlName.equals("")) {
+                String lastSql = singleResource.get(previousSqlName);
+                singleResource.put(previousSqlName, SqlUtil.removeAnnotationBlock(lastSql));
             }
         }
         mergeSqlPartIfNecessary(singleResource, prefix);
@@ -177,19 +166,21 @@ public final class SQLFileManager {
      * @param partName sql片段名
      */
     private void doMergeSqlPart(final String partName, final String prefix, Map<String, String> sqlResource) {
-        // 此处排除sql的包名和sql名，sql片段内部合并以sql片段的名字为准
-        String pn = "${" + partName.substring(prefix.length() + 2);
+        // inner sql part name like: ${filename.part1}
+        //innerPartName will be '${part1}'
+        String innerPartName = "${" + partName.substring(prefix.length() + 2);
         boolean has = false;
-        // 片段内也可以包含片段
         for (String key : sqlResource.keySet()) {
-            if (sqlResource.get(key).contains(pn)) {
-                sqlResource.put(key, sqlResource.get(key).replace(pn, sqlResource.get(partName)));
+            String sql = sqlResource.get(key);
+            if (sql.contains(innerPartName)) {
+                String part = sqlResource.get(partName);
+                sqlResource.put(key, sql.replace(innerPartName, part));
             }
-            //直到sql内不再包含片段为止
-            if (sqlResource.get(key).contains(pn)) {
+            if (sqlResource.get(key).contains(innerPartName)) {
                 has = true;
             }
         }
+        // go on if inner part name still exists
         if (has) {
             doMergeSqlPart(partName, prefix, sqlResource);
         }

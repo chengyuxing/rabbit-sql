@@ -16,7 +16,10 @@ ${order};
 
 /*{field}*/
 /*用户表字段*/
-t.id,t.name,t.password;
+t
+.
+id
+,t.name,t.password;
 
 /*{order}*/
 /*排序*/
@@ -24,11 +27,13 @@ order by id;
 
 /*[select_user]*/
 select *
-from test.user where id < :id;
+from test.user
+where id < :id;
 
 /*[fruit]*/
 select *
-from test.student where ${cnd};
+from test.student
+where ${cnd};
 
 /*[update2]*/
 select count(*)
@@ -39,10 +44,10 @@ select *
 from test.student t
 WHERE
 --#if :age !=null
-t.age > 21
+    t.age > 21
 --#fi
 --#if :name != null
-and t.name ~ :name
+  and t.name ~ :name
 --#fi
 --#if :age <> blank && :age < 90
 and age < 90
@@ -53,13 +58,34 @@ and age < 90
 update test.user
 set
 --#if :name <> blank
-name = :name,
+name    = :name,
 --#fi
+
+--#choose
 --#if :age <100
-age = :age,
+age     = :age,
 --#fi
+--#if :age > 100
+age     = 100,
+--#fi
+--#if :age > 150
+age     = 101,
+--#fi
+--#end
+
+--#if :open <> ''
+family  = 'happy',
+--#fi
+
+--#choose
 --#if :address != null
 address = :address
 --#fi
+--#if :address == 'kunming'
+    address = 'kunming'
+--#fi
+--#if :address == "beijing"
+    address = '北京'
+--#fi
+--#end
 where id = 10
-;

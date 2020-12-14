@@ -241,6 +241,10 @@ public class SqlUtil {
         boolean start = false;
         boolean inBlock = false;
         boolean blockFirstOk = false;
+        boolean hasChooseBlock = false;
+        if (sql.contains("--#choose") && sql.contains("--#end")) {
+            hasChooseBlock = true;
+        }
         for (String line : lines) {
             String trimLine = line.trim();
             if (!trimLine.isEmpty()) {
@@ -250,13 +254,15 @@ public class SqlUtil {
                         first = false;
                     }
                 }
-                if (trimLine.startsWith("--#choose")) {
-                    inBlock = true;
-                    continue;
-                }
-                if (trimLine.startsWith("--#end")) {
-                    inBlock = false;
-                    continue;
+                if (hasChooseBlock) {
+                    if (trimLine.startsWith("--#choose")) {
+                        inBlock = true;
+                        continue;
+                    }
+                    if (trimLine.startsWith("--#end")) {
+                        inBlock = false;
+                        continue;
+                    }
                 }
                 if (trimLine.startsWith("--#if") && !start) {
                     start = true;

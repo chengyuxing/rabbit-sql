@@ -9,21 +9,20 @@ import static rabbit.sql.utils.SqlUtil.removeAnnotationBlock;
 
 public class StrTests {
 
-    public static String sql = "with t(a, b) as (select * from (values (array [ 1,2,3,4,5], /*array [[6,7,8,9],*/[10,11,12,13]])) arr)\n" +
-            "select a[3:5],\n" +
-            "       a[:2],\n" +
-            "       a[2:],\n" +
-            "       /*a[:],\n" +
-            "       a[4:4],\n" +
-            "       b/*[1:2]*/[2],\n" +
-            "       b[:2][2:],*/\n" +
-            "       '/*array_dims(a)*/' as arr,      -- 数组区间\n" +
-            "       array_dims(b),\n" +
-            "       array_upper(a, 1),  -- 区间结尾\n" +
-            "       array_lower(a, 1),  -- 区间开始\n" +
-            "       array_length(b, 1), -- 长度\n" +
-            "       cardinality(b)      --所有元素个数\n" +
-            "from t;";
+    public static String sql = "/*我的注释*/\n" +
+            "select count(*)\n" +
+            "from test.student t\n" +
+            "WHERE\n" +
+            "--#if :age !=null\n" +
+            "    t.age > 21\n" +
+            "--#fi\n" +
+            "--#if :name != null\n" +
+            "  and t.name ~ :name\n" +
+            "--#fi\n" +
+            "--#if :age <> blank && :age < 90\n" +
+            "and age < 90\n" +
+            "--#fi\n" +
+            ";";
 
     @Test
     public void sqlTest() throws Exception {

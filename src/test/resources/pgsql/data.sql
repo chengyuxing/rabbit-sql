@@ -40,7 +40,8 @@ select count(*)
 from test.student;
 
 /*[logical]*/
-select *
+/*我的注释*/
+select count(*)
 from test.student t
 WHERE
 --#if :age !=null

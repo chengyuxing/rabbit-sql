@@ -200,7 +200,11 @@ public class SqlUtil {
             } else if (chars[i] == '*' && chars[next] == '/') {
                 count--;
             } else if (count == 0) {
-                if (chars[prev] != '*' && chars[i] != '/') {
+                if (chars[prev] == '*') {
+                    if (chars[i] != '/') {
+                        characters.add(chars[i]);
+                    }
+                } else {
                     characters.add(chars[i]);
                 }
             }

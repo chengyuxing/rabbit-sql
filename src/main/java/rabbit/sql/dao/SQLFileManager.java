@@ -178,7 +178,7 @@ public final class SQLFileManager {
             String sql = sqlResource.get(key);
             if (sql.contains(innerPartName)) {
                 String part = sqlResource.get(partName);
-                sqlResource.put(key, sql.replace(innerPartName, part));
+                sqlResource.put(key, sql.replace(innerPartName, "\n" + part + "\n"));
             }
             if (sqlResource.get(key).contains(innerPartName)) {
                 has = true;

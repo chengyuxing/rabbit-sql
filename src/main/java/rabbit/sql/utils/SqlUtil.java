@@ -166,7 +166,7 @@ public class SqlUtil {
         String sql = sourceSql;
         for (String key : args.keySet()) {
             if (key.startsWith("${") && key.endsWith("}")) {
-                String v = " " + args.get(key).toString() + " ";
+                String v = "\n" + args.get(key).toString() + "\n";
                 sql = sql.replace(key, v);
             }
         }

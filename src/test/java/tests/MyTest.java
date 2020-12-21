@@ -176,11 +176,8 @@ public class MyTest {
 
     @Test
     public void pageTest() throws Exception {
-        baki.query("select * from test.region")
-                .skip(5)
-                .limit(10)
-                .map(r -> String.join("<>", r.getNames()))
-                .forEach(System.out::println);
+        long c = baki.query("select * from test.region where id = 100").count();
+        System.out.println(c);
     }
 
     @Test

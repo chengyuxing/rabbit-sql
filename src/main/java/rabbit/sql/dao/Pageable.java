@@ -30,12 +30,13 @@ public class Pageable<T> implements IPageable<T> {
     private String countQuery;
     private final int page;
     private final int size;
+    private Integer count;
     private PageHelper customPageHelper;
 
     /**
      * 分页构建器构造函数
      *
-     * @param baki       baki对象
+     * @param baki        baki对象
      * @param recordQuery 查询sql
      * @param page        当前页
      * @param size        页大小
@@ -56,6 +57,12 @@ public class Pageable<T> implements IPageable<T> {
     @Override
     public IPageable<T> countQuery(String countQuery) {
         this.countQuery = countQuery;
+        return this;
+    }
+
+    @Override
+    public IPageable<T> count(Integer count) {
+        this.count = count;
         return this;
     }
 
@@ -81,22 +88,23 @@ public class Pageable<T> implements IPageable<T> {
      */
     @Override
     public PagedResource<T> collect(Function<DataRow, T> rowConvert) {
-        String cq = countQuery;
         String query = baki.prepareSql(recordQuery, args);
-        if (cq == null) {
-            cq = SqlUtil.generateCountQuery(query);
+        if (count == null) {
+            String cq = countQuery;
+            if (cq == null) {
+                cq = SqlUtil.generateCountQuery(query);
+            }
+            count = baki.fetch(cq, args).map(cn -> cn.getInt(0)).orElse(0);
         }
-        return baki.fetch(cq, args).map(cn -> {
-            PageHelper pageHelper = customPageHelper;
-            if (pageHelper == null) {
-                pageHelper = defaultPager();
-            }
-            pageHelper.init(page, size, Optional.ofNullable(cn.getInt(0)).orElse(0));
-            try (Stream<DataRow> s = baki.query(pageHelper.wrapPagedSql(query), args)) {
-                List<T> list = s.map(rowConvert).collect(Collectors.toList());
-                return PagedResource.of(pageHelper, list);
-            }
-        }).orElseGet(PagedResource::empty);
+        PageHelper pageHelper = customPageHelper;
+        if (pageHelper == null) {
+            pageHelper = defaultPager();
+        }
+        pageHelper.init(page, size, count);
+        try (Stream<DataRow> s = baki.query(pageHelper.wrapPagedSql(query), args)) {
+            List<T> list = s.map(rowConvert).collect(Collectors.toList());
+            return PagedResource.of(pageHelper, list);
+        }
     }
 
     /**

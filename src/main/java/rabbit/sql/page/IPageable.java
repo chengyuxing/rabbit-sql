@@ -28,6 +28,14 @@ public interface IPageable<T> {
     IPageable<T> countQuery(String countQuery);
 
     /**
+     * 指定明确的记录条数（不进行sql查询）
+     *
+     * @param count 记录条数
+     * @return 分页构建器
+     */
+    IPageable<T> count(Integer count);
+
+    /**
      * 设置分页帮助类
      *
      * @param pageHelper 分页帮助类

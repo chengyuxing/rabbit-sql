@@ -260,6 +260,7 @@ public class SqlUtil {
                 }
                 if (hasChooseBlock) {
                     if (trimLine.startsWith("--#choose")) {
+                        blockFirstOk = false;
                         inBlock = true;
                         continue;
                     }

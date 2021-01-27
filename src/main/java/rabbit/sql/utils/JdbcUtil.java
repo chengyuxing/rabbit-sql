@@ -296,14 +296,14 @@ public class JdbcUtil {
     }
 
     /**
-     * 设置预编译sql的参数值
+     * 设置特殊的预编译sql的参数值，可以自动转一些换合适的数据类型
      *
      * @param statement statement
      * @param index     序号
      * @param value     值
      * @throws SQLException sqlExp
      */
-    public static void setStatementValue(PreparedStatement statement, int index, Object value) throws SQLException {
+    public static void setSpecialStatementValue(PreparedStatement statement, int index, Object value) throws SQLException {
         String pClass = statement.getParameterMetaData().getParameterClassName(index);
         String pType = statement.getParameterMetaData().getParameterTypeName(index);
         // if postgresql, insert as json(b) type
@@ -334,21 +334,33 @@ public class JdbcUtil {
         } else if (pClass.equals("java.sql.Timestamp") && value instanceof String) {
             statement.setObject(index, new Timestamp(DateTimes.toEpochMilli((String) value)));
         } else {
-            if (value instanceof java.util.Date) {
-                statement.setObject(index, new Date(((java.util.Date) value).getTime()));
-            } else if (value instanceof LocalDateTime) {
-                statement.setObject(index, new Timestamp(((LocalDateTime) value).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
-            } else if (value instanceof LocalDate) {
-                statement.setObject(index, new Date(((LocalDate) value).atStartOfDay(ZoneOffset.systemDefault()).toInstant().toEpochMilli()));
-            } else if (value instanceof LocalTime) {
-                statement.setObject(index, new Time(((LocalTime) value).atDate(LocalDate.now()).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
-            } else if (value instanceof Instant) {
-                statement.setObject(index, new Timestamp(((Instant) value).toEpochMilli()));
-            } else if (value instanceof InputStream) {
-                statement.setBinaryStream(index, (InputStream) value);
-            } else {
-                statement.setObject(index, value);
-            }
+            setStatementValue(statement, index, value);
+        }
+    }
+
+    /**
+     * 设置常规的参数占位符的参数值
+     *
+     * @param statement statement
+     * @param index     序号
+     * @param value     值
+     * @throws SQLException sqlExp
+     */
+    public static void setStatementValue(PreparedStatement statement, int index, Object value) throws SQLException {
+        if (value instanceof java.util.Date) {
+            statement.setObject(index, new Date(((java.util.Date) value).getTime()));
+        } else if (value instanceof LocalDateTime) {
+            statement.setObject(index, new Timestamp(((LocalDateTime) value).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
+        } else if (value instanceof LocalDate) {
+            statement.setObject(index, new Date(((LocalDate) value).atStartOfDay(ZoneOffset.systemDefault()).toInstant().toEpochMilli()));
+        } else if (value instanceof LocalTime) {
+            statement.setObject(index, new Time(((LocalTime) value).atDate(LocalDate.now()).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
+        } else if (value instanceof Instant) {
+            statement.setObject(index, new Timestamp(((Instant) value).toEpochMilli()));
+        } else if (value instanceof InputStream) {
+            statement.setBinaryStream(index, (InputStream) value);
+        } else {
+            statement.setObject(index, value);
         }
     }
 
@@ -366,7 +378,7 @@ public class JdbcUtil {
                 if (args.containsKey(names.get(i))) {
                     int index = i + 1;
                     Object param = args.get(names.get(i));
-                    setStatementValue(statement, index, param);
+                    setSpecialStatementValue(statement, index, param);
                 }
             }
         }

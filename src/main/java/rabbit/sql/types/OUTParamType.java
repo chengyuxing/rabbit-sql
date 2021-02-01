@@ -8,7 +8,8 @@ import java.sql.Types;
  * 出参枚举类型
  */
 public enum OUTParamType implements IOutParam {
-    REF_CURSOR(Types.REF_CURSOR, "cursor"),
+    REF_CURSOR(Types.REF_CURSOR, "ref_cursor"),
+    ORACLE_CURSOR(-10, "cursor"),
     VARCHAR(Types.VARCHAR, "varchar"),
     NVARCHAR(Types.NVARCHAR, "nvarchar"),
     INTEGER(Types.INTEGER, "integer"),

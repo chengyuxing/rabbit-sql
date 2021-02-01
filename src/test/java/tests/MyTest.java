@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.zaxxer.hikari.HikariDataSource;
 import func.FCondition;
 import func.FFilter;
+import oracle.jdbc.OracleTypes;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.postgresql.util.PGobject;
@@ -114,7 +115,7 @@ public class MyTest {
         System.out.println(row);
         row.<List<DataRow>>get(0)
                 .forEach(System.out::println);
-
+        int i = OracleTypes.CURSOR;
 //        DataRow row1 = baki.execute("insert into test.tb(a,b) values (:a,:b)", Args.<Object>of("a", 5).add("b", 5));
 //        System.out.println(row1);
 //

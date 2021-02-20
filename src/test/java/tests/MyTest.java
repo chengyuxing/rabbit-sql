@@ -232,7 +232,7 @@ public class MyTest {
 
     @Test
     public void testProcedure() throws Exception {
-        baki.call("call test.transaction()", Args.create());
+        baki.call("call test.transaction_rollback()", Args.create());
     }
 
     @Test

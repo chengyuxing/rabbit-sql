@@ -290,43 +290,42 @@ public abstract class JdbcSupport {
         CallableStatement statement = null;
         Connection connection = getConnection();
         try {
+            statement = connection.prepareCall(executeSql);
+            List<String> outNames = new ArrayList<>();
             if (hasArgs) {
-                statement = connection.prepareCall(executeSql);
                 JdbcUtil.setStoreArgs(statement, args, argNames);
-                statement.execute();
-
-                List<String> outNames = new ArrayList<>();
                 for (String name : argNames) {
                     ParamMode mode = args.get(name).getParamMode();
                     if (mode == ParamMode.OUT || mode == ParamMode.IN_OUT) {
                         outNames.add(name);
                     }
                 }
-                if (outNames.size() > 0) {
-                    Object[] values = new Object[outNames.size()];
-                    String[] types = new String[values.length];
-                    int resultIndex = 0;
-                    for (int i = 0; i < argNames.size(); i++) {
-                        if (args.get(argNames.get(i)).getParamMode() == ParamMode.OUT || args.get(argNames.get(i)).getParamMode() == ParamMode.IN_OUT) {
-                            Object result = statement.getObject(i + 1);
-                            if (null == result) {
-                                values[resultIndex] = null;
-                                types[resultIndex] = null;
-                            } else if (result instanceof ResultSet) {
-                                List<DataRow> rows = JdbcUtil.createDataRows((ResultSet) result, executeSql, -1);
-                                values[resultIndex] = rows;
-                                types[resultIndex] = "java.util.ArrayList<DataRow>";
-                                log.debug("boxing a result with type: cursor, convert to ArrayList<DataRow>, get result by name:{} or index:{}!", outNames.get(resultIndex), resultIndex);
-                            } else {
-                                values[resultIndex] = result;
-                                types[resultIndex] = result.getClass().getName();
-                                log.debug("boxing a result with type:{}, get result by name:{} or index:{}!", types[resultIndex], outNames.get(resultIndex), resultIndex);
-                            }
-                            resultIndex++;
+            }
+            statement.execute();
+            if (outNames.size() > 0) {
+                Object[] values = new Object[outNames.size()];
+                String[] types = new String[values.length];
+                int resultIndex = 0;
+                for (int i = 0; i < argNames.size(); i++) {
+                    if (args.get(argNames.get(i)).getParamMode() == ParamMode.OUT || args.get(argNames.get(i)).getParamMode() == ParamMode.IN_OUT) {
+                        Object result = statement.getObject(i + 1);
+                        if (null == result) {
+                            values[resultIndex] = null;
+                            types[resultIndex] = null;
+                        } else if (result instanceof ResultSet) {
+                            List<DataRow> rows = JdbcUtil.createDataRows((ResultSet) result, executeSql, -1);
+                            values[resultIndex] = rows;
+                            types[resultIndex] = "java.util.ArrayList<DataRow>";
+                            log.debug("boxing a result with type: cursor, convert to ArrayList<DataRow>, get result by name:{} or index:{}!", outNames.get(resultIndex), resultIndex);
+                        } else {
+                            values[resultIndex] = result;
+                            types[resultIndex] = result.getClass().getName();
+                            log.debug("boxing a result with type:{}, get result by name:{} or index:{}!", types[resultIndex], outNames.get(resultIndex), resultIndex);
                         }
+                        resultIndex++;
                     }
-                    return DataRow.of(outNames.toArray(new String[0]), types, values);
                 }
+                return DataRow.of(outNames.toArray(new String[0]), types, values);
             }
             return DataRow.empty();
         } catch (SQLException e) {

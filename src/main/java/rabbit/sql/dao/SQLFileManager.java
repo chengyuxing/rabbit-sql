@@ -20,7 +20,8 @@ import java.util.regex.Pattern;
 
 /**
  * SQL文件解析管理器<br>
- * 本地sql文件 (以file:...开头)，默认读取classpath下的sql文件<br>
+ * 支持外部sql(本地文件系统)和classpath下的sql<br>
+ * 本地sql文件以 {@code file:} 开头，默认读取classpath下的sql文件<br>
  * 格式参考data.sql.template
  */
 public final class SQLFileManager {
@@ -48,9 +49,8 @@ public final class SQLFileManager {
 
     /**
      * Sql文件解析器实例<br>
-     * 文件名必须从classpath目录开始到文件名(包含后缀.sql)，多个sql文件以逗号(,)分割
      *
-     * @param sqls 多个文件名
+     * @param sqls 多个文件名，以逗号(,)分割
      */
     public SQLFileManager(String sqls) {
         this.sqls = sqls.split(",");

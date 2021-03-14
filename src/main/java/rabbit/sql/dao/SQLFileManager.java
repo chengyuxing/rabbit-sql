@@ -135,7 +135,7 @@ public final class SQLFileManager {
                         singleResource.put(previousSqlName, "");
                     } else {
                         // exclude single line annotation except expression keywords
-                        if (!trimLine.startsWith("--") || StringUtil.startsWiths(trimLine, EXPRESSION_KEYWORDS)) {
+                        if (!trimLine.startsWith("--") || StringUtil.startsWithsIgnoreCase(trimLine, EXPRESSION_KEYWORDS)) {
                             if (!previousSqlName.equals("")) {
                                 String prepareLine = singleResource.get(previousSqlName) + line;
                                 if (trimLine.endsWith(";")) {

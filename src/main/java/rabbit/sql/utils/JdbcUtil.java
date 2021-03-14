@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rabbit.common.types.DataRow;
 import rabbit.common.utils.DateTimes;
+import rabbit.common.utils.StringUtil;
 import rabbit.sql.types.Param;
 import rabbit.sql.types.ParamMode;
 
@@ -204,13 +205,12 @@ public class JdbcUtil {
      * @throws SQLException sqlEx
      */
     public static String[] createNames(ResultSet resultSet, final String executedSql) throws SQLException {
-        String sql = executedSql.toLowerCase();
         ResultSetMetaData metaData = resultSet.getMetaData();
         int columnCount = metaData.getColumnCount();
         String[] names = new String[columnCount];
         for (int i = 0; i < columnCount; i++) {
             String columnName = metaData.getColumnName(i + 1);
-            if (sql.contains("\"" + columnName.toLowerCase() + "\"")) {
+            if (StringUtil.containsIgnoreCase(executedSql, "\"" + columnName + "\"")) {
                 names[i] = columnName;
             } else {
                 names[i] = columnName.toLowerCase();

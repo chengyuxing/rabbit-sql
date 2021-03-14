@@ -8,6 +8,9 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static rabbit.common.utils.StringUtil.containsAllIgnoreCase;
+import static rabbit.common.utils.StringUtil.startsWithIgnoreCase;
+
 /**
  * SQL工具类
  */
@@ -166,7 +169,9 @@ public class SqlUtil {
         String sql = sourceSql;
         for (String key : args.keySet()) {
             if (key.startsWith("${") && key.endsWith("}")) {
-                String v = "\n" + args.get(key).toString() + "\n";
+                String childSql = args.get(key).toString();
+                String start = childSql.startsWith("\n") ? "" : "\n";
+                String v = start + childSql + "\n";
                 sql = sql.replace(key, v);
             }
         }
@@ -233,7 +238,7 @@ public class SqlUtil {
         if (argsMap == null || argsMap.isEmpty()) {
             return sql;
         }
-        if (!sql.contains("--#if") || !sql.contains("--#fi")) {
+        if (!containsAllIgnoreCase(sql, "--#if", "--#fi")) {
             return sql;
         }
         String nSql = removeAnnotationBlock(sql);
@@ -246,7 +251,7 @@ public class SqlUtil {
         boolean inBlock = false;
         boolean blockFirstOk = false;
         boolean hasChooseBlock = false;
-        if (sql.contains("--#choose") && sql.contains("--#end")) {
+        if (containsAllIgnoreCase(sql, "--#choose", "--#end")) {
             hasChooseBlock = true;
         }
         for (String line : lines) {
@@ -259,17 +264,17 @@ public class SqlUtil {
                     }
                 }
                 if (hasChooseBlock) {
-                    if (trimLine.startsWith("--#choose")) {
+                    if (startsWithIgnoreCase(trimLine, "--#choose")) {
                         blockFirstOk = false;
                         inBlock = true;
                         continue;
                     }
-                    if (trimLine.startsWith("--#end")) {
+                    if (startsWithIgnoreCase(trimLine, "--#end")) {
                         inBlock = false;
                         continue;
                     }
                 }
-                if (trimLine.startsWith("--#if") && !start) {
+                if (startsWithIgnoreCase(trimLine, "--#if") && !start) {
                     start = true;
                     if (inBlock) {
                         if (!blockFirstOk) {
@@ -287,7 +292,7 @@ public class SqlUtil {
                     }
                     continue;
                 }
-                if (trimLine.startsWith("--#fi") && start) {
+                if (startsWithIgnoreCase(trimLine, "--#fi") && start) {
                     ok = true;
                     start = false;
                     continue;
@@ -304,7 +309,7 @@ public class SqlUtil {
         Pattern p;
         Matcher m;
         // if update statement
-        if (firstLine.startsWith("update")) {
+        if (startsWithIgnoreCase(firstLine, "update")) {
             p = Pattern.compile(",\\s*where", Pattern.CASE_INSENSITIVE);
             m = p.matcher(dSql);
             if (m.find()) {

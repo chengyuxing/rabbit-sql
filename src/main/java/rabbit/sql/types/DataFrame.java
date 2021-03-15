@@ -143,7 +143,7 @@ public class DataFrame {
     }
 
     /**
-     * 行数据类型
+     * 创建一个数据容器
      *
      * @param tableName 表名
      * @param row       行数据类型
@@ -151,5 +151,16 @@ public class DataFrame {
      */
     public static DataFrame of(String tableName, DataRow row) {
         return of(tableName, row.toMap());
+    }
+
+    /**
+     * 创建一个数据容器
+     *
+     * @param tableName 表名
+     * @param entity    实体
+     * @return DataFrame
+     */
+    public static DataFrame of(String tableName, Object entity) {
+        return of(tableName, DataRow.fromEntity(entity));
     }
 }

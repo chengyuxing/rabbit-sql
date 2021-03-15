@@ -48,7 +48,7 @@ public class Condition implements ICondition {
      * @return 条件拼接器
      */
     public Condition expression(String sql) {
-        conditions.append(" ").append(sql).append(" ");
+        conditions.append(sql).append(" ");
         return this;
     }
 
@@ -112,6 +112,29 @@ public class Condition implements ICondition {
     @Override
     public Map<String, Object> getArgs() {
         return args;
+    }
+
+    /**
+     * 手动自定义sql占位符参数，通常指代sql中出现占位符 {@code :id} 的值
+     *
+     * @param holderArgs 占位符参数
+     * @return 条件拼接器接口
+     */
+    public Condition args(Map<String, Object> holderArgs) {
+        args.putAll(holderArgs);
+        return this;
+    }
+
+    /**
+     * 手动添加sql占位符参数
+     *
+     * @param name  参数名
+     * @param value 参数值
+     * @return 条件拼接器
+     */
+    public Condition addArg(String name, Object value) {
+        args.put(name, value);
+        return this;
     }
 
     /**

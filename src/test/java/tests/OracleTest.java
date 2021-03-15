@@ -10,7 +10,7 @@ import rabbit.sql.dao.BakiDao;
 import java.util.Date;
 
 public class OracleTest {
-    static Baki baki;
+    static BakiDao baki;
 
     @BeforeClass
     public static void init() {

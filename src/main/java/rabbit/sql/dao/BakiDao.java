@@ -83,7 +83,7 @@ public class BakiDao extends JdbcSupport implements Baki {
 
     @Override
     public DataRow execute(String sql) {
-        return executeAny(sql, Collections.emptyMap());
+        return execute(sql, Args.create());
     }
 
     @Override
@@ -91,6 +91,12 @@ public class BakiDao extends JdbcSupport implements Baki {
         return executeAny(sql, args);
     }
 
+    /**
+     * 插入
+     *
+     * @param dataFrame 数据对象
+     * @return 受影响的行数
+     */
     @Override
     public int insert(DataFrame dataFrame) {
         Collection<Map<String, Object>> data = dataFrame.getRows();
@@ -115,43 +121,92 @@ public class BakiDao extends JdbcSupport implements Baki {
         return -1;
     }
 
+    /**
+     * 删除
+     *
+     * @param tableName 表名
+     * @param condition 条件配置
+     * @return 受影响的行数
+     */
     @Override
-    public int delete(String tableName, ICondition ICondition) {
-        return executeNonQuery("delete from " + tableName + " " + ICondition.getSql(), Collections.singletonList(ICondition.getArgs()));
+    public int delete(String tableName, ICondition condition) {
+        return executeNonQuery("delete from " + tableName + " " + condition.getSql(), Collections.singletonList(condition.getArgs()));
     }
 
+    /**
+     * 更新
+     *
+     * @param tableName 表名
+     * @param data      数据
+     * @param condition 条件
+     * @return 受影响的行数
+     */
     @Override
-    public int update(String tableName, Map<String, Object> data, ICondition ICondition) {
+    public int update(String tableName, Map<String, Object> data, ICondition condition) {
         String update = SqlUtil.generateUpdate(tableName, data);
-        data.putAll(ICondition.getArgs());
-        return executeNonQuery(update + ICondition.getSql(), Collections.singletonList(data));
+        data.putAll(condition.getArgs());
+        return executeNonQuery(update + condition.getSql(), Collections.singletonList(data));
     }
 
+    /**
+     * 查询(一个流对象占用一个连接对象，需要手动关闭流或使用try-with-resource包裹)
+     *
+     * @param sql 查询sql
+     * @return 收集为流的结果集
+     */
     @Override
     public Stream<DataRow> query(String sql) {
         return query(sql, Args.create());
     }
 
+    /**
+     * 查询(一个流对象占用一个连接对象，需要手动关闭流或使用try-with-resource包裹)
+     *
+     * @param sql  查询sql
+     * @param args 参数
+     * @return 收集为流的结果集
+     */
     @Override
     public Stream<DataRow> query(String sql, Map<String, Object> args) {
         try {
             return executeQueryStream(sql, args);
         } catch (SQLException ex) {
-            log.error(ex.toString());
+            throw new RuntimeException("query results error: ", ex);
         }
-        return Stream.empty();
     }
 
+    /**
+     * 分页查询
+     *
+     * @param recordQuery 查询sql
+     * @param page        当前页
+     * @param size        分页大小
+     * @param <T>         类型参数
+     * @return 分页构建器
+     */
     @Override
     public <T> IPageable<T> query(String recordQuery, int page, int size) {
         return new Pageable<>(this, recordQuery, page, size);
     }
 
+    /**
+     * 获取一条
+     *
+     * @param sql 查询sql
+     * @return 空或一条
+     */
     @Override
     public Optional<DataRow> fetch(String sql) {
         return fetch(sql, Args.create());
     }
 
+    /**
+     * 获取一条<br>
+     *
+     * @param sql  查询sql
+     * @param args 参数
+     * @return 空或一条
+     */
     @Override
     public Optional<DataRow> fetch(String sql, Map<String, Object> args) {
         try (Stream<DataRow> s = query(sql, args)) {
@@ -159,38 +214,54 @@ public class BakiDao extends JdbcSupport implements Baki {
         }
     }
 
+    /**
+     * 判断是否存在数据行
+     *
+     * @param sql sql
+     * @return 是否存在
+     */
     @Override
     public boolean exists(String sql) {
         return fetch(sql).isPresent();
     }
 
+    /**
+     * 判断是否存在数据行
+     *
+     * @param sql  sql
+     * @param args 参数
+     * @return 是否存在
+     */
     @Override
     public boolean exists(String sql, Map<String, Object> args) {
         return fetch(sql, args).isPresent();
     }
 
     /**
-     * 执行一个存储过程或函数<br>
      * PostgreSQL执行获取一个游标类型的结果：
      * <blockquote>
      * <pre>
-     *  {@link List}&lt;{@link DataRow}&gt; rows = {@link rabbit.sql.transaction.Tx}.using(() -&gt;
-     *    baki.function("{call test.func2(:c::refcursor)}",
-     *       Args.create("c",Param.IN_OUT("result", OUTParamType.REF_CURSOR))
-     *       ).get(0));
-     *   </pre>
+     *      {@link List}&lt;{@link DataRow}&gt; rows = {@link rabbit.sql.transaction.Tx}.using(() -&gt;
+     *         baki.call("{call test.func2(:c::refcursor)}",
+     *             Args.create("c",Param.IN_OUT("result", OUTParamType.REF_CURSOR))
+     *             ).get(0));
+     * </pre>
      * </blockquote>
      *
      * @param name 过程名
      * @param args 参数 （占位符名字，参数对象）
-     * @return 包含至少一个结果的DataRow结果集
+     * @return DataRow
      */
     @Override
     public DataRow call(String name, Map<String, Param> args) {
-        return executeCall(name, args);
+        return executeCallStatement(name, args);
     }
 
-    @Override
+    /**
+     * 获取数据元信息
+     *
+     * @return 数据元信息
+     */
     public DatabaseMetaData getMetaData() {
         try {
             if (metaData == null) {

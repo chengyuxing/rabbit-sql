@@ -328,7 +328,7 @@ public class MyTest {
 
     @Test
     public void TestDelete() throws SQLException {
-        int i = baki.delete("test.user", Condition.where(Filter.like("name", "batch%")));
+        int i = baki.delete("test.history", Condition.where(Filter.eq("userid", "13766f06-119d-463d-9a94-8350ea172c87")));
         System.out.println(i);
     }
 

@@ -7,7 +7,7 @@ import java.util.Map;
  */
 public interface ICondition {
     /**
-     * 获取条件拼装器中的参数
+     * 获取条件拼装器中所有的参数
      *
      * @return 参数
      */

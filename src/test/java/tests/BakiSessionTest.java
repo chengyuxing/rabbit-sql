@@ -7,18 +7,21 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import rabbit.sql.Baki;
 import rabbit.sql.dao.Args;
+import rabbit.sql.page.PagedResource;
 import rabbit.sql.types.DataFrame;
 
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.*;
+import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 
 public class BakiSessionTest {
 
-    static Baki baki;
+    static BakiDao baki;
     static BakiDao orclLight;
     static HikariDataSource dataSource;
 
@@ -140,12 +143,15 @@ public class BakiSessionTest {
     }
 
     @Test
-    public void dateTimeTest() throws Exception {
-        DataFrame dataFrame = DataFrame.of("test.datetime", Args.create()
-                .add("ts", LocalDateTime.now())
-                .add("dt", LocalDate.now())
-                .add("tm", LocalTime.now()));
-        baki.insert(dataFrame);
+    public void update() throws Exception {
+        baki.update("test.history",
+                Args.of("words", "chengyuxingo"),
+                Condition.where("userid = :id").addArg("id", "a036313a-21f4-48ff-8308-532a6d62e5e6"));
+    }
+
+    @Test
+    public void del() throws Exception {
+        baki.delete("test.history", Condition.where(Filter.eq("userid", "eb9e6bbd-b750-4640-b1aa-14a813150fd7")));
     }
 
     @Test

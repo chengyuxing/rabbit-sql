@@ -14,7 +14,7 @@ import java.util.Arrays;
 
 public class SqliteTest {
 
-    static Baki baki;
+    static BakiDao baki;
 
     @BeforeClass
     public static void init() throws IOException {

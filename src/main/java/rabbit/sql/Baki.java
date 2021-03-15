@@ -12,7 +12,7 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 /**
- * dao接口
+ * 数据库基本操作通用接口
  */
 public interface Baki {
 
@@ -44,21 +44,21 @@ public interface Baki {
     /**
      * 删除
      *
-     * @param tableName  表名
-     * @param ICondition 条件
+     * @param tableName 表名
+     * @param condition 条件配置
      * @return 受影响的行数
      */
-    int delete(String tableName, ICondition ICondition);
+    int delete(String tableName, ICondition condition);
 
     /**
      * 更新
      *
-     * @param tableName  表名
-     * @param data       数据
-     * @param ICondition 条件
+     * @param tableName 表名
+     * @param data      数据
+     * @param condition 条件
      * @return 受影响的行数
      */
-    int update(String tableName, Map<String, Object> data, ICondition ICondition);
+    int update(String tableName, Map<String, Object> data, ICondition condition);
 
     /**
      * 查询

@@ -272,7 +272,7 @@ public abstract class JdbcSupport {
      * @param args      参数
      * @return DataRow
      */
-    public DataRow executeCall(final String procedure, Map<String, Param> args) {
+    public DataRow executeCallStatement(final String procedure, Map<String, Param> args) {
         String sourceSql = procedure;
         boolean hasArgs = args != null && !args.isEmpty();
         if (hasArgs) {

@@ -155,6 +155,13 @@ public class BakiSessionTest {
     }
 
     @Test
+    public void caseU() throws Exception {
+        baki.query("select words, userid, DEL as \"DeL\"\n" +
+                "from test.history")
+                .forEach(System.out::println);
+    }
+
+    @Test
     public void secondsTest() throws Exception {
         System.out.println(new Timestamp(LocalDateTime.now().atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
 

@@ -4,11 +4,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rabbit.common.types.DataRow;
 import rabbit.common.utils.DateTimes;
-import rabbit.common.utils.StringUtil;
 import rabbit.sql.types.Param;
 import rabbit.sql.types.ParamMode;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.*;
@@ -210,7 +210,7 @@ public class JdbcUtil {
         String[] names = new String[columnCount];
         for (int i = 0; i < columnCount; i++) {
             String columnName = metaData.getColumnName(i + 1);
-            if (StringUtil.containsIgnoreCase(executedSql, "\"" + columnName + "\"")) {
+            if (executedSql.contains("\"" + columnName + "\"")) {
                 names[i] = columnName;
             } else {
                 names[i] = columnName.toLowerCase();

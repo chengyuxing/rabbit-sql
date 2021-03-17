@@ -22,7 +22,7 @@ public class TestInserts {
 
     static List<DataRow> rows = new ArrayList<>();
 
-//    @BeforeClass
+    //    @BeforeClass
     public static void init() {
         dataSource = new HikariDataSource();
         dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
@@ -50,7 +50,7 @@ public class TestInserts {
     }
 
     @Test
-    public void aaa() throws Exception{
+    public void aaa() throws Exception {
         System.out.println(new Date().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
     }
 }

@@ -22,7 +22,7 @@ import java.util.stream.Stream;
 
 public class BakiSessionTest {
 
-    static BakiDao baki;
+    static Baki baki;
     static BakiDao orclLight;
     static HikariDataSource dataSource;
 
@@ -139,7 +139,7 @@ public class BakiSessionTest {
 
     @Test
     public void batchExe() throws Exception {
-        int[] res = baki.executeBatch(
+        int[] res = baki.execute(
                 "create table test.t_a(id int)",
                 "create table test.t_b(id int)",
                 "create table test.t_c(id int)",

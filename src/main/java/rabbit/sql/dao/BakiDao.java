@@ -135,7 +135,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * 快速插入数据（对数据类型有一定的限制）<br>
+     * 快速批量插入数据（对数据类型有一定的限制）<br>
      * 注：不支持插入二进制对象
      *
      * @param dataFrame 数据对象

@@ -8,8 +8,12 @@ import rabbit.sql.Baki;
 import rabbit.sql.dao.BakiDao;
 import rabbit.sql.types.DataFrame;
 
+import java.time.Instant;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 public class TestInserts {
@@ -18,7 +22,7 @@ public class TestInserts {
 
     static List<DataRow> rows = new ArrayList<>();
 
-    @BeforeClass
+//    @BeforeClass
     public static void init() {
         dataSource = new HikariDataSource();
         dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
@@ -43,5 +47,10 @@ public class TestInserts {
     @Test
     public void batch() throws Exception {
         baki.fastInsert(DataFrame.ofRows("test.message", rows));
+    }
+
+    @Test
+    public void aaa() throws Exception{
+        System.out.println(new Date().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime());
     }
 }

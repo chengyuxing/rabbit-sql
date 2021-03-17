@@ -2,12 +2,10 @@ package rabbit.sql.utils;
 
 import rabbit.common.tuple.Pair;
 import rabbit.common.types.CExpression;
-import rabbit.common.utils.DateTimes;
+import rabbit.common.utils.ReflectUtil;
 import rabbit.sql.types.Ignore;
 
-import java.time.Instant;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -137,16 +135,26 @@ public class SqlUtil {
     }
 
     /**
-     * 安全处理字符串参数的引号问题
+     * 使用单引号包裹
      *
      * @param value 值
-     * @return 使用引号包裹和转译后的值
+     * @return 使用引号包裹值
      */
-    public static String quoteValue(String value) {
+    public static String quote(String value) {
+        return "'" + value + "'";
+    }
+
+    /**
+     * 使用单引号包裹，并安全的处理其中包含的引号
+     *
+     * @param value 值
+     * @return 安全处理后的值
+     */
+    public static String safeQuote(String value) {
         if (value.contains("'")) {
             value = value.replace("'", "''");
         }
-        return "'" + value + "'";
+        return quote(value);
     }
 
     /**
@@ -158,7 +166,7 @@ public class SqlUtil {
     public static String quoteFormatValueIfNecessary(Object obj) {
         Class<?> clazz = obj.getClass();
         if (clazz == String.class) {
-            return quoteValue((String) obj);
+            return safeQuote((String) obj);
         }
         if (clazz == Integer.class ||
                 clazz == Long.class ||
@@ -170,19 +178,21 @@ public class SqlUtil {
                 clazz.isPrimitive()) {
             return obj.toString();
         }
-        if (clazz == LocalDate.class) {
-            return quoteValue(DateTimes.of((LocalDate) obj).toString("yyyy-MM-dd"));
-        }
-        if (clazz == LocalDateTime.class) {
-            return quoteValue(DateTimes.of((LocalDateTime) obj).toString("yyyy-MM-dd HH:mm:ss"));
-        }
-        if (clazz == Instant.class) {
-            return quoteValue(DateTimes.of((Instant) obj).toString("yyyy-MM-dd HH:mm:ss"));
-        }
         if (clazz == Date.class) {
-            return quoteValue(DateTimes.of((Date) obj).toString("yyyy-MM-dd HH:mm:ss"));
+            return quote(((Date) obj).toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime().toString());
         }
-        return quoteValue(obj.toString());
+        // I think you wanna save json string
+        if (Map.class.isAssignableFrom(clazz) ||
+                Collection.class.isAssignableFrom(clazz) ||
+                !clazz.getTypeName().startsWith("java.")) {
+            String value = ReflectUtil.obj2Json(obj);
+            if (value != null) {
+                return safeQuote(value);
+            }
+            return "null";
+        }
+        // default just quote
+        return quote(obj.toString());
     }
 
     /**

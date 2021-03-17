@@ -50,7 +50,7 @@ public interface Baki {
     int insert(DataFrame dataFrame);
 
     /**
-     * 快速插入数据
+     * 快速插入
      *
      * @param dataFrame 数据对象
      * @return 受影响的行数

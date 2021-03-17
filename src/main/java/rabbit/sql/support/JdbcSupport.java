@@ -107,11 +107,14 @@ public abstract class JdbcSupport {
     }
 
     /**
-     * 执行query语句，ddl或dml语句
+     * 执行query语句，ddl或dml语句<br>
+     * 返回数据为:<br>
+     * 执行结果：{@code DataRow.get(0)} 或 {@code DataRow.get("result")}<br>
+     * 执行类型：{@code DataRow.get(1)} 或 {@code DataRow.getString("type")}
      *
-     * @param sql  sql
+     * @param sql  原始sql
      * @param args 参数
-     * @return 包含各种结果的行数据类型
+     * @return 查询语句返回List，DML语句返回受影响的行数，DDL语句返回0
      */
     public DataRow executeAny(final String sql, Map<String, Object> args) {
         String sourceSql = sql;
@@ -134,9 +137,13 @@ public abstract class JdbcSupport {
             DataRow result;
             if (isQuery) {
                 List<DataRow> rows = JdbcUtil.createDataRows(sc.getResultSet(), preparedSql, -1);
-                result = DataRow.of(new String[]{"result", "type"},
-                        new String[]{"java.util.ArrayList<DataRow>", "java.lang.String"},
-                        new Object[]{rows, "query"});
+                if (rows.size() == 1) {
+                    result = DataRow.fromPair("result", rows.get(0), "type", "QUERY statement");
+                } else {
+                    result = DataRow.of(new String[]{"result", "type"},
+                            new String[]{"java.util.ArrayList<DataRow>", "java.lang.String"},
+                            new Object[]{rows, "QUERY statement"});
+                }
             } else {
                 int count = sc.getUpdateCount();
                 if (count <= 0) {
@@ -162,9 +169,8 @@ public abstract class JdbcSupport {
      * @param sql  e.g. <code>select * from test.user where id = :id</code>
      * @param args 参数 （占位符名字，参数对象）
      * @return Stream数据流
-     * @throws SQLException sqlEx
      */
-    public Stream<DataRow> executeQueryStream(final String sql, Map<String, Object> args) throws SQLException {
+    public Stream<DataRow> executeQueryStream(final String sql, Map<String, Object> args) {
         UncheckedCloseable close = null;
         try {
             if (args == null) {
@@ -212,8 +218,37 @@ public abstract class JdbcSupport {
                     sqlEx.addSuppressed(e);
                 }
             }
-            throw sqlEx;
+            throw new RuntimeException(sqlEx);
         }
+    }
+
+    /**
+     * 批量执行非查询语句
+     *
+     * @param sqls 一组sql
+     * @return 每条sql的执行结果
+     */
+    public int[] executeBatch(final String... sqls) {
+        Statement statement = null;
+        Connection connection = getConnection();
+        if (JdbcUtil.supportsBatchUpdates(connection)) {
+            try {
+                statement = connection.createStatement();
+                for (String sql : sqls) {
+                    statement.addBatch(getSourceSql(sql, Collections.emptyMap()));
+                }
+                return statement.executeBatch();
+            } catch (SQLException e) {
+                JdbcUtil.closeStatement(statement);
+                statement = null;
+                releaseConnection(connection, getDataSource());
+                throw new RuntimeException("execute batch error: ", e);
+            } finally {
+                JdbcUtil.closeStatement(statement);
+                releaseConnection(connection, getDataSource());
+            }
+        }
+        throw new UnsupportedOperationException("your database or jdbc driver not support batch execute currently!");
     }
 
     /**
@@ -233,10 +268,13 @@ public abstract class JdbcSupport {
         if (hasArgs) {
             Map<String, Object> firstArg = args.stream().findFirst().get();
             sourceSql = getSourceSql(sql, firstArg);
+            log.debug("SQL:{}", sourceSql);
+            if (args.size() == 1) {
+                log.debug("Args:{}", args);
+            } else {
+                log.debug("Args:{},...", args.iterator().next());
+            }
         }
-        log.debug("SQL:{}", sourceSql);
-        log.debug("Args:{}", args);
-
         Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSql(sourceSql);
         final List<String> argNames = preparedSqlAndArgNames.getItem2();
         final String preparedSql = preparedSqlAndArgNames.getItem1();

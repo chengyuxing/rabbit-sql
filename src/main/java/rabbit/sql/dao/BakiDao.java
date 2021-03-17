@@ -81,14 +81,38 @@ public class BakiDao extends JdbcSupport implements Baki {
         }
     }
 
+    /**
+     * 执行query语句，ddl或dml语句<br>
+     * 返回数据为:<br>
+     * 执行结果：{@code DataRow.get(0)} 或 {@code DataRow.get("result")}<br>
+     * 执行类型：{@code DataRow.get(1)} 或 {@code DataRow.getString("type")}
+     *
+     * @param sql 原始sql
+     * @return (结果 ， 类型)
+     */
     @Override
     public DataRow execute(String sql) {
         return execute(sql, Args.create());
     }
 
+    /**
+     * 执行query语句，ddl或dml语句<br>
+     * 返回数据为:<br>
+     * 执行结果：{@code DataRow.get(0)} 或 {@code DataRow.get("result")}<br>
+     * 执行类型：{@code DataRow.get(1)} 或 {@code DataRow.getString("type")}
+     *
+     * @param sql  原始sql
+     * @param args 参数
+     * @return (结果 ， 类型)
+     */
     @Override
     public DataRow execute(String sql, Map<String, Object> args) {
         return executeAny(sql, args);
+    }
+
+    @Override
+    public int[] execute(String... sqls) {
+        return executeBatch(sqls);
     }
 
     /**
@@ -102,23 +126,61 @@ public class BakiDao extends JdbcSupport implements Baki {
         Collection<Map<String, Object>> data = dataFrame.getRows();
         Iterator<Map<String, Object>> iterator = data.iterator();
         if (iterator.hasNext()) {
-            Map<String, Object> first = new HashMap<>(iterator.next());
-            List<String> tableFields = Collections.emptyList();
-            if (!dataFrame.isStrict()) {
-                log.debug("prepare for non-strict insert...");
-                tableFields = execute(dataFrame.getTableFieldsSql(), sc -> {
-                    sc.executeQuery();
-                    ResultSet fieldsResultSet = sc.getResultSet();
-                    List<String> fields = Arrays.asList(JdbcUtil.createNames(fieldsResultSet, ""));
-                    JdbcUtil.closeResultSet(fieldsResultSet);
-                    log.debug("all fields of table: {} {}", dataFrame.getTableName(), fields);
-                    return fields;
-                });
-            }
-            String insertSql = SqlUtil.generateInsert(dataFrame.getTableName(), first, dataFrame.getIgnore(), tableFields);
+            Map<String, Object> first = iterator.next();
+            List<String> tableFields = dataFrame.isStrict() ? new ArrayList<>() : getTableFields(dataFrame);
+            String insertSql = SqlUtil.generatePreparedInsert(dataFrame.getTableName(), first, dataFrame.getIgnore(), tableFields);
             return executeNonQuery(insertSql, data);
         }
         return -1;
+    }
+
+    /**
+     * 快速插入数据（对数据类型有一定的限制）<br>
+     * 注：不支持插入二进制对象
+     *
+     * @param dataFrame 数据对象
+     * @return 受影响的行数
+     */
+    @Override
+    public int fastInsert(DataFrame dataFrame) {
+        Collection<Map<String, Object>> data = dataFrame.getRows();
+        if (data.size() > 0) {
+            Iterator<Map<String, Object>> iterator = data.iterator();
+            String[] sqls = new String[data.size()];
+            List<String> tableFields = null;
+            int i = 0;
+            while (iterator.hasNext()) {
+                if (tableFields == null) {
+                    tableFields = dataFrame.isStrict() ? new ArrayList<>() : getTableFields(dataFrame);
+                }
+                String insertSql = SqlUtil.generateInsert(dataFrame.getTableName(), iterator.next(), dataFrame.getIgnore(), tableFields);
+                sqls[i] = insertSql;
+                i++;
+            }
+            log.debug("preview sql: {}", sqls[0]);
+            int count = executeBatch(sqls).length;
+            log.debug("{} rows inserted!", i);
+            return count;
+        }
+        return -1;
+    }
+
+    /**
+     * 根据严格模式获取表字段
+     *
+     * @param dataFrame 数据对象
+     * @return 表字段
+     */
+    private List<String> getTableFields(DataFrame dataFrame) {
+        log.debug("prepare for non-strict insert...");
+        return execute(dataFrame.getTableFieldsSql(), sc -> {
+            sc.executeQuery();
+            ResultSet fieldsResultSet = sc.getResultSet();
+            List<String> fields = Arrays.asList(JdbcUtil.createNames(fieldsResultSet, ""));
+            JdbcUtil.closeResultSet(fieldsResultSet);
+            log.debug("all fields of table: {} {}", dataFrame.getTableName(), fields);
+            return fields;
+        });
     }
 
     /**
@@ -143,7 +205,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     @Override
     public int update(String tableName, Map<String, Object> data, ICondition condition) {
-        String update = SqlUtil.generateUpdate(tableName, data);
+        String update = SqlUtil.generatePreparedUpdate(tableName, data);
         data.putAll(condition.getArgs());
         return executeNonQuery(update + condition.getSql(), Collections.singletonList(data));
     }
@@ -168,11 +230,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     @Override
     public Stream<DataRow> query(String sql, Map<String, Object> args) {
-        try {
-            return executeQueryStream(sql, args);
-        } catch (SQLException ex) {
-            throw new RuntimeException("query results error: ", ex);
-        }
+        return executeQueryStream(sql, args);
     }
 
     /**

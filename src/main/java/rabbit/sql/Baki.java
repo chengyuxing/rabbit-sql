@@ -20,7 +20,7 @@ public interface Baki {
      * 执行一条原始sql
      *
      * @param sql 原始sql
-     * @return 如果执行成功，DML语句返回1，DDL语句返回0
+     * @return 行数据
      */
     DataRow execute(String sql);
 
@@ -29,17 +29,33 @@ public interface Baki {
      *
      * @param sql  原始sql
      * @param args 参数
-     * @return 如果执行成功，DML语句返回1，DDL语句返回0
+     * @return 行数据
      */
     DataRow execute(String sql, Map<String, Object> args);
 
     /**
+     * 批量执行非查询sql
+     *
+     * @param sqls 一组sql
+     * @return 每条sql执行的结果
+     */
+    int[] execute(String... sqls);
+
+    /**
      * 插入
      *
-     * @param dataFrame 表名
+     * @param dataFrame 数据对象
      * @return 受影响的行数
      */
     int insert(DataFrame dataFrame);
+
+    /**
+     * 快速插入数据
+     *
+     * @param dataFrame 数据对象
+     * @return 受影响的行数
+     */
+    int fastInsert(DataFrame dataFrame);
 
     /**
      * 删除

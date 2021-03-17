@@ -2,8 +2,12 @@ package rabbit.sql.utils;
 
 import rabbit.common.tuple.Pair;
 import rabbit.common.types.CExpression;
+import rabbit.common.utils.DateTimes;
 import rabbit.sql.types.Ignore;
 
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,15 +33,14 @@ public class SqlUtil {
     public static final Pattern CHILD_STR_PATTERN = Pattern.compile("'[^']*'", Pattern.MULTILINE);
 
     /**
-     * 构建一个插入语句
+     * 过滤筛选掉不满足条件的字段
      *
-     * @param tableName 表名
-     * @param row       数据
-     * @param ignore    忽略类型
-     * @param fields    需要包含的字段集合
-     * @return 插入语句
+     * @param row    数据行
+     * @param ignore 忽略类型
+     * @param fields 需要包含的字段集合
+     * @return 满足条件的字段
      */
-    public static String generateInsert(final String tableName, final Map<String, Object> row, final Ignore ignore, List<String> fields) {
+    public static Set<String> filterKeys(final Map<String, Object> row, final Ignore ignore, List<String> fields) {
         Set<String> keys = row.keySet();
         if (fields != null && !fields.isEmpty()) {
             Iterator<String> keyIterator = keys.iterator();
@@ -63,11 +66,46 @@ public class SqlUtil {
                 }
             }
         }
+        return keys;
+    }
 
+    /**
+     * 构建一个普通插入语句
+     *
+     * @param tableName 表名
+     * @param row       数据
+     * @param ignore    忽略类型
+     * @param fields    需要包含的字段集合
+     * @return 插入语句
+     */
+    public static String generateInsert(final String tableName, final Map<String, Object> row, final Ignore ignore, List<String> fields) {
+        Set<String> keys = filterKeys(row, ignore, fields);
         if (keys.isEmpty()) {
             throw new IllegalArgumentException("empty field set, generate insert sql error.");
         }
+        StringBuilder f = new StringBuilder();
+        StringBuilder v = new StringBuilder();
+        for (String key : keys) {
+            f.append(key).append(", ");
+            v.append(quoteFormatValueIfNecessary(row.get(key))).append(", ");
+        }
+        return "insert into " + tableName + "(" + f.substring(0, f.length() - 2) + ") \nvalues (" + v.substring(0, v.length() - 2) + ")";
+    }
 
+    /**
+     * 构建一个预编译的插入语句
+     *
+     * @param tableName 表名
+     * @param row       数据
+     * @param ignore    忽略类型
+     * @param fields    需要包含的字段集合
+     * @return 插入语句
+     */
+    public static String generatePreparedInsert(final String tableName, final Map<String, Object> row, final Ignore ignore, List<String> fields) {
+        Set<String> keys = filterKeys(row, ignore, fields);
+        if (keys.isEmpty()) {
+            throw new IllegalArgumentException("empty field set, generate insert sql error.");
+        }
         StringBuilder f = new StringBuilder();
         StringBuilder h = new StringBuilder();
         for (String key : keys) {
@@ -78,13 +116,13 @@ public class SqlUtil {
     }
 
     /**
-     * 构建一个更新语句
+     * 构建一个预编译的更新语句
      *
      * @param tableName 表名
      * @param data      数据
      * @return 更新语句
      */
-    public static String generateUpdate(String tableName, Map<String, Object> data) {
+    public static String generatePreparedUpdate(String tableName, Map<String, Object> data) {
         Set<String> keys = data.keySet();
         StringBuilder sb = new StringBuilder();
         for (String key : keys) {
@@ -96,6 +134,55 @@ public class SqlUtil {
             throw new IllegalArgumentException("empty field set, generate update sql error.");
         }
         return "update " + tableName + " \nset " + sb.substring(0, sb.lastIndexOf(","));
+    }
+
+    /**
+     * 安全处理字符串参数的引号问题
+     *
+     * @param value 值
+     * @return 使用引号包裹和转译后的值
+     */
+    public static String quoteValue(String value) {
+        if (value.contains("'")) {
+            value = value.replace("'", "''");
+        }
+        return "'" + value + "'";
+    }
+
+    /**
+     * 安全处理字符串引号和值类型进行默认格式化处理
+     *
+     * @param obj 值对象
+     * @return 格式化后的值
+     */
+    public static String quoteFormatValueIfNecessary(Object obj) {
+        Class<?> clazz = obj.getClass();
+        if (clazz == String.class) {
+            return quoteValue((String) obj);
+        }
+        if (clazz == Integer.class ||
+                clazz == Long.class ||
+                clazz == Double.class ||
+                clazz == Short.class ||
+                clazz == Float.class ||
+                clazz == Byte.class ||
+                clazz == Boolean.class ||
+                clazz.isPrimitive()) {
+            return obj.toString();
+        }
+        if (clazz == LocalDate.class) {
+            return quoteValue(DateTimes.of((LocalDate) obj).toString("yyyy-MM-dd"));
+        }
+        if (clazz == LocalDateTime.class) {
+            return quoteValue(DateTimes.of((LocalDateTime) obj).toString("yyyy-MM-dd HH:mm:ss"));
+        }
+        if (clazz == Instant.class) {
+            return quoteValue(DateTimes.of((Instant) obj).toString("yyyy-MM-dd HH:mm:ss"));
+        }
+        if (clazz == Date.class) {
+            return quoteValue(DateTimes.of((Date) obj).toString("yyyy-MM-dd HH:mm:ss"));
+        }
+        return quoteValue(obj.toString());
     }
 
     /**
@@ -164,6 +251,9 @@ public class SqlUtil {
      */
     public static String resolveSqlPart(final String sourceSql, Map<String, Object> args) {
         if (args == null || args.size() == 0) {
+            return sourceSql;
+        }
+        if (!sourceSql.contains("${")) {
             return sourceSql;
         }
         String sql = sourceSql;

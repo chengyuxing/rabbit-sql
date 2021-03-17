@@ -5,7 +5,6 @@ import com.zaxxer.hikari.HikariDataSource;
 import func.BeanUtil;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.nutz.dao.entity.Record;
 import org.nutz.json.Json;
 import rabbit.common.tuple.Pair;
 import rabbit.common.types.DataRow;
@@ -27,7 +26,6 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static rabbit.sql.utils.SqlUtil.SEP;
 
@@ -212,7 +210,7 @@ public class Tests {
 
 //        String sql = SqlUtil.generateInsert("test.user", paramMap, Ignore.BLANK, Arrays.asList("c", "d", "a"));
 
-        String upd = SqlUtil.generateUpdate("test.user", paramMap);
+        String upd = SqlUtil.generatePreparedUpdate("test.user", paramMap);
         System.out.println(upd);
     }
 
@@ -310,5 +308,17 @@ public class Tests {
         System.out.println(Json.toJson(pagedResource));
         ObjectMapper mapper = new ObjectMapper();
         System.out.println(mapper.writeValueAsString(pagedResource));
+    }
+
+    @Test
+    public void inseertSql() throws Exception {
+        DataRow row = DataRow.fromPair("id", 15,
+                "name", "chengyuxing",
+                "words", "it's my time!",
+                "dt", LocalDateTime.now());
+        System.out.println(row);
+        System.out.println(SqlUtil.generatePreparedInsert("t.user", row.toMap(), Ignore.BLANK, Collections.emptyList()));
+        System.out.println(SqlUtil.generateInsert("t.user", row.toMap(), Ignore.BLANK, Collections.emptyList()));
+
     }
 }

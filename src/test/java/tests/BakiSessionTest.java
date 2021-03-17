@@ -14,6 +14,7 @@ import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.*;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
@@ -134,6 +135,19 @@ public class BakiSessionTest {
                 "  \"c\": 3\n" +
                 "}'::jsonb ??| array ['d', 's'];")
                 .ifPresent(System.out::println);
+    }
+
+    @Test
+    public void batchExe() throws Exception {
+        int[] res = baki.executeBatch(
+                "create table test.t_a(id int)",
+                "create table test.t_b(id int)",
+                "create table test.t_c(id int)",
+                "create table test.t_d(id int)",
+                "create table test.t_e(id int)",
+                "create table test.t_f(id int)"
+        );
+        System.out.println(Arrays.toString(res));
     }
 
     @Test

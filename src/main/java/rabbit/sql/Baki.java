@@ -7,8 +7,8 @@ import rabbit.sql.types.DataFrame;
 import rabbit.sql.types.Param;
 
 import java.sql.DatabaseMetaData;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -39,7 +39,7 @@ public interface Baki {
      * @param sqls 一组sql
      * @return 每条sql执行的结果
      */
-    int[] execute(String... sqls);
+    int[] executeBatch(String... sqls);
 
     /**
      * 插入
@@ -51,6 +51,7 @@ public interface Baki {
 
     /**
      * 快速插入
+     * 具体逻辑可参考实现
      *
      * @param dataFrame 数据对象
      * @return 受影响的行数
@@ -77,7 +78,18 @@ public interface Baki {
     int update(String tableName, Map<String, Object> data, ICondition condition);
 
     /**
-     * 查询
+     * 快速更新<br>
+     * 具体逻辑可参考实现
+     *
+     * @param tableName 表名
+     * @param args      参数
+     * @param where     条件
+     * @return 受影响的行数
+     */
+    int fastUpdate(String tableName, Collection<Map<String, Object>> args, String where);
+
+    /**
+     * 流式查询
      *
      * @param sql 查询sql
      * @return 收集为流的结果集
@@ -85,13 +97,38 @@ public interface Baki {
     Stream<DataRow> query(String sql);
 
     /**
-     * 查询<br>
+     * 流式查询
      *
      * @param sql  查询sql
      * @param args 参数
      * @return 收集为流的结果集
      */
     Stream<DataRow> query(String sql, Map<String, Object> args);
+
+    /**
+     * 查询
+     *
+     * @param sql 查询sql
+     * @return 一组map类型结果
+     */
+    default List<Map<String, Object>> queryMaps(String sql) {
+        try (Stream<DataRow> s = query(sql)) {
+            return s.map(DataRow::toMap).collect(Collectors.toList());
+        }
+    }
+
+    /**
+     * 查询
+     *
+     * @param sql  查询sql
+     * @param args 参数
+     * @return 一组map类型结果
+     */
+    default List<Map<String, Object>> queryMaps(String sql, Map<String, Object> args) {
+        try (Stream<DataRow> s = query(sql, args)) {
+            return s.map(DataRow::toMap).collect(Collectors.toList());
+        }
+    }
 
     /**
      * 分页查询
@@ -120,6 +157,27 @@ public interface Baki {
      * @return 空或一条
      */
     Optional<DataRow> fetch(String sql, Map<String, Object> args);
+
+    /**
+     * 获取一条
+     *
+     * @param sql 查询sql
+     * @return 一条数据
+     */
+    default Map<String, Object> fetchMap(String sql) {
+        return fetch(sql).map(DataRow::toMap).orElseGet(HashMap::new);
+    }
+
+    /**
+     * 获取一条
+     *
+     * @param sql  查询sql
+     * @param args 参数
+     * @return 一条数据
+     */
+    default Map<String, Object> fetchMap(String sql, Map<String, Object> args) {
+        return fetch(sql, args).map(DataRow::toMap).orElseGet(HashMap::new);
+    }
 
     /**
      * 判断是否存在数据行

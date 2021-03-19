@@ -5,16 +5,16 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import rabbit.common.types.DataRow;
 import rabbit.sql.Baki;
+import rabbit.sql.dao.Args;
 import rabbit.sql.dao.BakiDao;
 import rabbit.sql.types.DataFrame;
+import rabbit.sql.utils.SqlUtil;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
+import java.util.*;
 
 public class TestInserts {
     static Baki baki;
@@ -47,6 +47,26 @@ public class TestInserts {
     @Test
     public void batch() throws Exception {
         baki.fastInsert(DataFrame.ofRows("test.message", rows));
+    }
+
+    @Test
+    public void update() throws Exception {
+        Args<Object> args = Args.<Object>of("id", 12)
+                .add("name", "chengyuxing")
+                .add("words", "that's my book, don't touch!")
+                .add("dt", LocalDateTime.now());
+
+        System.out.println(SqlUtil.generateUpdate("test.message", args, "id = :id"));
+    }
+
+    @Test
+    public void fors() throws Exception {
+        List<String> list = Arrays.asList("a", "b", "c");
+        Iterator<String> iterator = list.iterator();
+        for (int i = 0; iterator.hasNext(); i++) {
+            System.out.println(i);
+            System.out.println(iterator.next());
+        }
     }
 
     @Test

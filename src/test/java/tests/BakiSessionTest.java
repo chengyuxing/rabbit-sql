@@ -139,7 +139,7 @@ public class BakiSessionTest {
 
     @Test
     public void batchExe() throws Exception {
-        int[] res = baki.execute(
+        int[] res = baki.executeBatch(
                 "create table test.t_a(id int)",
                 "create table test.t_b(id int)",
                 "create table test.t_c(id int)",

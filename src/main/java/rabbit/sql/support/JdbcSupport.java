@@ -223,32 +223,35 @@ public abstract class JdbcSupport {
     }
 
     /**
-     * 批量执行非查询语句
+     * 批量执行非查询(ddl,dml)语句
      *
      * @param sqls 一组sql
      * @return 每条sql的执行结果
      */
     public int[] executeBatch(final String... sqls) {
-        Statement statement = null;
-        Connection connection = getConnection();
-        if (JdbcUtil.supportsBatchUpdates(connection)) {
-            try {
-                statement = connection.createStatement();
-                for (String sql : sqls) {
-                    statement.addBatch(getSourceSql(sql, Collections.emptyMap()));
+        if (sqls.length > 0) {
+            Statement statement = null;
+            Connection connection = getConnection();
+            if (JdbcUtil.supportsBatchUpdates(connection)) {
+                try {
+                    statement = connection.createStatement();
+                    for (String sql : sqls) {
+                        statement.addBatch(getSourceSql(sql, Collections.emptyMap()));
+                    }
+                    return statement.executeBatch();
+                } catch (SQLException e) {
+                    JdbcUtil.closeStatement(statement);
+                    statement = null;
+                    releaseConnection(connection, getDataSource());
+                    throw new RuntimeException("execute batch error: ", e);
+                } finally {
+                    JdbcUtil.closeStatement(statement);
+                    releaseConnection(connection, getDataSource());
                 }
-                return statement.executeBatch();
-            } catch (SQLException e) {
-                JdbcUtil.closeStatement(statement);
-                statement = null;
-                releaseConnection(connection, getDataSource());
-                throw new RuntimeException("execute batch error: ", e);
-            } finally {
-                JdbcUtil.closeStatement(statement);
-                releaseConnection(connection, getDataSource());
             }
+            throw new UnsupportedOperationException("your database or jdbc driver not support batch execute currently!");
         }
-        throw new UnsupportedOperationException("your database or jdbc driver not support batch execute currently!");
+        throw new IllegalArgumentException("must be no less than one SQL.");
     }
 
     /**

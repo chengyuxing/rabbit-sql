@@ -114,6 +114,40 @@ public class SqlUtil {
     }
 
     /**
+     * 构建一个更新语句
+     *
+     * @param tableName 表名
+     * @param data      数据
+     * @param where     where条件
+     * @return 更新语句
+     */
+    public static String generateUpdate(String tableName, Map<String, Object> data, final String where) {
+        if (where.trim().equals("")) {
+            throw new IllegalArgumentException("where condition must not be empty.");
+        }
+        List<String> cndFields = getPreparedSql(where).getItem2();
+        StringBuilder sb = new StringBuilder();
+        String w = where;
+        for (String key : data.keySet()) {
+            String value = quoteFormatValueIfNecessary(data.get(key));
+            if (!cndFields.contains(key)) {
+                sb.append(key)
+                        .append(" = ")
+                        .append(value)
+                        .append(",\n\t");
+            } else {
+                w = w.replace(":" + key, value);
+            }
+        }
+        String updateFields = sb.toString();
+        if (!updateFields.equals("")) {
+            w = startsWithIgnoreCase(w.trim(), "where") ? w : "where " + w;
+            return "update " + tableName + " \nset " + sb.substring(0, sb.lastIndexOf(",")) + "\n" + w;
+        }
+        throw new IllegalArgumentException("generate error, there are no fields.");
+    }
+
+    /**
      * 构建一个预编译的更新语句
      *
      * @param tableName 表名

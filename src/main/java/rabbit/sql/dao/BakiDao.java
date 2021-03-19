@@ -110,16 +110,12 @@ public class BakiDao extends JdbcSupport implements Baki {
         return executeAny(sql, args);
     }
 
-    @Override
-    public int[] execute(String... sqls) {
-        return executeBatch(sqls);
-    }
-
     /**
-     * 插入
+     * {@inheritDoc}
      *
      * @param dataFrame 数据对象
      * @return 受影响的行数
+     * @see #fastInsert(DataFrame)
      */
     @Override
     public int insert(DataFrame dataFrame) {
@@ -135,7 +131,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * 快速批量插入数据（对数据类型有一定的限制）<br>
+     * {@inheritDoc}（对数据类型有一定的限制）<br>
      * 注：不支持插入二进制对象
      *
      * @param dataFrame 数据对象
@@ -148,18 +144,16 @@ public class BakiDao extends JdbcSupport implements Baki {
             Iterator<Map<String, Object>> iterator = data.iterator();
             String[] sqls = new String[data.size()];
             List<String> tableFields = null;
-            int i = 0;
-            while (iterator.hasNext()) {
+            for (int i = 0; iterator.hasNext(); i++) {
                 if (tableFields == null) {
                     tableFields = dataFrame.isStrict() ? new ArrayList<>() : getTableFields(dataFrame);
                 }
                 String insertSql = SqlUtil.generateInsert(dataFrame.getTableName(), iterator.next(), dataFrame.getIgnore(), tableFields);
                 sqls[i] = insertSql;
-                i++;
             }
             log.debug("preview sql: {}", sqls[0]);
             int count = executeBatch(sqls).length;
-            log.debug("{} rows inserted!", i);
+            log.debug("{} rows inserted!", count);
             return count;
         }
         return -1;
@@ -184,7 +178,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * 删除
+     * {@inheritDoc}
      *
      * @param tableName 表名
      * @param condition 条件配置
@@ -196,12 +190,13 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * 更新
+     * {@inheritDoc}
      *
      * @param tableName 表名
      * @param data      数据
      * @param condition 条件
      * @return 受影响的行数
+     * @see #fastUpdate(String, Collection, String)
      */
     @Override
     public int update(String tableName, Map<String, Object> data, ICondition condition) {
@@ -211,7 +206,44 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * 查询(一个流对象占用一个连接对象，需要手动关闭流或使用try-with-resource包裹)
+     * {@inheritDoc}（对数据类型有一定的限制）<br>
+     * 注：不支持插入二进制对象<br>
+     * e.g. {@code fastUpdate(<table>, <List<Map>>, "id = :id")}
+     * 关于此方法的说明举例：
+     * <blockquote>
+     * <pre>
+     *  参数： [{id:14, name:'cyx', address:'kunming'},...]
+     *  条件："id = :id"
+     *  生存：update{@code <table>} set name = 'cyx', address = 'kunming'
+     *       where id = 14
+     *  </pre>
+     * 解释：where中至少指定一个传名参数，数据中必须包含where条件中的所以传名参数
+     * </blockquote>
+     *
+     * @param tableName 表名
+     * @param args      参数 --需要更新的数据和条件参数
+     * @param where     条件 --条件中需要有传名参数作为更新的条件依据
+     * @return 受影响的行数
+     */
+    @Override
+    public int fastUpdate(String tableName, Collection<Map<String, Object>> args, String where) {
+        if (args.size() > 0) {
+            String[] sqls = new String[args.size()];
+            Iterator<Map<String, Object>> iterator = args.iterator();
+            for (int i = 0; iterator.hasNext(); i++) {
+                String update = SqlUtil.generateUpdate(tableName, iterator.next(), where);
+                sqls[i] = update;
+            }
+            log.debug("preview sql: {}", sqls[0]);
+            int count = Arrays.stream(executeBatch(sqls)).sum();
+            log.debug("{} rows updated!", count);
+            return count;
+        }
+        return -1;
+    }
+
+    /**
+     * {@inheritDoc}(一个流对象占用一个连接对象，需要手动关闭流或使用try-with-resource包裹)
      *
      * @param sql 查询sql
      * @return 收集为流的结果集
@@ -222,7 +254,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * 查询(一个流对象占用一个连接对象，需要手动关闭流或使用try-with-resource包裹)
+     * {@inheritDoc}(一个流对象占用一个连接对象，需要手动关闭流或使用try-with-resource包裹)
      *
      * @param sql  查询sql
      * @param args 参数
@@ -234,7 +266,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * 分页查询
+     * {@inheritDoc}
      *
      * @param recordQuery 查询sql
      * @param page        当前页
@@ -248,7 +280,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * 获取一条
+     * {@inheritDoc}
      *
      * @param sql 查询sql
      * @return 空或一条
@@ -259,7 +291,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * 获取一条<br>
+     * {@inheritDoc}
      *
      * @param sql  查询sql
      * @param args 参数
@@ -273,7 +305,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * 判断是否存在数据行
+     * {@inheritDoc}
      *
      * @param sql sql
      * @return 是否存在
@@ -284,7 +316,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * 判断是否存在数据行
+     * {@inheritDoc}
      *
      * @param sql  sql
      * @param args 参数
@@ -296,7 +328,8 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * PostgreSQL执行获取一个游标类型的结果：
+     * {@inheritDoc}<br>
+     * e.g. PostgreSQL执行获取一个游标类型的结果：
      * <blockquote>
      * <pre>
      *      {@link List}&lt;{@link DataRow}&gt; rows = {@link rabbit.sql.transaction.Tx}.using(() -&gt;
@@ -315,11 +348,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         return executeCallStatement(name, args);
     }
 
-    /**
-     * 获取数据元信息
-     *
-     * @return 数据元信息
-     */
+    @Override
     public DatabaseMetaData getMetaData() {
         try {
             if (metaData == null) {
@@ -369,12 +398,6 @@ public class BakiDao extends JdbcSupport implements Baki {
         }
     }
 
-    /**
-     * 释放连接对象，如果有事务存在，并不会执行真正的释放
-     *
-     * @param connection 连接对象
-     * @param dataSource 数据源
-     */
     @Override
     protected void releaseConnection(Connection connection, DataSource dataSource) {
         DataSourceUtil.releaseConnectionIfNecessary(connection, dataSource);

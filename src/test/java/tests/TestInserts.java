@@ -22,7 +22,7 @@ public class TestInserts {
 
     static List<DataRow> rows = new ArrayList<>();
 
-    //    @BeforeClass
+    @BeforeClass
     public static void init() {
         dataSource = new HikariDataSource();
         dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
@@ -30,13 +30,13 @@ public class TestInserts {
         dataSource.setDriverClassName("org.postgresql.Driver");
         baki = BakiDao.of(dataSource);
 
-        for (int i = 0; i < 10000; i++) {
-            DataRow row = DataRow.fromPair("id", i,
-                    "name", "chengyuxing",
-                    "words", "it's my time!",
-                    "dts", LocalDateTime.now());
-            rows.add(row);
-        }
+//        for (int i = 0; i < 10000; i++) {
+//            DataRow row = DataRow.fromPair("id", i,
+//                    "name", "chengyuxing",
+//                    "words", "it's my time!",
+//                    "dts", LocalDateTime.now());
+//            rows.add(row);
+//        }
     }
 
     @Test
@@ -47,6 +47,17 @@ public class TestInserts {
     @Test
     public void batch() throws Exception {
         baki.fastInsert(DataFrame.ofRows("test.message", rows));
+    }
+
+    @Test
+    public void updateFast() throws Exception {
+        List<Map<String, Object>> list = Arrays.asList(
+                Args.<Object>of("words", "it's my time!").add("id", 2),
+                Args.<Object>of("words", "it's my time!!!").add("id", 4),
+                Args.<Object>of("words", "Hello don't touch me'''").add("dt", LocalDateTime.now()).add("id", 5)
+        );
+        int i = baki.fastUpdate("test.message", list, "id = :id");
+        System.out.println(i);
     }
 
     @Test

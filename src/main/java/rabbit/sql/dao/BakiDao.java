@@ -151,7 +151,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 String insertSql = SqlUtil.generateInsert(dataFrame.getTableName(), iterator.next(), dataFrame.getIgnore(), tableFields);
                 sqls[i] = insertSql;
             }
-            log.debug("preview sql: {}", sqls[0]);
+            log.debug("preview sql: {}\nmore...", sqls[0]);
             int count = executeBatch(sqls).length;
             log.debug("{} rows inserted!", count);
             return count;
@@ -234,7 +234,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 String update = SqlUtil.generateUpdate(tableName, iterator.next(), where);
                 sqls[i] = update;
             }
-            log.debug("preview sql: {}", sqls[0]);
+            log.debug("preview sql: {}\nmore...", sqls[0]);
             int count = Arrays.stream(executeBatch(sqls)).sum();
             log.debug("{} rows updated!", count);
             return count;

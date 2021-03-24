@@ -1,7 +1,8 @@
 package rabbit.sql.utils;
 
+import rabbit.common.script.CExpression;
+import rabbit.common.script.FastExpression;
 import rabbit.common.tuple.Pair;
-import rabbit.common.types.CExpression;
 import rabbit.common.utils.ReflectUtil;
 import rabbit.sql.types.Ignore;
 
@@ -413,7 +414,7 @@ public class SqlUtil {
                     if (inBlock) {
                         if (!blockFirstOk) {
                             String filter = trimLine.substring(5);
-                            CExpression expression = CExpression.of(filter);
+                            FastExpression expression = FastExpression.of(filter);
                             ok = expression.calc(argsMap);
                             blockFirstOk = ok;
                         } else {
@@ -421,7 +422,7 @@ public class SqlUtil {
                         }
                     } else {
                         String filter = trimLine.substring(5);
-                        CExpression expression = CExpression.of(filter);
+                        FastExpression expression = FastExpression.of(filter);
                         ok = expression.calc(argsMap);
                     }
                     continue;

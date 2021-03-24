@@ -1,11 +1,9 @@
 package sql;
 
 import org.junit.Test;
-import rabbit.common.types.CExpression;
+import rabbit.common.script.CExpression;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 

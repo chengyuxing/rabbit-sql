@@ -1,6 +1,5 @@
 package rabbit.sql.utils;
 
-import rabbit.common.script.CExpression;
 import rabbit.common.script.FastExpression;
 import rabbit.common.tuple.Pair;
 import rabbit.common.utils.ReflectUtil;
@@ -367,7 +366,7 @@ public class SqlUtil {
      * @param sql     sql
      * @param argsMap 参数字典
      * @return 解析后的sql
-     * @see CExpression
+     * @see FastExpression
      */
     public static String dynamicSql(final String sql, Map<String, Object> argsMap) {
         if (argsMap == null || argsMap.isEmpty()) {

@@ -10,7 +10,7 @@
   <dependency>
       <groupId>com.github.chengyuxing</groupId>
       <artifactId>rabbit-sql</artifactId>
-      <version>4.3.17</version>
+      <version>4.3.19</version>
   </dependency>
   ```
 ## 参数占位符说明

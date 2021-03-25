@@ -1,5 +1,6 @@
 package tests;
 
+import rabbit.common.script.impl.CExpression;
 import rabbit.common.types.DataRow;
 import rabbit.sql.dao.*;
 import com.zaxxer.hikari.HikariDataSource;
@@ -22,7 +23,7 @@ import java.util.stream.Stream;
 
 public class BakiSessionTest {
 
-    static Baki baki;
+    static BakiDao baki;
     static BakiDao orclLight;
     static HikariDataSource dataSource;
 
@@ -33,7 +34,11 @@ public class BakiSessionTest {
         dataSource.setUsername("chengyuxing");
         dataSource.setDriverClassName("org.postgresql.Driver");
         baki = BakiDao.of(dataSource);
+    }
 
+    @Test
+    public void engine() throws Exception {
+        System.out.println(baki);
     }
 
     @Test

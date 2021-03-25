@@ -1,6 +1,6 @@
 package rabbit.sql.utils;
 
-import rabbit.common.script.FastExpression;
+import rabbit.common.script.impl.FastExpression;
 import rabbit.common.tuple.Pair;
 import rabbit.common.utils.ReflectUtil;
 import rabbit.sql.types.Ignore;

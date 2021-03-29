@@ -1,6 +1,6 @@
 package rabbit.sql.utils;
 
-import rabbit.common.script.FastExpression;
+import rabbit.common.script.impl.FastExpression;
 import rabbit.common.tuple.Pair;
 import rabbit.common.utils.ReflectUtil;
 import rabbit.sql.types.Ignore;
@@ -368,22 +368,19 @@ public class SqlUtil {
      * 根据解析条件表达式的结果动态生成sql<br>
      * e.g. data.sql.template
      *
-     * @param sql     sql
-     * @param argsMap 参数字典
+     * @param sql          sql
+     * @param argsMap      参数字典
+     * @param checkArgsKey 检查参数中是否存在表达式中需要计算的key
      * @return 解析后的sql
      * @see FastExpression
      */
-    public static String dynamicSql(final String sql, Map<String, Object> argsMap) {
-        if (argsMap == null || argsMap.isEmpty()) {
-            return sql;
-        }
+    public static String dynamicSql(final String sql, Map<String, Object> argsMap, boolean checkArgsKey) {
         if (!containsAllIgnoreCase(sql, "--#if", "--#fi")) {
             return sql;
         }
         String nSql = removeAnnotationBlock(sql);
         String[] lines = nSql.split("\n");
         StringBuilder sb = new StringBuilder();
-        String firstLine = "";
         boolean first = true;
         boolean ok = true;
         boolean start = false;
@@ -398,7 +395,6 @@ public class SqlUtil {
             if (!trimLine.isEmpty()) {
                 if (first) {
                     if (!trimLine.startsWith("--")) {
-                        firstLine = trimLine;
                         first = false;
                     }
                 }
@@ -419,6 +415,7 @@ public class SqlUtil {
                         if (!blockFirstOk) {
                             String filter = trimLine.substring(5);
                             FastExpression expression = FastExpression.of(filter);
+                            expression.setCheckArgsKey(checkArgsKey);
                             ok = expression.calc(argsMap);
                             blockFirstOk = ok;
                         } else {
@@ -427,6 +424,7 @@ public class SqlUtil {
                     } else {
                         String filter = trimLine.substring(5);
                         FastExpression expression = FastExpression.of(filter);
+                        expression.setCheckArgsKey(checkArgsKey);
                         ok = expression.calc(argsMap);
                     }
                     continue;
@@ -444,36 +442,52 @@ public class SqlUtil {
                 }
             }
         }
-        String dSql = sb.toString();
+        return repairSyntaxError(sb.toString());
+    }
+
+    /**
+     * 修复sql常规语法错误<br>
+     * e.g.
+     * <blockquote>
+     * <pre>where and/or/order/limit...</pre>
+     * <pre>select ... from ...where</pre>
+     * <pre>update ... set  a=b, where</pre>
+     * </blockquote>
+     *
+     * @param sql sql语句
+     * @return 修复后的sql
+     */
+    public static String repairSyntaxError(String sql) {
         Pattern p;
         Matcher m;
+        String firstLine = sql.substring(0, sql.indexOf("\n")).trim();
         // if update statement
         if (startsWithIgnoreCase(firstLine, "update")) {
             p = Pattern.compile(",\\s*where", Pattern.CASE_INSENSITIVE);
-            m = p.matcher(dSql);
+            m = p.matcher(sql);
             if (m.find()) {
-                dSql = dSql.substring(0, m.start()).concat(dSql.substring(m.start() + 1));
+                sql = sql.substring(0, m.start()).concat(sql.substring(m.start() + 1));
             }
         }
         // "where and" statement
         p = Pattern.compile("where\\s+(and|or)\\s+", Pattern.CASE_INSENSITIVE);
-        m = p.matcher(dSql);
+        m = p.matcher(sql);
         if (m.find()) {
-            return dSql.substring(0, m.start() + 6).concat(dSql.substring(m.end()));
+            return sql.substring(0, m.start() + 6).concat(sql.substring(m.end()));
         }
         // if "where order by ..." statement
         p = Pattern.compile("where\\s+(order by|limit|group by|union)\\s+", Pattern.CASE_INSENSITIVE);
-        m = p.matcher(dSql);
+        m = p.matcher(sql);
         if (m.find()) {
-            return dSql.substring(0, m.start()).concat(dSql.substring(m.start() + 6));
+            return sql.substring(0, m.start()).concat(sql.substring(m.start() + 6));
         }
         // if "where" at end
         p = Pattern.compile("where\\s*$", Pattern.CASE_INSENSITIVE);
-        m = p.matcher(dSql);
+        m = p.matcher(sql);
         if (m.find()) {
-            return dSql.substring(0, m.start());
+            return sql.substring(0, m.start());
         }
-        return dSql;
+        return sql;
     }
 
     /**

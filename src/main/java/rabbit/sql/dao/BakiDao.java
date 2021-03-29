@@ -43,6 +43,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     private final DataSource dataSource;
     private SQLFileManager sqlFileManager;
     private DatabaseMetaData metaData;
+    private boolean strictDynamicSqlArg = true;
 
     /**
      * 构造函数
@@ -369,9 +370,11 @@ public class BakiDao extends JdbcSupport implements Baki {
     /**
      * 如果使用取地址符"&amp;sql文件名.sql名"则获取sql文件中已缓存的sql
      *
-     * @param sql sql或sql名
+     * @param sql  sql或sql名
+     * @param args 参数
      * @return sql
-     * @throws NullPointerException 如果没有设置sql文件解析器或初始化，使用{@code &}引用用外部sql文件片段
+     * @throws NullPointerException     如果没有设置sql文件解析器或初始化，使用{@code &}引用用外部sql文件片段
+     * @throws IllegalArgumentException 如果严格模式下动态sql参数为null或空
      */
     @Override
     protected String prepareSql(String sql, Map<String, Object> args) {
@@ -383,7 +386,12 @@ public class BakiDao extends JdbcSupport implements Baki {
                 throw new NullPointerException("can not find property 'sqlFileManager' or SQLFileManager object init failed!");
             }
         }
-        return dynamicSql(trimEndedSql, args);
+        if (strictDynamicSqlArg) {
+            if (args == null || args.isEmpty()) {
+                throw new IllegalArgumentException("args must not be null or empty in strict.");
+            }
+        }
+        return dynamicSql(trimEndedSql, args, strictDynamicSqlArg);
     }
 
     @Override
@@ -404,5 +412,23 @@ public class BakiDao extends JdbcSupport implements Baki {
     @Override
     protected void releaseConnection(Connection connection, DataSource dataSource) {
         DataSourceUtil.releaseConnectionIfNecessary(connection, dataSource);
+    }
+
+    /**
+     * 设置动态sql的参数是否为严格模式
+     *
+     * @param strictDynamicSqlArg 严格模式
+     */
+    public void setStrictDynamicSqlArg(boolean strictDynamicSqlArg) {
+        this.strictDynamicSqlArg = strictDynamicSqlArg;
+    }
+
+    /**
+     * 获取当前动态sql参数是否为严格模式
+     *
+     * @return 当前严格模式状态
+     */
+    public boolean isStrictDynamicSqlArg() {
+        return strictDynamicSqlArg;
     }
 }

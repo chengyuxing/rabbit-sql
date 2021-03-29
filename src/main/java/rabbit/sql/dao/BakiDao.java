@@ -221,8 +221,8 @@ public class BakiDao extends JdbcSupport implements Baki {
      * </blockquote>
      *
      * @param tableName 表名
-     * @param args      参数 --需要更新的数据和条件参数
-     * @param where     条件 --条件中需要有传名参数作为更新的条件依据
+     * @param args      参数：需要更新的数据和条件参数
+     * @param where     条件：条件中需要有传名参数作为更新的条件依据
      * @return 受影响的行数
      */
     @Override
@@ -348,6 +348,12 @@ public class BakiDao extends JdbcSupport implements Baki {
         return executeCallStatement(name, args);
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return 数据源元信息
+     * @throws RuntimeException 如果数据库关闭或者获取连接对象失败
+     */
     @Override
     public DatabaseMetaData getMetaData() {
         try {
@@ -365,19 +371,16 @@ public class BakiDao extends JdbcSupport implements Baki {
      *
      * @param sql sql或sql名
      * @return sql
+     * @throws NullPointerException 如果没有设置sql文件解析器或初始化，使用{@code &}引用用外部sql文件片段
      */
     @Override
     protected String prepareSql(String sql, Map<String, Object> args) {
         String trimEndedSql = SqlUtil.trimEnd(sql);
         if (sql.startsWith("&")) {
             if (sqlFileManager != null) {
-                try {
-                    trimEndedSql = SqlUtil.trimEnd(sqlFileManager.get(sql.substring(1)));
-                } catch (IOException | URISyntaxException e) {
-                    log.error("get SQL failed:{}", e.getMessage());
-                }
+                trimEndedSql = SqlUtil.trimEnd(sqlFileManager.get(sql.substring(1)));
             } else {
-                throw new NullPointerException("can not find property 'sqlPath' or SQLFileManager init failed!");
+                throw new NullPointerException("can not find property 'sqlFileManager' or SQLFileManager object init failed!");
             }
         }
         return dynamicSql(trimEndedSql, args);

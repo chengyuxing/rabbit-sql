@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import rabbit.common.io.FileResource;
 import rabbit.common.utils.ResourceUtil;
 import rabbit.common.utils.StringUtil;
+import rabbit.sql.exceptions.DuplicateException;
 import rabbit.sql.utils.SqlUtil;
 
 import java.io.BufferedReader;
@@ -104,7 +105,8 @@ public final class SQLFileManager {
      *
      * @param name     sql文件自定义名
      * @param resource 类路径sql资源
-     * @throws IOException IOexp
+     * @throws IOException        如果sql文件不存在或路径无效
+     * @throws DuplicateException 如果同一个sql文件中有重复的sql名
      */
     private void resolveSqlContent(String name, FileResource resource) throws IOException {
         Map<String, String> singleResource = new HashMap<>();
@@ -124,13 +126,13 @@ public final class SQLFileManager {
                     if (m_name.matches()) {
                         previousSqlName = prefix + m_name.group("name");
                         if (singleResource.containsKey(previousSqlName)) {
-                            throw new RuntimeException("same sql name: " + previousSqlName);
+                            throw new DuplicateException("same sql name: " + previousSqlName);
                         }
                         singleResource.put(previousSqlName, "");
                     } else if (m_part.matches()) {
                         previousSqlName = "${" + prefix + m_part.group("part") + "}";
                         if (singleResource.containsKey(previousSqlName)) {
-                            throw new RuntimeException("same sql part: " + previousSqlName);
+                            throw new DuplicateException("same sql part: " + previousSqlName);
                         }
                         singleResource.put(previousSqlName, "");
                     } else {
@@ -241,6 +243,10 @@ public final class SQLFileManager {
 
     /**
      * 如果有检测到文件修改过，则重新加载已修改过的sql文件
+     *
+     * @throws IOException           如果sql文件读取错误
+     * @throws URISyntaxException    如果sql文件路径格式错误
+     * @throws FileNotFoundException 如果sql文件不存在或路径无效
      */
     private void reloadIfNecessary() throws IOException, URISyntaxException {
         lock.lock();
@@ -279,8 +285,9 @@ public final class SQLFileManager {
     /**
      * 初始化加载sql到缓存中
      *
-     * @throws IOException        IOExp
-     * @throws URISyntaxException URIExp
+     * @throws IOException           如果sql文件读取错误
+     * @throws URISyntaxException    如果sql文件路径格式错误
+     * @throws FileNotFoundException 如果sql文件没有找到
      */
     public void init() throws IOException, URISyntaxException {
         Map<String, String> mappedPaths = allPaths();
@@ -319,12 +326,17 @@ public final class SQLFileManager {
      *
      * @param name sql名
      * @return sql
-     * @throws IOException        IOExp
-     * @throws URISyntaxException URIExp
+     * @throws NoSuchElementException 如果没有找到相应名字的sql片段
      */
-    public String get(String name) throws IOException, URISyntaxException {
+    public String get(String name) {
         if (checkModified) {
-            reloadIfNecessary();
+            try {
+                reloadIfNecessary();
+            } catch (IOException e) {
+                log.error("sql file read fail: ", e);
+            } catch (URISyntaxException e) {
+                log.error("sql file path syntax error: ", e);
+            }
         }
         if (RESOURCE.containsKey(name)) {
             return RESOURCE.get(name);

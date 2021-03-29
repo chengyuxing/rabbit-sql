@@ -1,6 +1,6 @@
 package rabbit.sql.utils;
 
-import rabbit.common.script.impl.FastExpression;
+import rabbit.common.script.FastExpression;
 import rabbit.common.tuple.Pair;
 import rabbit.common.utils.ReflectUtil;
 import rabbit.sql.types.Ignore;
@@ -42,6 +42,7 @@ public class SqlUtil {
         Set<String> keys = row.keySet();
         if (fields != null && !fields.isEmpty()) {
             Iterator<String> keyIterator = keys.iterator();
+            //noinspection SingleStatementInBlock
             while (keyIterator.hasNext()) {
                 if (!fields.contains(keyIterator.next())) {
                     keyIterator.remove();
@@ -75,6 +76,7 @@ public class SqlUtil {
      * @param ignore    忽略类型
      * @param fields    需要包含的字段集合
      * @return 插入语句
+     * @throws IllegalArgumentException 如果参数为空
      */
     public static String generateInsert(final String tableName, final Map<String, Object> row, final Ignore ignore, List<String> fields) {
         Set<String> keys = filterKeys(row, ignore, fields);
@@ -98,6 +100,7 @@ public class SqlUtil {
      * @param ignore    忽略类型
      * @param fields    需要包含的字段集合
      * @return 插入语句
+     * @throws IllegalArgumentException 如果参数为空
      */
     public static String generatePreparedInsert(final String tableName, final Map<String, Object> row, final Ignore ignore, List<String> fields) {
         Set<String> keys = filterKeys(row, ignore, fields);
@@ -120,6 +123,7 @@ public class SqlUtil {
      * @param data      数据
      * @param where     where条件
      * @return 更新语句
+     * @throws IllegalArgumentException 如果where条件为空或者没有生成需要更新的字段
      */
     public static String generateUpdate(String tableName, Map<String, Object> data, final String where) {
         if (where.trim().equals("")) {
@@ -153,6 +157,7 @@ public class SqlUtil {
      * @param tableName 表名
      * @param data      数据
      * @return 更新语句
+     * @throws IllegalArgumentException 如果参数为空
      */
     public static String generatePreparedUpdate(String tableName, Map<String, Object> data) {
         Set<String> keys = data.keySet();

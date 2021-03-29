@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import rabbit.common.tuple.Pair;
 import rabbit.common.types.DataRow;
 import rabbit.common.types.UncheckedCloseable;
+import rabbit.sql.exceptions.SqlRuntimeException;
 import rabbit.sql.types.Param;
 import rabbit.sql.types.ParamMode;
 import rabbit.sql.utils.JdbcUtil;
@@ -88,6 +89,7 @@ public abstract class JdbcSupport {
      * @param callback 执行声明回调函数
      * @param <T>      结果类型参数
      * @return 任意类型
+     * @throws SqlRuntimeException sql执行过程中出现异常
      */
     public <T> T execute(final String sql, StatementCallback<T> callback) {
         PreparedStatement statement = null;
@@ -99,7 +101,7 @@ public abstract class JdbcSupport {
             JdbcUtil.closeStatement(statement);
             statement = null;
             releaseConnection(connection, getDataSource());
-            throw new RuntimeException("execute sql [" + sql + "] error: ", e);
+            throw new SqlRuntimeException("execute sql:\n[" + sql + "]\nerror: ", e);
         } finally {
             JdbcUtil.closeStatement(statement);
             releaseConnection(connection, getDataSource());
@@ -115,6 +117,7 @@ public abstract class JdbcSupport {
      * @param sql  原始sql
      * @param args 参数
      * @return 查询语句返回List，DML语句返回受影响的行数，DDL语句返回0
+     * @throws SqlRuntimeException sql执行过程中出现错误
      */
     public DataRow executeAny(final String sql, Map<String, Object> args) {
         String sourceSql = sql;
@@ -169,21 +172,22 @@ public abstract class JdbcSupport {
      * @param sql  e.g. <code>select * from test.user where id = :id</code>
      * @param args 参数 （占位符名字，参数对象）
      * @return Stream数据流
+     * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误.
      */
     public Stream<DataRow> executeQueryStream(final String sql, Map<String, Object> args) {
+        if (args == null) {
+            args = Collections.emptyMap();
+        }
+        String sourceSql = getSourceSql(sql, args);
+        log.debug("SQL:{}", sourceSql);
+        log.debug("Args:{}", args);
+
+        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSql(sourceSql);
+        final List<String> argNames = preparedSqlAndArgNames.getItem2();
+        final String preparedSql = preparedSqlAndArgNames.getItem1();
+
         UncheckedCloseable close = null;
         try {
-            if (args == null) {
-                args = Collections.emptyMap();
-            }
-            String sourceSql = getSourceSql(sql, args);
-            log.debug("SQL:{}", sourceSql);
-            log.debug("Args:{}", args);
-
-            Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSql(sourceSql);
-            final List<String> argNames = preparedSqlAndArgNames.getItem2();
-            final String preparedSql = preparedSqlAndArgNames.getItem1();
-
             Connection connection = getConnection();
             close = UncheckedCloseable.wrap(connection);
             PreparedStatement statement = connection.prepareStatement(preparedSql);
@@ -206,7 +210,7 @@ public abstract class JdbcSupport {
                         action.accept(JdbcUtil.createDataRow(names, resultSet));
                         return true;
                     } catch (SQLException ex) {
-                        throw new RuntimeException(ex);
+                        throw new SqlRuntimeException("reading result set of query:\n[" + preparedSql + "]\nerror: ", ex);
                     }
                 }
             }, false).onClose(close);
@@ -218,7 +222,7 @@ public abstract class JdbcSupport {
                     sqlEx.addSuppressed(e);
                 }
             }
-            throw new RuntimeException(sqlEx);
+            throw new SqlRuntimeException("execute sql:\n[" + preparedSql + "]\nargs:\n" + args + "\nerror: ", sqlEx);
         }
     }
 
@@ -227,6 +231,9 @@ public abstract class JdbcSupport {
      *
      * @param sqls 一组sql
      * @return 每条sql的执行结果
+     * @throws SqlRuntimeException           执行批量操作时发生错误
+     * @throws UnsupportedOperationException 数据库或驱动版本不支持批量操作
+     * @throws IllegalArgumentException      如果执行的sql条数少1条
      */
     public int[] executeBatch(final String... sqls) {
         if (sqls.length > 0) {
@@ -243,7 +250,7 @@ public abstract class JdbcSupport {
                     JdbcUtil.closeStatement(statement);
                     statement = null;
                     releaseConnection(connection, getDataSource());
-                    throw new RuntimeException("execute batch error: ", e);
+                    throw new SqlRuntimeException("execute batch error: ", e);
                 } finally {
                     JdbcUtil.closeStatement(statement);
                     releaseConnection(connection, getDataSource());
@@ -264,6 +271,7 @@ public abstract class JdbcSupport {
      * @param sql  sql
      * @param args 数据
      * @return 总的受影响的行数
+     * @throws SqlRuntimeException sql执行过程中出现错误
      */
     public int executeNonQuery(final String sql, final Collection<Map<String, Object>> args) {
         String sourceSql = sql;
@@ -312,6 +320,7 @@ public abstract class JdbcSupport {
      * @param procedure 存储过程名
      * @param args      参数
      * @return DataRow
+     * @throws SqlRuntimeException 存储过程或函数执行过程中出现错误
      */
     public DataRow executeCallStatement(final String procedure, Map<String, Param> args) {
         String sourceSql = procedure;
@@ -373,7 +382,7 @@ public abstract class JdbcSupport {
             JdbcUtil.closeStatement(statement);
             statement = null;
             releaseConnection(connection, getDataSource());
-            throw new RuntimeException("execute procedure [" + procedure + "] error:", e);
+            throw new SqlRuntimeException("execute procedure [" + procedure + "] error:", e);
         } finally {
             JdbcUtil.closeStatement(statement);
             releaseConnection(connection, getDataSource());

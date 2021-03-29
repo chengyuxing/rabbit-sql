@@ -125,7 +125,7 @@ public class Tests {
         String dq = SqlUtil.dynamicSql(sql, Args.<Object>of("name", "")
                 .add("age", 27)
                 .add("address", "beijing")
-                .add("open", "sad"));
+                .add("open", "sad"), true);
         System.out.println(dq);
     }
 

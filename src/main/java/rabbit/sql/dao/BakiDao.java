@@ -386,11 +386,6 @@ public class BakiDao extends JdbcSupport implements Baki {
                 throw new NullPointerException("can not find property 'sqlFileManager' or SQLFileManager object init failed!");
             }
         }
-        if (strictDynamicSqlArg) {
-            if (args == null || args.isEmpty()) {
-                throw new IllegalArgumentException("args must not be null or empty in strict.");
-            }
-        }
         return dynamicSql(trimEndedSql, args, strictDynamicSqlArg);
     }
 

@@ -41,8 +41,10 @@ import static rabbit.sql.utils.SqlUtil.dynamicSql;
 public class BakiDao extends JdbcSupport implements Baki {
     private final static Logger log = LoggerFactory.getLogger(BakiDao.class);
     private final DataSource dataSource;
-    private SQLFileManager sqlFileManager;
     private DatabaseMetaData metaData;
+    //----------------------------------
+    //---------optional properties------
+    private SQLFileManager sqlFileManager;
     private boolean strictDynamicSqlArg = true;
 
     /**

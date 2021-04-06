@@ -31,15 +31,16 @@ public final class SQLFileManager {
     private final Map<String, String> RESOURCE = new HashMap<>();
     private final AtomicInteger UN_NAMED_SQL_INDEX = new AtomicInteger();
     private final String UN_NAMED_SQL_NAME = "UN_NAMED_SQL_";
-    private static final String[] EXPRESSION_KEYWORDS = new String[]{
+    private final Map<String, Long> LAST_MODIFIED = new HashMap<>();
+    private static final Pattern NAME_PATTERN = Pattern.compile("/\\*\\s*\\[\\s*(?<name>\\S+)\\s*]\\s*\\*/");
+    private static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+)\\s*}\\s*\\*/");
+    private static final String[] KEEP_ANNOTATION_STARTS_KEYWORDS = new String[]{
             "--#if",
             "--#fi",
             "--#choose",
             "--#end"
     };
-    private final Map<String, Long> LAST_MODIFIED = new HashMap<>();
-    private static final Pattern NAME_PATTERN = Pattern.compile("/\\*\\s*\\[\\s*(?<name>\\S+)\\s*]\\s*\\*/");
-    private static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+)\\s*}\\s*\\*/");
+    // ----------------optional properties------------------
     private volatile boolean checkModified;
     private String[] sqls;
     private Map<String, String> sqlMap;
@@ -137,7 +138,7 @@ public final class SQLFileManager {
                         singleResource.put(previousSqlName, "");
                     } else {
                         // exclude single line annotation except expression keywords
-                        if (!trimLine.startsWith("--") || StringUtil.startsWithsIgnoreCase(trimLine, EXPRESSION_KEYWORDS)) {
+                        if (!trimLine.startsWith("--") || StringUtil.startsWithsIgnoreCase(trimLine, KEEP_ANNOTATION_STARTS_KEYWORDS)) {
                             if (!previousSqlName.equals("")) {
                                 String prepareLine = singleResource.get(previousSqlName) + line;
                                 if (trimLine.endsWith(";")) {

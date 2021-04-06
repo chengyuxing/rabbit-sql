@@ -35,7 +35,7 @@ public class SqlFileTest {
     @Test
     public void nutzIoc() throws Exception {
         SQLFileManager sqlFileManager = ioc.get(SQLFileManager.class, "sqlFileManager");
-        sqlFileManager.init();
+//        sqlFileManager.init();
         sqlFileManager.look();
     }
 

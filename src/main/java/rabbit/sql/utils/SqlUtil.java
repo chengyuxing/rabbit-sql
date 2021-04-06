@@ -28,7 +28,7 @@ public class SqlUtil {
     /**
      * 匹配字符串单引号里面的内容
      */
-    public static final Pattern CHILD_STR_PATTERN = Pattern.compile("'[^']*'", Pattern.MULTILINE);
+    public static final Pattern SUB_STR_PATTERN = Pattern.compile("'[^']*'", Pattern.MULTILINE);
 
     /**
      * 过滤筛选掉不满足条件的字段
@@ -243,7 +243,7 @@ public class SqlUtil {
     public static Pair<String, Map<String, String>> replaceStrPartOfSql(final String sql) {
         String noneStrSql = sql;
         Map<String, String> mapper = new HashMap<>();
-        Matcher m = CHILD_STR_PATTERN.matcher(sql);
+        Matcher m = SUB_STR_PATTERN.matcher(sql);
         int x = 0;
         while (m.find()) {
             // sql part of string
@@ -308,9 +308,9 @@ public class SqlUtil {
         String sql = sourceSql;
         for (String key : args.keySet()) {
             if (key.startsWith("${") && key.endsWith("}")) {
-                String childSql = args.get(key).toString();
-                String start = childSql.startsWith("\n") ? "" : "\n";
-                String v = start + childSql + "\n";
+                String subSql = args.get(key).toString();
+                String start = subSql.startsWith("\n") ? "" : "\n";
+                String v = start + subSql + "\n";
                 sql = sql.replace(key, v);
             }
         }

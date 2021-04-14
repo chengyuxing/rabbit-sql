@@ -5,6 +5,7 @@ import rabbit.sql.datasource.ConnectionHolder;
 import rabbit.sql.datasource.DataSourceUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import rabbit.sql.exceptions.SqlRuntimeException;
 
 import java.sql.SQLException;
 import java.util.function.Supplier;
@@ -19,6 +20,8 @@ public final class Tx {
      * 开始事务
      *
      * @param definition 事务定义
+     * @see #using(Runnable, Definition)
+     * @see #using(Supplier, Definition)
      */
     public static void begin(Definition definition) {
         //记住事务的定义，以在后续其他操作中沿用此事务的定义
@@ -30,6 +33,9 @@ public final class Tx {
 
     /**
      * 开始事务
+     *
+     * @see #using(Runnable)
+     * @see #using(Supplier)
      */
     public static void begin() {
         begin(Definition.defaultDefinition());
@@ -37,6 +43,8 @@ public final class Tx {
 
     /**
      * 提交事务
+     *
+     * @throws SqlRuntimeException 如果事务提交过程中出现异常
      */
     public static void commit() {
         try {
@@ -48,6 +56,8 @@ public final class Tx {
 
     /**
      * 回滚事务
+     *
+     * @throws SqlRuntimeException 如果事务回滚过程中出现异常
      */
     public static void rollback() {
         try {
@@ -58,10 +68,14 @@ public final class Tx {
     }
 
     /**
-     * 自动提交/回滚事务
+     * 新建一个事务自动提交/回滚事务
      *
      * @param runnable   sql执行操作
      * @param definition 事务定义
+     * @throws SqlRuntimeException 如果在此事务中，sql执行错误或数据库错误则抛出异常
+     * @see #begin(Definition)
+     * @see #commit()
+     * @see #rollback()
      */
     public static void using(Runnable runnable, Definition definition) {
         try {
@@ -70,46 +84,58 @@ public final class Tx {
             commit();
         } catch (Exception e) {
             rollback();
-            log.error("transaction will rollback cause: ", e);
+            throw new SqlRuntimeException("transaction will rollback cause:", e);
         }
     }
 
     /**
-     * 自动提交/回滚事务
+     * 新建一个事务自动提交/回滚事务
      *
      * @param supplier   sql执行操作
      * @param definition 事务定义
      * @param <T>        类型参数
      * @return 回调结果
+     * @throws SqlRuntimeException 如果在此事务中，sql执行错误或数据库错误则抛出异常
+     * @see #begin(Definition)
+     * @see #commit()
+     * @see #rollback()
      */
     public static <T> T using(Supplier<T> supplier, Definition definition) {
-        T result = null;
+        T result;
         try {
             begin(definition);
             result = supplier.get();
             commit();
         } catch (Exception e) {
             rollback();
-            log.error("transaction will rollback cause: ", e);
+            throw new SqlRuntimeException("transaction will rollback cause:", e);
         }
         return result;
     }
 
     /**
-     * 自动提交/回滚事务
+     * 新建一个事务自动提交/回滚事务
      *
      * @param runnable sql执行操作
+     * @throws SqlRuntimeException 如果在此事务中，sql执行错误或数据库错误则抛出异常
+     * @see #begin()
+     * @see #commit()
+     * @see #rollback()
      */
     public static void using(Runnable runnable) {
         using(runnable, Definition.defaultDefinition());
     }
 
     /**
-     * 自动提交/回滚事务
+     * 新建一个事务自动提交/回滚事务
      *
      * @param supplier sql执行操作
      * @param <T>      类型参数
      * @return 回调结果
+     * @throws SqlRuntimeException 如果在此事务中，sql执行错误或数据库错误则抛出异常
+     * @see #begin()
+     * @see #commit()
+     * @see #rollback()
      */
     public static <T> T using(Supplier<T> supplier) {
         return using(supplier, Definition.defaultDefinition());
@@ -128,6 +154,7 @@ public final class Tx {
 
     /**
      * 同步提交事务
+     * @throws SqlRuntimeException 如果事物回滚过程中出现异常
      */
     private static void commitTransaction() {
         log.info("commit transaction!");
@@ -137,7 +164,7 @@ public final class Tx {
                 try {
                     holder.getConnection().commit();
                 } catch (SQLException e) {
-                    throw new RuntimeException("transaction commit failed: ", e);
+                    throw new SqlRuntimeException("transaction commit failed: ", e);
                 }
             }
         });
@@ -145,6 +172,7 @@ public final class Tx {
 
     /**
      * 同步回滚事务
+     * @throws SqlRuntimeException 如果事物回滚过程中出现异常
      */
     private static void rollbackTransaction() {
         log.info("rollback transaction!");
@@ -154,7 +182,7 @@ public final class Tx {
                 try {
                     holder.getConnection().rollback();
                 } catch (SQLException e) {
-                    throw new RuntimeException("transaction rollback failed: ", e);
+                    throw new SqlRuntimeException("transaction rollback failed: ", e);
                 }
             }
         });

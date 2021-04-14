@@ -14,7 +14,6 @@ import rabbit.sql.dao.*;
 import rabbit.sql.page.impl.OraclePageHelper;
 import rabbit.sql.page.PagedResource;
 import rabbit.sql.dao.Args;
-import rabbit.sql.types.Ignore;
 import rabbit.sql.types.Param;
 import rabbit.sql.utils.SqlUtil;
 

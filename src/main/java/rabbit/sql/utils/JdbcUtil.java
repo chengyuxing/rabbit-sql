@@ -202,7 +202,7 @@ public class JdbcUtil {
      * @param resultSet   结果集
      * @param executedSql 将要执行的原生sql
      * @return 一组表头
-     * @throws SQLException sqlEx
+     * @throws SQLException 数据库异常
      */
     public static String[] createNames(ResultSet resultSet, final String executedSql) throws SQLException {
         ResultSetMetaData metaData = resultSet.getMetaData();

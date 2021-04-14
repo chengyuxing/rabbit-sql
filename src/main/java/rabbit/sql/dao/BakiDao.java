@@ -5,6 +5,8 @@ import org.slf4j.LoggerFactory;
 import rabbit.common.types.DataRow;
 import rabbit.sql.Baki;
 import rabbit.sql.datasource.DataSourceUtil;
+import rabbit.sql.exceptions.ConnectionStatusException;
+import rabbit.sql.exceptions.DuplicateException;
 import rabbit.sql.page.IPageable;
 import rabbit.sql.support.ICondition;
 import rabbit.sql.support.JdbcSupport;
@@ -80,6 +82,8 @@ public class BakiDao extends JdbcSupport implements Baki {
             log.error("sql file is not exists:{}", e.getMessage());
         } catch (URISyntaxException e) {
             log.error(e.getMessage());
+        } catch (DuplicateException e) {
+            log.error("resolve sql file error:{}", e.getMessage());
         }
     }
 
@@ -91,6 +95,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      *
      * @param sql 原始sql
      * @return (结果 ， 类型)
+     * @throws rabbit.sql.exceptions.SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
      */
     @Override
     public DataRow execute(String sql) {
@@ -106,6 +111,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param sql  原始sql
      * @param args 参数
      * @return (结果 ， 类型)
+     * @throws rabbit.sql.exceptions.SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
      */
     @Override
     public DataRow execute(String sql, Map<String, Object> args) {
@@ -117,6 +123,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      *
      * @param dataFrame 数据对象
      * @return 受影响的行数
+     * @throws rabbit.sql.exceptions.SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
      * @see #fastInsert(DataFrame)
      */
     @Override
@@ -138,6 +145,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      *
      * @param dataFrame 数据对象
      * @return 受影响的行数
+     * @throws rabbit.sql.exceptions.SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
      */
     @Override
     public int fastInsert(DataFrame dataFrame) {
@@ -166,6 +174,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      *
      * @param dataFrame 数据对象
      * @return 表字段
+     * @throws rabbit.sql.exceptions.SqlRuntimeException 执行查询表字段出现异常
      */
     private List<String> getTableFields(DataFrame dataFrame) {
         return execute(dataFrame.getTableFieldsSql(), sc -> {
@@ -184,6 +193,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param tableName 表名
      * @param condition 条件配置
      * @return 受影响的行数
+     * @throws rabbit.sql.exceptions.SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
      */
     @Override
     public int delete(String tableName, ICondition condition) {
@@ -197,6 +207,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param data      数据
      * @param condition 条件
      * @return 受影响的行数
+     * @throws rabbit.sql.exceptions.SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
      * @see #fastUpdate(String, Collection, String)
      */
     @Override
@@ -225,6 +236,9 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param args      参数：需要更新的数据和条件参数
      * @param where     条件：条件中需要有传名参数作为更新的条件依据
      * @return 受影响的行数
+     * @throws rabbit.sql.exceptions.SqlRuntimeException 执行批量操作时发生错误
+     * @throws UnsupportedOperationException             数据库或驱动版本不支持批量操作
+     * @throws IllegalArgumentException                  数据条数少于一条
      */
     @Override
     public int fastUpdate(String tableName, Collection<Map<String, Object>> args, String where) {
@@ -248,6 +262,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      *
      * @param sql 查询sql
      * @return 收集为流的结果集
+     * @throws rabbit.sql.exceptions.SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
      */
     @Override
     public Stream<DataRow> query(String sql) {
@@ -260,6 +275,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param sql  查询sql
      * @param args 参数
      * @return 收集为流的结果集
+     * @throws rabbit.sql.exceptions.SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
      */
     @Override
     public Stream<DataRow> query(String sql, Map<String, Object> args) {
@@ -285,6 +301,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      *
      * @param sql 查询sql
      * @return 空或一条
+     * @throws rabbit.sql.exceptions.SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
      */
     @Override
     public Optional<DataRow> fetch(String sql) {
@@ -297,6 +314,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param sql  查询sql
      * @param args 参数
      * @return 空或一条
+     * @throws rabbit.sql.exceptions.SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
      */
     @Override
     public Optional<DataRow> fetch(String sql, Map<String, Object> args) {
@@ -310,6 +328,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      *
      * @param sql sql
      * @return 是否存在
+     * @throws rabbit.sql.exceptions.SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
      */
     @Override
     public boolean exists(String sql) {
@@ -322,6 +341,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param sql  sql
      * @param args 参数
      * @return 是否存在
+     * @throws rabbit.sql.exceptions.SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
      */
     @Override
     public boolean exists(String sql, Map<String, Object> args) {
@@ -343,6 +363,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param name 过程名
      * @param args 参数 （占位符名字，参数对象）
      * @return DataRow
+     * @throws rabbit.sql.exceptions.SqlRuntimeException 存储过程或函数执行过程中出现错误
      */
     @Override
     public DataRow call(String name, Map<String, Param> args) {
@@ -353,7 +374,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * {@inheritDoc}
      *
      * @return 数据源元信息
-     * @throws RuntimeException 如果数据库关闭或者获取连接对象失败
+     * @throws ConnectionStatusException 如果数据库关闭或者获取连接对象失败
      */
     @Override
     public DatabaseMetaData getMetaData() {
@@ -363,7 +384,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
             return metaData;
         } catch (SQLException throwables) {
-            throw new RuntimeException("fail to get metadata: ", throwables);
+            throw new ConnectionStatusException("fail to get metadata: ", throwables);
         }
     }
 
@@ -394,13 +415,18 @@ public class BakiDao extends JdbcSupport implements Baki {
         return dataSource;
     }
 
+    /**
+     * {@inheritDoc}
+     *
+     * @return 连接对象
+     * @throws ConnectionStatusException 如果连接对象异常
+     */
     @Override
     protected Connection getConnection() {
         try {
             return DataSourceUtil.getConnection(dataSource);
         } catch (SQLException e) {
-            log.error("fetch connection failed:{}", e.getMessage());
-            return null;
+            throw new ConnectionStatusException("fetch connection failed:", e);
         }
     }
 

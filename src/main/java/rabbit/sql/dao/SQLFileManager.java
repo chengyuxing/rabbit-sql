@@ -289,6 +289,7 @@ public final class SQLFileManager {
      * @throws IOException           如果sql文件读取错误
      * @throws URISyntaxException    如果sql文件路径格式错误
      * @throws FileNotFoundException 如果sql文件没有找到
+     * @throws DuplicateException    如果同一个sql文件中有重复的sql名
      */
     public void init() throws IOException, URISyntaxException {
         Map<String, String> mappedPaths = allPaths();

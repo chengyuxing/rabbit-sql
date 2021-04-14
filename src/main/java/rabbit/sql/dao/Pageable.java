@@ -1,6 +1,7 @@
 package rabbit.sql.dao;
 
 import rabbit.common.types.DataRow;
+import rabbit.sql.exceptions.ConnectionStatusException;
 import rabbit.sql.page.IPageable;
 import rabbit.sql.page.PageHelper;
 import rabbit.sql.page.PagedResource;
@@ -84,6 +85,9 @@ public class Pageable<T> implements IPageable<T> {
      * 收集结果集操作
      *
      * @return 已分页的资源
+     * @throws rabbit.sql.exceptions.SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
+     * @throws UnsupportedOperationException             如果没有自定分页，而默认分页不支持当前数据库
+     * @throws ConnectionStatusException                 如果连接对象异常
      */
     @Override
     public PagedResource<T> collect(Function<DataRow, T> rowConvert) {
@@ -110,6 +114,8 @@ public class Pageable<T> implements IPageable<T> {
      * 根据数据库名字自动选择合适的默认分页帮助类
      *
      * @return 分页帮助类
+     * @throws UnsupportedOperationException 如果没有自定分页，而默认分页不支持当前数据库
+     * @throws ConnectionStatusException     如果连接对象异常
      */
     private PageHelper defaultPager() {
         try {
@@ -126,7 +132,7 @@ public class Pageable<T> implements IPageable<T> {
                     throw new UnsupportedOperationException("pager of \"" + dbName + "\" not support currently!");
             }
         } catch (SQLException e) {
-            throw new RuntimeException("get db metadata error: " + e.getMessage());
+            throw new ConnectionStatusException("get db metadata error: ", e);
         }
     }
 }

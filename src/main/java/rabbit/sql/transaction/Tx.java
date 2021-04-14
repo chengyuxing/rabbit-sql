@@ -6,6 +6,7 @@ import rabbit.sql.datasource.DataSourceUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rabbit.sql.exceptions.SqlRuntimeException;
+import rabbit.sql.exceptions.TransactionException;
 
 import java.sql.SQLException;
 import java.util.function.Supplier;
@@ -44,7 +45,9 @@ public final class Tx {
     /**
      * 提交事务
      *
-     * @throws SqlRuntimeException 如果事务提交过程中出现异常
+     * @throws TransactionException 如果数据库错误，或者连接被关闭，或者数据库事务为自动提交
+     * @see #begin(Definition)
+     * @see #begin()
      */
     public static void commit() {
         try {
@@ -57,7 +60,9 @@ public final class Tx {
     /**
      * 回滚事务
      *
-     * @throws SqlRuntimeException 如果事务回滚过程中出现异常
+     * @throws TransactionException 如果数据库错误，或者连接被关闭，或者数据库事务为自动提交
+     * @see #begin(Definition)
+     * @see #begin()
      */
     public static void rollback() {
         try {
@@ -72,7 +77,8 @@ public final class Tx {
      *
      * @param runnable   sql执行操作
      * @param definition 事务定义
-     * @throws SqlRuntimeException 如果在此事务中，sql执行错误或数据库错误则抛出异常
+     * @throws SqlRuntimeException  如果在此事务中，sql执行错误则抛出异常
+     * @throws TransactionException 如果数据库错误，或者连接被关闭，或者数据库事务为自动提交
      * @see #begin(Definition)
      * @see #commit()
      * @see #rollback()
@@ -82,9 +88,11 @@ public final class Tx {
             begin(definition);
             runnable.run();
             commit();
-        } catch (Exception e) {
+        } catch (SqlRuntimeException e) {
             rollback();
             throw new SqlRuntimeException("transaction will rollback cause:", e);
+        } catch (TransactionException e) {
+            throw new TransactionException("transaction error:", e);
         }
     }
 
@@ -95,7 +103,8 @@ public final class Tx {
      * @param definition 事务定义
      * @param <T>        类型参数
      * @return 回调结果
-     * @throws SqlRuntimeException 如果在此事务中，sql执行错误或数据库错误则抛出异常
+     * @throws SqlRuntimeException  如果在此事务中，sql执行错误则抛出异常
+     * @throws TransactionException 如果数据库错误，或者连接被关闭，或者数据库事务为自动提交
      * @see #begin(Definition)
      * @see #commit()
      * @see #rollback()
@@ -106,9 +115,11 @@ public final class Tx {
             begin(definition);
             result = supplier.get();
             commit();
-        } catch (Exception e) {
+        } catch (SqlRuntimeException e) {
             rollback();
             throw new SqlRuntimeException("transaction will rollback cause:", e);
+        } catch (TransactionException e) {
+            throw new TransactionException("transaction error:", e);
         }
         return result;
     }
@@ -117,7 +128,8 @@ public final class Tx {
      * 新建一个事务自动提交/回滚事务
      *
      * @param runnable sql执行操作
-     * @throws SqlRuntimeException 如果在此事务中，sql执行错误或数据库错误则抛出异常
+     * @throws SqlRuntimeException  如果在此事务中，sql执行错误则抛出异常
+     * @throws TransactionException 如果数据库错误，或者连接被关闭，或者数据库事务为自动提交
      * @see #begin()
      * @see #commit()
      * @see #rollback()
@@ -132,7 +144,8 @@ public final class Tx {
      * @param supplier sql执行操作
      * @param <T>      类型参数
      * @return 回调结果
-     * @throws SqlRuntimeException 如果在此事务中，sql执行错误或数据库错误则抛出异常
+     * @throws SqlRuntimeException  如果在此事务中，sql执行错误则抛出异常
+     * @throws TransactionException 如果数据库错误，或者连接被关闭，或者数据库事务为自动提交
      * @see #begin()
      * @see #commit()
      * @see #rollback()
@@ -154,7 +167,8 @@ public final class Tx {
 
     /**
      * 同步提交事务
-     * @throws SqlRuntimeException 如果事物回滚过程中出现异常
+     *
+     * @throws TransactionException 如果数据库错误，或者连接被关闭，或者数据库事务为自动提交
      */
     private static void commitTransaction() {
         log.info("commit transaction!");
@@ -164,7 +178,7 @@ public final class Tx {
                 try {
                     holder.getConnection().commit();
                 } catch (SQLException e) {
-                    throw new SqlRuntimeException("transaction commit failed: ", e);
+                    throw new TransactionException("transaction commit failed: ", e);
                 }
             }
         });
@@ -172,7 +186,8 @@ public final class Tx {
 
     /**
      * 同步回滚事务
-     * @throws SqlRuntimeException 如果事物回滚过程中出现异常
+     *
+     * @throws TransactionException 如果数据库错误，或者连接被关闭，或者数据库事务为自动提交
      */
     private static void rollbackTransaction() {
         log.info("rollback transaction!");
@@ -182,7 +197,7 @@ public final class Tx {
                 try {
                     holder.getConnection().rollback();
                 } catch (SQLException e) {
-                    throw new SqlRuntimeException("transaction rollback failed: ", e);
+                    throw new TransactionException("transaction rollback failed: ", e);
                 }
             }
         });

@@ -316,10 +316,33 @@ public final class SQLFileManager {
     }
 
     /**
-     * 查看sql资源
+     * 遍历查看已扫描的sql资源
      */
     public void look() {
         RESOURCE.forEach((k, v) -> System.out.println("\033[95m" + k + "\033[0m -> " + v));
+    }
+
+    /**
+     * 查看一共有多少条sql
+     *
+     * @return sql总条数
+     */
+    public int size() {
+        return RESOURCE.size();
+    }
+
+    /**
+     * 是否包含指定名称的sql
+     *
+     * @param name sql名<br>
+     *             <blockquote>
+     *             命名sql格式：sql文件命名.sql名<br>
+     *             未命名sql格式：UN_NAMED_SQL_序号.sql名
+     *             </blockquote>
+     * @return 是否存在
+     */
+    public boolean containsSql(String name) {
+        return RESOURCE.containsKey(name);
     }
 
     /**

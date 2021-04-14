@@ -317,8 +317,8 @@ public class Tests {
                 "words", "it's my time!",
                 "dt", LocalDateTime.now());
         System.out.println(row);
-        System.out.println(SqlUtil.generatePreparedInsert("t.user", row.toMap(), Ignore.BLANK, Collections.emptyList()));
-        System.out.println(SqlUtil.generateInsert("t.user", row.toMap(), Ignore.BLANK, Collections.emptyList()));
+        System.out.println(SqlUtil.generatePreparedInsert("t.user", row.toMap(), Collections.emptyList()));
+        System.out.println(SqlUtil.generateInsert("t.user", row.toMap(), Collections.emptyList()));
 
     }
 }

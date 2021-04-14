@@ -3,7 +3,6 @@ package rabbit.sql.utils;
 import rabbit.common.script.impl.FastExpression;
 import rabbit.common.tuple.Pair;
 import rabbit.common.utils.ReflectUtil;
-import rabbit.sql.types.Ignore;
 
 import java.time.ZoneId;
 import java.util.*;
@@ -34,33 +33,16 @@ public class SqlUtil {
      * 过滤筛选掉不满足条件的字段
      *
      * @param row    数据行
-     * @param ignore 忽略类型
      * @param fields 需要包含的字段集合
      * @return 满足条件的字段
      */
-    public static Set<String> filterKeys(final Map<String, Object> row, final Ignore ignore, List<String> fields) {
+    @SuppressWarnings("Java8CollectionRemoveIf")
+    public static Set<String> filterKeys(final Map<String, Object> row, List<String> fields) {
         Set<String> keys = row.keySet();
         if (fields != null && !fields.isEmpty()) {
             Iterator<String> keyIterator = keys.iterator();
-            //noinspection SingleStatementInBlock
             while (keyIterator.hasNext()) {
                 if (!fields.contains(keyIterator.next())) {
-                    keyIterator.remove();
-                }
-            }
-        }
-
-        Iterator<String> keyIterator = keys.iterator();
-        if (ignore == Ignore.NULL) {
-            while (keyIterator.hasNext()) {
-                if (row.get(keyIterator.next()) == null) {
-                    keyIterator.remove();
-                }
-            }
-        } else if (ignore == Ignore.BLANK) {
-            while (keyIterator.hasNext()) {
-                String k = keyIterator.next();
-                if (row.get(k) == null || row.get(k).equals("")) {
                     keyIterator.remove();
                 }
             }
@@ -73,13 +55,12 @@ public class SqlUtil {
      *
      * @param tableName 表名
      * @param row       数据
-     * @param ignore    忽略类型
      * @param fields    需要包含的字段集合
      * @return 插入语句
      * @throws IllegalArgumentException 如果参数为空
      */
-    public static String generateInsert(final String tableName, final Map<String, Object> row, final Ignore ignore, List<String> fields) {
-        Set<String> keys = filterKeys(row, ignore, fields);
+    public static String generateInsert(final String tableName, final Map<String, Object> row, List<String> fields) {
+        Set<String> keys = filterKeys(row, fields);
         if (keys.isEmpty()) {
             throw new IllegalArgumentException("empty field set, generate insert sql error.");
         }
@@ -97,13 +78,12 @@ public class SqlUtil {
      *
      * @param tableName 表名
      * @param row       数据
-     * @param ignore    忽略类型
      * @param fields    需要包含的字段集合
      * @return 插入语句
      * @throws IllegalArgumentException 如果参数为空
      */
-    public static String generatePreparedInsert(final String tableName, final Map<String, Object> row, final Ignore ignore, List<String> fields) {
-        Set<String> keys = filterKeys(row, ignore, fields);
+    public static String generatePreparedInsert(final String tableName, final Map<String, Object> row, List<String> fields) {
+        Set<String> keys = filterKeys(row, fields);
         if (keys.isEmpty()) {
             throw new IllegalArgumentException("empty field set, generate insert sql error.");
         }
@@ -203,6 +183,9 @@ public class SqlUtil {
      * @return 格式化后的值
      */
     public static String quoteFormatValueIfNecessary(Object obj) {
+        if (obj == null) {
+            return "null";
+        }
         Class<?> clazz = obj.getClass();
         if (clazz == String.class) {
             return safeQuote((String) obj);
@@ -386,10 +369,7 @@ public class SqlUtil {
         boolean start = false;
         boolean inBlock = false;
         boolean blockFirstOk = false;
-        boolean hasChooseBlock = false;
-        if (containsAllIgnoreCase(sql, "--#choose", "--#end")) {
-            hasChooseBlock = true;
-        }
+        boolean hasChooseBlock = containsAllIgnoreCase(sql, "--#choose", "--#end");
         for (String line : lines) {
             String trimLine = line.trim();
             if (!trimLine.isEmpty()) {

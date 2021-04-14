@@ -27,6 +27,7 @@ import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.sql.*;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 
@@ -85,7 +86,7 @@ public class MyTest {
 
     @Test
     public void insert() throws Exception {
-        DataFrame dataFrame = DataFrame.of("test.tb", Args.create()
+        DataFrame dataFrame = DataFrame.ofMap("test.tb", Args.create()
                 .add("ts", "2020年2月12日 11:22:33")
                 .add("dtm", "")
                 .add("tm", "23时55分13秒")
@@ -100,13 +101,13 @@ public class MyTest {
         Me me = new Me();
         me.setAge(25);
         me.setName("entity");
-        DataFrame frame = DataFrame.of("test.tb", Args.of("jsb", me));
+        DataFrame frame = DataFrame.ofMap("test.tb", Args.of("jsb", me));
         baki.insert(frame);
     }
 
     @Test
     public void insertFile() throws FileNotFoundException {
-        baki.insert(DataFrame.of("test.tb", Args.of("blob", new FileInputStream("/Users/chengyuxing/Downloads/Bob.app.zip"))));
+        baki.insert(DataFrame.ofMap("test.tb", Args.of("blob", new FileInputStream("/Users/chengyuxing/Downloads/Bob.app.zip"))));
     }
 
     @Test
@@ -159,6 +160,25 @@ public class MyTest {
     }
 
     @Test
+    public void q() throws Exception {
+//        List<DataRow> rows = Arrays.asList(
+//                DataRow.fromPair("words", "aaaaa", "userid", UUID.randomUUID()),
+//                DataRow.fromPair("words", "dd", "userid", UUID.randomUUID()),
+//                DataRow.fromPair("words", "ccc", "userid", UUID.randomUUID()),
+//                DataRow.fromPair("words", "aaadaaa", "userid", UUID.randomUUID()),
+//                DataRow.fromPair("words", "dddddd", "userid", UUID.randomUUID())
+//        );
+//        baki.fastInsert(DataFrame.ofRows("test.history", rows));
+        try {
+            DataRow row = baki.fetch("select * from test.history where id = alskdjc.sksj")
+                    .orElse(DataRow.empty());
+            System.out.println(row);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
     public void loadData() throws Exception {
         baki.execute("copy test.fruit from '/Users/chengyuxing/test/fruit2.txt' with delimiter ','");
 //        baki.execute("copy test.fruit from '/Users/chengyuxing/test/fruit2.txt' with delimiter ','");
@@ -171,7 +191,7 @@ public class MyTest {
         map.put("productplace", "bbb");
         map.put("price", 1000);
 
-        int i = baki.insert(DataFrame.of("test.fruit", map));
+        int i = baki.insert(DataFrame.ofMap("test.fruit", map));
         System.out.println(i);
     }
 
@@ -250,7 +270,7 @@ public class MyTest {
         baki.call(":num = call test.get_grade(:id)",
                 Args.of("num", Param.OUT(OUTParamType.INTEGER))
                         .add("id", Param.IN(5)))
-                .getNullable("num")
+                .getOptional("num")
                 .ifPresent(System.out::println);
     }
 

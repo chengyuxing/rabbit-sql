@@ -210,7 +210,7 @@ public abstract class JdbcSupport {
                         action.accept(JdbcUtil.createDataRow(names, resultSet));
                         return true;
                     } catch (SQLException ex) {
-                        throw new SqlRuntimeException("reading result set of query:\n[" + preparedSql + "]\nerror: ", ex);
+                        throw new SqlRuntimeException("reading result set of query:[" + preparedSql + "]\nerror: ", ex);
                     }
                 }
             }, false).onClose(close);
@@ -222,7 +222,7 @@ public abstract class JdbcSupport {
                     sqlEx.addSuppressed(e);
                 }
             }
-            throw new SqlRuntimeException("execute sql:\n[" + preparedSql + "]\nargs:\n" + args + "\nerror: ", sqlEx);
+            throw new SqlRuntimeException("\nexecute sql:[" + preparedSql + "]\nargs:" + args + "\nerror: ", sqlEx);
         }
     }
 

@@ -15,7 +15,6 @@ public class DataFrame {
     private final String tableName;
     private final Collection<Map<String, Object>> rows;
     private boolean strict = true;
-    private Ignore ignore;
 
     /**
      * 构造函数
@@ -38,15 +37,6 @@ public class DataFrame {
     }
 
     /**
-     * 获取忽略的值类型
-     *
-     * @return 忽略类型
-     */
-    public Ignore getIgnore() {
-        return ignore;
-    }
-
-    /**
      * 是否是严格模式
      *
      * @return 是否严格模式
@@ -62,17 +52,6 @@ public class DataFrame {
      */
     public String getTableName() {
         return tableName;
-    }
-
-    /**
-     * 设置忽略插入的类型
-     *
-     * @param ignore 忽略
-     * @return DataFrame
-     */
-    public DataFrame ignore(Ignore ignore) {
-        this.ignore = ignore;
-        return this;
     }
 
     /**
@@ -138,7 +117,7 @@ public class DataFrame {
      * @param row       行数据类型
      * @return DataFrame
      */
-    public static DataFrame of(String tableName, Map<String, Object> row) {
+    public static DataFrame ofMap(String tableName, Map<String, Object> row) {
         return ofMaps(tableName, Collections.singletonList(row));
     }
 
@@ -149,8 +128,8 @@ public class DataFrame {
      * @param row       行数据类型
      * @return DataFrame
      */
-    public static DataFrame of(String tableName, DataRow row) {
-        return of(tableName, row.toMap());
+    public static DataFrame ofRow(String tableName, DataRow row) {
+        return ofMap(tableName, row.toMap());
     }
 
     /**
@@ -160,7 +139,7 @@ public class DataFrame {
      * @param entity    实体
      * @return DataFrame
      */
-    public static DataFrame of(String tableName, Object entity) {
-        return of(tableName, DataRow.fromEntity(entity));
+    public static DataFrame ofEntity(String tableName, Object entity) {
+        return ofRow(tableName, DataRow.fromEntity(entity));
     }
 }

@@ -304,37 +304,42 @@ public class JdbcUtil {
      * @throws SQLException sqlExp
      */
     public static void setSpecialStatementValue(PreparedStatement statement, int index, Object value) throws SQLException {
-        String pClass = statement.getParameterMetaData().getParameterClassName(index);
-        String pType = statement.getParameterMetaData().getParameterTypeName(index);
-        // if postgresql, insert as json(b) type
-        // if column is json type
-        if (pType.equals("json") || pType.equals("jsonb")) {
-            if (value instanceof String) {
-                statement.setObject(index, createPgObject(pType, value.toString()));
-            } else {
-                statement.setObject(index, createPgObject(pType, obj2Json(value)));
-            }
-        } else if (pClass.equals("java.lang.String") && !(value instanceof String)) {
-            if (value instanceof Map || value instanceof Collection) {
-                statement.setObject(index, obj2Json(value));
-                // maybe Date, LocalDateTime, UUID, BigDecimal, Integer...
-            } else if (value.getClass().getTypeName().startsWith("java.")) {
-                statement.setObject(index, value.toString());
-            } else {
-                // maybe is java bean
-                statement.setObject(index, obj2Json(value));
-            }
-            // if is postgresql array
-        } else if (pClass.equals("java.sql.Array") && value instanceof Collection) {
-            statement.setObject(index, ((Collection<?>) value).toArray());
-        } else if (pClass.equals("java.sql.Date") && value instanceof String) {
-            statement.setObject(index, new Date(DateTimes.toEpochMilli((String) value)));
-        } else if (pClass.equals("java.sql.Time") && value instanceof String) {
-            statement.setObject(index, new Time(DateTimes.toEpochMilli((String) value)));
-        } else if (pClass.equals("java.sql.Timestamp") && value instanceof String) {
-            statement.setObject(index, new Timestamp(DateTimes.toEpochMilli((String) value)));
+        ParameterMetaData pmd = statement.getParameterMetaData();
+        String pClass = pmd.getParameterClassName(index);
+        String pType = pmd.getParameterTypeName(index);
+        if (null == value) {
+            statement.setNull(index, pmd.getParameterType(index));
         } else {
-            setStatementValue(statement, index, value);
+            // if postgresql, insert as json(b) type
+            // if column is json type
+            if (pType.equals("json") || pType.equals("jsonb")) {
+                if (value instanceof String) {
+                    statement.setObject(index, createPgObject(pType, value.toString()));
+                } else {
+                    statement.setObject(index, createPgObject(pType, obj2Json(value)));
+                }
+            } else if (pClass.equals("java.lang.String") && !(value instanceof String)) {
+                if (value instanceof Map || value instanceof Collection) {
+                    statement.setObject(index, obj2Json(value));
+                    // maybe Date, LocalDateTime, UUID, BigDecimal, Integer...
+                } else if (value.getClass().getTypeName().startsWith("java.")) {
+                    statement.setObject(index, value.toString());
+                } else {
+                    // maybe is java bean
+                    statement.setObject(index, obj2Json(value));
+                }
+                // if is postgresql array
+            } else if (pClass.equals("java.sql.Array") && value instanceof Collection) {
+                statement.setObject(index, ((Collection<?>) value).toArray());
+            } else if (pClass.equals("java.sql.Date") && value instanceof String) {
+                statement.setObject(index, new Date(DateTimes.toEpochMilli((String) value)));
+            } else if (pClass.equals("java.sql.Time") && value instanceof String) {
+                statement.setObject(index, new Time(DateTimes.toEpochMilli((String) value)));
+            } else if (pClass.equals("java.sql.Timestamp") && value instanceof String) {
+                statement.setObject(index, new Timestamp(DateTimes.toEpochMilli((String) value)));
+            } else {
+                setStatementValue(statement, index, value);
+            }
         }
     }
 
@@ -347,7 +352,9 @@ public class JdbcUtil {
      * @throws SQLException sqlExp
      */
     public static void setStatementValue(PreparedStatement statement, int index, Object value) throws SQLException {
-        if (value instanceof java.util.Date) {
+        if (null == value) {
+            statement.setNull(index, Types.NULL);
+        } else if (value instanceof java.util.Date) {
             statement.setObject(index, new Date(((java.util.Date) value).getTime()));
         } else if (value instanceof LocalDateTime) {
             statement.setObject(index, new Timestamp(((LocalDateTime) value).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));

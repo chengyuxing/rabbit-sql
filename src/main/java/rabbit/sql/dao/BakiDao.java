@@ -126,7 +126,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         if (iterator.hasNext()) {
             Map<String, Object> first = iterator.next();
             List<String> tableFields = dataFrame.isStrict() ? new ArrayList<>() : getTableFields(dataFrame);
-            String insertSql = SqlUtil.generatePreparedInsert(dataFrame.getTableName(), first, dataFrame.getIgnore(), tableFields);
+            String insertSql = SqlUtil.generatePreparedInsert(dataFrame.getTableName(), first, tableFields);
             return executeNonQuery(insertSql, data);
         }
         return -1;
@@ -150,7 +150,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 if (tableFields == null) {
                     tableFields = dataFrame.isStrict() ? new ArrayList<>() : getTableFields(dataFrame);
                 }
-                String insertSql = SqlUtil.generateInsert(dataFrame.getTableName(), iterator.next(), dataFrame.getIgnore(), tableFields);
+                String insertSql = SqlUtil.generateInsert(dataFrame.getTableName(), iterator.next(), tableFields);
                 sqls[i] = insertSql;
             }
             log.debug("preview sql: {}\nmore...", sqls[0]);
@@ -168,7 +168,6 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @return 表字段
      */
     private List<String> getTableFields(DataFrame dataFrame) {
-        log.debug("prepare for non-strict insert...");
         return execute(dataFrame.getTableFieldsSql(), sc -> {
             sc.executeQuery();
             ResultSet fieldsResultSet = sc.getResultSet();

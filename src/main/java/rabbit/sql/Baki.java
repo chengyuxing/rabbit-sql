@@ -6,8 +6,10 @@ import rabbit.sql.support.ICondition;
 import rabbit.sql.types.DataFrame;
 import rabbit.sql.types.Param;
 
+import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -204,6 +206,15 @@ public interface Baki {
      * @return 一个或多个结果或无结果
      */
     DataRow call(String name, Map<String, Param> args);
+
+    /**
+     * 从内部获取一个连接对象
+     *
+     * @param func 函数体
+     * @param <T>  结果类型参数
+     * @return 执行结果
+     */
+    <T> T using(Function<Connection, T> func);
 
     /**
      * 获取数据库的元数据信息

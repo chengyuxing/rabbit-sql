@@ -10,6 +10,7 @@ import org.junit.Test;
 import org.postgresql.util.PGobject;
 import rabbit.common.types.DataRow;
 import rabbit.sql.dao.*;
+import rabbit.sql.exceptions.ConnectionStatusException;
 import rabbit.sql.page.PagedResource;
 import rabbit.sql.support.ICondition;
 import rabbit.sql.support.IOutParam;
@@ -272,6 +273,26 @@ public class MyTest {
                         .add("id", Param.IN(5)))
                 .getOptional("num")
                 .ifPresent(System.out::println);
+    }
+
+    @Test
+    public void using() throws Exception {
+        try {
+            baki.using(connection -> {
+                try {
+                    PreparedStatement statement = connection.prepareStatement("select current_timestamp, version()");
+                    ResultSet resultSet = statement.executeQuery();
+                    while (resultSet.next()) {
+                        System.out.println(resultSet.getObject(1));
+                    }
+                } catch (SQLException throwables) {
+                    throwables.printStackTrace();
+                }
+                return 1;
+            });
+        } catch (ConnectionStatusException e) {
+            e.printStackTrace();
+        }
     }
 
 

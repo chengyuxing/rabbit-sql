@@ -23,6 +23,7 @@ import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import static rabbit.sql.utils.SqlUtil.dynamicSql;
@@ -368,6 +369,26 @@ public class BakiDao extends JdbcSupport implements Baki {
     @Override
     public DataRow call(String name, Map<String, Param> args) {
         return executeCallStatement(name, args);
+    }
+
+    /**
+     * {@inheritDoc}<br>
+     * 执行完成后自动关闭连接对象，不需要手动关闭
+     *
+     * @param func 函数体
+     * @param <T>  类型参数
+     * @return 执行结果
+     * @throws ConnectionStatusException 如果数据库错误或连接对象已关闭
+     */
+    @Override
+    public <T> T using(Function<Connection, T> func) {
+        Connection connection = null;
+        try {
+            connection = getConnection();
+            return func.apply(connection);
+        } finally {
+            releaseConnection(connection, getDataSource());
+        }
     }
 
     /**

@@ -2,10 +2,12 @@ package tests;
 
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.nutz.dao.impl.NutDao;
 import org.nutz.ioc.Ioc;
 import org.nutz.ioc.impl.NutIoc;
 import org.nutz.ioc.loader.json.JsonLoader;
 import rabbit.common.tuple.Pair;
+import rabbit.sql.dao.BakiDao;
 import rabbit.sql.dao.SQLFileManager;
 import rabbit.sql.utils.SqlUtil;
 
@@ -54,5 +56,11 @@ public class SqlFileTest {
         String sql = "select * from user where 1=1 and id = 2)}];\n;; \t\n \r\n;; \n\n\t\r";
         System.out.println(SqlUtil.trimEnd(sql));
         System.out.println(sql.trim());
+    }
+
+    @Test
+    public void bakiDao() throws Exception{
+        BakiDao bakiDao = new BakiDao(null);
+        NutDao nutDao = new NutDao();
     }
 }

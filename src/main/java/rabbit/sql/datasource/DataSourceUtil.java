@@ -1,5 +1,6 @@
 package rabbit.sql.datasource;
 
+import rabbit.sql.exceptions.ConnectionStatusException;
 import rabbit.sql.transaction.Definition;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -160,12 +161,13 @@ public abstract class DataSourceUtil {
      *
      * @param dataSource 数据源
      * @return new connection
-     * @throws SQLException ex
+     * @throws SQLException              ex
+     * @throws ConnectionStatusException 如果连接对象为null
      */
     private static Connection fetchConnection(DataSource dataSource) throws SQLException {
         Connection connection = dataSource.getConnection();
         if (connection == null) {
-            throw new IllegalStateException("DataSource returned null from DataSource:" + dataSource);
+            throw new ConnectionStatusException("DataSource returned null from DataSource:" + dataSource);
         }
         return connection;
     }

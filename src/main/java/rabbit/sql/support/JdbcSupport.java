@@ -5,6 +5,7 @@ import org.slf4j.LoggerFactory;
 import rabbit.common.tuple.Pair;
 import rabbit.common.types.DataRow;
 import rabbit.common.types.UncheckedCloseable;
+import rabbit.sql.datasource.AbstractTransactionSyncManager;
 import rabbit.sql.exceptions.SqlRuntimeException;
 import rabbit.sql.types.Param;
 import rabbit.sql.types.ParamMode;
@@ -95,6 +96,7 @@ public abstract class JdbcSupport {
         PreparedStatement statement = null;
         Connection connection = getConnection();
         try {
+            connection = getConnection();
             statement = connection.prepareStatement(sql);
             return callback.doInStatement(statement);
         } catch (SQLException e) {
@@ -189,10 +191,22 @@ public abstract class JdbcSupport {
         UncheckedCloseable close = null;
         try {
             Connection connection = getConnection();
-            close = UncheckedCloseable.wrap(connection);
+            // if this query is not in transaction, it's connection managed by Stream
+            if (!AbstractTransactionSyncManager.isTransactionActive()) {
+                close = UncheckedCloseable.wrap(connection);
+            }
             PreparedStatement statement = connection.prepareStatement(preparedSql);
             JdbcUtil.setSqlArgs(statement, args, argNames);
-            close = close.nest(statement);
+            // if close is null. it means this query in transaction currently,
+            // it's connection managed by Tx(transaction)
+            // connection will not be close when read stream to the end in 'try-with-resource' block
+            // or Stream.close() method.
+            if (close == null) {
+                log.warn("\033[93mStream Query in transaction now, I don't recommend it!!!, maybe you should optimize your program.\033[0m");
+                close = UncheckedCloseable.wrap(statement);
+            } else {
+                close = close.nest(statement);
+            }
             ResultSet resultSet = statement.executeQuery();
             close = close.nest(resultSet);
             return StreamSupport.stream(new Spliterators.AbstractSpliterator<DataRow>(Long.MAX_VALUE, Spliterator.ORDERED) {

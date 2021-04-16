@@ -276,6 +276,16 @@ public class MyTest {
     }
 
     @Test
+    public void queryInTransaction() throws Exception {
+        Tx.using(() -> {
+            baki.fetch("select current_timestamp, version()")
+                    .ifPresent(System.out::println);
+            baki.insert(DataFrame.ofRow("test.history",
+                    DataRow.fromPair("userid", UUID.randomUUID(), "words", "transactional")));
+        });
+    }
+
+    @Test
     public void using() throws Exception {
         try {
             baki.using(connection -> {

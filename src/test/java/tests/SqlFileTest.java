@@ -6,10 +6,10 @@ import org.nutz.dao.impl.NutDao;
 import org.nutz.ioc.Ioc;
 import org.nutz.ioc.impl.NutIoc;
 import org.nutz.ioc.loader.json.JsonLoader;
-import rabbit.common.tuple.Pair;
-import rabbit.sql.dao.BakiDao;
-import rabbit.sql.dao.SQLFileManager;
-import rabbit.sql.utils.SqlUtil;
+import com.github.chengyuxing.common.tuple.Pair;
+import com.github.chengyuxing.sql.dao.BakiDao;
+import com.github.chengyuxing.sql.dao.SQLFileManager;
+import com.github.chengyuxing.sql.utils.SqlUtil;
 
 import java.util.List;
 

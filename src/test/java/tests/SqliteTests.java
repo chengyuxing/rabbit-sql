@@ -3,7 +3,7 @@ package tests;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import rabbit.sql.utils.JdbcUtil;
+import com.github.chengyuxing.sql.utils.JdbcUtil;
 
 public class SqliteTests {
 

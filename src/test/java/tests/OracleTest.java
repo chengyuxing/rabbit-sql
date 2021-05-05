@@ -3,11 +3,7 @@ package tests;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import rabbit.sql.Baki;
-import rabbit.sql.dao.Args;
-import rabbit.sql.dao.BakiDao;
-
-import java.util.Date;
+import com.github.chengyuxing.sql.dao.BakiDao;
 
 public class OracleTest {
     static BakiDao baki;

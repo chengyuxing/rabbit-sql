@@ -1,21 +1,22 @@
 package tests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.chengyuxing.sql.dao.BakiDao;
+import com.github.chengyuxing.sql.dao.SQLFileManager;
 import com.zaxxer.hikari.HikariDataSource;
 import func.BeanUtil;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.nutz.json.Json;
-import rabbit.common.tuple.Pair;
-import rabbit.common.types.DataRow;
-import rabbit.common.types.ImmutableList;
-import rabbit.common.utils.DateTimes;
-import rabbit.sql.dao.*;
-import rabbit.sql.page.impl.OraclePageHelper;
-import rabbit.sql.page.PagedResource;
-import rabbit.sql.dao.Args;
-import rabbit.sql.types.Param;
-import rabbit.sql.utils.SqlUtil;
+import com.github.chengyuxing.common.tuple.Pair;
+import com.github.chengyuxing.common.types.DataRow;
+import com.github.chengyuxing.common.types.ImmutableList;
+import com.github.chengyuxing.common.utils.DateTimes;
+import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
+import com.github.chengyuxing.sql.page.PagedResource;
+import com.github.chengyuxing.sql.dao.Args;
+import com.github.chengyuxing.sql.types.Param;
+import com.github.chengyuxing.sql.utils.SqlUtil;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -26,7 +27,7 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static rabbit.sql.utils.SqlUtil.SEP;
+import static com.github.chengyuxing.sql.utils.SqlUtil.SEP;
 
 public class Tests {
 

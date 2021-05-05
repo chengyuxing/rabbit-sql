@@ -3,14 +3,11 @@ package tests;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import rabbit.common.types.DataRow;
-import rabbit.sql.Baki;
-import rabbit.sql.dao.Args;
-import rabbit.sql.dao.BakiDao;
+import com.github.chengyuxing.sql.dao.Args;
+import com.github.chengyuxing.sql.dao.BakiDao;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Arrays;
 
 public class SqliteTest {
 

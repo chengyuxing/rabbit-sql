@@ -2,10 +2,7 @@ package strtests;
 
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import static rabbit.sql.utils.SqlUtil.removeAnnotationBlock;
+import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
 
 public class StrTests {
 

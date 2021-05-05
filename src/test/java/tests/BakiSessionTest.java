@@ -1,23 +1,19 @@
 package tests;
 
-import rabbit.common.script.impl.CExpression;
-import rabbit.common.types.DataRow;
-import rabbit.sql.dao.*;
+import com.github.chengyuxing.common.types.DataRow;
+import com.github.chengyuxing.sql.dao.BakiDao;
+import com.github.chengyuxing.sql.dao.Condition;
+import com.github.chengyuxing.sql.dao.Filter;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import rabbit.sql.Baki;
-import rabbit.sql.dao.Args;
-import rabbit.sql.page.PagedResource;
-import rabbit.sql.types.DataFrame;
+import com.github.chengyuxing.sql.dao.Args;
 
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.*;
 import java.util.Arrays;
-import java.util.Map;
-import java.util.UUID;
 import java.util.stream.Stream;
 
 

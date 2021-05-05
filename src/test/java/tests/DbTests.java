@@ -3,8 +3,8 @@ package tests;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import rabbit.common.types.DataRow;
-import rabbit.sql.utils.JdbcUtil;
+import com.github.chengyuxing.common.types.DataRow;
+import com.github.chengyuxing.sql.utils.JdbcUtil;
 
 import java.io.IOException;
 import java.net.URISyntaxException;

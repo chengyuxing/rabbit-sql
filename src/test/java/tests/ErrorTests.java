@@ -1,9 +1,8 @@
 package tests;
 
 import com.zaxxer.hikari.HikariDataSource;
-import rabbit.common.types.DataRow;
-import rabbit.sql.Baki;
-import rabbit.sql.dao.BakiDao;
+import com.github.chengyuxing.common.types.DataRow;
+import com.github.chengyuxing.sql.dao.BakiDao;
 
 import java.sql.SQLException;
 import java.util.stream.Collectors;

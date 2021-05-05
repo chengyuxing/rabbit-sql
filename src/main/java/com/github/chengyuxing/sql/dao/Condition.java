@@ -1,17 +1,22 @@
-package func;
+package com.github.chengyuxing.sql.dao;
 
 import com.github.chengyuxing.common.tuple.Pair;
+import com.github.chengyuxing.sql.support.ICondition;
+import com.github.chengyuxing.sql.support.IFilter;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 
 import java.util.HashMap;
 import java.util.Map;
 
-public class FCondition<T> {
+/**
+ * SQL条件拼装器
+ */
+public class Condition implements ICondition {
     private final Map<String, Object> args = new HashMap<>();
     private final StringBuilder conditions = new StringBuilder();
     private int arg_index = 0;
 
-    FCondition() {
+    Condition() {
 
     }
 
@@ -21,9 +26,19 @@ public class FCondition<T> {
      * @param filter 过滤器
      * @return 条件拼接器
      */
-    public static <T> FCondition<T> where(FFilter<T> filter) {
-        FCondition<T> cnd = new FCondition<>();
+    public static Condition where(IFilter filter) {
+        Condition cnd = new Condition();
         return cnd.concatFilterBy("", filter);
+    }
+
+    /**
+     * where
+     *
+     * @param sql sql字符串
+     * @return 条件拼接器
+     */
+    public static Condition where(String sql) {
+        return new Condition().expression(sql);
     }
 
     /**
@@ -32,7 +47,7 @@ public class FCondition<T> {
      * @param sql sql
      * @return 条件拼接器
      */
-    public FCondition<T> expression(String sql) {
+    public Condition expression(String sql) {
         conditions.append(sql).append(" ");
         return this;
     }
@@ -43,7 +58,7 @@ public class FCondition<T> {
      * @param filter 过滤器
      * @return 条件拼接器
      */
-    public FCondition<T> and(FFilter<T> filter) {
+    public Condition and(IFilter filter) {
         return concatFilterBy("and ", filter);
     }
 
@@ -53,7 +68,7 @@ public class FCondition<T> {
      * @param filter 过滤器
      * @return 条件拼接器
      */
-    public FCondition<T> or(FFilter<T> filter) {
+    public Condition or(IFilter filter) {
         return concatFilterBy("or ", filter);
     }
 
@@ -64,10 +79,17 @@ public class FCondition<T> {
      * @param filter 过滤器
      * @return 条件拼接器
      */
-    private FCondition<T> concatFilterBy(String s, FFilter<T> filter) {
-        Pair<String, String> sf = getSpecialField(filter.getField());
-        conditions.append(s).append(filter.getField()).append(filter.getOperator()).append(sf.getItem2()).append(" ");
-        args.put(sf.getItem1(), filter.getValue());
+    private Condition concatFilterBy(String s, IFilter filter) {
+        if (!IFilter.IGNORE_VALUE.equals(filter.getValue())) {
+            Pair<String, String> sf = getSpecialField(filter.getField());
+            conditions.append(s)
+                    .append(filter.getField())
+                    .append(filter.getOperator())
+                    .append(sf.getItem2()).append(" ");
+            args.put(sf.getItem1(), filter.getValue());
+        } else {
+            conditions.append(s).append(filter.getField()).append(filter.getOperator());
+        }
         return this;
     }
 
@@ -87,8 +109,32 @@ public class FCondition<T> {
      *
      * @return 参数
      */
+    @Override
     public Map<String, Object> getArgs() {
         return args;
+    }
+
+    /**
+     * 手动自定义sql占位符参数，通常指代sql中出现占位符 {@code :id} 的值
+     *
+     * @param holderArgs 占位符参数
+     * @return 条件拼接器接口
+     */
+    public Condition args(Map<String, Object> holderArgs) {
+        args.putAll(holderArgs);
+        return this;
+    }
+
+    /**
+     * 手动添加sql占位符参数
+     *
+     * @param name  参数名
+     * @param value 参数值
+     * @return 条件拼接器
+     */
+    public Condition addArg(String name, Object value) {
+        args.put(name, value);
+        return this;
     }
 
     /**
@@ -96,6 +142,7 @@ public class FCondition<T> {
      *
      * @return where子句
      */
+    @Override
     public String getSql() {
         String cnds = conditions.toString();
         if (cnds.startsWith("and ")) {

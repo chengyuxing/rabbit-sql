@@ -4,11 +4,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import rabbit.common.types.DataRow;
 import rabbit.common.utils.DateTimes;
+import rabbit.sql.exceptions.SqlRuntimeException;
 import rabbit.sql.types.Param;
 import rabbit.sql.types.ParamMode;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.*;
@@ -366,6 +366,12 @@ public class JdbcUtil {
             statement.setObject(index, new Timestamp(((Instant) value).toEpochMilli()));
         } else if (value instanceof InputStream) {
             statement.setBinaryStream(index, (InputStream) value);
+        } else if (value instanceof File) {
+            try {
+                statement.setBinaryStream(index, new FileInputStream((File) value));
+            } catch (FileNotFoundException e) {
+                throw new SqlRuntimeException("set value failed:", e);
+            }
         } else {
             statement.setObject(index, value);
         }

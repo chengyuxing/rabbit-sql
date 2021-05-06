@@ -27,6 +27,7 @@ import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.sql.*;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 
@@ -224,12 +225,20 @@ public class MyTest {
     }
 
     @Test
-    public void testSqlFile() {
-        try (Stream<DataRow> s = baki.query("&data.query",
+    public void testSqlFile() throws InterruptedException {
+        try (Stream<DataRow> s = baki.query("select * from current_date,now()",
                 Args.create().add("id", 4))) {
             s.map(DataRow::toMap)
                     .forEach(System.out::println);
         }
+        try (Stream<DataRow> s = baki.query("select * from test.message --用户ID\n" +
+                ";")){
+            s.forEach(System.out::println);
+        }
+
+        System.out.println(baki.fetchMap("select * from current_date,now()"));
+
+        TimeUnit.MINUTES.sleep(5);
     }
 
     @Test

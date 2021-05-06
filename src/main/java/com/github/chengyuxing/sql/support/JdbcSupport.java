@@ -94,7 +94,7 @@ public abstract class JdbcSupport {
      */
     public <T> T execute(final String sql, StatementCallback<T> callback) {
         PreparedStatement statement = null;
-        Connection connection = getConnection();
+        Connection connection = null;
         try {
             connection = getConnection();
             statement = connection.prepareStatement(sql);

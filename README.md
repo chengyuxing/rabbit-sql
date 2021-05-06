@@ -6,19 +6,43 @@
 
 - maven dependency (jdk1.8)
 
-  ```xml
-  <dependency>
-      <groupId>com.github.chengyuxing</groupId>
-      <artifactId>rabbit-sql</artifactId>
-      <version>5.0.1</version>
-  </dependency>
-  ```
+```xml
+<dependency>
+    <groupId>com.github.chengyuxing</groupId>
+    <artifactId>rabbit-sql</artifactId>
+    <version>5.0.1</version>
+</dependency>
+```
 
 ## 参数占位符说明
 
-- `:name` (jdbc标准的传名参数写法，参数将被预编译安全处理)
-- `${part}` (通用的字符串模版占位符，不进行预编译，用于动态sql的拼接)
+- `:name` (jdbc标准的传名参数写法，参数将被预编译安全处理，参数名为：`name`)
+
+- `${part}` (通用的字符串模版占位符，不进行预编译，用于动态sql的拼接，参数名为：`${part}`)
+
 - 字符串模版中还可以使用传名参数
+
+- 参数占位符效果示例：
+
+  sql：
+
+  ```sql
+  select ${fields} from <tableName> where id = :id;
+  ```
+
+  参数：
+
+  ```java
+  Args<Object> args = Args.<Object>of("id","uuid").add("${fields}", "id, name, address");
+  ```
+
+  最终执行的SQL：
+
+  ```sql
+  select id, name, address from <tableName> where id = 'uuid';
+  ```
+
+  
 
 ## 外部SQL文件详解
 
@@ -43,7 +67,7 @@
   | ------ | -------------- |
   | <      | 大于           |
   | >      | 小于           |
-  | >=     | 大于等于       |
+  | > =     | 大于等于       |
   | <=     | 小于等于       |
   | ==     | 等于，同 =     |
   | !=     | 不等于，同 <>  |
@@ -86,14 +110,12 @@ WHERE
 
 ```java
 dataSource=new HikariDataSource();
-        dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
-        dataSource.setUsername("chengyuxing");
-        dataSource.setDriverClassName("org.postgresql.Driver");
-
-        SQLFileManager manager=new SQLFileManager("pgsql/data.sql, pgsql/other.sql");
-
-        BakiDao baki=new BakiDao(dataSource);
-        baki.setSqlFileManager(manager);
+dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
+dataSource.setUsername("chengyuxing");
+dataSource.setDriverClassName("org.postgresql.Driver");
+SQLFileManager manager=new SQLFileManager("pgsql/data.sql, pgsql/other.sql");
+BakiDao baki=new BakiDao(dataSource);
+baki.setSqlFileManager(manager);
 ```
 
 ### 流查询
@@ -107,9 +129,9 @@ try(Stream<DataRow> fruits=baki.query("select * from fruit")){
 ### 分页查询
 
 ```java
-PagedResource<DataRow> res=baki.<DataRow>query("&pgsql.data.select_user",1,10)
-        .args(Args.create().set("id",35))
-        .collect(d->d);
+PagedResource<DataRow> res=baki.<DataRow>query("&pgsql.data.select_user", 1, 10)
+        .args(Args.create().set("id", 35))
+        .collect(d -> d);
 ```
 
 ### 存储过程

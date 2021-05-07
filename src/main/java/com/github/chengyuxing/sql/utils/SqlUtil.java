@@ -281,6 +281,7 @@ public class SqlUtil {
      * @param args      参数
      * @return 替换模版占位符后的sql
      */
+    @SuppressWarnings("unchecked")
     public static String resolveSqlPart(final String sourceSql, Map<String, Object> args) {
         if (args == null || args.size() == 0) {
             return sourceSql;
@@ -291,10 +292,30 @@ public class SqlUtil {
         String sql = sourceSql;
         for (String key : args.keySet()) {
             if (key.startsWith("${") && key.endsWith("}")) {
-                String subSql = args.get(key).toString();
+                String trueKey = key;
+                Object value = args.get(key);
+                String subSql;
+                if (key.startsWith("${...")) {
+                    trueKey = key.replace("${...", "${");
+                    Object[] values;
+                    if (value instanceof Object[]) {
+                        values = (Object[]) value;
+                    } else if (value instanceof Collection) {
+                        values = ((Collection<Object>) value).toArray();
+                    } else {
+                        values = new Object[]{value};
+                    }
+                    StringBuilder sb = new StringBuilder();
+                    for (Object v : values) {
+                        sb.append(quoteFormatValueIfNecessary(v)).append(", ");
+                    }
+                    subSql = sb.substring(0, sb.length() - 2);
+                } else {
+                    subSql = value.toString();
+                }
                 String start = subSql.startsWith("\n") ? "" : "\n";
                 String v = start + subSql + "\n";
-                sql = sql.replace(key, v);
+                sql = sql.replace(trueKey, v);
             }
         }
         return sql;

@@ -1,8 +1,11 @@
 package sql;
 
+import com.github.chengyuxing.sql.dao.Args;
+import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
 import com.github.chengyuxing.common.script.impl.CExpression;
 
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
@@ -86,7 +89,7 @@ public class ControlTest {
     }
 
     @Test
-    public void regex() throws Exception{
+    public void regex() throws Exception {
         Map<String, Object> args = new HashMap<>();
         args.put("enable", true);
         args.put("types", "a1b2c3");
@@ -102,5 +105,24 @@ public class ControlTest {
     public void number() throws Exception {
         Pattern p = Pattern.compile("-?([0-9]|(0\\.\\d+)|([1-9]+\\.?\\d+))");
         System.out.println("-99.0".matches(p.pattern()));
+    }
+
+    @Test
+    public void sqlPart() throws Exception {
+        String sql = "select ${fields} from test.user where id in (${ids}) and id = :id";
+        Args<Object> args = Args.<Object>of("${...ids}", Arrays.asList("I'm Ok!", "b", "c"))
+                .add("${fields}", "id, name, age")
+                .add("id", 10);
+
+        System.out.println(SqlUtil.resolveSqlPart(sql, args));
+    }
+
+    @Test
+    public void arr() throws Exception{
+        Object strings = new int[]{1,2,3};
+        Object stringx = new String[]{"1,2,3","a"};
+        if (stringx.getClass().isArray()) {
+            System.out.println(Arrays.toString((Object[]) strings));
+        }
     }
 }

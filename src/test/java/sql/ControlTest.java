@@ -119,10 +119,6 @@ public class ControlTest {
 
     @Test
     public void arr() throws Exception{
-        Object strings = new int[]{1,2,3};
-        Object stringx = new String[]{"1,2,3","a"};
-        if (stringx.getClass().isArray()) {
-            System.out.println(Arrays.toString((Object[]) strings));
-        }
+        System.out.println(Arrays.toString("a,b,c".split("[,]")));
     }
 }

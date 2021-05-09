@@ -1,6 +1,6 @@
 package com.github.chengyuxing.sql.dao;
 
-import com.github.chengyuxing.common.types.DataRow;
+import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.exceptions.SqlRuntimeException;
 import com.github.chengyuxing.sql.page.IPageable;
 import com.github.chengyuxing.sql.page.PageHelper;

@@ -1,6 +1,6 @@
 package com.github.chengyuxing.sql;
 
-import com.github.chengyuxing.common.types.DataRow;
+import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.page.IPageable;
 import com.github.chengyuxing.sql.support.ICondition;
 import com.github.chengyuxing.sql.types.DataFrame;

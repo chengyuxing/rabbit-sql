@@ -3,7 +3,7 @@ package tests;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import com.github.chengyuxing.common.types.DataRow;
+import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.Baki;
 import com.github.chengyuxing.sql.dao.Args;
 import com.github.chengyuxing.sql.dao.BakiDao;

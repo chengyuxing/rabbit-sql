@@ -1,6 +1,6 @@
 package com.github.chengyuxing.sql.types;
 
-import com.github.chengyuxing.common.types.DataRow;
+import com.github.chengyuxing.common.DataRow;
 
 import java.util.Collection;
 import java.util.Collections;

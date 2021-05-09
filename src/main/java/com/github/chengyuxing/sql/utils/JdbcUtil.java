@@ -2,8 +2,8 @@ package com.github.chengyuxing.sql.utils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.github.chengyuxing.common.types.DataRow;
-import com.github.chengyuxing.common.utils.DateTimes;
+import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.common.DateTimes;
 import com.github.chengyuxing.sql.exceptions.SqlRuntimeException;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.types.ParamMode;

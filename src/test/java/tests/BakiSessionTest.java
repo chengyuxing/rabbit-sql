@@ -1,6 +1,6 @@
 package tests;
 
-import com.github.chengyuxing.common.types.DataRow;
+import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.dao.BakiDao;
 import com.github.chengyuxing.sql.dao.Condition;
 import com.github.chengyuxing.sql.dao.Filter;

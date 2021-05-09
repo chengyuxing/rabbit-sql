@@ -1,6 +1,6 @@
 package com.github.chengyuxing.sql.page;
 
-import com.github.chengyuxing.common.types.DataRow;
+import com.github.chengyuxing.common.DataRow;
 
 import java.util.Map;
 import java.util.function.Function;

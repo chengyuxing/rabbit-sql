@@ -9,7 +9,7 @@ import oracle.jdbc.OracleTypes;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.postgresql.util.PGobject;
-import com.github.chengyuxing.common.types.DataRow;
+import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
 import com.github.chengyuxing.sql.page.PagedResource;
 import com.github.chengyuxing.sql.support.ICondition;

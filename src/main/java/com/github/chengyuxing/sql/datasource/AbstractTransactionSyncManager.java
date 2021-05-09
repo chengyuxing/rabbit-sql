@@ -1,7 +1,7 @@
 package com.github.chengyuxing.sql.datasource;
 
 import com.github.chengyuxing.sql.transaction.Definition;
-import com.github.chengyuxing.common.types.NamedThreadLocal;
+import com.github.chengyuxing.common.NamedThreadLocal;
 import com.github.chengyuxing.sql.datasource.DataSourceUtil.TransactionSynchronization;
 
 import java.util.*;

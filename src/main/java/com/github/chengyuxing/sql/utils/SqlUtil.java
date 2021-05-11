@@ -477,7 +477,7 @@ public class SqlUtil {
             return sql.substring(0, m.start() + 6).concat(sql.substring(m.end()));
         }
         // if "where order by ..." statement
-        p = Pattern.compile("where\\s+(order by|limit|group by|union)\\s+", Pattern.CASE_INSENSITIVE);
+        p = Pattern.compile("where\\s+(order by|limit|group by|union|\\))\\s+", Pattern.CASE_INSENSITIVE);
         m = p.matcher(sql);
         if (m.find()) {
             return sql.substring(0, m.start()).concat(sql.substring(m.start() + 6));

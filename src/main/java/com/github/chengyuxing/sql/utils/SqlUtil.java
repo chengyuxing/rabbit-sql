@@ -286,10 +286,12 @@ public class SqlUtil {
         if (args == null || args.size() == 0) {
             return sourceSql;
         }
-        if (!sourceSql.contains("${")) {
+        // exclude quote str look like '${name}', it's not placeholder.
+        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceStrPartOfSql(sourceSql);
+        String noneStrSql = noneStrSqlAndHolder.getItem1();
+        if (!noneStrSql.contains("${")) {
             return sourceSql;
         }
-        String sql = sourceSql;
         for (String key : args.keySet()) {
             if (key.startsWith("${") && key.endsWith("}")) {
                 String trueKey = key;
@@ -315,10 +317,14 @@ public class SqlUtil {
                 }
                 String start = subSql.startsWith("\n") ? "" : "\n";
                 String v = start + subSql + "\n";
-                sql = sql.replace(trueKey, v);
+                noneStrSql = noneStrSql.replace(trueKey, v);
             }
         }
-        return sql;
+        Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
+        for (String key : placeholderMapper.keySet()) {
+            noneStrSql = noneStrSql.replace(key, placeholderMapper.get(key));
+        }
+        return noneStrSql;
     }
 
     /**

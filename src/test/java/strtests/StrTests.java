@@ -1,5 +1,7 @@
 package strtests;
 
+import com.github.chengyuxing.sql.dao.Args;
+import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
 
 import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
@@ -26,4 +28,10 @@ public class StrTests {
         System.out.println(removeAnnotationBlock(sql));
     }
 
+    @Test
+    public void ExcludePlaceholder() throws Exception {
+        String sql = "select '${tableName}',${age} age from test.${tableName} where id = 10";
+        Args<Object> args = Args.<Object>of("${tableName}", "user").add("${age}", 28);
+        System.out.println(SqlUtil.resolveSqlPart(sql, args));
+    }
 }

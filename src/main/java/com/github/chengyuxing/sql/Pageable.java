@@ -1,11 +1,9 @@
-package com.github.chengyuxing.sql.dao;
+package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.exceptions.SqlRuntimeException;
-import com.github.chengyuxing.sql.page.IPageable;
 import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
-import com.github.chengyuxing.sql.page.PagedResource;
 import com.github.chengyuxing.sql.page.impl.MysqlPageHelper;
 import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
@@ -24,7 +22,7 @@ import java.util.stream.Stream;
  *
  * @param <T> 结果类型参数
  */
-public class Pageable<T> implements IPageable<T> {
+public class Pageable<T> {
     private final BakiDao baki;
     private Map<String, Object> args = Collections.emptyMap();
     private final String recordQuery;
@@ -49,20 +47,17 @@ public class Pageable<T> implements IPageable<T> {
         this.size = size;
     }
 
-    @Override
-    public IPageable<T> args(Map<String, Object> args) {
+    public Pageable<T> args(Map<String, Object> args) {
         this.args = args;
         return this;
     }
 
-    @Override
-    public IPageable<T> countQuery(String countQuery) {
+    public Pageable<T> countQuery(String countQuery) {
         this.countQuery = countQuery;
         return this;
     }
 
-    @Override
-    public IPageable<T> count(Integer count) {
+    public Pageable<T> count(Integer count) {
         this.count = count;
         return this;
     }
@@ -76,8 +71,7 @@ public class Pageable<T> implements IPageable<T> {
      * @see PGPageHelper
      * @see MysqlPageHelper
      */
-    @Override
-    public IPageable<T> pageHelper(PageHelper pageHelper) {
+    public Pageable<T> pageHelper(PageHelper pageHelper) {
         this.customPageHelper = pageHelper;
         return this;
     }
@@ -86,11 +80,10 @@ public class Pageable<T> implements IPageable<T> {
      * 收集结果集操作
      *
      * @return 已分页的资源
-     * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
-     * @throws UnsupportedOperationException             如果没有自定分页，而默认分页不支持当前数据库
-     * @throws ConnectionStatusException                 如果连接对象异常
+     * @throws SqlRuntimeException           sql执行过程中出现错误或读取结果集是出现错误
+     * @throws UnsupportedOperationException 如果没有自定分页，而默认分页不支持当前数据库
+     * @throws ConnectionStatusException     如果连接对象异常
      */
-    @Override
     public PagedResource<T> collect(Function<DataRow, T> rowConvert) {
         String query = baki.prepareSql(recordQuery, args);
         if (count == null) {

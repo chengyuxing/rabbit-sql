@@ -2,7 +2,7 @@ package tests;
 
 import com.zaxxer.hikari.HikariDataSource;
 import com.github.chengyuxing.common.DataRow;
-import com.github.chengyuxing.sql.dao.BakiDao;
+import com.github.chengyuxing.sql.BakiDao;
 
 import java.sql.SQLException;
 import java.util.stream.Collectors;

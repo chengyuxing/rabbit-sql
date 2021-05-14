@@ -1,4 +1,4 @@
-package com.github.chengyuxing.sql.dao;
+package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.sql.datasource.DataSourceUtil;
 import com.github.chengyuxing.sql.exceptions.SqlRuntimeException;
@@ -8,12 +8,9 @@ import com.github.chengyuxing.sql.utils.JdbcUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.github.chengyuxing.common.DataRow;
-import com.github.chengyuxing.sql.Baki;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
 import com.github.chengyuxing.sql.exceptions.DuplicateException;
-import com.github.chengyuxing.sql.page.IPageable;
 import com.github.chengyuxing.sql.support.ICondition;
-import com.github.chengyuxing.sql.types.DataFrame;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 
@@ -295,7 +292,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @return 分页构建器
      */
     @Override
-    public <T> IPageable<T> query(String recordQuery, int page, int size) {
+    public <T> Pageable<T> query(String recordQuery, int page, int size) {
         return new Pageable<>(this, recordQuery, page, size);
     }
 

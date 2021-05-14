@@ -1,8 +1,8 @@
 package tests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.chengyuxing.sql.dao.BakiDao;
-import com.github.chengyuxing.sql.dao.SQLFileManager;
+import com.github.chengyuxing.sql.BakiDao;
+import com.github.chengyuxing.sql.SQLFileManager;
 import com.zaxxer.hikari.HikariDataSource;
 import func.BeanUtil;
 import org.junit.BeforeClass;
@@ -13,8 +13,8 @@ import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.ImmutableList;
 import com.github.chengyuxing.common.DateTimes;
 import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
-import com.github.chengyuxing.sql.page.PagedResource;
-import com.github.chengyuxing.sql.dao.Args;
+import com.github.chengyuxing.sql.PagedResource;
+import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 

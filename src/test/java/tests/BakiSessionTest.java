@@ -1,13 +1,13 @@
 package tests;
 
 import com.github.chengyuxing.common.DataRow;
-import com.github.chengyuxing.sql.dao.BakiDao;
-import com.github.chengyuxing.sql.dao.Condition;
-import com.github.chengyuxing.sql.dao.Filter;
+import com.github.chengyuxing.sql.BakiDao;
+import com.github.chengyuxing.sql.Condition;
+import com.github.chengyuxing.sql.Filter;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import com.github.chengyuxing.sql.dao.Args;
+import com.github.chengyuxing.sql.Args;
 
 import java.sql.Date;
 import java.sql.Time;

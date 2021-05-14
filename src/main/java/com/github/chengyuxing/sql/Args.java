@@ -1,4 +1,4 @@
-package com.github.chengyuxing.sql.dao;
+package com.github.chengyuxing.sql;
 
 import java.util.HashMap;
 

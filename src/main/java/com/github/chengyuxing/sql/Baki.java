@@ -1,9 +1,7 @@
 package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.DataRow;
-import com.github.chengyuxing.sql.page.IPageable;
 import com.github.chengyuxing.sql.support.ICondition;
-import com.github.chengyuxing.sql.types.DataFrame;
 import com.github.chengyuxing.sql.types.Param;
 
 import java.sql.Connection;
@@ -141,7 +139,7 @@ public interface Baki {
      * @param <T>   类型参数
      * @return 分页构建器
      */
-    <T> IPageable<T> query(String query, int page, int size);
+    <T> Pageable<T> query(String query, int page, int size);
 
     /**
      * 获取一条<br>

@@ -1,7 +1,7 @@
 package tests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.github.chengyuxing.sql.dao.*;
+import com.github.chengyuxing.sql.*;
 import com.zaxxer.hikari.HikariDataSource;
 import func.FCondition;
 import func.FFilter;
@@ -11,11 +11,10 @@ import org.junit.Test;
 import org.postgresql.util.PGobject;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
-import com.github.chengyuxing.sql.page.PagedResource;
 import com.github.chengyuxing.sql.support.ICondition;
 import com.github.chengyuxing.sql.support.IOutParam;
 import com.github.chengyuxing.sql.transaction.Tx;
-import com.github.chengyuxing.sql.types.DataFrame;
+import com.github.chengyuxing.sql.DataFrame;
 import com.github.chengyuxing.sql.types.OUTParamType;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.utils.JdbcUtil;

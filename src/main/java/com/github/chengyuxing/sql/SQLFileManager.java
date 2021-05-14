@@ -1,4 +1,4 @@
-package com.github.chengyuxing.sql.dao;
+package com.github.chengyuxing.sql;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

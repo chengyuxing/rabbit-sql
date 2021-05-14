@@ -1,4 +1,6 @@
-package com.github.chengyuxing.sql.page;
+package com.github.chengyuxing.sql;
+
+import com.github.chengyuxing.sql.page.PageHelper;
 
 import java.util.Collections;
 import java.util.List;

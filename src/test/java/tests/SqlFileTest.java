@@ -7,8 +7,8 @@ import org.nutz.ioc.Ioc;
 import org.nutz.ioc.impl.NutIoc;
 import org.nutz.ioc.loader.json.JsonLoader;
 import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.sql.dao.BakiDao;
-import com.github.chengyuxing.sql.dao.SQLFileManager;
+import com.github.chengyuxing.sql.BakiDao;
+import com.github.chengyuxing.sql.SQLFileManager;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 
 import java.util.List;

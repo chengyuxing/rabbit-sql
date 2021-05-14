@@ -3,8 +3,8 @@ package tests;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import com.github.chengyuxing.sql.dao.Args;
-import com.github.chengyuxing.sql.dao.BakiDao;
+import com.github.chengyuxing.sql.Args;
+import com.github.chengyuxing.sql.BakiDao;
 
 import java.io.File;
 import java.io.IOException;

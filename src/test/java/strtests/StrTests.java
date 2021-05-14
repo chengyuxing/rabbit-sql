@@ -1,6 +1,6 @@
 package strtests;
 
-import com.github.chengyuxing.sql.dao.Args;
+import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
 

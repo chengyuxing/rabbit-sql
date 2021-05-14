@@ -1,4 +1,4 @@
-package com.github.chengyuxing.sql.types;
+package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.DataRow;
 

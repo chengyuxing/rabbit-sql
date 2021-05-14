@@ -175,7 +175,7 @@ public class JdbcUtil {
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new SqlRuntimeException("close result error:", e);
         }
     }
 
@@ -192,7 +192,7 @@ public class JdbcUtil {
                 }
             }
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new SqlRuntimeException("close statement error:", e);
         }
     }
 

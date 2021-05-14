@@ -1,4 +1,4 @@
-package com.github.chengyuxing.sql.dao;
+package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.sql.support.ICondition;

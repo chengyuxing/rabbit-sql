@@ -1,6 +1,6 @@
 package sql;
 
-import com.github.chengyuxing.sql.dao.Args;
+import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
 import com.github.chengyuxing.common.script.impl.CExpression;

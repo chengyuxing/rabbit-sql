@@ -79,12 +79,13 @@ public class Pageable<T> {
     /**
      * 收集结果集操作
      *
+     * @param mapper 行数据映射函数
      * @return 已分页的资源
      * @throws SqlRuntimeException           sql执行过程中出现错误或读取结果集是出现错误
      * @throws UnsupportedOperationException 如果没有自定分页，而默认分页不支持当前数据库
      * @throws ConnectionStatusException     如果连接对象异常
      */
-    public PagedResource<T> collect(Function<DataRow, T> rowConvert) {
+    public PagedResource<T> collect(Function<DataRow, T> mapper) {
         String query = baki.prepareSql(recordQuery, args);
         if (count == null) {
             String cq = countQuery;
@@ -99,7 +100,7 @@ public class Pageable<T> {
         }
         pageHelper.init(page, size, count);
         try (Stream<DataRow> s = baki.query(pageHelper.wrapPagedSql(query), args)) {
-            List<T> list = s.map(rowConvert).collect(Collectors.toList());
+            List<T> list = s.map(mapper).collect(Collectors.toList());
             return PagedResource.of(pageHelper, list);
         }
     }

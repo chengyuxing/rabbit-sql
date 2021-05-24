@@ -297,8 +297,7 @@ public class SqlUtil {
                 String trueKey = key;
                 Object value = args.get(key);
                 String subSql;
-                if (key.startsWith("${...")) {
-                    trueKey = key.replace("${...", "${");
+                if (key.startsWith("${...") || key.startsWith("${..:")) {
                     Object[] values;
                     if (value instanceof Object[]) {
                         values = (Object[]) value;
@@ -308,8 +307,18 @@ public class SqlUtil {
                         values = new Object[]{value};
                     }
                     StringBuilder sb = new StringBuilder();
-                    for (Object v : values) {
-                        sb.append(quoteFormatValueIfNecessary(v)).append(", ");
+                    // expand and quote safe args
+                    if (key.startsWith("${..:")) {
+                        trueKey = key.replace("${..:", "${");
+                        for (Object v : values) {
+                            sb.append(quoteFormatValueIfNecessary(v)).append(", ");
+                        }
+                    } else {
+                        // just expand
+                        trueKey = key.replace("${...", "${");
+                        for (Object v : values) {
+                            sb.append(v).append(", ");
+                        }
                     }
                     subSql = sb.substring(0, sb.length() - 2);
                 } else {

@@ -1,12 +1,26 @@
 package strtests;
 
+import com.github.chengyuxing.common.WatchDog;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
 
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.util.Calendar;
+import java.util.concurrent.TimeUnit;
+
 import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
 
 public class StrTests {
+
+    public static void main(String[] args) {
+        WatchDog watchDog = new WatchDog();
+        watchDog.addListener("tick", () -> {
+            System.out.println(LocalDateTime.now());
+        }, 1, TimeUnit.SECONDS);
+    }
 
     public static String sql = "/*我的注释*/\n" +
             "select count(*)\n" +
@@ -25,7 +39,19 @@ public class StrTests {
 
     @Test
     public void sqlTest() throws Exception {
-        System.out.println(removeAnnotationBlock(sql));
+//        System.out.println(removeAnnotationBlock(sql));
+//        System.out.println("2021-05-24 WEEK 17:32:00");
+//        System.out.println(LocalDateTime.now().getDayOfWeek());
+        System.out.println(LocalDateTime.now().getDayOfYear());
+        System.out.println(Clock.systemDefaultZone());
+    }
+
+    @Test
+    public void dt() throws Exception {
+        WatchDog watchDog = new WatchDog();
+        watchDog.addListener("tick", () -> {
+            System.out.println(LocalDateTime.now());
+        }, 1, TimeUnit.SECONDS);
     }
 
     @Test

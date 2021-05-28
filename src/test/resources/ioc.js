@@ -1,6 +1,6 @@
 var ioc = {
     sqlFileManager: {
-        type: 'rabbit.sql.dao.SQLFileManager',
+        type: 'com.github.chengyuxing.sql.SQLFileManager',
         fields: {
             sqlMap: {
                 data: 'pgsql/data.sql',

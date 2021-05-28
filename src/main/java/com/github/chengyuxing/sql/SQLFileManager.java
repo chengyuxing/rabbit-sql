@@ -24,6 +24,12 @@ import java.util.regex.Pattern;
  * SQL文件解析管理器<br>
  * 支持外部sql(本地文件系统)和classpath下的sql<br>
  * 本地sql文件以 {@code file:} 开头，默认读取classpath下的sql文件<br>
+ * e.g. SQL文件格式
+ * <blockquote>
+ * <pre>windows: file:\\D:\\rabbit.sql</pre>
+ * <pre>Linux/Unix: file:/root/rabbit.sql</pre>
+ * <pre>ClassPath: sql/rabbit.sql</pre>
+ * </blockquote>
  * 格式参考data.sql.template
  */
 public final class SQLFileManager {

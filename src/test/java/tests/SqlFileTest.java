@@ -17,9 +17,19 @@ public class SqlFileTest {
 
     private static Ioc ioc;
 
-    @BeforeClass
+    //    @BeforeClass
     public static void init() {
         ioc = new NutIoc(new JsonLoader("ioc.js"));
+    }
+
+    @Test
+    public void sqlf() throws Exception {
+        SQLFileManager sqlFileManager = new SQLFileManager();
+        sqlFileManager.add("rabbit", "file:/Users/chengyuxing/Downloads/local.sql");
+        sqlFileManager.init();
+        sqlFileManager.foreach((k, v) -> {
+            System.out.println(k + ":" + v);
+        });
     }
 
     @Test
@@ -37,7 +47,7 @@ public class SqlFileTest {
     @Test
     public void nutzIoc() throws Exception {
         SQLFileManager sqlFileManager = ioc.get(SQLFileManager.class, "sqlFileManager");
-//        sqlFileManager.init();
+        sqlFileManager.init();
         sqlFileManager.look();
     }
 
@@ -59,7 +69,7 @@ public class SqlFileTest {
     }
 
     @Test
-    public void bakiDao() throws Exception{
+    public void bakiDao() throws Exception {
         BakiDao bakiDao = new BakiDao(null);
         NutDao nutDao = new NutDao();
     }

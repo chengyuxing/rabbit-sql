@@ -16,6 +16,7 @@ import java.net.URISyntaxException;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -322,6 +323,24 @@ public final class SQLFileManager {
      */
     public void look() {
         RESOURCE.forEach((k, v) -> System.out.println("\033[95m" + k + "\033[0m -> " + v));
+    }
+
+    /**
+     * 遍历sql名和sql代码
+     *
+     * @param kvFunc 回调函数
+     */
+    public void foreach(BiConsumer<String, String> kvFunc) {
+        RESOURCE.forEach(kvFunc);
+    }
+
+    /**
+     * 获取全部sql名集合
+     *
+     * @return sql名集合
+     */
+    public Set<String> names() {
+        return RESOURCE.keySet();
     }
 
     /**

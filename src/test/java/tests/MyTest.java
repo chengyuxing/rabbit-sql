@@ -141,6 +141,23 @@ public class MyTest {
     }
 
     @Test
+    public void line() throws Exception{
+        baki.execute("do\n" +
+                "$$\n" +
+                "    declare\n" +
+                "        x    integer[];\n" +
+                "        nums integer[] := array [[1,2,3],[4,5,6],[7,8,9]];\n" +
+                "    begin\n" +
+                "        foreach x slice 1 in array nums\n" +
+                "            loop\n" +
+                "                raise notice 'num:%',x;\n" +
+                "            end loop;\n" +
+                "    end;\n" +
+                "\n" +
+                "$$;");
+    }
+
+    @Test
     public void jdbcTest() throws Exception {
         System.out.println(JdbcUtil.supportsNamedParameters(dataSource.getConnection()));
     }

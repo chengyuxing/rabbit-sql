@@ -14,6 +14,7 @@ import com.github.chengyuxing.sql.utils.SqlUtil;
 
 import javax.sql.DataSource;
 import java.sql.*;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -111,7 +112,7 @@ public abstract class JdbcSupport {
     }
 
     /**
-     * 执行query语句，ddl或dml语句<br>
+     * 执行query、ddl、dml或plsql语句<br>
      * 返回数据为:<br>
      * 执行结果：{@code DataRow.get(0)} 或 {@code DataRow.get("result")}<br>
      * 执行类型：{@code DataRow.get(1)} 或 {@code DataRow.getString("type")}
@@ -139,6 +140,7 @@ public abstract class JdbcSupport {
                 JdbcUtil.setSqlArgs(sc, args, argNames);
             }
             boolean isQuery = sc.execute();
+            printSqlConsole(sc);
             DataRow result;
             if (isQuery) {
                 List<DataRow> rows = JdbcUtil.createDataRows(sc.getResultSet(), preparedSql, -1);
@@ -366,6 +368,7 @@ public abstract class JdbcSupport {
                 }
             }
             statement.execute();
+            printSqlConsole(statement);
             if (outNames.size() > 0) {
                 Object[] values = new Object[outNames.size()];
                 String[] types = new String[values.length];
@@ -400,6 +403,24 @@ public abstract class JdbcSupport {
         } finally {
             JdbcUtil.closeStatement(statement);
             releaseConnection(connection, getDataSource());
+        }
+    }
+
+    /**
+     * 打印sql内部执行中的日志打印<br>
+     * e.g. postgresql
+     * <blockquote>
+     * raise notice 'my console.';
+     * </blockquote>
+     *
+     * @param sc sql执行声明对象
+     * @throws SQLException 如果sql执行发生异常
+     */
+    private void printSqlConsole(Statement sc) throws SQLException {
+        if (log.isWarnEnabled()) {
+            SQLWarning warning = sc.getWarnings();
+            String state = warning.getSQLState();
+            sc.getWarnings().forEach(r -> log.warn("[{}] [{}] {}", LocalDateTime.now(), state, r.getMessage()));
         }
     }
 }

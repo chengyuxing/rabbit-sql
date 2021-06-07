@@ -149,7 +149,7 @@ public final class SQLFileManager {
                             if (!previousSqlName.equals("")) {
                                 String prepareLine = singleResource.get(previousSqlName) + line;
                                 if (trimLine.endsWith(";")) {
-                                    String naSql = SqlUtil.removeAnnotationBlock(prepareLine).getItem1();
+                                    String naSql = SqlUtil.removeAnnotationBlock(prepareLine);
                                     singleResource.put(previousSqlName, naSql.substring(0, naSql.lastIndexOf(";")));
                                     log.debug("scan to get SQL [{}]：{}", previousSqlName, SqlUtil.highlightSql(singleResource.get(previousSqlName)));
                                     previousSqlName = "";
@@ -164,7 +164,7 @@ public final class SQLFileManager {
             // if last part of sql is not ends with ';' symbol
             if (!previousSqlName.equals("")) {
                 String lastSql = singleResource.get(previousSqlName);
-                singleResource.put(previousSqlName, SqlUtil.removeAnnotationBlock(lastSql).getItem1());
+                singleResource.put(previousSqlName, SqlUtil.removeAnnotationBlock(lastSql));
                 log.debug("scan to get SQL [{}]：{}", previousSqlName, SqlUtil.highlightSql(lastSql));
             }
         }

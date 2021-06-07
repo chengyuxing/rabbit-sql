@@ -31,10 +31,11 @@ public class StrTests {
                 "       cardinality(b)      --所有元素个数\n" +
                 "from t;";
 
-//        Pair<String, List<String>> pair = SqlUtil.removeAnnotationBlock(sql);
-//        System.out.println(pair.getItem1());
-//        System.out.println(pair.getItem2());;
-//
+        System.out.println(SqlUtil.removeAnnotationBlock(sql));
+        SqlUtil.getAnnotationBlock(sql).forEach(a -> {
+            System.out.println(a);
+            System.out.println("---");
+        });
         System.out.println(SqlUtil.highlightSql(sql));
     }
 

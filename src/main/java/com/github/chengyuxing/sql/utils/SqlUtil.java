@@ -13,9 +13,9 @@ import java.time.ZoneId;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Stream;
 
-import static com.github.chengyuxing.common.utils.StringUtil.*;
+import static com.github.chengyuxing.common.utils.StringUtil.containsAllIgnoreCase;
+import static com.github.chengyuxing.common.utils.StringUtil.startsWithIgnoreCase;
 
 /**
  * SQL工具类
@@ -345,14 +345,60 @@ public class SqlUtil {
      * 移除sql的块注释
      *
      * @param sql sql
-     * @return 去除块注释的sql和注释块
+     * @return 去除块注释的sql
      */
-    public static Pair<String, List<String>> removeAnnotationBlock(final String sql) {
+    public static String removeAnnotationBlock(final String sql) {
         Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceStrPartOfSql(sql);
         String noneStrSql = noneStrSqlAndHolder.getItem1();
         Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
         char[] chars = noneStrSql.toCharArray();
         List<Character> characters = new ArrayList<>();
+        int count = 0;
+        for (int i = 0; i < chars.length; i++) {
+            int prev = i;
+            int next = i;
+            if (i > 0) {
+                prev = i - 1;
+            }
+            if (i < chars.length - 1) {
+                next = i + 1;
+            }
+            if (chars[i] == '/' && chars[next] == '*') {
+                count++;
+            } else if (chars[i] == '*' && chars[next] == '/') {
+                count--;
+            } else if (count == 0) {
+                if (chars[prev] == '*') {
+                    if (chars[i] != '/') {
+                        characters.add(chars[i]);
+                    }
+                } else {
+                    characters.add(chars[i]);
+                }
+            }
+        }
+        StringBuilder sb = new StringBuilder();
+        for (Character c : characters) {
+            sb.append(c);
+        }
+        String noneBSql = sb.toString().replaceAll("\n\\s*\n", "\n");
+        for (String key : placeholderMapper.keySet()) {
+            noneBSql = noneBSql.replace(key, placeholderMapper.get(key));
+        }
+        return noneBSql;
+    }
+
+    /**
+     * 获取sql的块注释
+     *
+     * @param sql sql
+     * @return 块注释
+     */
+    public static List<String> getAnnotationBlock(final String sql) {
+        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceStrPartOfSql(sql);
+        String noneStrSql = noneStrSqlAndHolder.getItem1();
+        Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
+        char[] chars = noneStrSql.toCharArray();
         StringBuilder annotations = new StringBuilder();
         int count = 0;
         for (int i = 0; i < chars.length; i++) {
@@ -372,32 +418,21 @@ public class SqlUtil {
                 annotations.append("*");
             } else if (count == 0) {
                 if (chars[prev] == '*') {
-                    if (chars[i] != '/') {
-                        characters.add(chars[i]);
-                    } else {
+                    if (chars[i] == '/') {
                         annotations.append("/").append("\u02ac");
                     }
-                } else {
-                    characters.add(chars[i]);
                 }
             } else {
                 annotations.append(chars[i]);
             }
         }
-        StringBuilder sb = new StringBuilder();
-        for (Character c : characters) {
-            sb.append(c);
-        }
-        String noneBSql = sb.toString().replaceAll("\n\\s*\n", "\n");
         String annotationStr = annotations.toString();
         for (String key : placeholderMapper.keySet()) {
-            noneBSql = noneBSql.replace(key, placeholderMapper.get(key));
             if (annotationStr.contains(key)) {
                 annotationStr = annotationStr.replace(key, placeholderMapper.get(key));
             }
         }
-        List<String> annotationsList = Arrays.asList(annotationStr.split("\u02ac"));
-        return Pair.of(noneBSql, annotationsList);
+        return Arrays.asList(annotationStr.split("\u02ac"));
     }
 
     /**
@@ -414,7 +449,7 @@ public class SqlUtil {
         if (!containsAllIgnoreCase(sql, "--#if", "--#fi")) {
             return sql;
         }
-        String nSql = removeAnnotationBlock(sql).getItem1();
+        String nSql = removeAnnotationBlock(sql);
         String[] lines = nSql.split("\n");
         StringBuilder sb = new StringBuilder();
         boolean first = true;
@@ -594,7 +629,7 @@ public class SqlUtil {
             colorfulSql = String.join("\n", sqlLine);
             // resolve block annotation
             if (colorfulSql.contains("/*") && colorfulSql.contains("*/")) {
-                List<String> annotations = removeAnnotationBlock(colorfulSql).getItem2();
+                List<String> annotations = getAnnotationBlock(colorfulSql);
                 for (String annotation : annotations) {
                     colorfulSql = colorfulSql.replace(annotation, Printer.colorful(annotation.replaceAll("\033\\[\\d{2}m|\033\\[0m", ""), Color.SILVER));
                 }

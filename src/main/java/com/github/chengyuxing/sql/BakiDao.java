@@ -161,7 +161,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 String insertSql = SqlUtil.generateInsert(dataFrame.getTableName(), iterator.next(), tableFields);
                 sqls[i] = insertSql;
             }
-            log.debug("preview sql: {}\nmore...", sqls[0]);
+            log.debug("preview sql: {}\nmore...", SqlUtil.highlightSql(sqls[0]));
             int count = executeBatch(sqls).length;
             log.debug("{} rows inserted!", count);
             return count;
@@ -236,9 +236,9 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param args      参数：需要更新的数据和条件参数
      * @param where     条件：条件中需要有传名参数作为更新的条件依据
      * @return 受影响的行数
-     * @throws SqlRuntimeException 执行批量操作时发生错误
-     * @throws UnsupportedOperationException             数据库或驱动版本不支持批量操作
-     * @throws IllegalArgumentException                  数据条数少于一条
+     * @throws SqlRuntimeException           执行批量操作时发生错误
+     * @throws UnsupportedOperationException 数据库或驱动版本不支持批量操作
+     * @throws IllegalArgumentException      数据条数少于一条
      */
     @Override
     public int fastUpdate(String tableName, Collection<Map<String, Object>> args, String where) {
@@ -249,7 +249,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 String update = SqlUtil.generateUpdate(tableName, iterator.next(), where);
                 sqls[i] = update;
             }
-            log.debug("preview sql: {}\nmore...", sqls[0]);
+            log.debug("preview sql: {}\nmore...", SqlUtil.highlightSql(sqls[0]));
             int count = Arrays.stream(executeBatch(sqls)).sum();
             log.debug("{} rows updated!", count);
             return count;

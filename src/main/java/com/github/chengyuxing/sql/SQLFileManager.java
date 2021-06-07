@@ -41,7 +41,7 @@ public final class SQLFileManager {
     private final Map<String, Long> LAST_MODIFIED = new HashMap<>();
     private static final Pattern NAME_PATTERN = Pattern.compile("/\\*\\s*\\[\\s*(?<name>\\S+)\\s*]\\s*\\*/");
     private static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+)\\s*}\\s*\\*/");
-    private static final String[] KEEP_ANNOTATION_STARTS_KEYWORDS = new String[]{
+    public static final String[] KEEP_ANNOTATION_STARTS_KEYWORDS = new String[]{
             "--#if",
             "--#fi",
             "--#choose",
@@ -149,9 +149,9 @@ public final class SQLFileManager {
                             if (!previousSqlName.equals("")) {
                                 String prepareLine = singleResource.get(previousSqlName) + line;
                                 if (trimLine.endsWith(";")) {
-                                    String naSql = SqlUtil.removeAnnotationBlock(prepareLine);
+                                    String naSql = SqlUtil.removeAnnotationBlock(prepareLine).getItem1();
                                     singleResource.put(previousSqlName, naSql.substring(0, naSql.lastIndexOf(";")));
-                                    log.debug("scan to get SQL [{}]：{}", previousSqlName, singleResource.get(previousSqlName));
+                                    log.debug("scan to get SQL [{}]：{}", previousSqlName, SqlUtil.highlightSql(singleResource.get(previousSqlName)));
                                     previousSqlName = "";
                                 } else {
                                     singleResource.put(previousSqlName, prepareLine.concat("\n"));
@@ -164,8 +164,8 @@ public final class SQLFileManager {
             // if last part of sql is not ends with ';' symbol
             if (!previousSqlName.equals("")) {
                 String lastSql = singleResource.get(previousSqlName);
-                singleResource.put(previousSqlName, SqlUtil.removeAnnotationBlock(lastSql));
-                log.debug("scan to get SQL [{}]：{}", previousSqlName, lastSql);
+                singleResource.put(previousSqlName, SqlUtil.removeAnnotationBlock(lastSql).getItem1());
+                log.debug("scan to get SQL [{}]：{}", previousSqlName, SqlUtil.highlightSql(lastSql));
             }
         }
         mergeSqlPartIfNecessary(singleResource, prefix);
@@ -328,7 +328,7 @@ public final class SQLFileManager {
      * 遍历查看已扫描的sql资源
      */
     public void look() {
-        RESOURCE.forEach((k, v) -> System.out.println("\033[95m" + k + "\033[0m -> " + v));
+        RESOURCE.forEach((k, v) -> System.out.println("\033[95m" + k + "\033[0m -> " + SqlUtil.highlightSql(v)));
     }
 
     /**

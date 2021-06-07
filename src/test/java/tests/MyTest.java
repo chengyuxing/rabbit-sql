@@ -2,6 +2,7 @@ package tests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.chengyuxing.sql.*;
+import com.github.chengyuxing.sql.Keywords;
 import com.zaxxer.hikari.HikariDataSource;
 import func.FCondition;
 import func.FFilter;
@@ -141,7 +142,7 @@ public class MyTest {
     }
 
     @Test
-    public void line() throws Exception{
+    public void line() throws Exception {
         baki.execute("do\n" +
                 "$$\n" +
                 "    declare\n" +
@@ -173,6 +174,13 @@ public class MyTest {
 //                        Integer[] ints = (Integer[]) arr.getArray();
 //                        System.out.println(Arrays.toString(ints));
                 });
+    }
+
+    @Test
+    public void ssss() throws Exception{
+//        String[] x = Keywords.byJdbc(baki.getMetaData());
+//        System.out.println(x.length);
+        System.out.println(Keywords.STANDARD.length);
     }
 
     @Test
@@ -248,7 +256,7 @@ public class MyTest {
                     .forEach(System.out::println);
         }
         try (Stream<DataRow> s = baki.query("select * from test.message --用户ID\n" +
-                ";")){
+                ";")) {
             s.forEach(System.out::println);
         }
 

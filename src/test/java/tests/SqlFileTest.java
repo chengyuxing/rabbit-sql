@@ -27,9 +27,7 @@ public class SqlFileTest {
         SQLFileManager sqlFileManager = new SQLFileManager();
         sqlFileManager.add("rabbit", "file:/Users/chengyuxing/Downloads/local.sql");
         sqlFileManager.init();
-        sqlFileManager.foreach((k, v) -> {
-            System.out.println(k + ":" + v);
-        });
+        sqlFileManager.look();
     }
 
     @Test

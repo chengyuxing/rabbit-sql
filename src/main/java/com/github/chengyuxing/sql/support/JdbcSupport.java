@@ -1,5 +1,7 @@
 package com.github.chengyuxing.sql.support;
 
+import com.github.chengyuxing.common.console.Color;
+import com.github.chengyuxing.common.console.Printer;
 import com.github.chengyuxing.sql.utils.JdbcUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -128,7 +130,7 @@ public abstract class JdbcSupport {
         if (hasArgs) {
             sourceSql = getSourceSql(sql, args);
         }
-        log.debug("SQL:{}", sourceSql);
+        log.debug("SQL:{}", SqlUtil.highlightSql(sourceSql));
         log.debug("Args:{}", args);
 
         Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSql(sourceSql);
@@ -183,7 +185,7 @@ public abstract class JdbcSupport {
             args = Collections.emptyMap();
         }
         String sourceSql = getSourceSql(sql, args);
-        log.debug("SQL:{}", sourceSql);
+        log.debug("SQL:{}", SqlUtil.highlightSql(sourceSql));
         log.debug("Args:{}", args);
 
         Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSql(sourceSql);
@@ -295,7 +297,7 @@ public abstract class JdbcSupport {
         if (hasArgs) {
             Map<String, Object> firstArg = args.stream().findFirst().get();
             sourceSql = getSourceSql(sql, firstArg);
-            log.debug("SQL:{}", sourceSql);
+            log.debug("SQL:{}", SqlUtil.highlightSql(sourceSql));
             if (args.size() == 1) {
                 log.debug("Args:{}", args);
             } else {
@@ -346,7 +348,7 @@ public abstract class JdbcSupport {
             args.forEach((k, v) -> pArgs.put(k, v.getValue()));
             sourceSql = getSourceSql(procedure, pArgs);
         }
-        log.debug("Procedure:{}", sourceSql);
+        log.debug("Procedure:{}", Printer.colorful(sourceSql, Color.YELLOW));
         log.debug("Args:{}", args);
 
         Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSql(sourceSql);

@@ -1,16 +1,21 @@
 package com.github.chengyuxing.sql.utils;
 
+import com.github.chengyuxing.common.console.Color;
+import com.github.chengyuxing.common.console.Printer;
+import com.github.chengyuxing.common.script.Comparators;
 import com.github.chengyuxing.common.script.impl.FastExpression;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.ReflectUtil;
+import com.github.chengyuxing.common.utils.StringUtil;
+import com.github.chengyuxing.sql.Keywords;
 
 import java.time.ZoneId;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
-import static com.github.chengyuxing.common.utils.StringUtil.containsAllIgnoreCase;
-import static com.github.chengyuxing.common.utils.StringUtil.startsWithIgnoreCase;
+import static com.github.chengyuxing.common.utils.StringUtil.*;
 
 /**
  * SQL工具类
@@ -340,14 +345,15 @@ public class SqlUtil {
      * 移除sql的块注释
      *
      * @param sql sql
-     * @return 去除块注释的sql
+     * @return 去除块注释的sql和注释块
      */
-    public static String removeAnnotationBlock(final String sql) {
+    public static Pair<String, List<String>> removeAnnotationBlock(final String sql) {
         Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceStrPartOfSql(sql);
         String noneStrSql = noneStrSqlAndHolder.getItem1();
         Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
         char[] chars = noneStrSql.toCharArray();
         List<Character> characters = new ArrayList<>();
+        StringBuilder annotations = new StringBuilder();
         int count = 0;
         for (int i = 0; i < chars.length; i++) {
             int prev = i;
@@ -360,16 +366,22 @@ public class SqlUtil {
             }
             if (chars[i] == '/' && chars[next] == '*') {
                 count++;
+                annotations.append("/");
             } else if (chars[i] == '*' && chars[next] == '/') {
                 count--;
+                annotations.append("*");
             } else if (count == 0) {
                 if (chars[prev] == '*') {
                     if (chars[i] != '/') {
                         characters.add(chars[i]);
+                    } else {
+                        annotations.append("/").append(SqlUtil.SEP);
                     }
                 } else {
                     characters.add(chars[i]);
                 }
+            } else {
+                annotations.append(chars[i]);
             }
         }
         StringBuilder sb = new StringBuilder();
@@ -380,7 +392,8 @@ public class SqlUtil {
         for (String key : placeholderMapper.keySet()) {
             noneBSql = noneBSql.replace(key, placeholderMapper.get(key));
         }
-        return noneBSql;
+        List<String> annotationsList = Arrays.asList(annotations.toString().split(SqlUtil.SEP));
+        return Pair.of(noneBSql, annotationsList);
     }
 
     /**
@@ -397,7 +410,7 @@ public class SqlUtil {
         if (!containsAllIgnoreCase(sql, "--#if", "--#fi")) {
             return sql;
         }
-        String nSql = removeAnnotationBlock(sql);
+        String nSql = removeAnnotationBlock(sql).getItem1();
         String[] lines = nSql.split("\n");
         StringBuilder sb = new StringBuilder();
         boolean first = true;
@@ -515,5 +528,77 @@ public class SqlUtil {
     public static String generateCountQuery(final String recordQuery) {
         // for 0 errors, sorry!!!
         return "select count(*) from (" + recordQuery + ") _data";
+    }
+
+    /**
+     * 处理sql字符串高亮
+     *
+     * @param sql sql字符串
+     * @return 高亮sql
+     */
+    public static String highlightSql(String sql) {
+        try {
+            Pair<String, Map<String, String>> r = SqlUtil.replaceStrPartOfSql(sql);
+            String rSql = r.getItem1();
+            Pair<List<String>, List<String>> x = StringUtil.regexSplit(rSql, "(?<sp>[\\s,\\[\\]()::;])", "sp");
+            List<String> maybeKeywords = x.getItem1();
+            StringBuilder sb = new StringBuilder();
+            for (int i = 0; i < maybeKeywords.size(); i++) {
+                String key = maybeKeywords.get(i);
+                if (!key.trim().equals("")) {
+                    // keywords highlight
+                    if (StringUtil.matchesAnyIgnoreCase(key, Keywords.STANDARD) || StringUtil.matchesAnyIgnoreCase(key, Keywords.POSTGRESQL)) {
+                        maybeKeywords.set(i, Printer.colorful(key, Color.DARK_PURPLE));
+                        // functions highlight
+                    } else if (StringUtil.containsAnyIgnoreCase(key, Keywords.FUNCTIONS)) {
+                        if (rSql.contains(key + "(")) {
+                            maybeKeywords.set(i, Printer.colorful(key, Color.YELLOW));
+                        }
+                        // number highlight
+                    } else if (key.matches(Comparators.NUMBER_REGEX)) {
+                        maybeKeywords.set(i, Printer.colorful(key, Color.DARK_CYAN));
+                        // PostgreSQL function body block highlight
+                    } else if (key.equals("$$")) {
+                        maybeKeywords.set(i, Printer.colorful(key, Color.DARK_GREEN));
+                        // symbol '*' highlight
+                    } else if (key.contains("*") && !key.contains("/*") && !key.contains("*/")) {
+                        maybeKeywords.set(i, key.replace("*", Printer.colorful("*", Color.YELLOW)));
+                    }
+                }
+                sb.append(maybeKeywords.get(i));
+                if (i < maybeKeywords.size() - 1) {
+                    sb.append(x.getItem2().get(i));
+                }
+            }
+            String colorfulSql = sb.toString();
+            // reinsert the sub string
+            Map<String, String> subStr = r.getItem2();
+            for (String key : subStr.keySet()) {
+                colorfulSql = colorfulSql.replace(key, Printer.colorful(subStr.get(key), Color.DARK_GREEN));
+            }
+            // resolve single annotation
+            String[] sqlLine = colorfulSql.split("\n");
+            for (int i = 0; i < sqlLine.length; i++) {
+                String line = sqlLine[i];
+                if (line.trim().startsWith("--")) {
+                    sqlLine[i] = Printer.colorful(line.replaceAll("\033\\[\\d{2}m|\033\\[0m", ""), Color.SILVER);
+                } else if (line.contains("--")) {
+                    int idx = line.indexOf("--");
+                    sqlLine[i] = line.substring(0, idx) + Printer.colorful(line.substring(idx).replaceAll("\033\\[\\d{2}m|\033\\[0m", ""), Color.SILVER);
+                }
+            }
+            colorfulSql = String.join("\n", sqlLine);
+            // resolve block annotation
+            if (colorfulSql.contains("/*") && colorfulSql.contains("*/")) {
+                List<String> annotations = removeAnnotationBlock(colorfulSql).getItem2();
+                for (String annotation : annotations) {
+                    colorfulSql = colorfulSql.replace(annotation, Printer.colorful(annotation.replaceAll("\033\\[\\d{2}m|\033\\[0m", ""), Color.SILVER));
+                }
+            }
+            return colorfulSql;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return sql;
+        }
     }
 }

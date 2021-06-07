@@ -206,7 +206,7 @@ public abstract class JdbcSupport {
             // connection will not be close when read stream to the end in 'try-with-resource' block
             // or Stream.close() method.
             if (close == null) {
-                log.warn("\033[93mStream Query in transaction now, I don't recommend it!!!, maybe you should optimize your program.\033[0m");
+                log.warn(Printer.colorful("Stream Query in transaction now, I don't recommend it!!!, maybe you should optimize your program.", Color.YELLOW));
                 close = UncheckedCloseable.wrap(statement);
             } else {
                 close = close.nest(statement);

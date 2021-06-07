@@ -375,7 +375,7 @@ public class SqlUtil {
                     if (chars[i] != '/') {
                         characters.add(chars[i]);
                     } else {
-                        annotations.append("/").append(SqlUtil.SEP);
+                        annotations.append("/").append("\u02ac");
                     }
                 } else {
                     characters.add(chars[i]);
@@ -389,10 +389,14 @@ public class SqlUtil {
             sb.append(c);
         }
         String noneBSql = sb.toString().replaceAll("\n\\s*\n", "\n");
+        String annotationStr = annotations.toString();
         for (String key : placeholderMapper.keySet()) {
             noneBSql = noneBSql.replace(key, placeholderMapper.get(key));
+            if (annotationStr.contains(key)) {
+                annotationStr = annotationStr.replace(key, placeholderMapper.get(key));
+            }
         }
-        List<String> annotationsList = Arrays.asList(annotations.toString().split(SqlUtil.SEP));
+        List<String> annotationsList = Arrays.asList(annotationStr.split("\u02ac"));
         return Pair.of(noneBSql, annotationsList);
     }
 

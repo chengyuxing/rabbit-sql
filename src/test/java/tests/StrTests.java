@@ -15,13 +15,13 @@ import java.util.Map;
 public class StrTests {
     @Test
     public void keys() throws Exception {
-        String sql = "with t(a, b) as (select * from (values (array [ 1,2,3,4,5], /*array [[6,7,8,9],*/[10,11,12,13] ])) arr)\n" +
+        String sql = "with t(a, b) as (select * from (values (array [ 1,2,'3,4,5'], /*array [[6',7,8,9'],*/[10,11,12,13] ])) arr)\n" +
                 "select a[3:5],\n" +
                 "       a[:2],\n" +
                 "       a[2:],\n" +
                 "    /*a[:],\n" +
                 "    a[4:4],\n" +
-                "    b/*[1:2]*/[2],\n" +
+                "    b/*['1':2]*/[2],\n" +
                 "    b[:2][2:],*/\n" +
                 "       array_dims(a),      -- 数组区间\n" +
                 "       array_dims(b),\n" +
@@ -31,13 +31,15 @@ public class StrTests {
                 "       cardinality(b)      --所有元素个数\n" +
                 "from t;";
 
+//        Pair<String, List<String>> pair = SqlUtil.removeAnnotationBlock(sql);
+//        System.out.println(pair.getItem1());
+//        System.out.println(pair.getItem2());;
+//
         System.out.println(SqlUtil.highlightSql(sql));
     }
 
     @Test
     public void xsz() throws Exception {
-        System.out.println("\u001B[32m'{\n" +
-                "         \"name\": \"user\"\n" +
-                "       }'\u001B[0m");
+        System.out.println("\u02ac");
     }
 }

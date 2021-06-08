@@ -17,7 +17,7 @@ public class SqlFileTest {
 
     private static Ioc ioc;
 
-    //    @BeforeClass
+    @BeforeClass
     public static void init() {
         ioc = new NutIoc(new JsonLoader("ioc.js"));
     }

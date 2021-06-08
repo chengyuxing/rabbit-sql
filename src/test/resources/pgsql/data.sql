@@ -1,7 +1,7 @@
 /*aaaa*/
 /*[query]*/
 select ${field}
-from test."user" t --用户表
+from ${db}."user" t --用户表
     ${x.part1};
 
 /*插入语句。*/

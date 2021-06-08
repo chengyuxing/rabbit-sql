@@ -49,6 +49,7 @@ public final class SQLFileManager {
     };
     // ----------------optional properties------------------
     private volatile boolean checkModified;
+    private Map<String, String> constants = new HashMap<>();
     private String[] sqls;
     private Map<String, String> sqlMap;
     private List<String> sqlList;
@@ -180,7 +181,7 @@ public final class SQLFileManager {
      * @param sqlResource sql字符串文件资源
      */
     private void doMergeSqlPart(final String partName, final String prefix, Map<String, String> sqlResource) {
-        // inner sql part name like: ${filename.part1}
+        // inner sql part name like: '${filename.part1}'
         //innerPartName will be '${part1}'
         String innerPartName = "${" + partName.substring(prefix.length() + 2);
         boolean has = false;
@@ -212,6 +213,20 @@ public final class SQLFileManager {
                 doMergeSqlPart(key, prefix, sqlResource);
             }
         }
+        if (constants != null && !constants.isEmpty()) {
+            for (String name : sqlResource.keySet()) {
+                String sql = sqlResource.get(name);
+                for (String key : constants.keySet()) {
+                    String constantName = "${" + key + "}";
+                    if (sql.contains(constantName)) {
+                        String constant = getConstant(key);
+                        sqlResource.put(name, sql.replace(constantName, constant));
+                    } else {
+                        break;
+                    }
+                }
+            }
+        }
     }
 
     /**
@@ -229,7 +244,7 @@ public final class SQLFileManager {
      * @return 所有sql
      */
     private Map<String, String> allPaths() {
-        Map<String, String> pathMap = new HashMap<>();
+        Map<String, String> pathMap = new LinkedHashMap<>();
         // add unnamed paths
         if (sqlList != null && sqlList.size() > 0) {
             for (String path : sqlList) {
@@ -401,5 +416,41 @@ public final class SQLFileManager {
      */
     public void setCheckModified(boolean checkModified) {
         this.checkModified = checkModified;
+    }
+
+    /**
+     * 设置全局常量集合<br>
+     * 初始化扫描sql时，如果sql文件中没有找到匹配的字符串模版，则从全局常量中寻找
+     * 格式为：
+     * <blockquote>
+     * <pre>constants: {db:"test"}</pre>
+     * <pre>sql: {@code select ${db}.user from table;}</pre>
+     * <pre>result: select test.user from table.</pre>
+     * </blockquote>
+     *
+     * @param constants 常量集合
+     */
+    public void setConstants(Map<String, String> constants) {
+        this.constants = constants;
+        log.debug("global constants defined: {}", constants);
+    }
+
+    /**
+     * 获取常量集合
+     *
+     * @return 常量集合
+     */
+    public Map<String, String> getConstants() {
+        return constants;
+    }
+
+    /**
+     * 根据键获取常量值
+     *
+     * @param key 常量名
+     * @return 常量值
+     */
+    public String getConstant(String key) {
+        return constants.get(key);
     }
 }

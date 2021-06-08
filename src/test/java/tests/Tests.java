@@ -252,10 +252,12 @@ public class Tests {
 
     @Test
     public void SqlFileTest() throws IOException, URISyntaxException {
-        SQLFileManager manager = new SQLFileManager("pgsql");
+        SQLFileManager manager = new SQLFileManager();
+        manager.add("pg", "pgsql/test.sql");
+        manager.setConstants(Args.of("db", "test").add("fields", "name, address, enable"));
         manager.init();
-        System.out.println("----");
-        System.out.println(manager.get("data.query"));
+        System.out.println("-------------");
+        manager.look();
     }
 
     @Test

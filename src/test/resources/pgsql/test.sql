@@ -1,5 +1,5 @@
 /*[me]*/
 select ${fields} from pg_aggregate;
 
-/*{fields}*/
+/*{field}*/
 id,name,age;

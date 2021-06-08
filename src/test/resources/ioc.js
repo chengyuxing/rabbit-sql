@@ -2,6 +2,9 @@ var ioc = {
     sqlFileManager: {
         type: 'com.github.chengyuxing.sql.SQLFileManager',
         fields: {
+            constants: {
+                db: "qbpt_deve"
+            },
             sqlMap: {
                 data: 'pgsql/data.sql',
                 other: 'pgsql/other.sql',

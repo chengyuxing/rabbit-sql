@@ -6,6 +6,7 @@ import com.github.chengyuxing.common.script.Comparators;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.Keywords;
+import com.github.chengyuxing.sql.SQLFileManager;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
 
@@ -42,5 +43,12 @@ public class StrTests {
     @Test
     public void xsz() throws Exception {
         System.out.println("\u02ac");
+    }
+
+    @Test
+    public void sqls() throws Exception {
+        SQLFileManager sqlFileManager = new SQLFileManager("pgsql/test.sql");
+        sqlFileManager.init();
+        sqlFileManager.look();
     }
 }

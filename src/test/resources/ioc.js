@@ -6,14 +6,9 @@ var ioc = {
                 db: "qbpt_deve"
             },
             sqlMap: {
-                data: 'pgsql/data.sql',
-                other: 'pgsql/other.sql',
+                test: 'pgsql/test.sql',
                 mac: 'file:/Users/chengyuxing/Downloads/local.sql'
-            },
-            sqlList: [
-                'pgsql/data.sql',
-                'pgsql/other.sql'
-            ]
+            }
         }, events: {
             create: 'init'
         }

@@ -1,5 +1,8 @@
 package com.github.chengyuxing.sql;
 
+import com.github.chengyuxing.common.console.Color;
+import com.github.chengyuxing.common.console.Printer;
+import com.github.chengyuxing.common.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.github.chengyuxing.common.io.FileResource;
@@ -184,20 +187,23 @@ public final class SQLFileManager {
         // inner sql part name like: '${filename.part1}'
         //innerPartName will be '${part1}'
         String innerPartName = "${" + partName.substring(prefix.length() + 2);
-        boolean has = false;
         for (String key : sqlResource.keySet()) {
-            String sql = sqlResource.get(key);
+            Pair<String, Map<String, String>> sqlAndSubstr = SqlUtil.replaceSubstrOfSql(sqlResource.get(key));
+            // get sql without substr first.
+            String sql = sqlAndSubstr.getItem1();
             if (sql.contains(innerPartName)) {
                 String part = sqlResource.get(partName);
-                sqlResource.put(key, sql.replace(innerPartName, part));
+                // insert sql part first without substr because we not allow substr sql part e.g. '${partName}'
+                sql = sql.replace(innerPartName, part);
+                // reinsert substr into the sql finally
+                Map<String, String> substr = sqlAndSubstr.getItem2();
+                if (!substr.isEmpty()) {
+                    for (String substrKey : substr.keySet()) {
+                        sql = sql.replace(substrKey, substr.get(substrKey));
+                    }
+                }
+                sqlResource.put(key, sql);
             }
-            if (sqlResource.get(key).contains(innerPartName)) {
-                has = true;
-            }
-        }
-        // go on if inner part name still exists
-        if (has) {
-            doMergeSqlPart(partName, prefix, sqlResource);
         }
     }
 
@@ -215,16 +221,27 @@ public final class SQLFileManager {
         }
         if (constants != null && !constants.isEmpty()) {
             for (String name : sqlResource.keySet()) {
-                String sql = sqlResource.get(name);
+                Pair<String, Map<String, String>> sqlAndSubstr = SqlUtil.replaceSubstrOfSql(sqlResource.get(name));
+                // get sql without substr first.
+                String sql = sqlAndSubstr.getItem1();
                 for (String key : constants.keySet()) {
                     String constantName = "${" + key + "}";
                     if (sql.contains(constantName)) {
                         String constant = getConstant(key);
-                        sqlResource.put(name, sql.replace(constantName, constant));
+                        // insert sql part first without substr because we not allow substr sql part e.g. '${partName}'
+                        sql = sql.replace(constantName, constant);
                     } else {
                         break;
                     }
                 }
+                // then reinsert substr into the sql
+                Map<String, String> substr = sqlAndSubstr.getItem2();
+                if (!substr.isEmpty()) {
+                    for (String substrKey : substr.keySet()) {
+                        sql = sql.replace(substrKey, substr.get(substrKey));
+                    }
+                }
+                sqlResource.put(name, sql);
             }
         }
     }
@@ -342,7 +359,13 @@ public final class SQLFileManager {
      * 遍历查看已扫描的sql资源
      */
     public void look() {
-        RESOURCE.forEach((k, v) -> System.out.println("\033[95m" + k + "\033[0m -> " + SqlUtil.highlightSql(v)));
+        RESOURCE.forEach((k, v) -> {
+            Color color = Color.PURPLE;
+            if (k.startsWith("${")) {
+                color = Color.GREEN;
+            }
+            System.out.println(Printer.colorful(k, color) + " -> " + SqlUtil.highlightSql(v));
+        });
     }
 
     /**

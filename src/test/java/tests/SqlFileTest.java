@@ -1,5 +1,6 @@
 package tests;
 
+import com.github.chengyuxing.sql.Args;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.nutz.dao.impl.NutDao;
@@ -51,12 +52,14 @@ public class SqlFileTest {
 
     @Test
     public void sqlTest() throws Exception {
-        SQLFileManager sqlFileManager = new SQLFileManager("pgsql/data.sql");
+        SQLFileManager sqlFileManager = new SQLFileManager("pgsql/nest.sql");
+        sqlFileManager.setConstants(Args.of("db", "qbpt_deve"));
         sqlFileManager.setCheckModified(true);
-        sqlFileManager.add("pgsql/other.sql");
-        sqlFileManager.add("mac", "file:/Users/chengyuxing/Downloads/local.sql");
+//        sqlFileManager.add("pgsql/other.sql");
+//        sqlFileManager.add("mac", "file:/Users/chengyuxing/Downloads/local.sql");
 
-        System.out.println(sqlFileManager.get("pgsql.data.update"));
+        sqlFileManager.init();
+        sqlFileManager.look();
     }
 
     @Test

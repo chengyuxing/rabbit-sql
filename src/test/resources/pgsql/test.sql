@@ -1,5 +1,6 @@
 /*[me]*/
-select ${fields} from pg_aggregate;
+select ${fields}, '${fields}', '${db}'
+from ${db}.pg_aggregate;
 
-/*{field}*/
+/*{fields}*/
 id,name,age;

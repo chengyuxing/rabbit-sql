@@ -16,10 +16,7 @@ ${order};
 
 /*{field}*/
 /*用户表字段*/
-t
-.
-id
-,t.name,t.password;
+t.id,t.name,t.password;
 
 /*{order}*/
 /*排序*/

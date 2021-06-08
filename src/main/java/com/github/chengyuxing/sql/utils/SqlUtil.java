@@ -228,7 +228,7 @@ public class SqlUtil {
      * @param sql sql字符串
      * @return 替换字符串后带有特殊占位符的sql和占位符与字符串的映射
      */
-    public static Pair<String, Map<String, String>> replaceStrPartOfSql(final String sql) {
+    public static Pair<String, Map<String, String>> replaceSubstrOfSql(final String sql) {
         String noneStrSql = sql;
         Map<String, String> mapper = new HashMap<>();
         Matcher m = SUB_STR_PATTERN.matcher(sql);
@@ -251,7 +251,7 @@ public class SqlUtil {
      * @return 预编译SQL和参数名的集合
      */
     public static Pair<String, List<String>> getPreparedSql(final String sql) {
-        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceStrPartOfSql(sql);
+        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSubstrOfSql(sql);
         String noneStrSql = noneStrSqlAndHolder.getItem1();
         Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
         // safe to replace arg by name placeholder
@@ -292,7 +292,7 @@ public class SqlUtil {
             return sourceSql;
         }
         // exclude quote str look like '${name}', it's not placeholder.
-        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceStrPartOfSql(sourceSql);
+        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSubstrOfSql(sourceSql);
         String noneStrSql = noneStrSqlAndHolder.getItem1();
         if (!noneStrSql.contains("${")) {
             return sourceSql;
@@ -348,7 +348,7 @@ public class SqlUtil {
      * @return 去除块注释的sql
      */
     public static String removeAnnotationBlock(final String sql) {
-        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceStrPartOfSql(sql);
+        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSubstrOfSql(sql);
         String noneStrSql = noneStrSqlAndHolder.getItem1();
         Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
         char[] chars = noneStrSql.toCharArray();
@@ -395,7 +395,7 @@ public class SqlUtil {
      * @return 块注释
      */
     public static List<String> getAnnotationBlock(final String sql) {
-        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceStrPartOfSql(sql);
+        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSubstrOfSql(sql);
         String noneStrSql = noneStrSqlAndHolder.getItem1();
         Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
         char[] chars = noneStrSql.toCharArray();
@@ -577,7 +577,7 @@ public class SqlUtil {
      */
     public static String highlightSql(String sql) {
         try {
-            Pair<String, Map<String, String>> r = SqlUtil.replaceStrPartOfSql(sql);
+            Pair<String, Map<String, String>> r = SqlUtil.replaceSubstrOfSql(sql);
             String rSql = r.getItem1();
             Pair<List<String>, List<String>> x = StringUtil.regexSplit(rSql, "(?<sp>[\\s,\\[\\]()::;])", "sp");
             List<String> maybeKeywords = x.getItem1();

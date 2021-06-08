@@ -158,7 +158,7 @@ public class Tests {
         System.out.println(pair.getItem1());
         System.out.println(pair.getItem2());
 
-        Pair<String, Map<String, String>> stringMapPair = SqlUtil.replaceStrPartOfSql(str);
+        Pair<String, Map<String, String>> stringMapPair = SqlUtil.replaceSubstrOfSql(str);
         System.out.println(stringMapPair.getItem1());
         System.out.println(stringMapPair.getItem2());
     }

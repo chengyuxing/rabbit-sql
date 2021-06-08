@@ -10,7 +10,7 @@
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>5.0.7</version>
+    <version>5.0.8</version>
 </dependency>
 ```
 
@@ -53,7 +53,7 @@
   
   
 
-## 外部SQL文件详解
+## 外部SQL文件详解(SQLFileManager)
 
 - sql文件中可以包含任意符合标准的注释
 - sql文件结尾以`.sql`结尾
@@ -62,7 +62,7 @@
 - BakiDao中如果配置属性```strictDynamicSqlArg```为`false`（默认为`true`）,则动态sql的参数可以为null、空或键值不存在，否则将抛出异常
 - sql文件名格式为``/*[name]*/``，sql文件中可以嵌套sql片段，使用`${片段名}`指定
 - sql片段名格式化``/*{name}*/``，sql片段中可以嵌套sql片段，使用`${片段名}`指定
-- sql文件将优先寻找sql文件内的sql片段
+- sql文件将优先寻找sql文件内的sql片段，没找到的情况下，如果配置了属性```constants```，则再从```constants```常量集合中查找
 
 ## 动态SQL
 

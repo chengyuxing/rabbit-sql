@@ -71,6 +71,8 @@ public class Keywords {
             "jsonb_path_query", "gen_random_uuid", "version", "generate_series", "jsonb_build_array", "max", "greatest",
             "extract", "age", "array_positions", "array_cat", "jsonb_pretty", "array_length", "avg", "min", "dense_rank",
             "percent_rank", "quote_ident", "format", "pg_get_userbyid", "array_upper", "array_lower", "upper", "lower",
-            "uuid_generate_v1mc", "trim"
+            "uuid_generate_v1mc", "trim", "regexp_matches", "regexp_match", "string_agg", "arraycontains", "array_remove",
+            "to_number", "array_prepend", "array_append", "lpad", "rpad", "regexp_replace", "regexp_split_to_array",
+            "regexp_split_to_table", "ceil", "concat"
     };
 }

@@ -388,10 +388,12 @@ public class JdbcUtil {
     public static void setSqlArgs(PreparedStatement statement, Map<String, Object> args, List<String> names) throws SQLException {
         if (args != null && !args.isEmpty()) {
             for (int i = 0; i < names.size(); i++) {
-                if (args.containsKey(names.get(i))) {
-                    int index = i + 1;
-                    Object param = args.get(names.get(i));
-                    setSpecialStatementValue(statement, index, param);
+                int index = i + 1;
+                String name = names.get(i);
+                if (args.containsKey(name)) {
+                    setSpecialStatementValue(statement, index, args.get(name));
+                } else if (args.containsKey(":" + name)) {
+                    setSpecialStatementValue(statement, index, args.get(":" + name));
                 }
             }
         }
@@ -409,9 +411,15 @@ public class JdbcUtil {
         if (args != null && !args.isEmpty()) {
             // out and inout param first
             for (int i = 0; i < names.size(); i++) {
-                if (args.containsKey(names.get(i))) {
-                    int index = i + 1;
-                    Param param = args.get(names.get(i));
+                int index = i + 1;
+                String name = names.get(i);
+                if (args.containsKey(name)) {
+                    Param param = args.get(name);
+                    if (param.getParamMode() == ParamMode.OUT || param.getParamMode() == ParamMode.IN_OUT) {
+                        statement.registerOutParameter(index, param.getType().getTypeNumber());
+                    }
+                } else if (args.containsKey(":" + name)) {
+                    Param param = args.get(":" + name);
                     if (param.getParamMode() == ParamMode.OUT || param.getParamMode() == ParamMode.IN_OUT) {
                         statement.registerOutParameter(index, param.getType().getTypeNumber());
                     }
@@ -419,9 +427,15 @@ public class JdbcUtil {
             }
             // in param first
             for (int i = 0; i < names.size(); i++) {
-                if (args.containsKey(names.get(i))) {
-                    int index = i + 1;
-                    Param param = args.get(names.get(i));
+                int index = i + 1;
+                String name = names.get(i);
+                if (args.containsKey(name)) {
+                    Param param = args.get(name);
+                    if (param.getParamMode() == ParamMode.IN || param.getParamMode() == ParamMode.IN_OUT) {
+                        setStatementValue(statement, index, param.getValue());
+                    }
+                } else if (args.containsKey(":" + name)) {
+                    Param param = args.get(":" + name);
                     if (param.getParamMode() == ParamMode.IN || param.getParamMode() == ParamMode.IN_OUT) {
                         setStatementValue(statement, index, param.getValue());
                     }

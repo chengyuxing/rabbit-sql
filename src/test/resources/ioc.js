@@ -6,7 +6,7 @@ var ioc = {
                 db: "qbpt_deve"
             },
             sqlMap: {
-                test: 'pgsql/test.sql',
+                sys: 'pgsql/test.sql',
                 mac: 'file:/Users/chengyuxing/Downloads/local.sql'
             }
         }, events: {

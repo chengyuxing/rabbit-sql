@@ -34,7 +34,9 @@ public class BakiSessionTest {
 
     @Test
     public void engine() throws Exception {
-        System.out.println(baki);
+        baki.query("select * from test.history where length(words) < :num or words ~ :regex",
+                Args.<Object>of(":num", 5).add("regex", "^tran"))
+                .forEach(System.out::println);
     }
 
     @Test

@@ -413,13 +413,13 @@ public class JdbcUtil {
             for (int i = 0; i < names.size(); i++) {
                 int index = i + 1;
                 String name = names.get(i);
+                Param param = null;
                 if (args.containsKey(name)) {
-                    Param param = args.get(name);
-                    if (param.getParamMode() == ParamMode.OUT || param.getParamMode() == ParamMode.IN_OUT) {
-                        statement.registerOutParameter(index, param.getType().getTypeNumber());
-                    }
+                    param = args.get(name);
                 } else if (args.containsKey(":" + name)) {
-                    Param param = args.get(":" + name);
+                    param = args.get(":" + name);
+                }
+                if (param != null) {
                     if (param.getParamMode() == ParamMode.OUT || param.getParamMode() == ParamMode.IN_OUT) {
                         statement.registerOutParameter(index, param.getType().getTypeNumber());
                     }
@@ -429,13 +429,13 @@ public class JdbcUtil {
             for (int i = 0; i < names.size(); i++) {
                 int index = i + 1;
                 String name = names.get(i);
+                Param param = null;
                 if (args.containsKey(name)) {
-                    Param param = args.get(name);
-                    if (param.getParamMode() == ParamMode.IN || param.getParamMode() == ParamMode.IN_OUT) {
-                        setStatementValue(statement, index, param.getValue());
-                    }
+                    param = args.get(name);
                 } else if (args.containsKey(":" + name)) {
-                    Param param = args.get(":" + name);
+                    param = args.get(":" + name);
+                }
+                if (param != null) {
                     if (param.getParamMode() == ParamMode.IN || param.getParamMode() == ParamMode.IN_OUT) {
                         setStatementValue(statement, index, param.getValue());
                     }

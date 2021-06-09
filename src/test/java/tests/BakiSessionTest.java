@@ -9,6 +9,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import com.github.chengyuxing.sql.Args;
 
+import java.sql.DatabaseMetaData;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
@@ -37,6 +38,18 @@ public class BakiSessionTest {
         baki.query("select * from test.history where length(words) < :num or words ~ :regex",
                 Args.<Object>of(":num", 5).add("regex", "^tran"))
                 .forEach(System.out::println);
+    }
+
+    @Test
+    public void meta() throws Exception {
+        DatabaseMetaData metaData = baki.getMetaData();
+        System.out.println(metaData.getJDBCMajorVersion());
+        System.out.println(metaData.getJDBCMinorVersion());
+        System.out.println(metaData.getDriverVersion());
+        System.out.println(metaData.getDriverMajorVersion());
+        System.out.println(metaData.getDriverMinorVersion());
+        System.out.println(metaData.getDatabaseProductVersion());
+        System.out.println(metaData.getDriverName());
     }
 
     @Test

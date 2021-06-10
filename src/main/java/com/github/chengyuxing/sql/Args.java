@@ -1,5 +1,7 @@
 package com.github.chengyuxing.sql;
 
+import com.github.chengyuxing.sql.types.Param;
+
 import java.util.HashMap;
 
 /**
@@ -33,6 +35,19 @@ public class Args<V> extends HashMap<String, V> {
     }
 
     /**
+     * 创建一个空的存储过程参数类型集合
+     *
+     * @param key   名称
+     * @param param 参数对象
+     * @return 有初始值的存储过程参数集合
+     */
+    public static Args<Param> ofProcedure(String key, Param param) {
+        Args<Param> args = new Args<>();
+        args.add(key, param);
+        return args;
+    }
+
+    /**
      * 链式添加键值
      *
      * @param key   名称
@@ -42,5 +57,20 @@ public class Args<V> extends HashMap<String, V> {
     public Args<V> add(String key, V value) {
         put(key, value);
         return this;
+    }
+
+    /**
+     * 添加字符串模版类型参数
+     * <blockquote>
+     * e.g. 默认使用'${}'包裹
+     * <pre>${key}</pre>
+     * </blockquote>
+     *
+     * @param key   键名
+     * @param value 值
+     * @return 参数集合
+     */
+    public Args<V> addStrTemp(String key, V value) {
+        return add("${" + key + "}", value);
     }
 }

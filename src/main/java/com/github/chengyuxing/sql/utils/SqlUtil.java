@@ -2,7 +2,6 @@ package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.console.Color;
 import com.github.chengyuxing.common.console.Printer;
-import com.github.chengyuxing.common.script.Comparators;
 import com.github.chengyuxing.common.script.impl.FastExpression;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.ReflectUtil;
@@ -594,7 +593,7 @@ public class SqlUtil {
                             maybeKeywords.set(i, Printer.colorful(key, Color.YELLOW));
                         }
                         // number highlight
-                    } else if (key.matches(Comparators.NUMBER_REGEX)) {
+                    } else if (StringUtil.isNumeric(key)) {
                         maybeKeywords.set(i, Printer.colorful(key, Color.DARK_CYAN));
                         // PostgreSQL function body block highlight
                     } else if (key.equals("$$")) {

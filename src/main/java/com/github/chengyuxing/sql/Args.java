@@ -70,7 +70,7 @@ public class Args<V> extends HashMap<String, V> {
      * @param value 值
      * @return 参数集合
      */
-    public Args<V> addStrTemp(String key, V value) {
+    public Args<V> addStrTemplate(String key, V value) {
         return add("${" + key + "}", value);
     }
 }

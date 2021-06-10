@@ -421,8 +421,10 @@ public abstract class JdbcSupport {
     private void printSqlConsole(Statement sc) throws SQLException {
         if (log.isWarnEnabled()) {
             SQLWarning warning = sc.getWarnings();
-            String state = warning.getSQLState();
-            sc.getWarnings().forEach(r -> log.warn("[{}] [{}] {}", LocalDateTime.now(), state, r.getMessage()));
+            if (warning != null) {
+                String state = warning.getSQLState();
+                sc.getWarnings().forEach(r -> log.warn("[{}] [{}] {}", LocalDateTime.now(), state, r.getMessage()));
+            }
         }
     }
 }

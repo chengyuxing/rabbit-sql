@@ -1,18 +1,18 @@
 package com.github.chengyuxing.sql;
 
-import com.github.chengyuxing.sql.datasource.DataSourceUtil;
-import com.github.chengyuxing.sql.exceptions.SqlRuntimeException;
-import com.github.chengyuxing.sql.support.JdbcSupport;
-import com.github.chengyuxing.sql.transaction.Tx;
-import com.github.chengyuxing.sql.utils.JdbcUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.sql.datasource.DataSourceUtil;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
 import com.github.chengyuxing.sql.exceptions.DuplicateException;
+import com.github.chengyuxing.sql.exceptions.SqlRuntimeException;
 import com.github.chengyuxing.sql.support.ICondition;
+import com.github.chengyuxing.sql.support.JdbcSupport;
+import com.github.chengyuxing.sql.transaction.Tx;
 import com.github.chengyuxing.sql.types.Param;
+import com.github.chengyuxing.sql.utils.JdbcUtil;
 import com.github.chengyuxing.sql.utils.SqlUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.io.IOException;
@@ -71,19 +71,14 @@ public class BakiDao extends JdbcSupport implements Baki {
      * 指定sql文件解析管理器
      *
      * @param sqlFileManager sql文件解析管理器
+     * @throws IOException        如果文件读取错误
+     * @throws URISyntaxException 如果文件uri地址语法错误
+     * @throws DuplicateException 如果同一个文件出现同名sql
      */
-    public void setSqlFileManager(SQLFileManager sqlFileManager) {
+    public void setSqlFileManager(SQLFileManager sqlFileManager) throws IOException, URISyntaxException, DuplicateException {
         this.sqlFileManager = sqlFileManager;
-        try {
-            if (!sqlFileManager.isInitialized()) {
-                sqlFileManager.init();
-            }
-        } catch (IOException e) {
-            log.error("sql file is not exists:{}", e.getMessage());
-        } catch (URISyntaxException e) {
-            log.error(e.getMessage());
-        } catch (DuplicateException e) {
-            log.error("resolve sql file error:{}", e.getMessage());
+        if (!sqlFileManager.isInitialized()) {
+            sqlFileManager.init();
         }
     }
 

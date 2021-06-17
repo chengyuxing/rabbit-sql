@@ -4,6 +4,9 @@ select ${field}
 from ${db}."user" t --用户表
     ${x.part1};
 
+/*[query]*/
+select current_timestamp;
+
 /*插入语句。*/
 /*  [   great.insert  ]  */
 insert into test."user" (id, name, password)

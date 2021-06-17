@@ -12,11 +12,9 @@ import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.*;
+import java.sql.Date;
 import java.time.*;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static com.github.chengyuxing.common.utils.ReflectUtil.obj2Json;
 
@@ -252,6 +250,9 @@ public class JdbcUtil {
      * @throws SQLException ex
      */
     public static List<DataRow> createDataRows(final ResultSet resultSet, final String executedSql, final long fetchSize) throws SQLException {
+        if (resultSet == null) {
+            return Collections.emptyList();
+        }
         List<DataRow> list = new ArrayList<>();
         String[] names = null;
         long size = fetchSize;

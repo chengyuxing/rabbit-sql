@@ -1,6 +1,7 @@
 package tests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.sql.*;
 import com.github.chengyuxing.sql.Keywords;
 import com.zaxxer.hikari.HikariDataSource;
@@ -46,14 +47,79 @@ public class MyTest {
         dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
         dataSource.setUsername("chengyuxing");
 
-        SQLFileManager manager = new SQLFileManager("pgsql/data.sql");
+//        SQLFileManager manager = new SQLFileManager("pgsql/data.sql");
 
         BakiDao bakiDao = BakiDao.of(dataSource);
-        bakiDao.setSqlFileManager(manager);
+//        bakiDao.setSqlFileManager(manager);
         baki = bakiDao;
         baki2 = BakiDao.of(dataSource);
 //        bakiDao.setSqlPath("pgsql");
 //        baki2 = new BakiDao(dataSource2);
+    }
+
+    @SuppressWarnings("unchecked")
+    public void mergeTreeInverse(List<Map<String, Object>> list, List<Map<String, Object>> tree) {
+        System.out.println("xxxx");
+        if (list.isEmpty()) {
+            return;
+        }
+        for (int i = tree.size() - 1, j = i; i >= 0; i--) {
+            Iterator<Map<String, Object>> iterator = list.iterator();
+            while (iterator.hasNext()) {
+                Map<String, Object> last = tree.get(i);
+                Map<String, Object> first = tree.get(j - i);
+                Map<String, Object> next = iterator.next();
+                if (first.get("id").equals(next.get("pid"))) {
+                    next.put("children", new ArrayList<>());
+                    ((List<Map<String, Object>>) first.get("children")).add(next);
+                    iterator.remove();
+                } else if (first != last && last.get("id").equals(next.get("pid"))) {
+                    next.put("children", new ArrayList<>());
+                    ((List<Map<String, Object>>) last.get("children")).add(next);
+                    iterator.remove();
+                }
+            }
+            mergeTreeInverse(list, (List<Map<String, Object>>) tree.get(i).get("children"));
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    public void mergeTree(List<Map<String, Object>> list, Map<String, Object> tree) {
+        Iterator<Map<String, Object>> iterator = list.iterator();
+        List<Map<String, Object>> children = (List<Map<String, Object>>) tree.get("children");
+        if (children == null) {
+            children = new ArrayList<>();
+            tree.put("children", children);
+        }
+        while (iterator.hasNext()) {
+            Map<String, Object> next = iterator.next();
+            if (tree.get("id").equals(next.get("pid"))) {
+                next.put("children", new ArrayList<>());
+                children.add(next);
+                iterator.remove();
+            }
+        }
+        for (Map<String, Object> child : children) {
+            if (list.isEmpty()) {
+                break;
+            }
+            mergeTree(list, child);
+        }
+    }
+
+    @Test
+    public void tree() throws Exception {
+        List<Map<String, Object>> list = baki.queryMaps("select id,name,pid from test.region where pid != 1000");
+        Map<String, Object> tree = new HashMap<>();
+        tree.put("id", 0);
+        tree.put("pid", -1);
+        tree.put("name", "地球");
+        tree.put("children", new ArrayList<>());
+        List<Map<String, Object>> trees = new ArrayList<>();
+        trees.add(tree);
+        mergeTreeInverse(list, trees);
+        System.out.println(ReflectUtil.obj2Json(trees));
+        System.out.println(list.size());
     }
 
     @Test
@@ -177,7 +243,7 @@ public class MyTest {
     }
 
     @Test
-    public void ssss() throws Exception{
+    public void ssss() throws Exception {
 //        String[] x = Keywords.byJdbc(baki.getMetaData());
 //        System.out.println(x.length);
         System.out.println(Keywords.STANDARD.length);

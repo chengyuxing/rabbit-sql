@@ -1,0 +1,138 @@
+{
+  "id": 0,
+  "pid": -1,
+  "children": [
+    {
+      "id": 1,
+      "pid": 0,
+      "children": [
+        {
+          "id": 2,
+          "pid": 1,
+          "children": [
+            {
+              "id": 3,
+              "pid": 2,
+              "children": [
+                {
+                  "id": 5,
+                  "pid": 3,
+                  "children": [],
+                  "name": "五华区"
+                },
+                {
+                  "id": 6,
+                  "pid": 3,
+                  "children": [],
+                  "name": "西山区"
+                },
+                {
+                  "id": 7,
+                  "pid": 3,
+                  "children": [],
+                  "name": "盘龙区"
+                },
+                {
+                  "id": 8,
+                  "pid": 3,
+                  "children": [],
+                  "name": "官渡区"
+                },
+                {
+                  "id": 9,
+                  "pid": 3,
+                  "children": [],
+                  "name": "呈贡区"
+                },
+                {
+                  "id": 16,
+                  "pid": 3,
+                  "children": [],
+                  "name": "安宁市"
+                },
+                {
+                  "id": 17,
+                  "pid": 3,
+                  "children": [],
+                  "name": "嵩明县"
+                }
+              ],
+              "name": "昆明市"
+            },
+            {
+              "id": 4,
+              "pid": 2,
+              "children": [
+                {
+                  "id": 10,
+                  "pid": 4,
+                  "children": [],
+                  "name": "红塔区"
+                },
+                {
+                  "id": 11,
+                  "pid": 4,
+                  "children": [],
+                  "name": "江川区"
+                },
+                {
+                  "id": 12,
+                  "pid": 4,
+                  "children": [],
+                  "name": "澄江县"
+                },
+                {
+                  "id": 21,
+                  "pid": 4,
+                  "children": [],
+                  "name": "通海县"
+                },
+                {
+                  "id": 22,
+                  "pid": 4,
+                  "children": [],
+                  "name": "易门县"
+                }
+              ],
+              "name": "玉溪市"
+            },
+            {
+              "id": 14,
+              "pid": 2,
+              "children": [
+                {
+                  "id": 15,
+                  "pid": 14,
+                  "children": [],
+                  "name": "楚雄市"
+                },
+                {
+                  "id": 18,
+                  "pid": 14,
+                  "children": [],
+                  "name": "姚安县"
+                },
+                {
+                  "id": 19,
+                  "pid": 14,
+                  "children": [],
+                  "name": "禄丰县"
+                },
+                {
+                  "id": 20,
+                  "pid": 14,
+                  "children": [],
+                  "name": "南华县"
+                }
+              ],
+              "name": "楚雄州"
+            }
+          ],
+          "name": "云南省"
+        }
+      ],
+      "name": "中国"
+    }
+  ],
+  "name": "地球"
+}

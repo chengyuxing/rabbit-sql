@@ -416,14 +416,17 @@ public abstract class JdbcSupport {
      * </blockquote>
      *
      * @param sc sql执行声明对象
-     * @throws SQLException 如果sql执行发生异常
      */
-    private void printSqlConsole(Statement sc) throws SQLException {
+    private void printSqlConsole(Statement sc) {
         if (log.isWarnEnabled()) {
-            SQLWarning warning = sc.getWarnings();
-            if (warning != null) {
-                String state = warning.getSQLState();
-                sc.getWarnings().forEach(r -> log.warn("[{}] [{}] {}", LocalDateTime.now(), state, r.getMessage()));
+            try {
+                SQLWarning warning = sc.getWarnings();
+                if (warning != null) {
+                    String state = warning.getSQLState();
+                    sc.getWarnings().forEach(r -> log.warn("[{}] [{}] {}", LocalDateTime.now(), state, r.getMessage()));
+                }
+            } catch (SQLException e) {
+                log.error("get sql warning error: ", e);
             }
         }
     }

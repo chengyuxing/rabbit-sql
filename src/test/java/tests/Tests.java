@@ -53,6 +53,7 @@ public class Tests {
         String tm = "23时12分55秒";
 
         System.out.println(DateTimes.toDate(ts));
+        System.out.println(DateTimes.now().toString("yyyy-MM-dd"));
     }
 
     @Test

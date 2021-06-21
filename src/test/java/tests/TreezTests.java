@@ -21,7 +21,7 @@ public class TreezTests {
     private static BakiDao baki;
     private static List<Map<String, Object>> treeData1 = new ArrayList<>();
     private static List<Map<String, Object>> treeData2 = new ArrayList<>();
-    private static List<MenuTree.Tree> treezData3 = new ArrayList<>();
+    private static List<RegionTree> treezData3 = new ArrayList<>();
 
     private static final AtomicInteger tree1Count = new AtomicInteger();
     private static final AtomicInteger tree2Count = new AtomicInteger();

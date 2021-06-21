@@ -79,7 +79,6 @@ public class TreezTests {
         System.out.println(ReflectUtil.obj2Json(trees));
         System.out.println(treezData3.size());
         System.out.println(root);
-        System.out.println("xxx执行次数" + MenuTree.i.get());
     }
 
     @SuppressWarnings("unchecked")

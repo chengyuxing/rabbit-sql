@@ -34,7 +34,7 @@ public class TreezTests {
         baki = BakiDao.of(dataSource);
         treeData1 = baki.queryMaps("select id,name,pid,'bool' as status from test.region");
         treeData2 = baki.queryMaps("select id,name,pid from test.region");
-        try (Stream<DataRow> s = baki.query("select id,name,pid from test.region")) {
+        try (Stream<DataRow> s = baki.query("select id,name,pid from test.region order by id;")) {
             treezData3 = s.map(r -> new RegionTree(r.toMap())).collect(Collectors.toList());
         }
     }
@@ -79,6 +79,7 @@ public class TreezTests {
         System.out.println(ReflectUtil.obj2Json(trees));
         System.out.println(treezData3.size());
         System.out.println(root);
+        System.out.println("xxx执行次数" + MenuTree.i.get());
     }
 
     @SuppressWarnings("unchecked")

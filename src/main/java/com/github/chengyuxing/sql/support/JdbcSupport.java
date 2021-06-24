@@ -332,6 +332,7 @@ public abstract class JdbcSupport {
      *         {call test.func1(:arg1, :arg2, :result1, :result2)};
      *         {call test.func2(:result::refcursor)}; //PostgreSQL
      *         {:result = call test.func3()};
+     *         call test.procedure(); //PostgreSQL 13版 存储过程不需要加大括号(非函数)
      *     </pre>
      * </blockquote>
      *

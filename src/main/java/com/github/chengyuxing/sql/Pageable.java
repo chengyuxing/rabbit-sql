@@ -47,16 +47,47 @@ public class Pageable<T> {
         this.size = size;
     }
 
+    /**
+     * 设置sql参数
+     *
+     * @param args 参数
+     * @return 分页对象
+     */
     public Pageable<T> args(Map<String, Object> args) {
         this.args = args;
         return this;
     }
 
+    /**
+     * 设置sql查询条数
+     *
+     * @param countQuery count查询语句
+     * @return 分页对象
+     * @see #count(String)
+     */
+    @Deprecated
     public Pageable<T> countQuery(String countQuery) {
         this.countQuery = countQuery;
         return this;
     }
 
+    /**
+     * 设置sql查询条数
+     *
+     * @param countQuery count查询语句
+     * @return 分页对象
+     */
+    public Pageable<T> count(String countQuery) {
+        this.countQuery = countQuery;
+        return this;
+    }
+
+    /**
+     * 设置sql查询条数
+     *
+     * @param count 总数据条数
+     * @return 分页对象
+     */
     public Pageable<T> count(Integer count) {
         this.count = count;
         return this;

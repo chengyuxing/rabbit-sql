@@ -75,19 +75,7 @@ public abstract class JdbcSupport {
     protected abstract String prepareSql(String sql, Map<String, Object> args);
 
     /**
-     * 获取经过解析处理后的sql
-     *
-     * @param sql  sql
-     * @param args 参数
-     * @return 最终要执行的sql
-     */
-    private String getSourceSql(String sql, Map<String, Object> args) {
-        String preparedSql = prepareSql(sql, args);
-        return SqlUtil.resolveSqlPart(preparedSql, args);
-    }
-
-    /**
-     * 执行一句sql
+     * 执行一句预编译的sql
      *
      * @param sql      sql
      * @param callback 执行声明回调函数
@@ -95,7 +83,7 @@ public abstract class JdbcSupport {
      * @return 任意类型
      * @throws SqlRuntimeException sql执行过程中出现异常
      */
-    public <T> T execute(final String sql, StatementCallback<T> callback) {
+    protected <T> T execute(final String sql, StatementCallback<T> callback) {
         PreparedStatement statement = null;
         Connection connection = null;
         try {
@@ -124,21 +112,17 @@ public abstract class JdbcSupport {
      * @return 查询语句返回List，DML语句返回受影响的行数，DDL语句返回0
      * @throws SqlRuntimeException sql执行过程中出现错误
      */
-    public DataRow executeAny(final String sql, Map<String, Object> args) {
-        String sourceSql = sql;
-        boolean hasArgs = args != null && !args.isEmpty();
-        if (hasArgs) {
-            sourceSql = getSourceSql(sql, args);
-        }
+    public DataRow execute(final String sql, Map<String, Object> args) {
+        String sourceSql = prepareSql(sql, args);
         log.debug("SQL:{}", SqlUtil.highlightSql(sourceSql));
         log.debug("Args:{}", args);
 
-        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSql(sourceSql);
+        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSql(sourceSql, args);
         final List<String> argNames = preparedSqlAndArgNames.getItem2();
         final String preparedSql = preparedSqlAndArgNames.getItem1();
 
         return execute(preparedSql, sc -> {
-            if (hasArgs) {
+            if (args != null && !args.isEmpty()) {
                 JdbcUtil.setSqlArgs(sc, args, argNames);
             }
             boolean isQuery = sc.execute();
@@ -184,11 +168,11 @@ public abstract class JdbcSupport {
         if (args == null) {
             args = Collections.emptyMap();
         }
-        String sourceSql = getSourceSql(sql, args);
+        String sourceSql = prepareSql(sql, args);
         log.debug("SQL:{}", SqlUtil.highlightSql(sourceSql));
         log.debug("Args:{}", args);
 
-        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSql(sourceSql);
+        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSql(sourceSql, args);
         final List<String> argNames = preparedSqlAndArgNames.getItem2();
         final String preparedSql = preparedSqlAndArgNames.getItem1();
 
@@ -261,7 +245,7 @@ public abstract class JdbcSupport {
                 try {
                     statement = connection.createStatement();
                     for (String sql : sqls) {
-                        statement.addBatch(getSourceSql(sql, Collections.emptyMap()));
+                        statement.addBatch(prepareSql(sql, Collections.emptyMap()));
                     }
                     return statement.executeBatch();
                 } catch (SQLException e) {
@@ -280,31 +264,35 @@ public abstract class JdbcSupport {
     }
 
     /**
-     * 执行一句非查询语句(insert，update，delete)<br>
+     * 批量执行一句非查询语句(insert，update，delete)<br>
      * e.g.
      * <blockquote>
      * <pre>insert into table (a,b,c) values (:v1,:v2,:v3)</pre>
+     * <pre>[{v1:'a',v2:'b',v3:'c'},{...},...]</pre>
      * </blockquote>
      *
      * @param sql  sql
-     * @param args 数据
+     * @param args 数据 --每行数据类型和参数个数都必须相同
      * @return 总的受影响的行数
      * @throws SqlRuntimeException sql执行过程中出现错误
      */
     public int executeNonQuery(final String sql, final Collection<Map<String, Object>> args) {
         String sourceSql = sql;
+        Map<String, Object> firstArg = Collections.emptyMap();
         boolean hasArgs = args != null && !args.isEmpty();
         if (hasArgs) {
-            Map<String, Object> firstArg = args.stream().findFirst().get();
-            sourceSql = getSourceSql(sql, firstArg);
-            log.debug("SQL:{}", SqlUtil.highlightSql(sourceSql));
+            firstArg = args.iterator().next();
+            sourceSql = prepareSql(sql, firstArg);
+        }
+        log.debug("SQL:{}", SqlUtil.highlightSql(sourceSql));
+        if (hasArgs) {
             if (args.size() == 1) {
                 log.debug("Args:{}", args);
             } else {
-                log.debug("Args:{},...", args.iterator().next());
+                log.debug("Args:{},...", firstArg);
             }
         }
-        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSql(sourceSql);
+        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSql(sourceSql, firstArg);
         final List<String> argNames = preparedSqlAndArgNames.getItem2();
         final String preparedSql = preparedSqlAndArgNames.getItem1();
 
@@ -321,6 +309,22 @@ public abstract class JdbcSupport {
             log.debug("{} rows updated!", i);
             return i;
         });
+    }
+
+    /**
+     * 执行一句非查询语句(insert，update，delete)<br>
+     * e.g.
+     * <blockquote>
+     * <pre>insert into table (a,b,c) values (:v1,:v2,:v3)</pre>
+     * </blockquote>
+     *
+     * @param sql sql
+     * @param arg 数据
+     * @return 总的受影响的行数
+     * @throws SqlRuntimeException sql执行过程中出现错误
+     */
+    public int executeNonQuery(final String sql, final Map<String, Object> arg) {
+        return executeNonQuery(sql, Collections.singletonList(arg));
     }
 
     /**
@@ -345,14 +349,12 @@ public abstract class JdbcSupport {
         String sourceSql = procedure;
         boolean hasArgs = args != null && !args.isEmpty();
         if (hasArgs) {
-            Map<String, Object> pArgs = new HashMap<>();
-            args.forEach((k, v) -> pArgs.put(k, v.getValue()));
-            sourceSql = getSourceSql(procedure, pArgs);
+            sourceSql = prepareSql(procedure, Collections.emptyMap());
         }
         log.debug("Procedure:{}", Printer.colorful(sourceSql, Color.YELLOW));
         log.debug("Args:{}", args);
 
-        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSql(sourceSql);
+        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSql(sourceSql, Collections.emptyMap());
         final String executeSql = preparedSqlAndArgNames.getItem1();
         final List<String> argNames = preparedSqlAndArgNames.getItem2();
 

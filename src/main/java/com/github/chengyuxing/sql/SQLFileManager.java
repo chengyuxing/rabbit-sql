@@ -188,7 +188,7 @@ public final class SQLFileManager {
         //innerPartName will be '${part1}'
         String innerPartName = "${" + partName.substring(prefix.length() + 2);
         for (String key : sqlResource.keySet()) {
-            Pair<String, Map<String, String>> sqlAndSubstr = SqlUtil.replaceSubstrOfSql(sqlResource.get(key));
+            Pair<String, Map<String, String>> sqlAndSubstr = SqlUtil.replaceSqlSubstr(sqlResource.get(key));
             // get sql without substr first.
             String sql = sqlAndSubstr.getItem1();
             if (sql.contains(innerPartName)) {
@@ -221,7 +221,7 @@ public final class SQLFileManager {
         }
         if (constants != null && !constants.isEmpty()) {
             for (String name : sqlResource.keySet()) {
-                Pair<String, Map<String, String>> sqlAndSubstr = SqlUtil.replaceSubstrOfSql(sqlResource.get(name));
+                Pair<String, Map<String, String>> sqlAndSubstr = SqlUtil.replaceSqlSubstr(sqlResource.get(name));
                 // get sql without substr first.
                 String sql = sqlAndSubstr.getItem1();
                 for (String key : constants.keySet()) {

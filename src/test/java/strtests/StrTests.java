@@ -2,16 +2,11 @@ package strtests;
 
 import com.github.chengyuxing.common.WatchDog;
 import com.github.chengyuxing.sql.Args;
-import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
 
 import java.time.Clock;
-import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.Calendar;
 import java.util.concurrent.TimeUnit;
-
-import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
 
 public class StrTests {
 
@@ -58,6 +53,6 @@ public class StrTests {
     public void ExcludePlaceholder() throws Exception {
         String sql = "select '${tableName}',${age} age from test.${tableName} where id = 10";
         Args<Object> args = Args.<Object>of("${tableName}", "user").add("${age}", 28);
-        System.out.println(SqlUtil.resolveSqlPart(sql, args));
+//        System.out.println(SqlUtil.resolveSqlPart(sql, args));
     }
 }

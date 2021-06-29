@@ -113,18 +113,21 @@ public class SqlUtil {
         if (where.trim().equals("")) {
             throw new IllegalArgumentException("where condition must not be empty.");
         }
-        List<String> cndFields = getPreparedSql(where).getItem2();
+        Pair<String, List<String>> sqlAndFields = generateSql(where, data, false);
+        List<String> cndFields = sqlAndFields.getItem2();
+        String w = sqlAndFields.getItem1();
         StringBuilder sb = new StringBuilder();
-        String w = where;
         for (String key : data.keySet()) {
-            String value = quoteFormatValueIfNecessary(data.get(key));
-            if (!cndFields.contains(key)) {
-                sb.append(key)
-                        .append(" = ")
-                        .append(value)
-                        .append(",\n\t");
-            } else {
-                w = w.replace(":" + key, value);
+            if (!key.startsWith("${") && !key.endsWith("}")) {
+                String value = quoteFormatValueIfNecessary(data.get(key));
+                if (!cndFields.contains(key)) {
+                    sb.append(key)
+                            .append(" = ")
+                            .append(value)
+                            .append(",\n\t");
+                } else {
+                    w = w.replace(":" + key, value);
+                }
             }
         }
         String updateFields = sb.toString();
@@ -227,7 +230,7 @@ public class SqlUtil {
      * @param sql sql字符串
      * @return 替换字符串后带有特殊占位符的sql和占位符与字符串的映射
      */
-    public static Pair<String, Map<String, String>> replaceSubstrOfSql(final String sql) {
+    public static Pair<String, Map<String, String>> replaceSqlSubstr(final String sql) {
         String noneStrSql = sql;
         Map<String, String> mapper = new HashMap<>();
         Matcher m = SUB_STR_PATTERN.matcher(sql);
@@ -249,9 +252,23 @@ public class SqlUtil {
      * @param sql 带参数占位符的SQL
      * @return 预编译SQL和参数名的集合
      */
-    public static Pair<String, List<String>> getPreparedSql(final String sql) {
-        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSubstrOfSql(sql);
-        String noneStrSql = noneStrSqlAndHolder.getItem1();
+    public static Pair<String, List<String>> getPreparedSql(final String sql, Map<String, Object> args) {
+        return generateSql(sql, args, true);
+    }
+
+    /**
+     * 构建带有传名参数的sql
+     *
+     * @param sql     sql字符串
+     * @param args    参数
+     * @param prepare 是否生成预编译sql
+     * @return 预编译sql或普通sql
+     */
+    public static Pair<String, List<String>> generateSql(final String sql, Map<String, Object> args, boolean prepare) {
+        // exclude substr first
+        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSqlSubstr(sql);
+        // resolve the sql string template next
+        String noneStrSql = resolveSqlStrTemplate(noneStrSqlAndHolder.getItem1(), args, false);
         Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
         // safe to replace arg by name placeholder
         Matcher matcher = ARG_PATTERN.matcher(noneStrSql);
@@ -259,7 +276,8 @@ public class SqlUtil {
         while (matcher.find()) {
             String name = matcher.group("name");
             names.add(name);
-            noneStrSql = noneStrSql.replaceFirst(":" + name, "?");
+            String value = prepare ? "?" : quoteFormatValueIfNecessary(args.get(name));
+            noneStrSql = noneStrSql.replaceFirst(":" + name, value);
         }
         // finally set placeholder into none-string-part sql
         for (String key : placeholderMapper.keySet()) {
@@ -279,22 +297,27 @@ public class SqlUtil {
     }
 
     /**
-     * 解析SQL字符串
+     * 解析字符串模版
      *
-     * @param sourceSql 原始sql字符串
-     * @param args      参数
-     * @return 替换模版占位符后的sql
+     * @param str          带有字符串模版占位符的字符串
+     * @param args         参数
+     * @param exceptSubstr 是否排除子字符串 --如果子字符串中包含字符串模版占位符，true：不解析，false：解析
+     * @return 替换模版占位符后的字符串
      */
     @SuppressWarnings("unchecked")
-    public static String resolveSqlPart(final String sourceSql, Map<String, Object> args) {
-        if (args == null || args.size() == 0) {
-            return sourceSql;
+    public static String resolveSqlStrTemplate(final String str, final Map<String, Object> args, boolean exceptSubstr) {
+        if (args == null || args.isEmpty()) {
+            return str;
         }
-        // exclude quote str look like '${name}', it's not placeholder.
-        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSubstrOfSql(sourceSql);
-        String noneStrSql = noneStrSqlAndHolder.getItem1();
+        String noneStrSql = str;
+        Map<String, String> substrMapper = null;
+        if (exceptSubstr) {
+            Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSqlSubstr(str);
+            noneStrSql = noneStrSqlAndHolder.getItem1();
+            substrMapper = noneStrSqlAndHolder.getItem2();
+        }
         if (!noneStrSql.contains("${")) {
-            return sourceSql;
+            return str;
         }
         for (String key : args.keySet()) {
             if (key.startsWith("${") && key.endsWith("}")) {
@@ -333,9 +356,10 @@ public class SqlUtil {
                 noneStrSql = noneStrSql.replace(trueKey, v);
             }
         }
-        Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
-        for (String key : placeholderMapper.keySet()) {
-            noneStrSql = noneStrSql.replace(key, placeholderMapper.get(key));
+        if (exceptSubstr) {
+            for (String key : substrMapper.keySet()) {
+                noneStrSql = noneStrSql.replace(key, substrMapper.get(key));
+            }
         }
         return noneStrSql;
     }
@@ -347,7 +371,7 @@ public class SqlUtil {
      * @return 去除块注释的sql
      */
     public static String removeAnnotationBlock(final String sql) {
-        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSubstrOfSql(sql);
+        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSqlSubstr(sql);
         String noneStrSql = noneStrSqlAndHolder.getItem1();
         Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
         char[] chars = noneStrSql.toCharArray();
@@ -394,7 +418,7 @@ public class SqlUtil {
      * @return 块注释
      */
     public static List<String> getAnnotationBlock(final String sql) {
-        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSubstrOfSql(sql);
+        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSqlSubstr(sql);
         String noneStrSql = noneStrSqlAndHolder.getItem1();
         Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
         char[] chars = noneStrSql.toCharArray();
@@ -576,7 +600,7 @@ public class SqlUtil {
      */
     public static String highlightSql(String sql) {
         try {
-            Pair<String, Map<String, String>> r = SqlUtil.replaceSubstrOfSql(sql);
+            Pair<String, Map<String, String>> r = SqlUtil.replaceSqlSubstr(sql);
             String rSql = r.getItem1();
             Pair<List<String>, List<String>> x = StringUtil.regexSplit(rSql, "(?<sp>[\\s,\\[\\]()::;])", "sp");
             List<String> maybeKeywords = x.getItem1();

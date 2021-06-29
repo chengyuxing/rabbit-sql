@@ -155,13 +155,21 @@ public class Tests {
         String sql = "insert into test.user(idd,name,id,age,address) values (:id,:name::integer,:idd" + SEP + "::float,integer :age,date :address)";
 //        String sql2 = "select * from test.user where id = '1' and tag = '1' and num = '1' and name = :name";
 //        String jsonSql = "select '{\"a\":[1,2,3],\"b\":[4,5,6]}'::json #>> '{b,1}'";
-        Pair<String, List<String>> pair = SqlUtil.getPreparedSql(str);
+        Pair<String, List<String>> pair = SqlUtil.getPreparedSql(str,Collections.emptyMap());
         System.out.println(pair.getItem1());
         System.out.println(pair.getItem2());
 
-        Pair<String, Map<String, String>> stringMapPair = SqlUtil.replaceSubstrOfSql(str);
+        Pair<String, Map<String, String>> stringMapPair = SqlUtil.replaceSqlSubstr(str);
         System.out.println(stringMapPair.getItem1());
         System.out.println(stringMapPair.getItem2());
+    }
+
+    @Test
+    public void sqlPlaceHolder() throws Exception{
+        String query = "select * from test where id = :id and id = :id or name = :name";
+        Pair<String, List<String>> sql = SqlUtil.generateSql(query, Collections.emptyMap(), true);
+        System.out.println(sql.getItem1());
+        System.out.println(sql.getItem2());
     }
 
     @Test

@@ -94,23 +94,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     @Override
     public DataRow execute(String sql) {
-        return execute(sql, Args.create());
-    }
-
-    /**
-     * 执行query语句，ddl或dml语句<br>
-     * 返回数据为:<br>
-     * 执行结果：{@code DataRow.get(0)} 或 {@code DataRow.get("result")}<br>
-     * 执行类型：{@code DataRow.get(1)} 或 {@code DataRow.getString("type")}
-     *
-     * @param sql  原始sql
-     * @param args 参数
-     * @return (结果 ， 类型)
-     * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
-     */
-    @Override
-    public DataRow execute(String sql, Map<String, Object> args) {
-        return executeAny(sql, args);
+        return execute(sql, Collections.emptyMap());
     }
 
     /**
@@ -165,24 +149,6 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * 根据严格模式获取表字段
-     *
-     * @param dataFrame 数据对象
-     * @return 表字段
-     * @throws SqlRuntimeException 执行查询表字段出现异常
-     */
-    private List<String> getTableFields(DataFrame dataFrame) {
-        return execute(dataFrame.getTableFieldsSql(), sc -> {
-            sc.executeQuery();
-            ResultSet fieldsResultSet = sc.getResultSet();
-            List<String> fields = Arrays.asList(JdbcUtil.createNames(fieldsResultSet, ""));
-            JdbcUtil.closeResultSet(fieldsResultSet);
-            log.debug("all fields of table: {} {}", dataFrame.getTableName(), fields);
-            return fields;
-        });
-    }
-
-    /**
      * {@inheritDoc}
      *
      * @param tableName 表名
@@ -192,7 +158,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     @Override
     public int delete(String tableName, ICondition condition) {
-        return executeNonQuery("delete from " + tableName + " " + condition.getSql(), Collections.singletonList(condition.getArgs()));
+        return executeNonQuery("delete from " + tableName + " " + condition.getSql(), condition.getArgs());
     }
 
     /**
@@ -209,7 +175,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     public int update(String tableName, Map<String, Object> data, ICondition condition) {
         String update = SqlUtil.generatePreparedUpdate(tableName, data);
         data.putAll(condition.getArgs());
-        return executeNonQuery(update + condition.getSql(), Collections.singletonList(data));
+        return executeNonQuery(update + condition.getSql(), data);
     }
 
     /**
@@ -383,6 +349,24 @@ public class BakiDao extends JdbcSupport implements Baki {
         } finally {
             releaseConnection(connection, getDataSource());
         }
+    }
+
+    /**
+     * 根据严格模式获取表字段
+     *
+     * @param dataFrame 数据对象
+     * @return 表字段
+     * @throws SqlRuntimeException 执行查询表字段出现异常
+     */
+    private List<String> getTableFields(DataFrame dataFrame) {
+        return execute(dataFrame.getTableFieldsSql(), sc -> {
+            sc.executeQuery();
+            ResultSet fieldsResultSet = sc.getResultSet();
+            List<String> fields = Arrays.asList(JdbcUtil.createNames(fieldsResultSet, ""));
+            JdbcUtil.closeResultSet(fieldsResultSet);
+            log.debug("all fields of table: {} {}", dataFrame.getTableName(), fields);
+            return fields;
+        });
     }
 
     /**

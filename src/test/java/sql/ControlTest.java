@@ -1,9 +1,8 @@
 package sql;
 
-import com.github.chengyuxing.sql.Args;
-import com.github.chengyuxing.sql.utils.SqlUtil;
-import org.junit.Test;
 import com.github.chengyuxing.common.script.impl.CExpression;
+import com.github.chengyuxing.sql.Args;
+import org.junit.Test;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -114,7 +113,7 @@ public class ControlTest {
                 .add("${fields}", "id, name, age")
                 .add("id", 10);
 
-        System.out.println(SqlUtil.resolveSqlPart(sql, args));
+//        System.out.println(SqlUtil.resolveSqlPart(sql, args));
     }
 
     @Test

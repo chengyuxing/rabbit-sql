@@ -349,6 +349,26 @@ public class MyTest {
     }
 
     @Test
+    public void arg4block() throws Exception {
+//        baki.execute("do\n" +
+//                "$$\n" +
+//                "    begin\n" +
+//                "        insert into test.message (words, dt) values (?, current_timestamp);\n" +
+//                "        if 13 / 1 > 1 then\n" +
+//                "            insert into test.message (words, dt) values (?, current_timestamp);\n" +
+//                "        end if;\n" +
+//                "    end;\n" +
+//                "$$;", sc -> {
+//            sc.setObject(1,"bbb");
+//            sc.setObject(2, "ggg");
+//            sc.execute();
+//            return true;
+//        });
+//        baki.execute("insert into test.message (words, dt) values (:wordc, current_timestamp);",
+//                Args.<Object>of("wordc", "xxx").add("wordd", "yyy"));
+    }
+
+    @Test
     public void testProcedure() throws Exception {
         baki.call("call test.transaction_rollback()", Args.create());
     }

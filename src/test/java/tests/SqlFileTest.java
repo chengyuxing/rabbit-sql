@@ -12,6 +12,7 @@ import com.github.chengyuxing.sql.BakiDao;
 import com.github.chengyuxing.sql.SQLFileManager;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 
+import java.util.Collections;
 import java.util.List;
 
 public class SqlFileTest {
@@ -33,7 +34,7 @@ public class SqlFileTest {
 
     @Test
     public void ref() throws Exception {
-        Pair<String, List<String>> pair = SqlUtil.getPreparedSql(":res = call getUser(:id, :name)");
+        Pair<String, List<String>> pair = SqlUtil.getPreparedSql(":res = call getUser(:id, :name)", Collections.emptyMap());
         System.out.println(pair.getItem1());
         System.out.println(pair.getItem2());
     }

@@ -249,7 +249,8 @@ public class SqlUtil {
     /**
      * 获取处理参数占位符预编译的SQL
      *
-     * @param sql 带参数占位符的SQL
+     * @param sql  带参数占位符的SQL
+     * @param args 参数
      * @return 预编译SQL和参数名的集合
      */
     public static Pair<String, List<String>> getPreparedSql(final String sql, Map<String, Object> args) {

@@ -226,18 +226,11 @@ public class JdbcUtil {
      * @throws SQLException sqlEx
      */
     public static DataRow createDataRow(String[] names, ResultSet resultSet) throws SQLException {
-        ResultSetMetaData metaData = resultSet.getMetaData();
-        String[] types = new String[names.length];
         Object[] values = new Object[names.length];
         for (int i = 0; i < names.length; i++) {
             values[i] = JdbcUtil.getResultValue(resultSet, i + 1);
-            if (values[i] == null) {
-                types[i] = metaData.getColumnClassName(i + 1);
-            } else {
-                types[i] = values[i].getClass().getTypeName();
-            }
         }
-        return DataRow.of(names, types, values);
+        return DataRow.of(names, values);
     }
 
     /**

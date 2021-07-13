@@ -324,33 +324,37 @@ public class SqlUtil {
             if (key.startsWith("${") && key.endsWith("}")) {
                 String trueKey = key;
                 Object value = args.get(key);
-                String subSql;
-                if (key.startsWith("${...") || key.startsWith("${..:")) {
-                    Object[] values;
-                    if (value instanceof Object[]) {
-                        values = (Object[]) value;
-                    } else if (value instanceof Collection) {
-                        values = ((Collection<Object>) value).toArray();
-                    } else {
-                        values = new Object[]{value};
-                    }
-                    StringBuilder sb = new StringBuilder();
-                    // expand and quote safe args
-                    if (key.startsWith("${..:")) {
-                        trueKey = key.replace("${..:", "${");
-                        for (Object v : values) {
-                            sb.append(quoteFormatValueIfNecessary(v)).append(", ");
+                String subSql = "";
+                if (value != null) {
+                    if (key.startsWith("${...") || key.startsWith("${..:")) {
+                        Object[] values;
+                        if (value instanceof Object[]) {
+                            values = (Object[]) value;
+                        } else if (value instanceof Collection) {
+                            values = ((Collection<Object>) value).toArray();
+                        } else {
+                            values = new Object[]{value};
+                        }
+                        if (values.length > 0) {
+                            StringBuilder sb = new StringBuilder();
+                            // expand and quote safe args
+                            if (key.startsWith("${..:")) {
+                                trueKey = key.replace("${..:", "${");
+                                for (Object v : values) {
+                                    sb.append(quoteFormatValueIfNecessary(v)).append(", ");
+                                }
+                            } else {
+                                // just expand
+                                trueKey = key.replace("${...", "${");
+                                for (Object v : values) {
+                                    sb.append(v).append(", ");
+                                }
+                            }
+                            subSql = sb.substring(0, sb.length() - 2);
                         }
                     } else {
-                        // just expand
-                        trueKey = key.replace("${...", "${");
-                        for (Object v : values) {
-                            sb.append(v).append(", ");
-                        }
+                        subSql = value.toString();
                     }
-                    subSql = sb.substring(0, sb.length() - 2);
-                } else {
-                    subSql = value.toString();
                 }
                 String start = subSql.startsWith("\n") ? "" : "\n";
                 String v = start + subSql + "\n";

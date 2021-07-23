@@ -1,6 +1,8 @@
 package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.common.tuple.Pair;
+import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.datasource.DataSourceUtil;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
 import com.github.chengyuxing.sql.exceptions.DuplicateException;
@@ -119,7 +121,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * {@inheritDoc}（对数据类型有一定的限制）<br>
+     * {@inheritDoc}（非预编译SQL）<br>
      * 注：不支持插入二进制对象
      *
      * @param dataFrame 数据对象
@@ -174,23 +176,58 @@ public class BakiDao extends JdbcSupport implements Baki {
     @Override
     public int update(String tableName, Map<String, Object> data, ICondition condition) {
         String update = SqlUtil.generatePreparedUpdate(tableName, data);
-        data.putAll(condition.getArgs());
-        return executeNonQuery(update + condition.getSql(), data);
+        Map<String, Object> updateDate = new HashMap<>(data);
+        updateDate.putAll(condition.getArgs());
+        return executeNonQuery(update + condition.getSql(), updateDate);
     }
 
     /**
-     * {@inheritDoc}（对数据类型有一定的限制）<br>
+     * {@inheritDoc}
+     * e.g. {@code update(<table>, <Map>, "id = :id")}
+     * 关于此方法的说明举例：
+     * <blockquote>
+     * <pre>
+     *  参数： {id:14, name:'cyx', address:'kunming'}
+     *  条件："id = :id"
+     *  生成：update{@code <table>} set name = 'cyx', address = 'kunming'
+     *       where id = 14
+     *  </pre>
+     * 解释：where中至少指定一个传名参数，数据中必须包含where条件中的所有传名参数
+     * </blockquote>
+     *
+     * @param tableName 表名
+     * @param data      数据：需要更新的数据和条件参数
+     * @param where     条件：条件中需要有传名参数作为更新的条件依据
+     * @return 受影响的行数
+     * @throws SqlRuntimeException sql执行过程中出现错误
+     * @see #fastUpdate(String, Collection, String)
+     */
+    @Override
+    public int update(String tableName, Map<String, Object> data, String where) {
+        Pair<String, List<String>> cnd = SqlUtil.generateSql(where, data, true);
+        Map<String, Object> updateData = new HashMap<>(data);
+        for (String key : cnd.getItem2()) {
+            updateData.remove(key);
+        }
+        String update = SqlUtil.generatePreparedUpdate(tableName, updateData);
+        String w = StringUtil.startsWithIgnoreCase(where.trim(), "where") ? where : "\nwhere " + where;
+        return executeNonQuery(update + w, data);
+    }
+
+    /**
+     * {@inheritDoc}（非预编译SQL）<br>
      * 注：不支持插入二进制对象<br>
+     * 如果需要插入文件请使用：{@link #update(String, Map, String)}（预编译SQL）<br>
      * e.g. {@code fastUpdate(<table>, <List<Map>>, "id = :id")}
      * 关于此方法的说明举例：
      * <blockquote>
      * <pre>
      *  参数： [{id:14, name:'cyx', address:'kunming'},...]
      *  条件："id = :id"
-     *  生存：update{@code <table>} set name = 'cyx', address = 'kunming'
-     *       where id = 14
+     *  生成：update{@code <table>} set name = 'cyx', address = 'kunming'
+     *       where id = 14, update...
      *  </pre>
-     * 解释：where中至少指定一个传名参数，数据中必须包含where条件中的所以传名参数
+     * 解释：where中至少指定一个传名参数，数据中必须包含where条件中的所有传名参数
      * </blockquote>
      *
      * @param tableName 表名

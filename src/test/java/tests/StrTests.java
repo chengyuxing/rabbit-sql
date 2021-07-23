@@ -1,15 +1,14 @@
 package tests;
 
-import com.github.chengyuxing.common.console.Color;
-import com.github.chengyuxing.common.console.Printer;
-import com.github.chengyuxing.common.script.Comparators;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.StringUtil;
-import com.github.chengyuxing.sql.Keywords;
+import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.SQLFileManager;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
 
+import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -50,5 +49,28 @@ public class StrTests {
         SQLFileManager sqlFileManager = new SQLFileManager("pgsql/test.sql");
         sqlFileManager.init();
         sqlFileManager.look();
+    }
+
+    @Test
+    public void gu() throws Exception {
+        update("test.user",
+                Args.<Object>of("id", 10)
+                        .add("name", "chengyuxing")
+                        .add("now", LocalDateTime.now())
+                        .add("enable", true),
+                "id=:id and enable = :enable");
+    }
+
+
+    public static void update(String tableName, Map<String, Object> data, String where) {
+        Pair<String, List<String>> cnd = SqlUtil.generateSql(where, data, true);
+        Map<String, Object> updateData = new HashMap<>(data);
+        for (String key : cnd.getItem2()) {
+            updateData.remove(key);
+        }
+        String update = SqlUtil.generatePreparedUpdate(tableName, updateData);
+        String w = StringUtil.startsWithIgnoreCase(where.trim(), "where") ? where : "\nwhere " + where;
+        System.out.println(update + w);
+        System.out.println(data);
     }
 }

@@ -74,8 +74,21 @@ public interface Baki {
      * @param data      数据
      * @param condition 条件
      * @return 受影响的行数
+     * @see #update(String, Map, String)
      */
+    @Deprecated
     int update(String tableName, Map<String, Object> data, ICondition condition);
+
+    /**
+     * 更新<br>
+     * 具体逻辑可参考实现
+     *
+     * @param tableName 表名
+     * @param data      数据
+     * @param where     条件
+     * @return 受影响的行数
+     */
+    int update(String tableName, Map<String, Object> data, String where);
 
     /**
      * 快速更新<br>

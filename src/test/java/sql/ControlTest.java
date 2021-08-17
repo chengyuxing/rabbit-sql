@@ -2,6 +2,7 @@ package sql;
 
 import com.github.chengyuxing.common.script.impl.CExpression;
 import com.github.chengyuxing.sql.Args;
+import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -109,15 +110,15 @@ public class ControlTest {
     @Test
     public void sqlPart() throws Exception {
         String sql = "select ${fields} from test.user where id in (${ids}) and id = :id";
-        Args<Object> args = Args.<Object>of("${...ids}", Arrays.asList("I'm Ok!", "b", "c"))
+        Args<Object> args = Args.<Object>of("${:ids}", Arrays.asList("I'm Ok!", "b", "c"))
                 .add("${fields}", "id, name, age")
                 .add("id", 10);
 
-//        System.out.println(SqlUtil.resolveSqlPart(sql, args));
+        System.out.println(SqlUtil.resolveSqlStrTemplate(sql, args, true));
     }
 
     @Test
-    public void arr() throws Exception{
+    public void arr() throws Exception {
         System.out.println(Arrays.toString("a,b,c".split("[,]")));
     }
 }

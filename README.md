@@ -18,13 +18,12 @@
 
 - `:name` (jdbc标准的传名参数写法，参数将被预编译安全处理，参数名为：`name`)
 
-- `${part}` (通用的字符串模版占位符，不进行预编译，用于动态sql的拼接)
+- `${}` (通用的字符串模版占位符，不进行预编译，用于动态sql的拼接)
 
-  参数名两种格式：
+  字符串模版参数名两种格式：
 
-  - `${part}` 和sql中参数占位符一模一样，则不进行任何处理直接进行sql片段的替换；
-  - `${..:part}` 名字前多了前缀符号(`..:`)，则对参数类型进行判断，如果类型是**装箱类型数组(String[], Integer[]...)**或**集合(Set, List...)**，则进行展开，并做一定的字符串安全处理。
-  - `${...part}` 名字前多了前缀符号(`...`)，则对参数类型进行判断，如果类型是**装箱类型数组(String[], Integer[]...)**或**集合(Set, List...)**，则进行展开。
+  - `${part}` 如果类型是**装箱类型数组(String[], Integer[]...)**或**集合(Set, List...)**，则先展开（逗号分割），再进行sql片段的替换；
+  - `${:part}` 名字前多了前缀符号(`:`)，如果类型是**装箱类型数组(String[], Integer[]...)**或**集合(Set, List...)**，则先展开（逗号分隔），并做一定的字符串安全处理，再进行sql片段的替换。
 
 - 字符串模版中还可以使用传名参数
 
@@ -41,8 +40,8 @@
   ```java
   Args<Object> args = Args.<Object>of("id","uuid")
     .add("${fields}", "id, name, address")
-    .add("${...moreFields}", Arrays.asList("email", "enable"))
-    .add("${..:words}", Arrays.asList("I'm OK!", "book", "warning"));
+    .add("${moreFields}", Arrays.asList("email", "enable"))
+    .add("${:words}", Arrays.asList("I'm OK!", "book", "warning"));
   ```
   
   最终执行的SQL：

@@ -326,35 +326,28 @@ public class SqlUtil {
                 Object value = args.get(key);
                 String subSql = "";
                 if (value != null) {
-                    if (key.startsWith("${...") || key.startsWith("${..:")) {
-                        Object[] values;
-                        if (value instanceof Object[]) {
-                            values = (Object[]) value;
-                        } else if (value instanceof Collection) {
-                            values = ((Collection<Object>) value).toArray();
-                        } else {
-                            values = new Object[]{value};
-                        }
-                        if (values.length > 0) {
-                            StringBuilder sb = new StringBuilder();
-                            // expand and quote safe args
-                            if (key.startsWith("${..:")) {
-                                trueKey = key.replace("${..:", "${");
-                                for (Object v : values) {
-                                    sb.append(quoteFormatValueIfNecessary(v)).append(", ");
-                                }
-                            } else {
-                                // just expand
-                                trueKey = key.replace("${...", "${");
-                                for (Object v : values) {
-                                    sb.append(v).append(", ");
-                                }
-                            }
-                            subSql = sb.substring(0, sb.length() - 2);
+                    Object[] values;
+                    if (value instanceof Object[]) {
+                        values = (Object[]) value;
+                    } else if (value instanceof Collection) {
+                        values = ((Collection<Object>) value).toArray();
+                    } else {
+                        values = new Object[]{value};
+                    }
+                    StringBuilder sb = new StringBuilder();
+                    if (key.startsWith("${:")) {
+                        // expand and quote safe args
+                        trueKey = "${" + key.substring(3);
+                        for (Object v : values) {
+                            sb.append(quoteFormatValueIfNecessary(v)).append(", ");
                         }
                     } else {
-                        subSql = value.toString();
+                        // just expand
+                        for (Object v : values) {
+                            sb.append(v).append(", ");
+                        }
                     }
+                    subSql = sb.substring(0, sb.length() - 2);
                 }
                 String start = subSql.startsWith("\n") ? "" : "\n";
                 String v = start + subSql + "\n";

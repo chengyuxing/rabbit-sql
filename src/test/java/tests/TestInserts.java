@@ -1,18 +1,18 @@
 package tests;
 
+import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.sql.Args;
+import com.github.chengyuxing.sql.Baki;
+import com.github.chengyuxing.sql.BakiDao;
+import com.github.chengyuxing.sql.utils.SqlUtil;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import com.github.chengyuxing.common.DataRow;
-import com.github.chengyuxing.sql.Baki;
-import com.github.chengyuxing.sql.Args;
-import com.github.chengyuxing.sql.BakiDao;
-import com.github.chengyuxing.sql.DataFrame;
-import com.github.chengyuxing.sql.utils.SqlUtil;
 
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
+import java.util.stream.Collectors;
 
 public class TestInserts {
     static Baki baki;
@@ -39,12 +39,12 @@ public class TestInserts {
 
     @Test
     public void normal() throws Exception {
-        baki.insert(DataFrame.ofRows("test.message", rows));
+        baki.insert("test.message", rows.stream().map(DataRow::toMap).collect(Collectors.toList()));
     }
 
     @Test
     public void batch() throws Exception {
-        baki.fastInsert(DataFrame.ofRows("test.message", rows));
+        baki.fastInsert("test.message", rows.stream().map(DataRow::toMap).collect(Collectors.toList()));
     }
 
     @Test

@@ -1,7 +1,7 @@
 package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.DataRow;
-import com.github.chengyuxing.sql.support.ICondition;
+import com.github.chengyuxing.sql.exceptions.SqlRuntimeException;
 import com.github.chengyuxing.sql.types.Param;
 
 import java.sql.Connection;
@@ -39,45 +39,85 @@ public interface Baki {
      * @param sqls 一组sql
      * @return 每条sql执行的结果
      */
-    int[] executeBatch(String... sqls);
+    int[] batchExecute(String... sqls);
 
     /**
      * 插入
      *
-     * @param dataFrame 数据对象
+     * @param tableName 数据对象
+     * @param data      数据
+     * @param strict    是否严格插入
      * @return 受影响的行数
      */
-    int insert(DataFrame dataFrame);
+    int insert(String tableName, Collection<? extends Map<String, ?>> data, boolean strict);
+
+    /**
+     * 插入
+     *
+     * @param tableName 数据对象
+     * @param data      数据
+     * @return 受影响的行数
+     */
+    int insert(String tableName, Collection<? extends Map<String, ?>> data);
+
+    /**
+     * 插入
+     *
+     * @param tableName 数据对象
+     * @param data      数据
+     * @param strict    是否严格插入
+     * @return 受影响的行数
+     */
+    int insert(String tableName, Map<String, ?> data, boolean strict);
+
+    /**
+     * 插入
+     *
+     * @param tableName 数据对象
+     * @param data      数据
+     * @return 受影响的行数
+     */
+    int insert(String tableName, Map<String, ?> data);
 
     /**
      * 快速插入
      * 具体逻辑可参考实现
      *
-     * @param dataFrame 数据对象
+     * @param tableName 表名
+     * @param strict    是否严格插入
      * @return 受影响的行数
      */
-    int fastInsert(DataFrame dataFrame);
+    int fastInsert(String tableName, Collection<? extends Map<String, ?>> data, boolean strict);
+
+    /**
+     * 快速插入
+     * 具体逻辑可参考实现
+     *
+     * @param tableName 表名
+     * @return 受影响的行数
+     */
+    int fastInsert(String tableName, Collection<? extends Map<String, ?>> data);
 
     /**
      * 删除
      *
      * @param tableName 表名
-     * @param condition 条件配置
+     * @param where     条件
+     * @param arg       条件参数
      * @return 受影响的行数
+     * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
      */
-    int delete(String tableName, ICondition condition);
+    int delete(String tableName, String where, Map<String, ?> arg);
 
     /**
-     * 更新
+     * 删除
      *
      * @param tableName 表名
-     * @param data      数据
-     * @param condition 条件
+     * @param where     条件
      * @return 受影响的行数
-     * @see #update(String, Map, String)
+     * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
      */
-    @Deprecated
-    int update(String tableName, Map<String, Object> data, ICondition condition);
+    int delete(String tableName, String where);
 
     /**
      * 更新<br>

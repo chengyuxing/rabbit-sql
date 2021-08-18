@@ -1,13 +1,11 @@
 package tests;
 
 import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.BakiDao;
-import com.github.chengyuxing.sql.Condition;
-import com.github.chengyuxing.sql.Filter;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import com.github.chengyuxing.sql.Args;
 
 import java.sql.DatabaseMetaData;
 import java.sql.Date;
@@ -155,7 +153,7 @@ public class BakiSessionTest {
 
     @Test
     public void batchExe() throws Exception {
-        int[] res = baki.executeBatch(
+        int[] res = baki.batchExecute(
                 "create table test.t_a(id int)",
                 "create table test.t_b(id int)",
                 "create table test.t_c(id int)",
@@ -174,14 +172,14 @@ public class BakiSessionTest {
 
     @Test
     public void update() throws Exception {
-        baki.update("test.history",
-                Args.of("words", "chengyuxingo"),
-                Condition.where("userid = :id").addArg("id", "a036313a-21f4-48ff-8308-532a6d62e5e6"));
+//        baki.update("test.history",
+//                Args.of("words", "chengyuxingo"),
+//                Condition.where("userid = :id").addArg("id", "a036313a-21f4-48ff-8308-532a6d62e5e6"));
     }
 
     @Test
     public void del() throws Exception {
-        baki.delete("test.history", Condition.where(Filter.eq("userid", "eb9e6bbd-b750-4640-b1aa-14a813150fd7")));
+//        baki.delete("test.history", Condition.where(Filter.eq("userid", "eb9e6bbd-b750-4640-b1aa-14a813150fd7")));
     }
 
     @Test

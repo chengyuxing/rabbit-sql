@@ -5,9 +5,7 @@ import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Pattern;
 
 
@@ -119,6 +117,11 @@ public class ControlTest {
 
     @Test
     public void arr() throws Exception {
-        System.out.println(Arrays.toString("a,b,c".split("[,]")));
+        List<Args<String>> args = new ArrayList<>();
+        int a = fastInsert("", args);
+    }
+
+    public static int fastInsert(String tableName, Collection<? extends Map<String, ?>> data) {
+        return 1;
     }
 }

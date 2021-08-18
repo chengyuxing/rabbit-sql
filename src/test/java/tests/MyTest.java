@@ -1,9 +1,15 @@
 package tests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.sql.*;
-import com.github.chengyuxing.sql.Keywords;
+import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
+import com.github.chengyuxing.sql.support.IOutParam;
+import com.github.chengyuxing.sql.transaction.Tx;
+import com.github.chengyuxing.sql.types.OUTParamType;
+import com.github.chengyuxing.sql.types.Param;
+import com.github.chengyuxing.sql.utils.JdbcUtil;
 import com.zaxxer.hikari.HikariDataSource;
 import func.FCondition;
 import func.FFilter;
@@ -11,15 +17,6 @@ import oracle.jdbc.OracleTypes;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.postgresql.util.PGobject;
-import com.github.chengyuxing.common.DataRow;
-import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
-import com.github.chengyuxing.sql.support.ICondition;
-import com.github.chengyuxing.sql.support.IOutParam;
-import com.github.chengyuxing.sql.transaction.Tx;
-import com.github.chengyuxing.sql.DataFrame;
-import com.github.chengyuxing.sql.types.OUTParamType;
-import com.github.chengyuxing.sql.types.Param;
-import com.github.chengyuxing.sql.utils.JdbcUtil;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -152,13 +149,12 @@ public class MyTest {
 
     @Test
     public void insert() throws Exception {
-        DataFrame dataFrame = DataFrame.ofMap("test.tb", Args.create()
+        Args<Object> args = Args.create()
                 .add("ts", "2020年2月12日 11:22:33")
                 .add("dtm", "")
                 .add("tm", "23时55分13秒")
-                .add("bak", "ccc"))
-                .strict(false);
-        baki.insert(dataFrame);
+                .add("bak", "ccc");
+        baki.insert("test.tb", args, false);
     }
 
     @Test
@@ -167,13 +163,12 @@ public class MyTest {
         Me me = new Me();
         me.setAge(25);
         me.setName("entity");
-        DataFrame frame = DataFrame.ofMap("test.tb", Args.of("jsb", me));
-        baki.insert(frame);
+        baki.insert("test.tb", Args.of("jsb", me));
     }
 
     @Test
     public void insertFile() throws FileNotFoundException {
-        baki.insert(DataFrame.ofMap("test.tb", Args.of("blob", new FileInputStream("/Users/chengyuxing/Downloads/Bob.app.zip"))));
+        baki.insert("test.tb", Args.of("blob", new FileInputStream("/Users/chengyuxing/Downloads/Bob.app.zip")));
     }
 
     @Test
@@ -281,7 +276,7 @@ public class MyTest {
         map.put("productplace", "bbb");
         map.put("price", 1000);
 
-        int i = baki.insert(DataFrame.ofMap("test.fruit", map));
+        int i = baki.insert("test.fruit", map);
         System.out.println(i);
     }
 
@@ -397,8 +392,7 @@ public class MyTest {
         Tx.using(() -> {
             baki.fetch("select current_timestamp, version()")
                     .ifPresent(System.out::println);
-            baki.insert(DataFrame.ofRow("test.history",
-                    DataRow.fromPair("userid", UUID.randomUUID(), "words", "transactional")));
+            baki.insert("test.history", DataRow.fromPair("userid", UUID.randomUUID(), "words", "transactional").toMap());
         });
     }
 
@@ -496,16 +490,16 @@ public class MyTest {
 
     @Test
     public void TestDelete() throws SQLException {
-        int i = baki.delete("test.history", Condition.where(Filter.eq("userid", "13766f06-119d-463d-9a94-8350ea172c87")));
-        System.out.println(i);
+//        int i = baki.delete("test.history", Condition.where(Filter.eq("userid", "13766f06-119d-463d-9a94-8350ea172c87")));
+//        System.out.println(i);
     }
 
     @Test
     public void testUpdate() throws SQLException {
-        int i = baki.update("test.user t",
-                Args.create().add("name", Param.IN("SQLFileManager")),
-                Condition.where(Filter.eq("id", 5)));
-        System.out.println(i);
+//        int i = baki.update("test.user t",
+//                Args.create().add("name", Param.IN("SQLFileManager")),
+//                Condition.where(Filter.eq("id", 5)));
+//        System.out.println(i);
     }
 
     @Test
@@ -518,12 +512,12 @@ public class MyTest {
 
     @Test
     public void ConditionTest() {
-        ICondition conditions = Condition.where(Filter.eq("id", 25))
-                .and(Filter.isNotNull("name"))
-                .or(Filter.eq("id", 88))
-                .or(Filter.notLike("name", "%admin"));
-
-        System.out.println(conditions);
+//        ICondition conditions = Condition.where(Filter.eq("id", 25))
+//                .and(Filter.isNotNull("name"))
+//                .or(Filter.eq("id", 88))
+//                .or(Filter.notLike("name", "%admin"));
+//
+//        System.out.println(conditions);
     }
 
     @Test

@@ -72,7 +72,7 @@ public abstract class JdbcSupport {
      * @param args 参数
      * @return 处理后的sql
      */
-    protected abstract String prepareSql(String sql, Map<String, Object> args);
+    protected abstract String prepareSql(String sql, Map<String, ?> args);
 
     /**
      * 执行一句预编译的sql
@@ -235,7 +235,7 @@ public abstract class JdbcSupport {
      * @throws UnsupportedOperationException 数据库或驱动版本不支持批量操作
      * @throws IllegalArgumentException      如果执行的sql条数少1条
      */
-    public int[] executeBatch(final String... sqls) {
+    public int[] batchExecute(final String... sqls) {
         if (sqls.length > 0) {
             Statement statement = null;
             Connection connection = getConnection();
@@ -274,9 +274,9 @@ public abstract class JdbcSupport {
      * @return 总的受影响的行数
      * @throws SqlRuntimeException sql执行过程中出现错误
      */
-    public int executeNonQuery(final String sql, final Collection<Map<String, Object>> args) {
+    public int executeNonQuery(final String sql, final Collection<?extends Map<String, ?>> args) {
         String sourceSql = sql;
-        Map<String, Object> firstArg = Collections.emptyMap();
+        Map<String, ?> firstArg = Collections.emptyMap();
         boolean hasArgs = args != null && !args.isEmpty();
         if (hasArgs) {
             firstArg = args.iterator().next();
@@ -297,7 +297,7 @@ public abstract class JdbcSupport {
         return execute(preparedSql, sc -> {
             int i = 0;
             if (hasArgs) {
-                for (Map<String, Object> arg : args) {
+                for (Map<String, ?> arg : args) {
                     JdbcUtil.setSqlArgs(sc, arg, argNames);
                     i += sc.executeUpdate();
                 }
@@ -321,7 +321,7 @@ public abstract class JdbcSupport {
      * @return 总的受影响的行数
      * @throws SqlRuntimeException sql执行过程中出现错误
      */
-    public int executeNonQuery(final String sql, final Map<String, Object> arg) {
+    public int executeNonQuery(final String sql, final Map<String, ?> arg) {
         return executeNonQuery(sql, Collections.singletonList(arg));
     }
 

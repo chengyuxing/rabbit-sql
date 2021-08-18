@@ -41,7 +41,7 @@ public class SqlUtil {
      * @return 满足条件的字段
      */
     @SuppressWarnings("Java8CollectionRemoveIf")
-    public static Set<String> filterKeys(final Map<String, Object> row, List<String> fields) {
+    public static Set<String> filterKeys(final Map<String, ?> row, List<String> fields) {
         Set<String> keys = row.keySet();
         if (fields != null && !fields.isEmpty()) {
             Iterator<String> keyIterator = keys.iterator();
@@ -63,7 +63,7 @@ public class SqlUtil {
      * @return 插入语句
      * @throws IllegalArgumentException 如果参数为空
      */
-    public static String generateInsert(final String tableName, final Map<String, Object> row, List<String> fields) {
+    public static String generateInsert(final String tableName, final Map<String, ?> row, List<String> fields) {
         Set<String> keys = filterKeys(row, fields);
         if (keys.isEmpty()) {
             throw new IllegalArgumentException("empty field set, generate insert sql error.");
@@ -86,7 +86,7 @@ public class SqlUtil {
      * @return 插入语句
      * @throws IllegalArgumentException 如果参数为空
      */
-    public static String generatePreparedInsert(final String tableName, final Map<String, Object> row, List<String> fields) {
+    public static String generatePreparedInsert(final String tableName, final Map<String, ?> row, List<String> fields) {
         Set<String> keys = filterKeys(row, fields);
         if (keys.isEmpty()) {
             throw new IllegalArgumentException("empty field set, generate insert sql error.");
@@ -253,7 +253,7 @@ public class SqlUtil {
      * @param args 参数
      * @return 预编译SQL和参数名的集合
      */
-    public static Pair<String, List<String>> getPreparedSql(final String sql, Map<String, Object> args) {
+    public static Pair<String, List<String>> getPreparedSql(final String sql, Map<String, ?> args) {
         return generateSql(sql, args, true);
     }
 
@@ -265,7 +265,7 @@ public class SqlUtil {
      * @param prepare 是否生成预编译sql
      * @return 预编译sql或普通sql
      */
-    public static Pair<String, List<String>> generateSql(final String sql, Map<String, Object> args, boolean prepare) {
+    public static Pair<String, List<String>> generateSql(final String sql, Map<String, ?> args, boolean prepare) {
         // exclude substr first
         Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSqlSubstr(sql);
         // resolve the sql string template next
@@ -306,7 +306,7 @@ public class SqlUtil {
      * @return 替换模版占位符后的字符串
      */
     @SuppressWarnings("unchecked")
-    public static String resolveSqlStrTemplate(final String str, final Map<String, Object> args, boolean exceptSubstr) {
+    public static String resolveSqlStrTemplate(final String str, final Map<String, ?> args, boolean exceptSubstr) {
         if (args == null || args.isEmpty()) {
             return str;
         }
@@ -466,7 +466,7 @@ public class SqlUtil {
      * @return 解析后的sql
      * @see FastExpression
      */
-    public static String dynamicSql(final String sql, Map<String, Object> argsMap, boolean checkArgsKey) {
+    public static String dynamicSql(final String sql, Map<String, ?> argsMap, boolean checkArgsKey) {
         if (!containsAllIgnoreCase(sql, "--#if", "--#fi")) {
             return sql;
         }

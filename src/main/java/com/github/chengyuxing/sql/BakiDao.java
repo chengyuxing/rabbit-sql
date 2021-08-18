@@ -7,7 +7,6 @@ import com.github.chengyuxing.sql.datasource.DataSourceUtil;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
 import com.github.chengyuxing.sql.exceptions.DuplicateException;
 import com.github.chengyuxing.sql.exceptions.SqlRuntimeException;
-import com.github.chengyuxing.sql.support.ICondition;
 import com.github.chengyuxing.sql.support.JdbcSupport;
 import com.github.chengyuxing.sql.transaction.Tx;
 import com.github.chengyuxing.sql.types.Param;
@@ -102,65 +101,40 @@ public class BakiDao extends JdbcSupport implements Baki {
     /**
      * {@inheritDoc}
      *
-     * @param dataFrame 数据对象
+     * @param tableName 表名
+     * @param data      数据
+     * @param strict    true：根据数据生成insert语句，不论表是否存在相应的字段，false：根据表字段筛选数据中存在的字段生成insert语句
      * @return 受影响的行数
      * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
-     * @see #fastInsert(DataFrame)
+     * @see #fastInsert(String, Collection, boolean)
+     * @see #fastInsert(String, Collection)
      */
     @Override
-    public int insert(DataFrame dataFrame) {
-        Collection<Map<String, Object>> data = dataFrame.getRows();
-        Iterator<Map<String, Object>> iterator = data.iterator();
+    public int insert(String tableName, Collection<? extends Map<String, ?>> data, boolean strict) {
+        Iterator<? extends Map<String, ?>> iterator = data.iterator();
         if (iterator.hasNext()) {
-            Map<String, Object> first = iterator.next();
-            List<String> tableFields = dataFrame.isStrict() ? new ArrayList<>() : getTableFields(dataFrame);
-            String insertSql = SqlUtil.generatePreparedInsert(dataFrame.getTableName(), first, tableFields);
+            Map<String, ?> first = iterator.next();
+            List<String> tableFields = strict ? new ArrayList<>() : getTableFields(tableName);
+            String insertSql = SqlUtil.generatePreparedInsert(tableName, first, tableFields);
             return executeNonQuery(insertSql, data);
         }
         return -1;
     }
 
     /**
-     * {@inheritDoc}（非预编译SQL）<br>
-     * 注：不支持插入二进制对象
-     *
-     * @param dataFrame 数据对象
-     * @return 受影响的行数
-     * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
-     */
-    @Override
-    public int fastInsert(DataFrame dataFrame) {
-        Collection<Map<String, Object>> data = dataFrame.getRows();
-        if (data.size() > 0) {
-            Iterator<Map<String, Object>> iterator = data.iterator();
-            String[] sqls = new String[data.size()];
-            List<String> tableFields = null;
-            for (int i = 0; iterator.hasNext(); i++) {
-                if (tableFields == null) {
-                    tableFields = dataFrame.isStrict() ? new ArrayList<>() : getTableFields(dataFrame);
-                }
-                String insertSql = SqlUtil.generateInsert(dataFrame.getTableName(), iterator.next(), tableFields);
-                sqls[i] = insertSql;
-            }
-            log.debug("preview sql: {}\nmore...", SqlUtil.highlightSql(sqls[0]));
-            int count = executeBatch(sqls).length;
-            log.debug("{} rows inserted!", count);
-            return count;
-        }
-        return -1;
-    }
-
-    /**
      * {@inheritDoc}
+     * 根据数据生成insert语句，不论表是否存在相应的字段
      *
      * @param tableName 表名
-     * @param condition 条件配置
+     * @param data      数据
      * @return 受影响的行数
      * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
+     * @see #fastInsert(String, Collection, boolean)
+     * @see #fastInsert(String, Collection)
      */
     @Override
-    public int delete(String tableName, ICondition condition) {
-        return executeNonQuery("delete from " + tableName + " " + condition.getSql(), condition.getArgs());
+    public int insert(String tableName, Collection<? extends Map<String, ?>> data) {
+        return insert(tableName, data, true);
     }
 
     /**
@@ -168,17 +142,102 @@ public class BakiDao extends JdbcSupport implements Baki {
      *
      * @param tableName 表名
      * @param data      数据
-     * @param condition 条件
+     * @param strict    true：根据数据生成insert语句，不论表是否存在相应的字段，false：根据表字段筛选数据中存在的字段生成insert语句
      * @return 受影响的行数
      * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
-     * @see #fastUpdate(String, Collection, String)
+     * @see #fastInsert(String, Collection, boolean)
+     * @see #fastInsert(String, Collection)
      */
     @Override
-    public int update(String tableName, Map<String, Object> data, ICondition condition) {
-        String update = SqlUtil.generatePreparedUpdate(tableName, data);
-        Map<String, Object> updateDate = new HashMap<>(data);
-        updateDate.putAll(condition.getArgs());
-        return executeNonQuery(update + condition.getSql(), updateDate);
+    public int insert(String tableName, Map<String, ?> data, boolean strict) {
+        return insert(tableName, Collections.singletonList(data), strict);
+    }
+
+    /**
+     * {@inheritDoc}
+     * 根据数据生成insert语句，不论表是否存在相应的字段
+     *
+     * @param tableName 表名
+     * @param data      数据
+     * @return 受影响的行数
+     * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
+     * @see #fastInsert(String, Collection, boolean)
+     * @see #fastInsert(String, Collection)
+     */
+    @Override
+    public int insert(String tableName, Map<String, ?> data) {
+        return insert(tableName, Collections.singletonList(data));
+    }
+
+    /**
+     * {@inheritDoc}（非预编译SQL）<br>
+     * 注：不支持插入二进制对象
+     *
+     * @param tableName 表名
+     * @param data      数据
+     * @param strict    true：根据数据生成insert语句，不论表是否存在相应的字段，false：根据表字段筛选数据中存在的字段生成insert语句
+     * @return 受影响的行数
+     * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
+     */
+    @Override
+    public int fastInsert(String tableName, Collection<? extends Map<String, ?>> data, boolean strict) {
+        if (data.size() > 0) {
+            Iterator<? extends Map<String, ?>> iterator = data.iterator();
+            String[] sqls = new String[data.size()];
+            List<String> tableFields = strict ? new ArrayList<>() : getTableFields(tableName);
+            for (int i = 0; iterator.hasNext(); i++) {
+                String insertSql = SqlUtil.generateInsert(tableName, iterator.next(), tableFields);
+                sqls[i] = insertSql;
+            }
+            log.debug("preview sql: {}\nmore...", SqlUtil.highlightSql(sqls[0]));
+            int count = batchExecute(sqls).length;
+            log.debug("{} rows inserted!", count);
+            return count;
+        }
+        return -1;
+    }
+
+    /**
+     * {@inheritDoc}（非预编译SQL）<br>
+     * 注：不支持插入二进制对象<br>
+     * 根据数据生成insert语句，不论表是否存在相应的字段
+     *
+     * @param tableName 表名
+     * @param data      数据
+     * @return 受影响的行数
+     * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
+     */
+    @Override
+    public int fastInsert(String tableName, Collection<? extends Map<String, ?>> data) {
+        return fastInsert(tableName, data, true);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param tableName 表名
+     * @param where     条件
+     * @param arg       条件参数
+     * @return 受影响的行数
+     * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
+     */
+    @Override
+    public int delete(String tableName, String where, Map<String, ?> arg) {
+        String w = StringUtil.startsWithIgnoreCase(where.trim(), "where") ? where : "\nwhere " + where;
+        return executeNonQuery("delete from " + tableName + w, arg);
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @param tableName 表名
+     * @param where     条件
+     * @return 受影响的行数
+     * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
+     */
+    @Override
+    public int delete(String tableName, String where) {
+        return delete(tableName, where, Collections.emptyMap());
     }
 
     /**
@@ -248,7 +307,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 sqls[i] = update;
             }
             log.debug("preview sql: {}\nmore...", SqlUtil.highlightSql(sqls[0]));
-            int count = Arrays.stream(executeBatch(sqls)).sum();
+            int count = Arrays.stream(batchExecute(sqls)).sum();
             log.debug("{} rows updated!", count);
             return count;
         }
@@ -391,17 +450,17 @@ public class BakiDao extends JdbcSupport implements Baki {
     /**
      * 根据严格模式获取表字段
      *
-     * @param dataFrame 数据对象
+     * @param tableName 表名
      * @return 表字段
      * @throws SqlRuntimeException 执行查询表字段出现异常
      */
-    private List<String> getTableFields(DataFrame dataFrame) {
-        return execute(dataFrame.getTableFieldsSql(), sc -> {
+    private List<String> getTableFields(String tableName) {
+        return execute("select * from " + tableName + " where 1 = 2", sc -> {
             sc.executeQuery();
             ResultSet fieldsResultSet = sc.getResultSet();
             List<String> fields = Arrays.asList(JdbcUtil.createNames(fieldsResultSet, ""));
             JdbcUtil.closeResultSet(fieldsResultSet);
-            log.debug("all fields of table: {} {}", dataFrame.getTableName(), fields);
+            log.debug("all fields of table: {} {}", tableName, fields);
             return fields;
         });
     }
@@ -434,7 +493,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @throws IllegalArgumentException 如果严格模式下动态sql参数为null或空
      */
     @Override
-    protected String prepareSql(String sql, Map<String, Object> args) {
+    protected String prepareSql(String sql, Map<String, ?> args) {
         String trimEndedSql = SqlUtil.trimEnd(sql);
         if (sql.startsWith("&")) {
             if (sqlFileManager != null) {

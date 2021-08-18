@@ -379,7 +379,7 @@ public class JdbcUtil {
      * @param names     占位符参数名
      * @throws SQLException ex
      */
-    public static void setSqlArgs(PreparedStatement statement, Map<String, Object> args, List<String> names) throws SQLException {
+    public static void setSqlArgs(PreparedStatement statement, Map<String, ?> args, List<String> names) throws SQLException {
         if (args != null && !args.isEmpty()) {
             for (int i = 0; i < names.size(); i++) {
                 int index = i + 1;

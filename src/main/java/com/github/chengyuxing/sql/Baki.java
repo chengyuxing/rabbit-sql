@@ -84,6 +84,7 @@ public interface Baki {
      * 具体逻辑可参考实现
      *
      * @param tableName 表名
+     * @param data      数据
      * @param strict    是否严格插入
      * @return 受影响的行数
      */

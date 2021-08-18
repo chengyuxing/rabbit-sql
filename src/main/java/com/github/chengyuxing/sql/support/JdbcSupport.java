@@ -112,7 +112,7 @@ public abstract class JdbcSupport {
      * @return 查询语句返回List，DML语句返回受影响的行数，DDL语句返回0
      * @throws SqlRuntimeException sql执行过程中出现错误
      */
-    public DataRow execute(final String sql, Map<String, Object> args) {
+    public DataRow execute(final String sql, Map<String, ?> args) {
         String sourceSql = prepareSql(sql, args);
         log.debug("SQL:{}", SqlUtil.highlightSql(sourceSql));
         log.debug("Args:{}", args);
@@ -162,7 +162,7 @@ public abstract class JdbcSupport {
      * @return Stream数据流
      * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误.
      */
-    public Stream<DataRow> executeQueryStream(final String sql, Map<String, Object> args) {
+    public Stream<DataRow> executeQueryStream(final String sql, Map<String, ?> args) {
         if (args == null) {
             args = Collections.emptyMap();
         }

@@ -259,10 +259,10 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param where     条件：条件中需要有传名参数作为更新的条件依据
      * @return 受影响的行数
      * @throws SqlRuntimeException sql执行过程中出现错误
-     * @see #fastUpdate(String, Collection, String)
+     * @see Baki#fastUpdate(String, Collection, String)
      */
     @Override
-    public int update(String tableName, Map<String, Object> data, String where) {
+    public int update(String tableName, Map<String, ?> data, String where) {
         Pair<String, List<String>> cnd = SqlUtil.generateSql(where, data, true);
         Map<String, Object> updateData = new HashMap<>(data);
         for (String key : cnd.getItem2()) {
@@ -276,7 +276,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     /**
      * {@inheritDoc}（非预编译SQL）<br>
      * 注：不支持插入二进制对象<br>
-     * 如果需要插入文件请使用：{@link #update(String, Map, String)}（预编译SQL）<br>
+     * 如果需要插入文件请使用：{@link Baki#update(String, Map, String)}（预编译SQL）<br>
      * e.g. {@code fastUpdate(<table>, <List<Map>>, "id = :id")}
      * 关于此方法的说明举例：
      * <blockquote>
@@ -298,10 +298,10 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @throws IllegalArgumentException      数据条数少于一条
      */
     @Override
-    public int fastUpdate(String tableName, Collection<Map<String, Object>> args, String where) {
+    public int fastUpdate(String tableName, Collection<? extends Map<String, ?>> args, String where) {
         if (args.size() > 0) {
             String[] sqls = new String[args.size()];
-            Iterator<Map<String, Object>> iterator = args.iterator();
+            Iterator<? extends Map<String, ?>> iterator = args.iterator();
             for (int i = 0; iterator.hasNext(); i++) {
                 String update = SqlUtil.generateUpdate(tableName, iterator.next(), where);
                 sqls[i] = update;
@@ -335,7 +335,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
      */
     @Override
-    public Stream<DataRow> query(String sql, Map<String, Object> args) {
+    public Stream<DataRow> query(String sql, Map<String, ?> args) {
         return executeQueryStream(sql, args);
     }
 
@@ -374,7 +374,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
      */
     @Override
-    public Optional<DataRow> fetch(String sql, Map<String, Object> args) {
+    public Optional<DataRow> fetch(String sql, Map<String, ?> args) {
         try (Stream<DataRow> s = query(sql, args)) {
             return s.findFirst();
         }
@@ -401,7 +401,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
      */
     @Override
-    public boolean exists(String sql, Map<String, Object> args) {
+    public boolean exists(String sql, Map<String, ?> args) {
         return fetch(sql, args).isPresent();
     }
 

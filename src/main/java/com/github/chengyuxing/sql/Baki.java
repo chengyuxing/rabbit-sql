@@ -31,7 +31,7 @@ public interface Baki {
      * @param args 参数
      * @return 行数据
      */
-    DataRow execute(String sql, Map<String, Object> args);
+    DataRow execute(String sql, Map<String, ?> args);
 
     /**
      * 批量执行非查询sql
@@ -129,7 +129,7 @@ public interface Baki {
      * @param where     条件
      * @return 受影响的行数
      */
-    int update(String tableName, Map<String, Object> data, String where);
+    int update(String tableName, Map<String, ?> data, String where);
 
     /**
      * 快速更新<br>
@@ -140,7 +140,7 @@ public interface Baki {
      * @param where     条件
      * @return 受影响的行数
      */
-    int fastUpdate(String tableName, Collection<Map<String, Object>> args, String where);
+    int fastUpdate(String tableName, Collection<? extends Map<String, ?>> args, String where);
 
     /**
      * 流式查询
@@ -157,7 +157,7 @@ public interface Baki {
      * @param args 参数
      * @return 收集为流的结果集
      */
-    Stream<DataRow> query(String sql, Map<String, Object> args);
+    Stream<DataRow> query(String sql, Map<String, ?> args);
 
     /**
      * 查询
@@ -178,7 +178,7 @@ public interface Baki {
      * @param args 参数
      * @return 一组map类型结果
      */
-    default List<Map<String, Object>> queryMaps(String sql, Map<String, Object> args) {
+    default List<Map<String, Object>> queryMaps(String sql, Map<String, ?> args) {
         try (Stream<DataRow> s = query(sql, args)) {
             return s.map(DataRow::toMap).collect(Collectors.toList());
         }
@@ -210,7 +210,7 @@ public interface Baki {
      * @param args 参数
      * @return 空或一条
      */
-    Optional<DataRow> fetch(String sql, Map<String, Object> args);
+    Optional<DataRow> fetch(String sql, Map<String, ?> args);
 
     /**
      * 获取一条
@@ -229,7 +229,7 @@ public interface Baki {
      * @param args 参数
      * @return 一条数据
      */
-    default Map<String, Object> fetchMap(String sql, Map<String, Object> args) {
+    default Map<String, Object> fetchMap(String sql, Map<String, ?> args) {
         return fetch(sql, args).map(DataRow::toMap).orElseGet(HashMap::new);
     }
 
@@ -248,7 +248,7 @@ public interface Baki {
      * @param args 参数
      * @return 是否存在
      */
-    boolean exists(String sql, Map<String, Object> args);
+    boolean exists(String sql, Map<String, ?> args);
 
     /**
      * 执行存储过程或函数

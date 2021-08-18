@@ -109,7 +109,7 @@ public class SqlUtil {
      * @return 更新语句
      * @throws IllegalArgumentException 如果where条件为空或者没有生成需要更新的字段
      */
-    public static String generateUpdate(String tableName, Map<String, Object> data, final String where) {
+    public static String generateUpdate(String tableName, Map<String, ?> data, final String where) {
         if (where.trim().equals("")) {
             throw new IllegalArgumentException("where condition must not be empty.");
         }

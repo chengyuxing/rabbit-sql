@@ -95,6 +95,7 @@ public interface Baki {
      * 具体逻辑可参考实现
      *
      * @param tableName 表名
+     * @param data      数据
      * @return 受影响的行数
      */
     int fastInsert(String tableName, Collection<? extends Map<String, ?>> data);

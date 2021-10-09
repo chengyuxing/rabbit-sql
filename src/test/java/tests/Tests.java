@@ -3,6 +3,7 @@ package tests;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.chengyuxing.sql.BakiDao;
 import com.github.chengyuxing.sql.SQLFileManager;
+import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.zaxxer.hikari.HikariDataSource;
 import func.BeanUtil;
 import org.junit.BeforeClass;
@@ -30,6 +31,15 @@ import java.util.regex.Pattern;
 import static com.github.chengyuxing.sql.utils.SqlUtil.SEP;
 
 public class Tests {
+
+    @Test
+    public void page() throws Exception{
+        PGPageHelper pgPageHelper = new PGPageHelper();
+        pgPageHelper.init(12,10,0);
+        System.out.println(pgPageHelper);
+        System.out.println(pgPageHelper.limit());
+        System.out.println(pgPageHelper.offset());
+    }
 
     @Test
     public void dtTest() throws Exception {

@@ -32,9 +32,17 @@ public class BakiSessionTest {
     }
 
     @Test
+    public void upd() throws Exception {
+        int i = baki.update("test.region",
+                Args.of("name", "南亚风情第一城").add("oldName", "南亚风情园"),
+                "name = :oldName");
+        System.out.println(i);
+    }
+
+    @Test
     public void engine() throws Exception {
         baki.query("select * from test.history where length(words) < :num or words ~ :regex",
-                Args.<Object>of(":num", 5).add("regex", "^tran"))
+                        Args.<Object>of(":num", 5).add("regex", "^tran"))
                 .forEach(System.out::println);
     }
 
@@ -108,20 +116,20 @@ public class BakiSessionTest {
     @Test
     public void jsonTest() throws Exception {
         baki.query("select '{\n" +
-                "      \"guid\": \"9c36adc1-7fb5-4d5b-83b4-90356a46061a\",\n" +
-                "      \"name\": \"Angela Barton\",\n" +
-                "      \"is_active\": true,\n" +
-                "      \"company\": \"Magnafone\",\n" +
-                "      \"address\": \"178 Howard Place, Gulf, Washington, 702\",\n" +
-                "      \"registered\": \"2009-11-07T08:53:22 +08:00\",\n" +
-                "      \"latitude\": 19.793713,\n" +
-                "      \"longitude\": 86.513373,\n" +
-                "      \"tags\": [\n" +
-                "        \"enim\",\n" +
-                "        \"aliquip\",\n" +
-                "        \"qui\"\n" +
-                "      ]\n" +
-                "    }'::jsonb")
+                        "      \"guid\": \"9c36adc1-7fb5-4d5b-83b4-90356a46061a\",\n" +
+                        "      \"name\": \"Angela Barton\",\n" +
+                        "      \"is_active\": true,\n" +
+                        "      \"company\": \"Magnafone\",\n" +
+                        "      \"address\": \"178 Howard Place, Gulf, Washington, 702\",\n" +
+                        "      \"registered\": \"2009-11-07T08:53:22 +08:00\",\n" +
+                        "      \"latitude\": 19.793713,\n" +
+                        "      \"longitude\": 86.513373,\n" +
+                        "      \"tags\": [\n" +
+                        "        \"enim\",\n" +
+                        "        \"aliquip\",\n" +
+                        "        \"qui\"\n" +
+                        "      ]\n" +
+                        "    }'::jsonb")
                 .forEach(r -> {
                     Object res = r.get(0);
                     System.out.println(r);
@@ -130,12 +138,12 @@ public class BakiSessionTest {
                 });
 
         baki.query("select t.a -> 'name', t.a -> 'age'\n" +
-                "from (\n" +
-                "         select '{\n" +
-                "           \"name\": \"cyx\",\n" +
-                "           \"age\": 26,\n" +
-                "           \"address\": \"昆明市\"\n" +
-                "         }'::json) t(a)")
+                        "from (\n" +
+                        "         select '{\n" +
+                        "           \"name\": \"cyx\",\n" +
+                        "           \"age\": 26,\n" +
+                        "           \"address\": \"昆明市\"\n" +
+                        "         }'::json) t(a)")
                 .forEach(System.out::println);
 
         baki.fetch("select array [4,5] || array [1,2,3]").ifPresent(System.out::println);
@@ -144,10 +152,10 @@ public class BakiSessionTest {
     @Test
     public void jsonTests() throws Exception {
         baki.fetch("select '{\n" +
-                "  \"a\": 1,\n" +
-                "  \"b\": 2,\n" +
-                "  \"c\": 3\n" +
-                "}'::jsonb ??| array ['d', 's'];")
+                        "  \"a\": 1,\n" +
+                        "  \"b\": 2,\n" +
+                        "  \"c\": 3\n" +
+                        "}'::jsonb ??| array ['d', 's'];")
                 .ifPresent(System.out::println);
     }
 
@@ -185,7 +193,7 @@ public class BakiSessionTest {
     @Test
     public void caseU() throws Exception {
         baki.query("select words, userid, DEL as \"DeL\"\n" +
-                "from test.history")
+                        "from test.history")
                 .forEach(System.out::println);
     }
 

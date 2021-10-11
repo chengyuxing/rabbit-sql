@@ -21,6 +21,24 @@ public class Args<V> extends HashMap<String, V> {
     }
 
     /**
+     * 从一组键值对创建一个Args
+     *
+     * @param pairOfArgs 键值对 k v，k v...
+     * @return Args对象
+     */
+    public static Args<Object> create(Object... pairOfArgs) {
+        if (pairOfArgs.length == 0 || pairOfArgs.length % 2 != 0) {
+            throw new IllegalArgumentException("key value are not a pair.");
+        }
+        int length = pairOfArgs.length >> 1;
+        Args<Object> args = create();
+        for (int i = 0; i < length; i++) {
+            args.put(pairOfArgs[i << 1].toString(), pairOfArgs[(i << 1) + 1]);
+        }
+        return args;
+    }
+
+    /**
      * 创建一个有初始值的参数集合
      *
      * @param key   名称

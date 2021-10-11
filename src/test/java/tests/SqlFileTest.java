@@ -11,6 +11,7 @@ import org.nutz.ioc.Ioc;
 import org.nutz.ioc.impl.NutIoc;
 import org.nutz.ioc.loader.json.JsonLoader;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.List;
 
@@ -31,6 +32,11 @@ public class SqlFileTest {
         System.out.println("-------");
         System.out.println(sqlFileManager.get("data.logical", Args.<Object>of("name", "cyx").add("age", 101)));
 
+    }
+
+    @Test
+    public void argsTest() throws Exception {
+        System.out.println(Args.create("id", 1, "name", "cyx", "dt", LocalDateTime.now()));
     }
 
     @Test

@@ -133,7 +133,7 @@ public class Tests {
                 "--#fi\n" +
                 "--#end\n" +
                 "where id = 10";
-        String dq = SqlUtil.dynamicSql(sql, Args.<Object>of("name", "")
+        String dq = SQLFileManager.calcDynamicSql(sql, Args.<Object>of("name", "")
                 .add("age", 27)
                 .add("address", "beijing")
                 .add("open", "sad"), true);

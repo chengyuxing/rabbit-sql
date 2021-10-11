@@ -26,8 +26,6 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import static com.github.chengyuxing.sql.utils.SqlUtil.dynamicSql;
-
 /**
  * <p>如果配置了{@link SQLFileManager },则接口所有方法都可以通过 <b>&amp;文件夹名.文件名.sql</b> 名来获取sql文件内的sql,通过<b>&amp;</b>
  * 前缀符号来判断如果是sql名则获取sql否则当作sql直接执行</p>
@@ -497,12 +495,12 @@ public class BakiDao extends JdbcSupport implements Baki {
         String trimEndedSql = SqlUtil.trimEnd(sql);
         if (sql.startsWith("&")) {
             if (sqlFileManager != null) {
-                trimEndedSql = SqlUtil.trimEnd(sqlFileManager.get(sql.substring(1)));
+                trimEndedSql = SqlUtil.trimEnd(sqlFileManager.get(sql.substring(1), args, strictDynamicSqlArg));
             } else {
                 throw new NullPointerException("can not find property 'sqlFileManager' or SQLFileManager object init failed!");
             }
         }
-        return dynamicSql(trimEndedSql, args, strictDynamicSqlArg);
+        return trimEndedSql;
     }
 
     @Override

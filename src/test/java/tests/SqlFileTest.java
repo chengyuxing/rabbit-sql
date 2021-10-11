@@ -1,16 +1,15 @@
 package tests;
 
+import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.sql.Args;
-import org.junit.BeforeClass;
+import com.github.chengyuxing.sql.BakiDao;
+import com.github.chengyuxing.sql.SQLFileManager;
+import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
 import org.nutz.dao.impl.NutDao;
 import org.nutz.ioc.Ioc;
 import org.nutz.ioc.impl.NutIoc;
 import org.nutz.ioc.loader.json.JsonLoader;
-import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.sql.BakiDao;
-import com.github.chengyuxing.sql.SQLFileManager;
-import com.github.chengyuxing.sql.utils.SqlUtil;
 
 import java.util.Collections;
 import java.util.List;
@@ -19,9 +18,19 @@ public class SqlFileTest {
 
     private static Ioc ioc;
 
-    @BeforeClass
+    //    @BeforeClass
     public static void init() {
         ioc = new NutIoc(new JsonLoader("ioc.js"));
+    }
+
+    @Test
+    public void dynamicSqlFileManagerTest() throws Exception {
+        SQLFileManager sqlFileManager = new SQLFileManager();
+        sqlFileManager.add("data", "pgsql/data.sql");
+        sqlFileManager.init();
+        System.out.println("-------");
+        System.out.println(sqlFileManager.get("data.logical", Args.<Object>of("name", "cyx").add("age", 101)));
+
     }
 
     @Test

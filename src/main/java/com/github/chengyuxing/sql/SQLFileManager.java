@@ -2,7 +2,9 @@ package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.console.Color;
 import com.github.chengyuxing.common.console.Printer;
+import com.github.chengyuxing.common.script.impl.FastExpression;
 import com.github.chengyuxing.common.tuple.Pair;
+import com.github.chengyuxing.sql.exceptions.IORuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.github.chengyuxing.common.io.FileResource;
@@ -23,6 +25,10 @@ import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.github.chengyuxing.common.utils.StringUtil.containsAllIgnoreCase;
+import static com.github.chengyuxing.common.utils.StringUtil.startsWithIgnoreCase;
+import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
+
 /**
  * SQL文件解析管理器<br>
  * 支持外部sql(本地文件系统)和classpath下的sql<br>
@@ -35,7 +41,7 @@ import java.util.regex.Pattern;
  * </blockquote>
  * 格式参考data.sql.template
  */
-public final class SQLFileManager {
+public class SQLFileManager {
     private final static Logger log = LoggerFactory.getLogger(SQLFileManager.class);
     private final ReentrantLock lock = new ReentrantLock();
     private final Map<String, String> RESOURCE = new HashMap<>();
@@ -44,12 +50,10 @@ public final class SQLFileManager {
     private final Map<String, Long> LAST_MODIFIED = new HashMap<>();
     private static final Pattern NAME_PATTERN = Pattern.compile("/\\*\\s*\\[\\s*(?<name>\\S+)\\s*]\\s*\\*/");
     private static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+)\\s*}\\s*\\*/");
-    public static final String[] KEEP_ANNOTATION_STARTS_KEYWORDS = new String[]{
-            "--#if",
-            "--#fi",
-            "--#choose",
-            "--#end"
-    };
+    public static final String IF = "--#if";
+    public static final String FI = "--#fi";
+    public static final String CHOOSE = "--#choose";
+    public static final String END = "--#end";
     // ----------------optional properties------------------
     private volatile boolean checkModified;
     private Map<String, String> constants = new HashMap<>();
@@ -149,11 +153,11 @@ public final class SQLFileManager {
                         singleResource.put(previousSqlName, "");
                     } else {
                         // exclude single line annotation except expression keywords
-                        if (!trimLine.startsWith("--") || StringUtil.startsWithsIgnoreCase(trimLine, KEEP_ANNOTATION_STARTS_KEYWORDS)) {
+                        if (!trimLine.startsWith("--") || StringUtil.startsWithsIgnoreCase(trimLine, IF, FI, CHOOSE, END)) {
                             if (!previousSqlName.equals("")) {
                                 String prepareLine = singleResource.get(previousSqlName) + line;
                                 if (trimLine.endsWith(";")) {
-                                    String naSql = SqlUtil.removeAnnotationBlock(prepareLine);
+                                    String naSql = removeAnnotationBlock(prepareLine);
                                     singleResource.put(previousSqlName, naSql.substring(0, naSql.lastIndexOf(";")));
                                     log.debug("scan to get SQL [{}]：{}", previousSqlName, SqlUtil.highlightSql(singleResource.get(previousSqlName)));
                                     previousSqlName = "";
@@ -168,7 +172,7 @@ public final class SQLFileManager {
             // if last part of sql is not ends with ';' symbol
             if (!previousSqlName.equals("")) {
                 String lastSql = singleResource.get(previousSqlName);
-                singleResource.put(previousSqlName, SqlUtil.removeAnnotationBlock(lastSql));
+                singleResource.put(previousSqlName, removeAnnotationBlock(lastSql));
                 log.debug("scan to get SQL [{}]：{}", previousSqlName, SqlUtil.highlightSql(lastSql));
             }
         }
@@ -323,6 +327,150 @@ public final class SQLFileManager {
     }
 
     /**
+     * 解析一条动态sql<br>
+     * e.g. data.sql.template
+     * <blockquote>
+     * <pre>
+     *         select *
+     * from test.student t
+     * WHERE
+     * --#choose
+     *     --#if :age < 21
+     *     t.age = 21
+     *     --#fi
+     *     --#if :age <> blank && :age < 90
+     *     and age < 90
+     *     --#fi
+     * --#end
+     * --#if :name != null
+     * and t.name ~ :name
+     * --#fi
+     * ;
+     *     </pre>
+     * </blockquote>
+     *
+     * @param sql          动态sql字符串
+     * @param args         动态sql逻辑表达式参数字典
+     * @param checkArgsKey 检查参数中是否必须存在表达式中需要计算的key
+     * @return 解析后的sql
+     * @throws IllegalArgumentException 如果 {@code checkArgsKey} 为 {@code true} 并且 {@code args} 中不存在表达式所需要的key
+     * @throws NullPointerException     如果 {@code args} 为null
+     * @see FastExpression
+     */
+    public static String calcDynamicSql(String sql, Map<String, ?> args, boolean checkArgsKey) {
+        if (!containsAllIgnoreCase(sql, IF, FI)) {
+            return sql;
+        }
+        String nSql = removeAnnotationBlock(sql);
+        String[] lines = nSql.split("\n");
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        boolean ok = true;
+        boolean start = false;
+        boolean inBlock = false;
+        boolean blockFirstOk = false;
+        boolean hasChooseBlock = containsAllIgnoreCase(sql, CHOOSE, END);
+        for (String line : lines) {
+            String trimLine = line.trim();
+            if (!trimLine.isEmpty()) {
+                if (first) {
+                    if (!trimLine.startsWith("--")) {
+                        first = false;
+                    }
+                }
+                if (hasChooseBlock) {
+                    if (startsWithIgnoreCase(trimLine, CHOOSE)) {
+                        blockFirstOk = false;
+                        inBlock = true;
+                        continue;
+                    }
+                    if (startsWithIgnoreCase(trimLine, END)) {
+                        inBlock = false;
+                        continue;
+                    }
+                }
+                if (startsWithIgnoreCase(trimLine, IF) && !start) {
+                    start = true;
+                    if (inBlock) {
+                        if (!blockFirstOk) {
+                            String filter = trimLine.substring(5);
+                            FastExpression expression = FastExpression.of(filter);
+                            expression.setCheckArgsKey(checkArgsKey);
+                            ok = expression.calc(args);
+                            blockFirstOk = ok;
+                        } else {
+                            ok = false;
+                        }
+                    } else {
+                        String filter = trimLine.substring(5);
+                        FastExpression expression = FastExpression.of(filter);
+                        expression.setCheckArgsKey(checkArgsKey);
+                        ok = expression.calc(args);
+                    }
+                    continue;
+                }
+                if (startsWithIgnoreCase(trimLine, FI) && start) {
+                    ok = true;
+                    start = false;
+                    continue;
+                }
+                if (ok) {
+                    sb.append(line).append("\n");
+                    if (!inBlock) {
+                        blockFirstOk = false;
+                    }
+                }
+            }
+        }
+        return repairSyntaxError(sb.toString());
+    }
+
+    /**
+     * 修复sql常规语法错误<br>
+     * e.g.
+     * <blockquote>
+     * <pre>where and/or/order/limit...</pre>
+     * <pre>select ... from ...where</pre>
+     * <pre>update ... set  a=b, where</pre>
+     * </blockquote>
+     *
+     * @param sql sql语句
+     * @return 修复后的sql
+     */
+    private static String repairSyntaxError(String sql) {
+        Pattern p;
+        Matcher m;
+        String firstLine = sql.substring(0, sql.indexOf("\n")).trim();
+        // if update statement
+        if (startsWithIgnoreCase(firstLine, "update")) {
+            p = Pattern.compile(",\\s*where", Pattern.CASE_INSENSITIVE);
+            m = p.matcher(sql);
+            if (m.find()) {
+                sql = sql.substring(0, m.start()).concat(sql.substring(m.start() + 1));
+            }
+        }
+        // "where and" statement
+        p = Pattern.compile("where\\s+(and|or)\\s+", Pattern.CASE_INSENSITIVE);
+        m = p.matcher(sql);
+        if (m.find()) {
+            return sql.substring(0, m.start() + 6).concat(sql.substring(m.end()));
+        }
+        // if "where order by ..." statement
+        p = Pattern.compile("where\\s+(order by|limit|group by|union|\\))\\s+", Pattern.CASE_INSENSITIVE);
+        m = p.matcher(sql);
+        if (m.find()) {
+            return sql.substring(0, m.start()).concat(sql.substring(m.start() + 6));
+        }
+        // if "where" at end
+        p = Pattern.compile("where\\s*$", Pattern.CASE_INSENSITIVE);
+        m = p.matcher(sql);
+        if (m.find()) {
+            return sql.substring(0, m.start());
+        }
+        return sql;
+    }
+
+    /**
      * 初始化加载sql到缓存中
      *
      * @throws IOException           如果sql文件读取错误
@@ -415,21 +563,90 @@ public final class SQLFileManager {
      * @param name sql名
      * @return sql
      * @throws NoSuchElementException 如果没有找到相应名字的sql片段
+     * @throws IORuntimeException     如果 {@code checkModified} 属性为true重载sql文件发生错误
      */
     public String get(String name) {
         if (checkModified) {
             try {
                 reloadIfNecessary();
-            } catch (IOException e) {
-                log.error("sql file read fail: ", e);
-            } catch (URISyntaxException e) {
-                log.error("sql file path syntax error: ", e);
+            } catch (URISyntaxException | IOException e) {
+                throw new IORuntimeException("reload sql file error: ", e);
             }
         }
         if (RESOURCE.containsKey(name)) {
             return RESOURCE.get(name);
         }
         throw new NoSuchElementException(String.format("no SQL named [%s] was found.", name));
+    }
+
+    /**
+     * 获取一条动态sql<br>
+     * e.g. data.sql.template
+     * <blockquote>
+     * <pre>
+     *         select *
+     * from test.student t
+     * WHERE
+     * --#choose
+     *     --#if :age < 21
+     *     t.age = 21
+     *     --#fi
+     *     --#if :age <> blank && :age < 90
+     *     and age < 90
+     *     --#fi
+     * --#end
+     * --#if :name != null
+     * and t.name ~ :name
+     * --#fi
+     * ;
+     *     </pre>
+     * </blockquote>
+     *
+     * @param name         sql名字
+     * @param args         动态sql逻辑表达式参数字典
+     * @param checkArgsKey 检查参数中是否必须存在表达式中需要计算的key
+     * @return 解析后的sql
+     * @throws NoSuchElementException 如果没有找到相应名字的sql片段
+     * @throws IORuntimeException     如果 {@code checkModified} 属性为true重载sql文件发生错误
+     * @see #calcDynamicSql(String, Map, boolean)
+     */
+    public String get(String name, Map<String, ?> args, boolean checkArgsKey) {
+        String sql = get(name);
+        return calcDynamicSql(sql, args, checkArgsKey);
+    }
+
+    /**
+     * 获取一条动态sql<br>
+     * e.g. data.sql.template
+     * <blockquote>
+     * <pre>
+     *         select *
+     * from test.student t
+     * WHERE
+     * --#choose
+     *     --#if :age < 21
+     *     t.age = 21
+     *     --#fi
+     *     --#if :age <> blank && :age < 90
+     *     and age < 90
+     *     --#fi
+     * --#end
+     * --#if :name != null
+     * and t.name ~ :name
+     * --#fi
+     * ;
+     *     </pre>
+     * </blockquote>
+     *
+     * @param name sql名字
+     * @param args 动态sql逻辑表达式参数字典
+     * @return 解析后的sql
+     * @throws NoSuchElementException 如果没有找到相应名字的sql片段
+     * @throws IORuntimeException     如果 {@code checkModified} 属性为true重载sql文件发生错误
+     * @see #calcDynamicSql(String, Map, boolean)
+     */
+    public String get(String name, Map<String, ?> args) {
+        return get(name, args, true);
     }
 
     /**

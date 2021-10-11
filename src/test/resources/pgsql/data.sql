@@ -4,7 +4,7 @@ select ${field}
 from ${db}."user" t --用户表
     ${x.part1};
 
-/*[query]*/
+/*[query2]*/
 select current_timestamp;
 
 /*插入语句。*/

@@ -2,7 +2,6 @@ package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.console.Color;
 import com.github.chengyuxing.common.console.Printer;
-import com.github.chengyuxing.common.script.impl.FastExpression;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
@@ -13,7 +12,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.github.chengyuxing.common.utils.StringUtil.containsAllIgnoreCase;
 import static com.github.chengyuxing.common.utils.StringUtil.startsWithIgnoreCase;
 
 /**
@@ -454,129 +452,6 @@ public class SqlUtil {
             }
         }
         return Arrays.asList(annotationStr.split("\u02ac"));
-    }
-
-    /**
-     * 根据解析条件表达式的结果动态生成sql<br>
-     * e.g. data.sql.template
-     *
-     * @param sql          sql
-     * @param argsMap      参数字典
-     * @param checkArgsKey 检查参数中是否存在表达式中需要计算的key
-     * @return 解析后的sql
-     * @see FastExpression
-     */
-    public static String dynamicSql(final String sql, Map<String, ?> argsMap, boolean checkArgsKey) {
-        if (!containsAllIgnoreCase(sql, "--#if", "--#fi")) {
-            return sql;
-        }
-        String nSql = removeAnnotationBlock(sql);
-        String[] lines = nSql.split("\n");
-        StringBuilder sb = new StringBuilder();
-        boolean first = true;
-        boolean ok = true;
-        boolean start = false;
-        boolean inBlock = false;
-        boolean blockFirstOk = false;
-        boolean hasChooseBlock = containsAllIgnoreCase(sql, "--#choose", "--#end");
-        for (String line : lines) {
-            String trimLine = line.trim();
-            if (!trimLine.isEmpty()) {
-                if (first) {
-                    if (!trimLine.startsWith("--")) {
-                        first = false;
-                    }
-                }
-                if (hasChooseBlock) {
-                    if (startsWithIgnoreCase(trimLine, "--#choose")) {
-                        blockFirstOk = false;
-                        inBlock = true;
-                        continue;
-                    }
-                    if (startsWithIgnoreCase(trimLine, "--#end")) {
-                        inBlock = false;
-                        continue;
-                    }
-                }
-                if (startsWithIgnoreCase(trimLine, "--#if") && !start) {
-                    start = true;
-                    if (inBlock) {
-                        if (!blockFirstOk) {
-                            String filter = trimLine.substring(5);
-                            FastExpression expression = FastExpression.of(filter);
-                            expression.setCheckArgsKey(checkArgsKey);
-                            ok = expression.calc(argsMap);
-                            blockFirstOk = ok;
-                        } else {
-                            ok = false;
-                        }
-                    } else {
-                        String filter = trimLine.substring(5);
-                        FastExpression expression = FastExpression.of(filter);
-                        expression.setCheckArgsKey(checkArgsKey);
-                        ok = expression.calc(argsMap);
-                    }
-                    continue;
-                }
-                if (startsWithIgnoreCase(trimLine, "--#fi") && start) {
-                    ok = true;
-                    start = false;
-                    continue;
-                }
-                if (ok) {
-                    sb.append(line).append("\n");
-                    if (!inBlock) {
-                        blockFirstOk = false;
-                    }
-                }
-            }
-        }
-        return repairSyntaxError(sb.toString());
-    }
-
-    /**
-     * 修复sql常规语法错误<br>
-     * e.g.
-     * <blockquote>
-     * <pre>where and/or/order/limit...</pre>
-     * <pre>select ... from ...where</pre>
-     * <pre>update ... set  a=b, where</pre>
-     * </blockquote>
-     *
-     * @param sql sql语句
-     * @return 修复后的sql
-     */
-    public static String repairSyntaxError(String sql) {
-        Pattern p;
-        Matcher m;
-        String firstLine = sql.substring(0, sql.indexOf("\n")).trim();
-        // if update statement
-        if (startsWithIgnoreCase(firstLine, "update")) {
-            p = Pattern.compile(",\\s*where", Pattern.CASE_INSENSITIVE);
-            m = p.matcher(sql);
-            if (m.find()) {
-                sql = sql.substring(0, m.start()).concat(sql.substring(m.start() + 1));
-            }
-        }
-        // "where and" statement
-        p = Pattern.compile("where\\s+(and|or)\\s+", Pattern.CASE_INSENSITIVE);
-        m = p.matcher(sql);
-        if (m.find()) {
-            return sql.substring(0, m.start() + 6).concat(sql.substring(m.end()));
-        }
-        // if "where order by ..." statement
-        p = Pattern.compile("where\\s+(order by|limit|group by|union|\\))\\s+", Pattern.CASE_INSENSITIVE);
-        m = p.matcher(sql);
-        if (m.find()) {
-            return sql.substring(0, m.start()).concat(sql.substring(m.start() + 6));
-        }
-        // if "where" at end
-        p = Pattern.compile("where\\s*$", Pattern.CASE_INSENSITIVE);
-        m = p.matcher(sql);
-        if (m.find()) {
-            return sql.substring(0, m.start());
-        }
-        return sql;
     }
 
     /**

@@ -204,7 +204,7 @@ public class MyTest {
 
     @Test
     public void line() throws Exception {
-        baki.execute("do\n" +
+        DataRow row = baki.execute("do\n" +
                 "$$\n" +
                 "    declare\n" +
                 "        x    integer[];\n" +
@@ -212,11 +212,12 @@ public class MyTest {
                 "    begin\n" +
                 "        foreach x slice 1 in array nums\n" +
                 "            loop\n" +
-                "                raise notice 'num:%',x;\n" +
+                "                raise warning 'num:%',x;\n" +
                 "            end loop;\n" +
                 "    end;\n" +
                 "\n" +
                 "$$;");
+        System.out.println(row);
     }
 
     @Test

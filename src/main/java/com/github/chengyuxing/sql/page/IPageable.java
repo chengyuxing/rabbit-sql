@@ -10,6 +10,11 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.function.Function;
 
+/**
+ * 分页查询构建器通用接口
+ *
+ * @param <T> 结果类型参数
+ */
 public abstract class IPageable<T> {
     protected Map<String, Object> args = Collections.emptyMap();
     protected final String recordQuery;

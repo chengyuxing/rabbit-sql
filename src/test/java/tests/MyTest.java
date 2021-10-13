@@ -187,8 +187,8 @@ public class MyTest {
 
     @Test
     public void pagerTest() throws Exception {
-        PagedResource<DataRow> res = baki.<DataRow>query("&pgsql.data.select_user", 1, 10)
-                .args(Args.create().add("id", 35))
+        PagedResource<DataRow> res = baki.<DataRow>query("select * from test.region where id > :id", 1, 10)
+                .args(Args.create().add("id", 3))
                 .collect(d -> d);
         System.out.println(res);
     }
@@ -371,7 +371,7 @@ public class MyTest {
     @Test
     public void testCall() throws Exception {
         Tx.using(() -> baki.call("{:res = call test.fun_query()}",
-                Args.of("res", Param.OUT(OUTParamType.REF_CURSOR)))
+                        Args.of("res", Param.OUT(OUTParamType.REF_CURSOR)))
                 .<List<DataRow>>get(0)
                 .stream()
                 .map(DataRow::toMap)
@@ -381,8 +381,8 @@ public class MyTest {
     @Test
     public void testCall2() throws Exception {
         baki.call(":num = call test.get_grade(:id)",
-                Args.of("num", Param.OUT(OUTParamType.INTEGER))
-                        .add("id", Param.IN(5)))
+                        Args.of("num", Param.OUT(OUTParamType.INTEGER))
+                                .add("id", Param.IN(5)))
                 .getOptional("num")
                 .ifPresent(System.out::println);
     }

@@ -497,7 +497,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             try {
                 dbName = metaData.getDatabaseProductName().toLowerCase();
             } catch (SQLException e) {
-                throw new ConnectionStatusException("fail to get jdbc driver name: ", e);
+                throw new ConnectionStatusException("fail to get database name: ", e);
             }
         }
         return dbName;

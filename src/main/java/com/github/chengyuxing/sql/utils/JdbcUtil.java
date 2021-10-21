@@ -380,9 +380,22 @@ public class JdbcUtil {
      * @param names     占位符参数名
      * @throws SQLException ex
      */
-    public static void setSqlTypedArgs(PreparedStatement statement, String jdbcDriverName, Map<String, ?> args, List<String> names) throws SQLException {
+    public static void setSqlTypedArgs(PreparedStatement statement, String dbName, Map<String, ?> args, List<String> names) throws SQLException {
         if (args != null && !args.isEmpty()) {
-            if (jdbcDriverName.equals("oracle")) {
+            // oracle jdbc driver not support(maybe an error), so except.
+            // -----------
+            // int var5 = var0.getParameterCount();
+            // var8 = var1.prepareStatement(var7);
+            // ...
+            // ResultSetMetaData var9 = var8.getMetaData();
+            // if (var9.getColumnCount() != var5) {     // never equals!!!
+            //   var3 = new OracleParameterMetaData(var5);
+            // ...
+            // OracleParameterMetaData(int var1) throws SQLException {
+            //        this.parameterCount = var1;
+            //        this.throwUnsupportedFeature = true;
+            //    }
+            if (dbName.equals("oracle")) {
                 setSqlPoolArgs(statement, args, names);
                 return;
             }

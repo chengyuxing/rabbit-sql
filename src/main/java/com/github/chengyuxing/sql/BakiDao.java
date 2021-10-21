@@ -44,7 +44,6 @@ public class BakiDao extends JdbcSupport implements Baki {
     private final static Logger log = LoggerFactory.getLogger(BakiDao.class);
     private final DataSource dataSource;
     private DatabaseMetaData metaData;
-    private String dbName;
     //---------optional properties------
     private SQLFileManager sqlFileManager;
     private boolean strictDynamicSqlArg = true;
@@ -483,24 +482,6 @@ public class BakiDao extends JdbcSupport implements Baki {
         } catch (SQLException throwables) {
             throw new ConnectionStatusException("fail to get metadata: ", throwables);
         }
-    }
-
-    /**
-     * 获取数据库的驱动名称
-     *
-     * @return 数据库驱动名称
-     */
-    @Override
-    public String getDbName() {
-        if (dbName == null) {
-            DatabaseMetaData metaData = getMetaData();
-            try {
-                dbName = metaData.getDatabaseProductName().toLowerCase();
-            } catch (SQLException e) {
-                throw new ConnectionStatusException("fail to get database name: ", e);
-            }
-        }
-        return dbName;
     }
 
     /**

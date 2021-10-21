@@ -50,13 +50,6 @@ public abstract class JdbcSupport {
     protected abstract DataSource getDataSource();
 
     /**
-     * 获取数据库驱动名称
-     *
-     * @return 数据库驱动名称
-     */
-    protected abstract String getDbName();
-
-    /**
      * 获取连接对象
      *
      * @return 连接对象

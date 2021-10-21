@@ -376,6 +376,7 @@ public class JdbcUtil {
      * ps. oracle jdbc 驱动实现有问题
      *
      * @param statement sql声明
+     * @param dbName    数据库名字
      * @param args      参数
      * @param names     占位符参数名
      * @throws SQLException ex

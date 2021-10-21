@@ -76,19 +76,4 @@ public class Args<V> extends HashMap<String, V> {
         put(key, value);
         return this;
     }
-
-    /**
-     * 添加字符串模版类型参数
-     * <blockquote>
-     * e.g. 默认使用'${}'包裹
-     * <pre>${key}</pre>
-     * </blockquote>
-     *
-     * @param key   键名
-     * @param value 值
-     * @return 参数集合
-     */
-    public Args<V> addStrTemplate(String key, V value) {
-        return add("${" + key + "}", value);
-    }
 }

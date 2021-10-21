@@ -1,18 +1,88 @@
 # rabbit-sql 使用说明
 
 - 对JDBC的一个薄封装工具类，提供基本的增删改查操作；
-
 - 此库以追求简单稳定高效为目标，不支持查询结果实体映射，返回对象类型统一为[`DataRow`](https://github.com/chengyuxing/rabbit-common/blob/master/src/main/java/rabbit/common/types/DataRow.java)，[`DataRow`](https://github.com/chengyuxing/rabbit-common/blob/master/src/main/java/rabbit/common/types/DataRow.java)提供了了简单的实体互相转换，若需要复杂映射，可自行通过[`DataRow`](https://github.com/chengyuxing/rabbit-common/blob/master/src/main/java/rabbit/common/types/DataRow.java)来实现。
-
 - maven dependency (jdk1.8)
 
 ```xml
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>5.2.4</version>
+    <version>5.2.5</version>
 </dependency>
 ```
+
+## 接口实现BakiDao
+
+### 构造函数
+
+BakiDao(DataSource dataSource)
+
+### 可选属性
+
+- **sqlFileManager**
+
+  支持动态SQL；
+
+  接口中需要写sql的所有方法都可以使用``&别名或文件包路径.sql名``取地址符来获取sql文件中的sql；
+
+  sql文件结尾以`.sql`结尾，sql文件中可以包含任意符合标准的注释，sql文件格式参考```data.sql.template```；
+
+  sql文件名格式为``/*[name]*/``，sql文件中可以嵌套sql片段，使用`${片段名}`指定;
+
+  sql片段名格式化``/*{name}*/``，sql片段中可以嵌套sql片段，使用`${片段名}`指定。
+
+  **构造函数**
+
+  - SQLFileManager()
+
+  - SQLFileManager(String sqls)
+
+    多个sql文件以逗号分隔。
+
+  **属性**
+
+  - **checkModified**
+
+    如果为`true`，则每次执行获取sql时都检查一次sql文件是否被修改过，如果修改过则重新加载，生产环境建议设置为`false`
+
+  - **constants**
+
+    全局SQL字符串模版常量
+
+    sql文件将优先寻找sql文件内的sql片段，没找到的情况下，如果配置了属性```constants```，则再从```constants```常量集合中查找；
+
+    BakiDao中执行sql方法参数中如果没有找到sql字符串模版，则自动查找并替换`constants`中的常量。
+
+    例：`baki.update("${db}.user",...)`
+
+  - **sqlList** 
+
+    sql文件路径集合列表
+
+    取sql写法：`&文件包路径.sql名`
+
+  - **sqlMap** 
+
+    命名别名的sql文件路径集合列表
+
+    取sql写法：`&文件别名.sql名`
+
+- **strictDynamicSqlArg**
+
+  默认值: true
+
+  如果为false，则动态sql的参数可以为null、空或键值不存在，否则将抛出异常。
+
+- **checkParameterType**
+
+  默认值: true
+
+  如果为true，则检查预编译参数对应数据库映射出来的真实java类型，可实现参数智能匹配合适的类型；
+
+  例如：PostgreSQL中，字段类型为`jsonb`，参数为一个`HashMap<>()`，则将对参数进行json序列化并插入；
+
+  ⚠️ 由于jdbc驱动实现问题，暂不支持Oracle，请将此属性设置为false。
 
 ## 参数占位符说明
 
@@ -50,20 +120,8 @@
   select id, name, address, email, enable from <tableName> where id in ('I''m Ok!', 'book', 'warning') or id = 'uuid';
   ```
   
-  
 
-## 外部SQL文件详解(SQLFileManager)
-
-- sql文件中可以包含任意符合标准的注释
-- sql文件结尾以`.sql`结尾
-- sql文件格式参考```data.sql.template```
-- BakiDao中如果配置了属性```sqlFileManager```,则接口中需要写sql的所有方法都可以使用``&文件名.sql名``取地址符来获取sql文件中的sql
-- BakiDao中如果配置属性```strictDynamicSqlArg```为`false`（默认为`true`）,则动态sql的参数可以为null、空或键值不存在，否则将抛出异常
-- sql文件名格式为``/*[name]*/``，sql文件中可以嵌套sql片段，使用`${片段名}`指定
-- sql片段名格式化``/*{name}*/``，sql片段中可以嵌套sql片段，使用`${片段名}`指定
-- sql文件将优先寻找sql文件内的sql片段，没找到的情况下，如果配置了属性```constants```，则再从```constants```常量集合中查找
-
-## 动态SQL
+### SQLFileManager动态SQL
 
 - 支持`--#if`和`--#fi`块标签，必须成对出现，类似于Mybatis的if标签；
 

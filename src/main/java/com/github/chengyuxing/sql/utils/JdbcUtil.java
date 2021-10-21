@@ -372,15 +372,20 @@ public class JdbcUtil {
     }
 
     /**
-     * 注册预编译sql参数
+     * 判断数据库表字段类型并对应注册预编译sql参数，除oracle以外
+     * ps. oracle jdbc 驱动实现有问题
      *
      * @param statement sql声明
      * @param args      参数
      * @param names     占位符参数名
      * @throws SQLException ex
      */
-    public static void setSqlArgs(PreparedStatement statement, Map<String, ?> args, List<String> names) throws SQLException {
+    public static void setSqlTypedArgs(PreparedStatement statement, String jdbcDriverName, Map<String, ?> args, List<String> names) throws SQLException {
         if (args != null && !args.isEmpty()) {
+            if (jdbcDriverName.equals("oracle")) {
+                setSqlPoolArgs(statement, args, names);
+                return;
+            }
             for (int i = 0; i < names.size(); i++) {
                 int index = i + 1;
                 String name = names.get(i);
@@ -389,6 +394,26 @@ public class JdbcUtil {
                 } else if (args.containsKey(":" + name)) {
                     setSpecialStatementValue(statement, index, args.get(":" + name));
                 }
+            }
+        }
+    }
+
+    /**
+     * 不判断数据库表字段类型注册预编译sql参数
+     *
+     * @param statement sql声明
+     * @param args      参数
+     * @param names     占位符参数名
+     * @throws SQLException ex
+     */
+    public static void setSqlPoolArgs(PreparedStatement statement, Map<String, ?> args, List<String> names) throws SQLException {
+        for (int i = 0; i < names.size(); i++) {
+            int index = i + 1;
+            String name = names.get(i);
+            if (args.containsKey(name)) {
+                setStatementValue(statement, index, args.get(name));
+            } else if (args.containsKey(":" + name)) {
+                setStatementValue(statement, index, args.get(":" + name));
             }
         }
     }

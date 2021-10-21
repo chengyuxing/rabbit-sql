@@ -12,7 +12,7 @@ public class SqlStrTests {
         Map<String, Object> args = Args.<Object>of("id", 5)
                 .add("name", "cyx")
                 .add("email", "chengyuxingo@gmail.com")
-                .addStrTemplate("and", "and name = :name");
+                .add("${and}", "and name = :name");
         System.out.println(SqlUtil.generateUpdate("test.user", args, "id = :id ${and}"));
     }
 }

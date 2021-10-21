@@ -50,6 +50,13 @@ public abstract class JdbcSupport {
     protected abstract DataSource getDataSource();
 
     /**
+     * 获取数据库驱动名称
+     *
+     * @return 数据库驱动名称
+     */
+    protected abstract String getDbName();
+
+    /**
      * 获取连接对象
      *
      * @return 连接对象
@@ -123,7 +130,7 @@ public abstract class JdbcSupport {
 
         return execute(preparedSql, sc -> {
             if (args != null && !args.isEmpty()) {
-                JdbcUtil.setSqlArgs(sc, args, argNames);
+                JdbcUtil.setSqlTypedArgs(sc, getDbName(), args, argNames);
             }
             boolean isQuery = sc.execute();
             printSqlConsole(sc);
@@ -182,7 +189,7 @@ public abstract class JdbcSupport {
                 close = UncheckedCloseable.wrap(connection);
             }
             PreparedStatement statement = connection.prepareStatement(preparedSql);
-            JdbcUtil.setSqlArgs(statement, args, argNames);
+            JdbcUtil.setSqlTypedArgs(statement, getDbName(), args, argNames);
             // if close is null. it means this query in transaction currently,
             // it's connection managed by Tx(transaction)
             // connection will not be close when read stream to the end in 'try-with-resource' block
@@ -274,7 +281,7 @@ public abstract class JdbcSupport {
      * @return 总的受影响的行数
      * @throws SqlRuntimeException sql执行过程中出现错误
      */
-    public int executeNonQuery(final String sql, final Collection<?extends Map<String, ?>> args) {
+    public int executeNonQuery(final String sql, final Collection<? extends Map<String, ?>> args) {
         String sourceSql = sql;
         Map<String, ?> firstArg = Collections.emptyMap();
         boolean hasArgs = args != null && !args.isEmpty();
@@ -298,7 +305,7 @@ public abstract class JdbcSupport {
             int i = 0;
             if (hasArgs) {
                 for (Map<String, ?> arg : args) {
-                    JdbcUtil.setSqlArgs(sc, arg, argNames);
+                    JdbcUtil.setSqlTypedArgs(sc, getDbName(), arg, argNames);
                     i += sc.executeUpdate();
                 }
             } else {

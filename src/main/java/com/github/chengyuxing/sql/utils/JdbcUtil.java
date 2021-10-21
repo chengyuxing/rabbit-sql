@@ -372,42 +372,28 @@ public class JdbcUtil {
     }
 
     /**
-     * 判断数据库表字段类型并对应注册预编译sql参数，除oracle以外
-     * ps. oracle jdbc 驱动实现有问题
+     * 判断数据库表字段类型并对应注册预编译sql参数
      *
-     * @param statement sql声明
-     * @param dbName    数据库名字
-     * @param args      参数
-     * @param names     占位符参数名
+     * @param statement          sql声明
+     * @param checkParameterType 是否检查数据库字段参数对应类型
+     * @param args               参数
+     * @param names              占位符参数名
      * @throws SQLException ex
      */
-    public static void setSqlTypedArgs(PreparedStatement statement, String dbName, Map<String, ?> args, List<String> names) throws SQLException {
+    public static void setSqlTypedArgs(PreparedStatement statement, boolean checkParameterType, Map<String, ?> args, List<String> names) throws SQLException {
         if (args != null && !args.isEmpty()) {
-            // oracle jdbc driver not support(maybe an error), so except.
-            // -----------
-            // int var5 = var0.getParameterCount();
-            // var8 = var1.prepareStatement(var7);
-            // ...
-            // ResultSetMetaData var9 = var8.getMetaData();
-            // if (var9.getColumnCount() != var5) {     // never equals!!!
-            //   var3 = new OracleParameterMetaData(var5);
-            // ...
-            // OracleParameterMetaData(int var1) throws SQLException {
-            //        this.parameterCount = var1;
-            //        this.throwUnsupportedFeature = true;
-            //    }
-            if (dbName.equals("oracle")) {
-                setSqlPoolArgs(statement, args, names);
-                return;
-            }
-            for (int i = 0; i < names.size(); i++) {
-                int index = i + 1;
-                String name = names.get(i);
-                if (args.containsKey(name)) {
-                    setSpecialStatementValue(statement, index, args.get(name));
-                } else if (args.containsKey(":" + name)) {
-                    setSpecialStatementValue(statement, index, args.get(":" + name));
+            if (checkParameterType) {
+                for (int i = 0; i < names.size(); i++) {
+                    int index = i + 1;
+                    String name = names.get(i);
+                    if (args.containsKey(name)) {
+                        setSpecialStatementValue(statement, index, args.get(name));
+                    } else if (args.containsKey(":" + name)) {
+                        setSpecialStatementValue(statement, index, args.get(":" + name));
+                    }
                 }
+            } else {
+                setSqlPoolArgs(statement, args, names);
             }
         }
     }

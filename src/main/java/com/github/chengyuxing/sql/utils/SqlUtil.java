@@ -347,9 +347,7 @@ public class SqlUtil {
                     }
                     subSql = sb.substring(0, sb.length() - 2);
                 }
-                String start = subSql.startsWith("\n") ? "" : "\n";
-                String v = start + subSql + "\n";
-                noneStrSql = noneStrSql.replace(trueKey, v);
+                noneStrSql = noneStrSql.replace(trueKey, subSql);
             }
         }
         if (exceptSubstr) {

@@ -82,6 +82,13 @@ public abstract class JdbcSupport {
     protected abstract String prepareSql(String sql, Map<String, ?> args);
 
     /**
+     * 是否检查预编译sql对应的参数类型
+     *
+     * @return 是否检查
+     */
+    protected abstract boolean checkParameterType();
+
+    /**
      * 执行一句预编译的sql
      *
      * @param sql      sql
@@ -130,7 +137,7 @@ public abstract class JdbcSupport {
 
         return execute(preparedSql, sc -> {
             if (args != null && !args.isEmpty()) {
-                JdbcUtil.setSqlTypedArgs(sc, getDbName(), args, argNames);
+                JdbcUtil.setSqlTypedArgs(sc, checkParameterType(), args, argNames);
             }
             boolean isQuery = sc.execute();
             printSqlConsole(sc);
@@ -189,7 +196,7 @@ public abstract class JdbcSupport {
                 close = UncheckedCloseable.wrap(connection);
             }
             PreparedStatement statement = connection.prepareStatement(preparedSql);
-            JdbcUtil.setSqlTypedArgs(statement, getDbName(), args, argNames);
+            JdbcUtil.setSqlTypedArgs(statement, checkParameterType(), args, argNames);
             // if close is null. it means this query in transaction currently,
             // it's connection managed by Tx(transaction)
             // connection will not be close when read stream to the end in 'try-with-resource' block
@@ -305,7 +312,7 @@ public abstract class JdbcSupport {
             int i = 0;
             if (hasArgs) {
                 for (Map<String, ?> arg : args) {
-                    JdbcUtil.setSqlTypedArgs(sc, getDbName(), arg, argNames);
+                    JdbcUtil.setSqlTypedArgs(sc, checkParameterType(), arg, argNames);
                     i += sc.executeUpdate();
                 }
             } else {

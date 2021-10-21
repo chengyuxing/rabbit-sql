@@ -3,10 +3,13 @@ package tests;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.BakiDao;
+import com.github.chengyuxing.sql.SQLFileManager;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
 import java.sql.DatabaseMetaData;
 import java.sql.Date;
 import java.sql.Time;
@@ -23,17 +26,21 @@ public class BakiSessionTest {
     static HikariDataSource dataSource;
 
     @BeforeClass
-    public static void init() {
+    public static void init() throws IOException, URISyntaxException {
         dataSource = new HikariDataSource();
         dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
         dataSource.setUsername("chengyuxing");
         dataSource.setDriverClassName("org.postgresql.Driver");
         baki = BakiDao.of(dataSource);
+        baki.setCheckParameterType(false);
+        SQLFileManager sqlFileManager = new SQLFileManager("pgsql/nest.sql");
+        sqlFileManager.setConstants(Args.of("db", "test"));
+        baki.setSqlFileManager(sqlFileManager);
     }
 
     @Test
     public void upd() throws Exception {
-        int i = baki.update("test.region",
+        int i = baki.update("${db}.region",
                 Args.of("name", "南亚风情第一城").add("oldName", "南亚风情园"),
                 "name = :oldName");
         System.out.println(i);
@@ -41,7 +48,7 @@ public class BakiSessionTest {
 
     @Test
     public void engine() throws Exception {
-        baki.query("select * from test.history where length(words) < :num or words ~ :regex",
+        baki.query("select * from ${db}.history where length(words) < :num or words ~ :regex",
                         Args.<Object>of(":num", 5).add("regex", "^tran"))
                 .forEach(System.out::println);
     }
@@ -56,6 +63,7 @@ public class BakiSessionTest {
         System.out.println(metaData.getDriverMinorVersion());
         System.out.println(metaData.getDatabaseProductVersion());
         System.out.println(metaData.getDriverName());
+        System.out.println(metaData.getDatabaseProductName());
     }
 
     @Test

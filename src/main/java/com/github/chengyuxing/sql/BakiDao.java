@@ -48,6 +48,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     //---------optional properties------
     private SQLFileManager sqlFileManager;
     private boolean strictDynamicSqlArg = true;
+    private boolean checkParameterType = true;
 
     /**
      * 构造函数
@@ -521,7 +522,26 @@ public class BakiDao extends JdbcSupport implements Baki {
                 throw new NullPointerException("can not find property 'sqlFileManager' or SQLFileManager object init failed!");
             }
         }
+        if (sqlFileManager != null) {
+            Map<String, String> constants = sqlFileManager.getConstants();
+            if (!constants.isEmpty()) {
+                for (String key : constants.keySet()) {
+                    String constantName = "${" + key + "}";
+                    if (trimEndedSql.contains(constantName)) {
+                        // use args first, if not exists then constants.
+                        if (!args.containsKey(constantName)) {
+                            trimEndedSql = trimEndedSql.replace(constantName, constants.get(key));
+                        }
+                    }
+                }
+            }
+        }
         return trimEndedSql;
+    }
+
+    @Override
+    protected boolean checkParameterType() {
+        return checkParameterType;
     }
 
     @Override
@@ -565,5 +585,23 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     public boolean isStrictDynamicSqlArg() {
         return strictDynamicSqlArg;
+    }
+
+    /**
+     * 是否检查预编译sql对应的参数类型
+     *
+     * @return 是否检查
+     */
+    public boolean isCheckParameterType() {
+        return checkParameterType;
+    }
+
+    /**
+     * 设置是否检查预编译sql对应的参数类型
+     *
+     * @param checkParameterType 是否检查标志
+     */
+    public void setCheckParameterType(boolean checkParameterType) {
+        this.checkParameterType = checkParameterType;
     }
 }

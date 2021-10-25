@@ -1,18 +1,18 @@
 package com.github.chengyuxing.sql.utils;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.DateTimes;
 import com.github.chengyuxing.sql.exceptions.SqlRuntimeException;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.types.ParamMode;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.sql.*;
 import java.sql.Date;
+import java.sql.*;
 import java.time.*;
 import java.util.*;
 
@@ -349,7 +349,7 @@ public class JdbcUtil {
         if (null == value) {
             statement.setNull(index, Types.NULL);
         } else if (value instanceof java.util.Date) {
-            statement.setObject(index, new Date(((java.util.Date) value).getTime()));
+            statement.setObject(index, new Timestamp(((java.util.Date) value).getTime()));
         } else if (value instanceof LocalDateTime) {
             statement.setObject(index, new Timestamp(((LocalDateTime) value).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
         } else if (value instanceof LocalDate) {

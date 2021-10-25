@@ -30,16 +30,42 @@ import static com.github.chengyuxing.common.utils.StringUtil.startsWithIgnoreCas
 import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
 
 /**
- * SQL文件解析管理器<br>
- * 支持外部sql(本地文件系统)和classpath下的sql<br>
- * 本地sql文件以 {@code file:} 开头，默认读取classpath下的sql文件<br>
+ * <h2>SQL文件解析管理器</h2>
+ * <h3>SQL文件配置</h3>
+ * <p>支持外部sql(本地文件系统)和classpath下的sql，
+ * 本地sql文件以 {@code file:} 开头，默认读取classpath下的sql文件</p>
  * e.g. SQL文件格式
  * <blockquote>
- * <pre>windows: file:\\D:\\rabbit.sql</pre>
- * <pre>Linux/Unix: file:/root/rabbit.sql</pre>
- * <pre>ClassPath: sql/rabbit.sql</pre>
+ *     <ul>
+ *         <li><pre>windows: file:\\D:\\rabbit.sql</pre></li>
+ *         <li><pre>Linux/Unix: file:/root/rabbit.sql</pre></li>
+ *         <li><pre>ClassPath: sql/rabbit.sql</pre></li>
+ *     </ul>
  * </blockquote>
- * 格式参考data.sql.template
+ * <h3>动态SQL</h3>
+ * <blockquote>
+ * <pre>
+ * select *
+ * from test.student t
+ * WHERE
+ * --#choose
+ *      --#if :age < 21
+ *      t.age = 21
+ *      --#fi
+ *      --#if :age <> blank && :age < 90
+ *      and age < 90
+ *      --#fi
+ *  --#end
+ *  --#if :name != null
+ *      and t.name ~ :name
+ *  --#fi
+ * ;
+ *     </pre>
+ * </blockquote>
+ * <h3>参考</h3>
+ * <blockquote>
+ * data.sql.template
+ * </blockquote>
  */
 public class SQLFileManager {
     private final static Logger log = LoggerFactory.getLogger(SQLFileManager.class);

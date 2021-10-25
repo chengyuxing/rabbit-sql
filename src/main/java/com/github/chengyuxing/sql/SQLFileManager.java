@@ -49,11 +49,11 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
  * from test.student t
  * WHERE
  * --#choose
- *      --#if :age < 21
+ *      --#if :age{@code <} 21
  *      t.age = 21
  *      --#fi
- *      --#if :age <> blank && :age < 90
- *      and age < 90
+ *      --#if :age{@code <>} blank{@code &&} :age{@code <} 90
+ *      and age{@code <} 90
  *      --#fi
  *  --#end
  *  --#if :name != null

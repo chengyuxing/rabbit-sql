@@ -45,7 +45,7 @@ public class JdbcUtil {
             obj = getBytes((Blob) obj);
         } else if (obj instanceof Clob) {
             Clob clob = (Clob) obj;
-            obj = clob.getSubString(0, (int) clob.length());
+            obj = clob.getSubString(1, (int) clob.length());
         } else if ("org.postgresql.jdbc.PgArray".equals(className)) {
             try {
                 Method method = obj.getClass().getDeclaredMethod("getArray");

@@ -33,7 +33,7 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
  * <h2>SQL文件解析管理器</h2>
  * <h3>SQL文件配置</h3>
  * <p>支持外部sql(本地文件系统)和classpath下的sql，
- * 本地sql文件以 {@code file:} 开头，默认读取classpath下的sql文件</p>
+ * 本地sql文件以 {@code file:} 开头，默认读取<strong>classpath</strong>下的sql文件</p>
  * e.g. SQL文件格式
  * <blockquote>
  *     <ul>

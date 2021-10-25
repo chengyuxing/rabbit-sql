@@ -28,8 +28,23 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
- * <p>如果配置了{@link SQLFileManager },则接口所有方法都可以通过 <b>&amp;文件夹名.文件名.sql</b> 名来获取sql文件内的sql,通过<b>&amp;</b>
- * 前缀符号来判断如果是sql名则获取sql否则当作sql直接执行</p>
+ * <h2>数据库DAO曾操作对象实现</h2>
+ * <p>如果配置了{@link SQLFileManager },则接口所有方法都可以通过取地址符号来获取sql文件内的sql</p>
+ * 取SQL通过 {@code &}符号前缀+sql键名：
+ * <blockquote>
+ * e.g. 配置类型:
+ * <pre>
+ *  sqlMap: {
+ *       sys: 'pgsql/test.sql',
+ *       mac: 'file:/Users/chengyuxing/Downloads/local.sql'
+ *   },
+ *  sqlList: ['pgsql/test.sql']
+ * </pre>
+ *  <ul>
+ *      <li>包路径表示法: {@code &pgsql.test.getUser}</li>
+ *      <li>别名表示法: {@code &sys.getUser}</li>
+ *  </ul>
+ * </blockquote>
  * 指定sql名执行：
  * <blockquote>
  * <pre>try ({@link Stream}&lt;{@link DataRow}&gt; s = baki.query("&amp;data.query")) {

@@ -136,7 +136,7 @@ public class MyTest {
                 .ifPresent(row -> {
                     Tb tb = row.toEntity(Tb.class);
                     System.out.println(tb);
-                    System.out.println(tb.getStrs().get(0));
+//                    System.out.println(tb.getStrs().get(0));
                     System.out.println(tb.getDt());
                 });
     }

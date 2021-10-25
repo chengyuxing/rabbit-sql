@@ -87,6 +87,9 @@ public class SQLFileManager {
     private Map<String, String> sqlMap;
     private List<String> sqlList;
 
+    /**
+     * Sql文件解析器实例
+     */
     public SQLFileManager() {
     }
 

@@ -35,10 +35,11 @@ public class Tests {
     @Test
     public void page() throws Exception{
         PGPageHelper pgPageHelper = new PGPageHelper();
-        pgPageHelper.init(12,10,0);
+        pgPageHelper.init(3,10,0);
         System.out.println(pgPageHelper);
         System.out.println(pgPageHelper.limit());
         System.out.println(pgPageHelper.offset());
+        System.out.println(pgPageHelper.pagedArgs());
     }
 
     @Test

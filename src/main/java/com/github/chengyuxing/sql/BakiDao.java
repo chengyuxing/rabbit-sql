@@ -8,6 +8,7 @@ import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
 import com.github.chengyuxing.sql.exceptions.DuplicateException;
 import com.github.chengyuxing.sql.exceptions.SqlRuntimeException;
 import com.github.chengyuxing.sql.page.IPageable;
+import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.support.JdbcSupport;
 import com.github.chengyuxing.sql.transaction.Tx;
 import com.github.chengyuxing.sql.types.Param;
@@ -357,7 +358,15 @@ public class BakiDao extends JdbcSupport implements Baki {
     /**
      * {@inheritDoc}
      *
-     * @param recordQuery 查询sql
+     * @param recordQuery 查询SQL或自定义分页查询的SQL<br>
+     *                    由于默认的分页处理无法满足所有情况，关于自定义分页SQL配置如下:
+     *                    <blockquote>
+     *                    <ul>
+     *                    <li>需要手动指定分页对象：{@link IPageable#pageHelper(PageHelper)}</li>
+     *                    <li>自定义count查询语句：{@link IPageable#count(String)}</li>
+     *                    <li>重写{@link com.github.chengyuxing.sql.page.PageHelper#pagedSql(String) }方法解除自动分页构建</li>
+     *                    </ul>
+     *                    </blockquote>
      * @param page        当前页
      * @param size        分页大小
      * @param <T>         类型参数

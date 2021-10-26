@@ -12,34 +12,6 @@
 </dependency>
 ```
 
-## 接口实现BakiDao
-
-### 构造函数
-
-BakiDao(DataSource dataSource)
-
-### 可选属性
-
-- [**sqlFileManager**](#SQLFileManager)
-
-  接口中需要写sql的所有方法都可以使用``&别名或文件包路径.sql名``取地址符来获取sql文件中的sql；
-
-- **strictDynamicSqlArg**
-
-  默认值: true
-
-  如果为false，则动态sql的参数可以为null、空或键值不存在，否则将抛出异常。
-
-- **checkParameterType**
-
-  默认值: true
-
-  如果为true，则检查预编译参数对应数据库映射出来的真实java类型，可实现参数智能匹配合适的类型；
-
-  例如：PostgreSQL中，字段类型为`jsonb`，参数为一个`HashMap<>()`，则将对参数进行json序列化并插入；
-
-  ⚠️ 由于jdbc驱动实现问题，暂不支持Oracle，请将此属性设置为false。
-
 ## 参数占位符说明
 
 - `:name` (jdbc标准的传名参数写法，参数将被预编译安全处理，参数名为：`name`)
@@ -75,9 +47,37 @@ BakiDao(DataSource dataSource)
   ```sql
   select id, name, address, email, enable from <tableName> where id in ('I''m Ok!', 'book', 'warning') or id = 'uuid';
   ```
+
+## 接口实现BakiDao
+
+### 构造函数
+
+BakiDao(DataSource dataSource)
+
+### 可选属性
+
+- [**sqlFileManager**](#SQLFileManager)
+
+  接口中需要写sql的所有方法都可以使用``&别名或文件包路径.sql名``取地址符来获取sql文件中的sql；
+
+- **strictDynamicSqlArg**
+
+  默认值: true
+
+  如果为false，则动态sql的参数可以为null、空或键值不存在，否则将抛出异常。
+
+- **checkParameterType**
+
+  默认值: true
+
+  如果为true，则检查预编译参数对应数据库映射出来的真实java类型，可实现参数智能匹配合适的类型；
+
+  例如：PostgreSQL中，字段类型为`jsonb`，参数为一个`HashMap<>()`，则将对参数进行json序列化并插入；
+
+  ⚠️ 由于jdbc驱动实现问题，此特性暂不支持Oracle，请将此属性设置为false。
   
 
-### <a href="#SQLFileManager">SQLFileManager</a>
+## <a href="#SQLFileManager">SQLFileManager</a>
 
 sql文件结尾以`.sql`结尾，sql文件中可以包含任意符合标准的注释，sql格式参考```data.sql.template```；
 
@@ -221,6 +221,44 @@ try(Stream<DataRow> fruits=baki.query("select * from fruit")){
 PagedResource<DataRow> res=baki.<DataRow>query("&pgsql.data.select_user", 1, 10)
         .args(Args.create("id", 35))
         .collect(d -> d);
+```
+
+### 自定义分页查询
+
+`/pgsql/data.sql`
+
+```sql
+/*[custom_paged]*/
+select *
+from test.region
+where id > :id limit :limit
+offset :offset;
+```
+
+```java
+PagedResource<DataRow> res = baki.<DataRow>query("&pgsql.data.custom_paged", 1, 7)
+                .count("select count(*) from <table> where id > :id")
+                .args(Args.create("id", 8))
+                .pageHelper(new PGPageHelper() {
+                  // 重写此方法覆盖默认的分页构建逻辑，否则默认进行分页处理导致异常
+                    @Override
+                    public String pagedSql(String sql) {
+                        return sql;
+                    }
+                }).collect(d -> d);
+```
+
+### 事务
+
+事务设计为与线程绑定，使用请遵循事物的线程隔离性。
+
+```java
+Tx.using(()->{
+  baki.update(...);
+  baki.delete(...);
+  baki.insert(...);
+  ......
+});
 ```
 
 ### 存储过程

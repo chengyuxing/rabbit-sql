@@ -61,7 +61,10 @@ public class Pageable<T> extends IPageable<T> {
             pageHelper = defaultPager();
         }
         pageHelper.init(page, size, count);
-        try (Stream<DataRow> s = baki.query(pageHelper.wrapPagedSql(query), args)) {
+        if (customPageHelper != null) {
+            args.putAll(pageHelper.pagedArgs());
+        }
+        try (Stream<DataRow> s = baki.query(pageHelper.pagedSql(query), args)) {
             List<T> list = s.map(mapper).collect(Collectors.toList());
             return PagedResource.of(pageHelper, list);
         }

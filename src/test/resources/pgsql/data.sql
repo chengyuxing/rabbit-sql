@@ -19,7 +19,10 @@ ${order};
 
 /*{field}*/
 /*用户表字段*/
-t.id,t.name,t.password;
+t
+.
+id
+,t.name,t.password;
 
 /*{order}*/
 /*排序*/
@@ -89,4 +92,10 @@ address = :address
     address = '北京'
 --#fi
 --#end
-where id = 10
+where id = 10;
+
+/*[custom_paged]*/
+select *
+from test.region
+where id > :id limit :limit
+offset :offset;

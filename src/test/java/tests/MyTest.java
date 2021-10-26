@@ -5,6 +5,7 @@ import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.sql.*;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
+import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.github.chengyuxing.sql.support.IOutParam;
 import com.github.chengyuxing.sql.transaction.Tx;
 import com.github.chengyuxing.sql.types.OUTParamType;
@@ -44,10 +45,10 @@ public class MyTest {
         dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
         dataSource.setUsername("chengyuxing");
 
-//        SQLFileManager manager = new SQLFileManager("pgsql/data.sql");
+        SQLFileManager manager = new SQLFileManager("pgsql/data.sql");
 
         BakiDao bakiDao = BakiDao.of(dataSource);
-//        bakiDao.setSqlFileManager(manager);
+        bakiDao.setSqlFileManager(manager);
         baki = bakiDao;
         baki2 = BakiDao.of(dataSource);
 //        bakiDao.setSqlPath("pgsql");
@@ -187,9 +188,16 @@ public class MyTest {
 
     @Test
     public void pagerTest() throws Exception {
-        PagedResource<DataRow> res = baki.<DataRow>query("select * from test.region where id > :id", 1, 10)
-                .args(Args.create().add("id", 3))
-                .collect(d -> d);
+        PagedResource<DataRow> res = baki.<DataRow>query("&pgsql.data.custom_paged", 1, 7)
+                .count("select count(*) from test.region where id > :id")
+                .args(Args.create("id", 8))
+                .pageHelper(new PGPageHelper() {
+                    @Override
+                    public String pagedSql(String sql) {
+                        return sql;
+                    }
+                }).collect(d -> d);
+
         System.out.println(res);
     }
 

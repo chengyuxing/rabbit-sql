@@ -1,13 +1,15 @@
 package com.github.chengyuxing.sql.page;
 
+import java.util.Map;
+
 /**
  * 抽象分页工具
  */
 public abstract class PageHelper {
-    private int pageNumber;
-    private int pageSize;
-    private int pageCount;
-    private int recordCount;
+    protected int pageNumber;
+    protected int pageSize;
+    protected int pageCount;
+    protected int recordCount;
 
     /**
      * 包裹分页的sql
@@ -15,7 +17,14 @@ public abstract class PageHelper {
      * @param sql sql
      * @return 分页的sql
      */
-    public abstract String wrapPagedSql(String sql);
+    public abstract String pagedSql(String sql);
+
+    /**
+     * 包裹分页的必要参数
+     *
+     * @return 分页的参数集合
+     */
+    public abstract Map<String, Integer> pagedArgs();
 
     /**
      * 获取总页数

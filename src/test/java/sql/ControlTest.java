@@ -2,11 +2,14 @@ package sql;
 
 import com.github.chengyuxing.common.script.impl.CExpression;
 import com.github.chengyuxing.sql.Args;
+import com.github.chengyuxing.sql.SQLFileManager;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
 
 import java.util.*;
 import java.util.regex.Pattern;
+
+import static com.github.chengyuxing.common.utils.StringUtil.searchIndexUntilNotBlank;
 
 
 public class ControlTest {
@@ -116,12 +119,20 @@ public class ControlTest {
     }
 
     @Test
-    public void arr() throws Exception {
-        List<Args<String>> args = new ArrayList<>();
-        int a = fastInsert("", args);
+    public void dynamicTest() throws Exception {
+        SQLFileManager sqlFileManager = new SQLFileManager();
+        sqlFileManager.add("dynamic", "pgsql/dynamic.sql");
+        sqlFileManager.init();
+        sqlFileManager.foreach((name, sql) -> {
+            System.out.println(name + "-->" + sql);
+        });
     }
 
-    public static int fastInsert(String tableName, Collection<? extends Map<String, ?>> data) {
-        return 1;
+    @Test
+    public void xxx() throws Exception {
+        String a = "1   \t  \n      \t${abc}   \n";
+        System.out.println(a.length());
+        System.out.println(searchIndexUntilNotBlank(a, 5, false));
+        System.out.println("abc".substring(0,0));
     }
 }

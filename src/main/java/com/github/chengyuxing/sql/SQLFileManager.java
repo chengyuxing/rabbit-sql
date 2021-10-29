@@ -224,10 +224,13 @@ public class SQLFileManager {
             Pair<String, Map<String, String>> sqlAndSubstr = SqlUtil.replaceSqlSubstr(sqlResource.get(key));
             // get sql without substr first.
             String sql = sqlAndSubstr.getItem1();
-            if (sql.contains(innerPartName)) {
-                String part = sqlResource.get(partName);
+            int partIndex = sql.indexOf(innerPartName);
+            if (partIndex > -1) {
+                String part = "\n" + sqlResource.get(partName).trim() + "\n";
+                int start = StringUtil.searchIndexUntilNotBlank(sql, partIndex, true);
+                int end = StringUtil.searchIndexUntilNotBlank(sql, partIndex + innerPartName.length(), false);
                 // insert sql part first without substr because we not allow substr sql part e.g. '${partName}'
-                sql = sql.replace(innerPartName, part);
+                sql = sql.substring(0, start + 1) + part + sql.substring(end);
                 // reinsert substr into the sql finally
                 Map<String, String> substr = sqlAndSubstr.getItem2();
                 if (!substr.isEmpty()) {

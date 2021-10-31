@@ -345,9 +345,14 @@ public class SqlUtil {
                             sb.append(v).append(", ");
                         }
                     }
-                    subSql = sb.substring(0, sb.length() - 2);
+                    subSql = "\n" + sb.substring(0, sb.length() - 2).trim() + "\n";
                 }
-                noneStrSql = noneStrSql.replace(trueKey, subSql);
+                int partIndex;
+                while ((partIndex = noneStrSql.indexOf(trueKey)) != -1) {
+                    int start = StringUtil.searchIndexUntilNotBlank(noneStrSql, partIndex, true);
+                    int end = StringUtil.searchIndexUntilNotBlank(noneStrSql, partIndex + trueKey.length() - 1, false);
+                    noneStrSql = noneStrSql.substring(0, start + 1) + subSql + noneStrSql.substring(end);
+                }
             }
         }
         if (exceptSubstr) {

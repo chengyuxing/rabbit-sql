@@ -1,7 +1,8 @@
 /*[query]*/
 select *
 from test.region
-where ${cnd}${order};
+where ${cnd}${order}
+or ${cnd};
 
 /*{cnd}*/
 --#if :id <> null

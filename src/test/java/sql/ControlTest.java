@@ -110,7 +110,8 @@ public class ControlTest {
 
     @Test
     public void sqlPart() throws Exception {
-        String sql = "select ${fields} from test.user where id in (${ids}) and id = :id";
+        String sql = "select ${fields} from test.user where id in (${ids},${fields}) and id = :id";
+        System.out.println(sql.length());
         Args<Object> args = Args.<Object>of("${:ids}", Arrays.asList("I'm Ok!", "b", "c"))
                 .add("${fields}", "id, name, age")
                 .add("id", 10);
@@ -129,10 +130,20 @@ public class ControlTest {
     }
 
     @Test
+    public void xz() throws Exception {
+        String str = "abcde";
+        int length = str.length();
+        int i = 0;
+        while (i++ < 10) {
+            System.out.println(i);
+        }
+    }
+
+    @Test
     public void xxx() throws Exception {
         String a = "1   \t  \n      \t${abc}   \n";
         System.out.println(a.length());
         System.out.println(searchIndexUntilNotBlank(a, 5, false));
-        System.out.println("abc".substring(0,0));
+        System.out.println("abc".substring(0, 0));
     }
 }

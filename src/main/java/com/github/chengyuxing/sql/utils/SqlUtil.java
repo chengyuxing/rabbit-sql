@@ -227,9 +227,9 @@ public class SqlUtil {
         Map<String, String> mapper = new HashMap<>();
         Matcher m = SUB_STR_PATTERN.matcher(sql);
         while (m.find()) {
-            // sql part of string
+            // sql part of substr
             String str = m.group();
-            // indexed placeholder
+            // mapping placeholder
             String placeHolder = "\u02de" + (str.hashCode()) + "\u02de";
             noneStrSql = noneStrSql.replace(str, placeHolder);
             mapper.put(placeHolder, str);
@@ -277,7 +277,7 @@ public class SqlUtil {
             String value = prepare ? "?" : quoteFormatValueIfNecessary(args.get(name));
             noneStrSql = noneStrSql.replaceFirst(":" + name, value);
         }
-        // finally set placeholder into none-string-part sql
+        // finally, set placeholder into none-string-part sql
         for (String key : placeholderMapper.keySet()) {
             noneStrSql = noneStrSql.replace(key, placeholderMapper.get(key));
         }
@@ -463,7 +463,7 @@ public class SqlUtil {
      * @return 条数查询sql
      */
     public static String generateCountQuery(final String recordQuery) {
-        // for 0 errors, sorry!!!
+        // for 0 errors, simple count query currently.
         return "select count(*) from (" + recordQuery + ") _data";
     }
 

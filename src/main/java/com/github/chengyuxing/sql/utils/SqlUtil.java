@@ -22,6 +22,11 @@ public class SqlUtil {
      * 特殊字符用来防止字段名重复的问题
      */
     public static final String SEP = "\u02de";
+    public static final String COLON = ":";
+    /**
+     * 用于替换子字符串内冒号的字符，避免被当作预编译参数占位符
+     */
+    public static final String FAKE_COLON = "\u0C83";
     /**
      * 匹配命名参数
      */
@@ -145,15 +150,13 @@ public class SqlUtil {
      * @throws IllegalArgumentException 如果参数为空
      */
     public static String generatePreparedUpdate(String tableName, Map<String, Object> data) {
+        if (data.isEmpty()) {
+            throw new IllegalArgumentException("empty field set, generate update sql error.");
+        }
         Set<String> keys = data.keySet();
         StringBuilder sb = new StringBuilder();
         for (String key : keys) {
-            if (!key.contains(SEP)) {
-                sb.append(key).append(" = :").append(key).append(",\n\t");
-            }
-        }
-        if (keys.isEmpty()) {
-            throw new IllegalArgumentException("empty field set, generate update sql error.");
+            sb.append(key).append(" = :").append(key).append(",\n\t");
         }
         return "update " + tableName + " \nset " + sb.substring(0, sb.lastIndexOf(","));
     }

@@ -21,7 +21,7 @@ public class SqlUtil {
     /**
      * 匹配命名参数
      */
-    public static final Pattern ARG_PATTERN = Pattern.compile("(^:|[^:]:)(?<name>[a-zA-Z]\\w*)", Pattern.MULTILINE);
+    public static final Pattern ARG_PATTERN = Pattern.compile("(^:|[^:]:)(?<name>[a-zA-Z_][\\w_]*)", Pattern.MULTILINE);
     /**
      * 匹配字符串单引号里面的内容
      */

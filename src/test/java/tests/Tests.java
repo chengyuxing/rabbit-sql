@@ -28,8 +28,6 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.github.chengyuxing.sql.utils.SqlUtil.SEP;
-
 public class Tests {
 
     @Test
@@ -163,7 +161,7 @@ public class Tests {
         String upd = "update test.score set grade =  :grade::integer" +
                 " where id =   :id_˞0::integer::integer or id >   :id_˞1::integer::integer";
 
-        String sql = "insert into test.user(idd,name,id,age,address) values (:id,:name::integer,:idd" + SEP + "::float,integer :age,date :address)";
+        String sql = "insert into test.user(idd,name,id,age,address) values (:id,:name::integer,:idd::float,integer :age,date :address)";
 //        String sql2 = "select * from test.user where id = '1' and tag = '1' and num = '1' and name = :name";
 //        String jsonSql = "select '{\"a\":[1,2,3],\"b\":[4,5,6]}'::json #>> '{b,1}'";
         Pair<String, List<String>> pair = SqlUtil.getPreparedSql(str, Collections.emptyMap());
@@ -186,7 +184,6 @@ public class Tests {
     @Test
     public void hash() throws Exception{
         System.out.println("a".hashCode());
-        System.out.println(SqlUtil.COLON);
     }
 
     @Test

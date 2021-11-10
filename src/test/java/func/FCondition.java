@@ -1,7 +1,6 @@
 package func;
 
 import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.sql.utils.SqlUtil;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -78,7 +77,7 @@ public class FCondition<T> {
      * @return (字段名, 字段名占位符)
      */
     private Pair<String, String> getSpecialField(String field) {
-        String s = field + SqlUtil.SEP + arg_index++;
+        String s = field + arg_index++;
         return Pair.of(s, ":" + s);
     }
 

@@ -21,12 +21,7 @@ public class SqlUtil {
     /**
      * 特殊字符用来防止字段名重复的问题
      */
-    public static final String SEP = "\u02de";
-    public static final String COLON = ":";
-    /**
-     * 用于替换子字符串内冒号的字符，避免被当作预编译参数占位符
-     */
-    public static final String FAKE_COLON = "\u0C83";
+    private static final String SEP = "\u02de";
     /**
      * 匹配命名参数
      */

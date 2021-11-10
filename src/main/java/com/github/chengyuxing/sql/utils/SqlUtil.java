@@ -232,12 +232,11 @@ public class SqlUtil {
         String noneStrSql = sql;
         Map<String, String> mapper = new HashMap<>();
         Matcher m = SUB_STR_PATTERN.matcher(sql);
-        int x = 0;
         while (m.find()) {
             // sql part of string
             String str = m.group();
             // indexed placeholder
-            String placeHolder = SEP + (x++) + SEP;
+            String placeHolder = SEP + (str.hashCode()) + SEP;
             noneStrSql = noneStrSql.replace(str, placeHolder);
             mapper.put(placeHolder, str);
         }
@@ -269,6 +268,12 @@ public class SqlUtil {
         // resolve the sql string template next
         String noneStrSql = resolveSqlStrTemplate(noneStrSqlAndHolder.getItem1(), args, false);
         Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
+        // maybe args contains substr.
+        while (noneStrSql.contains("'")) {
+            Pair<String, Map<String, String>> againNoneStrSqlAndHolder = replaceSqlSubstr(noneStrSql);
+            noneStrSql = resolveSqlStrTemplate(againNoneStrSqlAndHolder.getItem1(), args, false);
+            placeholderMapper.putAll(againNoneStrSqlAndHolder.getItem2());
+        }
         // safe to replace arg by name placeholder
         Matcher matcher = ARG_PATTERN.matcher(noneStrSql);
         List<String> names = new ArrayList<>();

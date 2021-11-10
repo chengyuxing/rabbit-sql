@@ -33,9 +33,9 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.SEP;
 public class Tests {
 
     @Test
-    public void page() throws Exception{
+    public void page() throws Exception {
         PGPageHelper pgPageHelper = new PGPageHelper();
-        pgPageHelper.init(3,10,0);
+        pgPageHelper.init(3, 10, 0);
         System.out.println(pgPageHelper);
         System.out.println(pgPageHelper.limit());
         System.out.println(pgPageHelper.offset());
@@ -166,7 +166,7 @@ public class Tests {
         String sql = "insert into test.user(idd,name,id,age,address) values (:id,:name::integer,:idd" + SEP + "::float,integer :age,date :address)";
 //        String sql2 = "select * from test.user where id = '1' and tag = '1' and num = '1' and name = :name";
 //        String jsonSql = "select '{\"a\":[1,2,3],\"b\":[4,5,6]}'::json #>> '{b,1}'";
-        Pair<String, List<String>> pair = SqlUtil.getPreparedSql(str,Collections.emptyMap());
+        Pair<String, List<String>> pair = SqlUtil.getPreparedSql(str, Collections.emptyMap());
         System.out.println(pair.getItem1());
         System.out.println(pair.getItem2());
 
@@ -176,11 +176,16 @@ public class Tests {
     }
 
     @Test
-    public void sqlPlaceHolder() throws Exception{
-        String query = "select * from test where id = :id and id = :id or name = :name";
-        Pair<String, List<String>> sql = SqlUtil.generateSql(query, Collections.emptyMap(), true);
+    public void sqlPlaceHolder() throws Exception {
+        String query = "select * from test where id = :id and id = :id and idCard = '5301111' or name = :name ${cnd}";
+        Pair<String, List<String>> sql = SqlUtil.generateSql(query, Args.of("${cnd}", "and date <= '2020-12-23 11:23:44'"), true);
         System.out.println(sql.getItem1());
         System.out.println(sql.getItem2());
+    }
+
+    @Test
+    public void hash() throws Exception{
+        System.out.println("a".hashCode());
     }
 
     @Test

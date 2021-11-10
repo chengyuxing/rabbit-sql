@@ -8,7 +8,7 @@
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>5.2.9</version>
+    <version>5.3.1</version>
 </dependency>
 ```
 

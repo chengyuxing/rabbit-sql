@@ -183,7 +183,7 @@ public class Tests {
 
     @Test
     public void hash() throws Exception{
-        System.out.println("a".hashCode());
+        System.out.println("null instanceof String".equals(null));
     }
 
     @Test

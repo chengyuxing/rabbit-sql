@@ -2,6 +2,7 @@ package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.DateTimes;
+import com.github.chengyuxing.sql.exceptions.IORuntimeException;
 import com.github.chengyuxing.sql.exceptions.SqlRuntimeException;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.types.ParamMode;
@@ -33,7 +34,8 @@ public class JdbcUtil {
      * @param resultSet resultSet
      * @param index     序号
      * @return java类型值
-     * @throws SQLException ex
+     * @throws SQLException        ex
+     * @throws RuntimeException 如果通过反射获取PgArray对象出现错误
      */
     public static Object getResultValue(ResultSet resultSet, int index) throws SQLException {
         Object obj = resultSet.getObject(index);
@@ -51,7 +53,7 @@ public class JdbcUtil {
                 Method method = obj.getClass().getDeclaredMethod("getArray");
                 obj = method.invoke(obj);
             } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-                log.error("invoke PgArray.getArray() with wrong:{}", e.getMessage());
+                throw new RuntimeException("invoke PgArray.getArray() with wrong:{}", e);
             }
         } else if ("oracle.sql.TIMESTAMP".equals(className) || "oracle.sql.TIMESTAMPTZ".equals(className)) {
             obj = resultSet.getTimestamp(index);
@@ -85,7 +87,7 @@ public class JdbcUtil {
                 //noinspection ResultOfMethodCallIgnored
                 ins.read(bytes);
             } catch (IOException e) {
-                log.error("read blob catch an error:" + e.getMessage());
+                throw new IORuntimeException("read blob catch an error:", e);
             }
         }
         return bytes;
@@ -109,7 +111,7 @@ public class JdbcUtil {
                 }
             }
         } catch (SQLException throwables) {
-            log.debug("JDBC driver 'supportsStoredProcedures' method threw exception", throwables);
+            log.error("JDBC driver 'supportsStoredProcedures' method threw exception", throwables);
         }
         return false;
     }
@@ -132,7 +134,7 @@ public class JdbcUtil {
                 }
             }
         } catch (SQLException throwables) {
-            log.debug("JDBC driver 'supportsStoredProcedures' method threw exception", throwables);
+            log.error("JDBC driver 'supportsStoredProcedures' method threw exception", throwables);
         }
         return false;
     }
@@ -155,7 +157,7 @@ public class JdbcUtil {
                 }
             }
         } catch (SQLException ex) {
-            log.debug("JDBC driver 'supportsBatchUpdates' method threw exception", ex);
+            log.error("JDBC driver 'supportsBatchUpdates' method threw exception", ex);
         }
         return false;
     }

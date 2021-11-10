@@ -230,7 +230,7 @@ public class SqlUtil {
             // sql part of string
             String str = m.group();
             // indexed placeholder
-            String placeHolder = "&[" + (str.hashCode()) + "]";
+            String placeHolder = "\u02de" + (str.hashCode()) + "\u02de";
             noneStrSql = noneStrSql.replace(str, placeHolder);
             mapper.put(placeHolder, str);
         }

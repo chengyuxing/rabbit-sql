@@ -104,6 +104,9 @@ public class SqlUtil {
      * @throws IllegalArgumentException 如果where条件为空或者没有生成需要更新的字段
      */
     public static String generateUpdate(String tableName, Map<String, ?> data, final String where) {
+        if (data.isEmpty()) {
+            throw new IllegalArgumentException("empty field set, generate update sql error.");
+        }
         if (where.trim().equals("")) {
             throw new IllegalArgumentException("where condition must not be empty.");
         }

@@ -175,7 +175,7 @@ public class Tests {
 
     @Test
     public void sqlPlaceHolder() throws Exception {
-        String query = "select * from test where id = :id and id = :id and idCard = '530:1111' or name = :name ${cnd}";
+        String query = "select * from test where id = :i and id = :id and idCard = '5301111' or name = :name ${cnd}";
         Pair<String, List<String>> sql = SqlUtil.generateSql(query, Args.of("${cnd}", "and date <= '2020-12-23 11:23:44'"), true);
         System.out.println(sql.getItem1());
         System.out.println(sql.getItem2());

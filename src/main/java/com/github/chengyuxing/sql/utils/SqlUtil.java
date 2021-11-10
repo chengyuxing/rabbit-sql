@@ -21,7 +21,7 @@ public class SqlUtil {
     /**
      * 匹配命名参数
      */
-    public static final Pattern ARG_PATTERN = Pattern.compile("(^:|[^:]:)(?<name>[\\w.]+)", Pattern.MULTILINE);
+    public static final Pattern ARG_PATTERN = Pattern.compile("(^:|[^:]:)(?<name>[a-zA-Z]\\w*)", Pattern.MULTILINE);
     /**
      * 匹配字符串单引号里面的内容
      */
@@ -263,7 +263,8 @@ public class SqlUtil {
         String noneStrSql = resolveSqlStrTemplate(noneStrSqlAndHolder.getItem1(), args, false);
         Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
         // maybe args contains substr.
-        while (noneStrSql.contains("'")) {
+        int x, y;
+        while ((x = noneStrSql.indexOf("'")) >= 0 && (y = noneStrSql.lastIndexOf("'")) >= 0 && x != y) {
             Pair<String, Map<String, String>> againNoneStrSqlAndHolder = replaceSqlSubstr(noneStrSql);
             noneStrSql = resolveSqlStrTemplate(againNoneStrSqlAndHolder.getItem1(), args, false);
             placeholderMapper.putAll(againNoneStrSqlAndHolder.getItem2());

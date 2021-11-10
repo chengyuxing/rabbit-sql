@@ -19,13 +19,9 @@ import static com.github.chengyuxing.common.utils.StringUtil.startsWithIgnoreCas
  */
 public class SqlUtil {
     /**
-     * 特殊字符用来防止字段名重复的问题
-     */
-    private static final String SEP = "\u02de";
-    /**
      * 匹配命名参数
      */
-    public static final Pattern ARG_PATTERN = Pattern.compile("(^:|[^:]:)(?<name>[\\w." + SEP + "]+)", Pattern.MULTILINE);
+    public static final Pattern ARG_PATTERN = Pattern.compile("(^:|[^:]:)(?<name>[\\w.]+)", Pattern.MULTILINE);
     /**
      * 匹配字符串单引号里面的内容
      */
@@ -234,7 +230,7 @@ public class SqlUtil {
             // sql part of string
             String str = m.group();
             // indexed placeholder
-            String placeHolder = SEP + (str.hashCode()) + SEP;
+            String placeHolder = "&[" + (str.hashCode()) + "]";
             noneStrSql = noneStrSql.replace(str, placeHolder);
             mapper.put(placeHolder, str);
         }

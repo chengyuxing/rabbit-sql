@@ -468,7 +468,7 @@ public class SqlUtil {
      */
     public static String generateCountQuery(final String recordQuery) {
         // for 0 errors, simple count query currently.
-        return "select count(*) from (" + recordQuery + ") _data";
+        return "select count(*) from (" + recordQuery + ") r_data";
     }
 
     /**

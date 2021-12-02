@@ -6,7 +6,6 @@ import com.github.chengyuxing.sql.page.IPageable;
 import com.github.chengyuxing.sql.types.Param;
 
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -269,11 +268,4 @@ public interface Baki {
      * @return 执行结果
      */
     <T> T using(Function<Connection, T> func);
-
-    /**
-     * 获取数据库的元数据信息
-     *
-     * @return 数据库的元数据信息
-     */
-    DatabaseMetaData getMetaData();
 }

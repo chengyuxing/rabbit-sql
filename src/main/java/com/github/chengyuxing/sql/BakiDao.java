@@ -491,24 +491,6 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * {@inheritDoc}
-     *
-     * @return 数据源元信息
-     * @throws ConnectionStatusException 如果数据库关闭或者获取连接对象失败
-     */
-    @Override
-    public DatabaseMetaData getMetaData() {
-        try {
-            if (metaData == null) {
-                metaData = getConnection().getMetaData();
-            }
-            return metaData;
-        } catch (SQLException throwables) {
-            throw new ConnectionStatusException("fail to get metadata: ", throwables);
-        }
-    }
-
-    /**
      * 如果使用取地址符"&amp;sql文件名.sql名"则获取sql文件中已缓存的sql
      *
      * @param sql  sql或sql名

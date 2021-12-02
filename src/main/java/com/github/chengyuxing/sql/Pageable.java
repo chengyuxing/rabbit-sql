@@ -78,21 +78,23 @@ public class Pageable<T> extends IPageable<T> {
      * @throws ConnectionStatusException     如果连接对象异常
      */
     private PageHelper defaultPager() {
-        try {
-            String dbName = baki.getMetaData().getDatabaseProductName().toLowerCase();
-            switch (dbName) {
-                case "oracle":
-                    return new OraclePageHelper();
-                case "postgresql":
-                case "sqlite":
-                    return new PGPageHelper();
-                case "mysql":
-                    return new MysqlPageHelper();
-                default:
-                    throw new UnsupportedOperationException("pager of \"" + dbName + "\" not support currently!");
+        String dbName = baki.using(c -> {
+            try {
+                return c.getMetaData().getDatabaseProductName().toLowerCase();
+            } catch (SQLException e) {
+                throw new ConnectionStatusException("get db metadata error: ", e);
             }
-        } catch (SQLException e) {
-            throw new ConnectionStatusException("get db metadata error: ", e);
+        });
+        switch (dbName) {
+            case "oracle":
+                return new OraclePageHelper();
+            case "postgresql":
+            case "sqlite":
+                return new PGPageHelper();
+            case "mysql":
+                return new MysqlPageHelper();
+            default:
+                throw new UnsupportedOperationException("pager of \"" + dbName + "\" not support currently!");
         }
     }
 }

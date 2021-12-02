@@ -10,10 +10,7 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.sql.DatabaseMetaData;
-import java.sql.Date;
-import java.sql.Time;
-import java.sql.Timestamp;
+import java.sql.*;
 import java.time.*;
 import java.util.Arrays;
 import java.util.stream.Stream;
@@ -55,7 +52,13 @@ public class BakiSessionTest {
 
     @Test
     public void meta() throws Exception {
-        DatabaseMetaData metaData = baki.getMetaData();
+        DatabaseMetaData metaData = baki.using(connection -> {
+            try {
+                return connection.getMetaData();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        });
         System.out.println(metaData.getJDBCMajorVersion());
         System.out.println(metaData.getJDBCMinorVersion());
         System.out.println(metaData.getDriverVersion());

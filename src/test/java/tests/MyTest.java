@@ -187,6 +187,27 @@ public class MyTest {
     }
 
     @Test
+    public void defaultPager() throws Exception {
+        PagedResource<DataRow> pagedResource = baki.<DataRow>query("select * from test.region", 1, 5)
+                .count(10)
+                .collect(d -> d);
+        System.out.println(pagedResource);
+        while (true) {
+
+        }
+    }
+
+    @Test
+    public void query() throws Exception {
+        try (Stream<DataRow> s = baki.query("select * from test.region")){
+            s.forEach(System.out::println);
+        }
+        while (true) {
+
+        }
+    }
+
+    @Test
     public void pagerTest() throws Exception {
         PagedResource<DataRow> res = baki.<DataRow>query("&pgsql.data.custom_paged", 1, 7)
                 .count("select count(*) from test.region where id > :id")

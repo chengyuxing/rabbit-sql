@@ -61,9 +61,7 @@ public class Pageable<T> extends IPageable<T> {
             pageHelper = defaultPager();
         }
         pageHelper.init(page, size, count);
-        if (customPageHelper != null) {
-            args.putAll(pageHelper.pagedArgs());
-        }
+        args.putAll(pageHelper.pagedArgs());
         try (Stream<DataRow> s = baki.query(pageHelper.pagedSql(query), args)) {
             List<T> list = s.map(mapper).collect(Collectors.toList());
             return PagedResource.of(pageHelper, list);
@@ -77,7 +75,7 @@ public class Pageable<T> extends IPageable<T> {
      * @throws UnsupportedOperationException 如果没有自定分页，而默认分页不支持当前数据库
      * @throws ConnectionStatusException     如果连接对象异常
      */
-    private PageHelper defaultPager() {
+    protected PageHelper defaultPager() {
         String dbName = baki.using(c -> {
             try {
                 return c.getMetaData().getDatabaseProductName().toLowerCase();

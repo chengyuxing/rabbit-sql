@@ -6,7 +6,7 @@ import com.github.chengyuxing.sql.page.impl.MysqlPageHelper;
 import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -16,7 +16,7 @@ import java.util.function.Function;
  * @param <T> 结果类型参数
  */
 public abstract class IPageable<T> {
-    protected Map<String, Object> args = Collections.emptyMap();
+    protected Map<String, Object> args = new HashMap<>();
     protected final String recordQuery;
     protected String countQuery;
     protected final int page;

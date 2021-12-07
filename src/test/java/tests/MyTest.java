@@ -198,8 +198,17 @@ public class MyTest {
     }
 
     @Test
+    public void updateMore() throws Exception {
+        List<Map<String, Object>> list = new ArrayList<>();
+        list.add(Args.create("id", 23, "name", "昆明西山万达广场"));
+        list.add(Args.create("id", 24, "name", "南亚风情园"));
+        int i = baki.update("test.region", list, "id = :id");
+        System.out.println(i);
+    }
+
+    @Test
     public void query() throws Exception {
-        try (Stream<DataRow> s = baki.query("select * from test.region")){
+        try (Stream<DataRow> s = baki.query("select * from test.region")) {
             s.forEach(System.out::println);
         }
         while (true) {

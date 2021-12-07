@@ -143,7 +143,7 @@ public class SqlUtil {
      * @return 更新语句
      * @throws IllegalArgumentException 如果参数为空
      */
-    public static String generatePreparedUpdate(String tableName, Map<String, Object> data) {
+    public static String generatePreparedUpdate(String tableName, Map<String, ?> data) {
         if (data.isEmpty()) {
             throw new IllegalArgumentException("empty field set, generate update sql error.");
         }

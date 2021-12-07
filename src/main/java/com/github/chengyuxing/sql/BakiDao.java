@@ -257,15 +257,53 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * {@inheritDoc}
-     * e.g. {@code update(<table>, <Map>, "id = :id")}
+     * {@inheritDoc}<br>
+     * e.g. {@code update(<table>, <List>, "id = :id")}<br>
+     * 关于此方法的说明举例：
+     * <blockquote>
+     * 根据第一条数据生成预编译SQL
+     * <pre>
+     *  参数： {id:14, name:'cyx', address:'kunming'},{...}...
+     *  条件："id = :id"
+     *  生成：update{@code <table>} set name = :name, address = :address
+     *       where id = :id
+     *  </pre>
+     * 解释：where中至少指定一个传名参数，数据中必须包含where条件中的所有传名参数
+     * </blockquote>
+     *
+     * @param tableName 表名
+     * @param data      数据：需要更新的数据和条件参数
+     * @param where     条件：条件中需要有传名参数作为更新的条件依据
+     * @return 受影响的行数
+     * @throws SqlRuntimeException sql执行过程中出现错误
+     * @see Baki#fastUpdate(String, Collection, String)
+     */
+    @Override
+    public int update(String tableName, Collection<? extends Map<String, ?>> data, String where) {
+        Iterator<? extends Map<String, ?>> iterator = data.iterator();
+        if (iterator.hasNext()) {
+            Map<String, ?> updateData = new HashMap<>(iterator.next());
+            Pair<String, List<String>> cnd = SqlUtil.generateSql(where, updateData, true);
+            for (String key : cnd.getItem2()) {
+                updateData.remove(key);
+            }
+            String update = SqlUtil.generatePreparedUpdate(tableName, updateData);
+            String w = StringUtil.startsWithIgnoreCase(where.trim(), "where") ? where : "\nwhere " + where;
+            return executeNonQuery(update + w, data);
+        }
+        return -1;
+    }
+
+    /**
+     * {@inheritDoc}<br>
+     * e.g. {@code update(<table>, <Map>, "id = :id")}<br>
      * 关于此方法的说明举例：
      * <blockquote>
      * <pre>
      *  参数： {id:14, name:'cyx', address:'kunming'}
      *  条件："id = :id"
-     *  生成：update{@code <table>} set name = 'cyx', address = 'kunming'
-     *       where id = 14
+     *  生成：update{@code <table>} set name = :name, address = :address
+     *       where id = :id
      *  </pre>
      * 解释：where中至少指定一个传名参数，数据中必须包含where条件中的所有传名参数
      * </blockquote>
@@ -279,14 +317,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     @Override
     public int update(String tableName, Map<String, ?> data, String where) {
-        Pair<String, List<String>> cnd = SqlUtil.generateSql(where, data, true);
-        Map<String, Object> updateData = new HashMap<>(data);
-        for (String key : cnd.getItem2()) {
-            updateData.remove(key);
-        }
-        String update = SqlUtil.generatePreparedUpdate(tableName, updateData);
-        String w = StringUtil.startsWithIgnoreCase(where.trim(), "where") ? where : "\nwhere " + where;
-        return executeNonQuery(update + w, data);
+        return update(tableName, Collections.singletonList(data), where);
     }
 
     /**

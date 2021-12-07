@@ -122,6 +122,17 @@ public interface Baki {
     int delete(String tableName, String where);
 
     /**
+     * 批量更新<br>
+     * 具体逻辑可参考实现
+     *
+     * @param tableName 表名
+     * @param data      数据
+     * @param where     条件
+     * @return 受影响的行数
+     */
+    int update(String tableName, Collection<? extends Map<String, ?>> data, String where);
+
+    /**
      * 更新<br>
      * 具体逻辑可参考实现
      *

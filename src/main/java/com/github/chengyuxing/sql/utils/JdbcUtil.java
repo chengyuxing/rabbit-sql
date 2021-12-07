@@ -34,7 +34,7 @@ public class JdbcUtil {
      * @param resultSet resultSet
      * @param index     序号
      * @return java类型值
-     * @throws SQLException        ex
+     * @throws SQLException     ex
      * @throws RuntimeException 如果通过反射获取PgArray对象出现错误
      */
     public static Object getResultValue(ResultSet resultSet, int index) throws SQLException {
@@ -385,14 +385,18 @@ public class JdbcUtil {
     public static void setSqlTypedArgs(PreparedStatement statement, boolean checkParameterType, Map<String, ?> args, List<String> names) throws SQLException {
         if (args != null && !args.isEmpty()) {
             if (checkParameterType) {
-                for (int i = 0; i < names.size(); i++) {
-                    int index = i + 1;
-                    String name = names.get(i);
-                    if (args.containsKey(name)) {
-                        setSpecialStatementValue(statement, index, args.get(name));
-                    } else if (args.containsKey(":" + name)) {
-                        setSpecialStatementValue(statement, index, args.get(":" + name));
+                try {
+                    for (int i = 0; i < names.size(); i++) {
+                        int index = i + 1;
+                        String name = names.get(i);
+                        if (args.containsKey(name)) {
+                            setSpecialStatementValue(statement, index, args.get(name));
+                        } else if (args.containsKey(":" + name)) {
+                            setSpecialStatementValue(statement, index, args.get(":" + name));
+                        }
                     }
+                } catch (SQLException e) {
+                    throw new SqlRuntimeException("maybe jdbc driver not support the check parameter type, set 'checkParameterType' false to disabled the check.");
                 }
             } else {
                 setSqlPoolArgs(statement, args, names);

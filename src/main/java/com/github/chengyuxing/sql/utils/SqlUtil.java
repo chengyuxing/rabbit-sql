@@ -62,13 +62,13 @@ public class SqlUtil {
         if (keys.isEmpty()) {
             throw new IllegalArgumentException("empty field set, generate insert sql error.");
         }
-        StringBuilder f = new StringBuilder();
-        StringBuilder v = new StringBuilder();
+        StringJoiner f = new StringJoiner(", ");
+        StringJoiner v = new StringJoiner(", ");
         for (String key : keys) {
-            f.append(key).append(", ");
-            v.append(quoteFormatValueIfNecessary(row.get(key))).append(", ");
+            f.add(key);
+            v.add(quoteFormatValueIfNecessary(row.get(key)));
         }
-        return "insert into " + tableName + "(" + f.substring(0, f.length() - 2) + ") \nvalues (" + v.substring(0, v.length() - 2) + ")";
+        return "insert into " + tableName + "(" + f + ") \nvalues (" + v + ")";
     }
 
     /**
@@ -85,13 +85,13 @@ public class SqlUtil {
         if (keys.isEmpty()) {
             throw new IllegalArgumentException("empty field set, generate insert sql error.");
         }
-        StringBuilder f = new StringBuilder();
-        StringBuilder h = new StringBuilder();
+        StringJoiner f = new StringJoiner(", ");
+        StringJoiner h = new StringJoiner(", ");
         for (String key : keys) {
-            f.append(key).append(", ");
-            h.append(":").append(key).append(", ");
+            f.add(key);
+            h.add(":" + key);
         }
-        return "insert into " + tableName + "(" + f.substring(0, f.length() - 2) + ") \nvalues (" + h.substring(0, h.length() - 2) + ")";
+        return "insert into " + tableName + "(" + f + ") \nvalues (" + h + ")";
     }
 
     /**
@@ -113,16 +113,14 @@ public class SqlUtil {
         Pair<String, List<String>> sqlAndFields = generateSql(where, data, false);
         List<String> cndFields = sqlAndFields.getItem2();
         String w = sqlAndFields.getItem1();
-        StringBuilder sb = new StringBuilder();
+        StringJoiner sb = new StringJoiner(",\n\t");
         for (String key : data.keySet()) {
             if (!key.startsWith("${") && !key.endsWith("}")) {
                 String value = quoteFormatValueIfNecessary(data.get(key));
                 if (!cndFields.contains(key)) {
-                    sb.append(key)
-                            .append(" = ")
-                            .append(value)
-                            .append(",\n\t");
+                    sb.add(key + " = " + value);
                 } else {
+                    // 此处是条件中所包含的参数，放在where中，不在更新语句中
                     w = w.replace(":" + key, value);
                 }
             }
@@ -130,7 +128,7 @@ public class SqlUtil {
         String updateFields = sb.toString();
         if (!updateFields.equals("")) {
             w = startsWithIgnoreCase(w.trim(), "where") ? w : "where " + w;
-            return "update " + tableName + " \nset " + sb.substring(0, sb.lastIndexOf(",")) + "\n" + w;
+            return "update " + tableName + " \nset " + sb + "\n" + w;
         }
         throw new IllegalArgumentException("generate error, there are no fields.");
     }
@@ -148,11 +146,11 @@ public class SqlUtil {
             throw new IllegalArgumentException("empty field set, generate update sql error.");
         }
         Set<String> keys = data.keySet();
-        StringBuilder sb = new StringBuilder();
+        StringJoiner sb = new StringJoiner(",\n\t");
         for (String key : keys) {
-            sb.append(key).append(" = :").append(key).append(",\n\t");
+            sb.add(key + " = :" + key);
         }
-        return "update " + tableName + " \nset " + sb.substring(0, sb.lastIndexOf(","));
+        return "update " + tableName + " \nset " + sb;
     }
 
     /**
@@ -335,20 +333,22 @@ public class SqlUtil {
                     } else {
                         values = new Object[]{value};
                     }
-                    StringBuilder sb = new StringBuilder();
+                    StringJoiner sb = new StringJoiner(", ");
                     if (key.startsWith("${:")) {
                         // expand and quote safe args
                         trueKey = "${" + key.substring(3);
                         for (Object v : values) {
-                            sb.append(quoteFormatValueIfNecessary(v)).append(", ");
+                            sb.add(quoteFormatValueIfNecessary(v));
                         }
                     } else {
                         // just expand
                         for (Object v : values) {
-                            sb.append(v).append(", ");
+                            if (v != null) {
+                                sb.add(v.toString());
+                            }
                         }
                     }
-                    subSql = "\n" + sb.substring(0, sb.length() - 2).trim() + "\n";
+                    subSql = "\n" + sb.toString().trim() + "\n";
                 }
                 int partIndex;
                 while ((partIndex = noneStrSql.indexOf(trueKey)) != -1) {

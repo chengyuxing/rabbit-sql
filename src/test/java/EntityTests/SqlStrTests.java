@@ -12,6 +12,7 @@ public class SqlStrTests {
         Map<String, Object> args = Args.<Object>of("id", 5)
                 .add("name", "cyx")
                 .add("email", "chengyuxingo@gmail.com")
+                .add("email2", "chengyuxingo@gmail.com")
                 .add("${and}", "and name = :name");
         System.out.println(SqlUtil.generateUpdate("test.user", args, "id = :id ${and}"));
     }

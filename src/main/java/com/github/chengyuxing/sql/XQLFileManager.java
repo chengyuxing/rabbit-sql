@@ -588,7 +588,7 @@ public class XQLFileManager {
      * @param name sql名格式：别名.sql块命名<br>
      * @return 是否存在
      */
-    public boolean containsSql(String name) {
+    public boolean contains(String name) {
         return RESOURCE.containsKey(name);
     }
 

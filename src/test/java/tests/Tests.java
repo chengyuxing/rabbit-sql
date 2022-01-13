@@ -97,49 +97,6 @@ public class Tests {
     }
 
     @Test
-    public void sqlTest() throws Exception {
-        String sql = "update test.user\n" +
-                "set\n" +
-                "--#if :name <> blank\n" +
-                "name    = :name,\n" +
-                "--#fi\n" +
-                "\n" +
-                "--#choose\n" +
-                "--#if :age <100\n" +
-                "age     = :age,\n" +
-                "--#fi\n" +
-                "--#if :age > 100\n" +
-                "age     = 100,\n" +
-                "--#fi\n" +
-                "--#if :age > 150\n" +
-                "age     = 101,\n" +
-                "--#fi\n" +
-                "--#end\n" +
-                "\n" +
-                "--#if :open <> ''\n" +
-                "family  = 'happy',\n" +
-                "--#fi\n" +
-                "\n" +
-                "--#choose\n" +
-                "--#if :address != null\n" +
-                "address = :address\n" +
-                "--#fi\n" +
-                "--#if :address == 'kunming'\n" +
-                "    address = 'kunming'\n" +
-                "--#fi\n" +
-                "--#if :address == \"beijing\"\n" +
-                "    address = '北京'\n" +
-                "--#fi\n" +
-                "--#end\n" +
-                "where id = 10";
-        String dq = XQLFileManager.dynamicCalc(sql, Args.<Object>of("name", "")
-                .add("age", 27)
-                .add("address", "beijing")
-                .add("open", "sad"), true);
-        System.out.println(dq);
-    }
-
-    @Test
     public void lambdaTest() throws Exception {
         immutableList.foreach(System.out::println);
     }

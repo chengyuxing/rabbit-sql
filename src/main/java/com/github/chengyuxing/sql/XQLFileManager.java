@@ -314,7 +314,7 @@ public class XQLFileManager {
      * @throws NullPointerException     如果 {@code args} 为null
      * @see FastExpression
      */
-    protected static String dynamicCalc(String sql, Map<String, ?> args, boolean checkArgsKey) {
+    protected String dynamicCalc(String sql, Map<String, ?> args, boolean checkArgsKey) {
         String[] lines = sql.split(NEW_LINE);
         StringJoiner output = new StringJoiner(NEW_LINE);
         for (int i = 0, j = lines.length; i < j; i++) {
@@ -477,7 +477,7 @@ public class XQLFileManager {
      * @param sql sql语句
      * @return 修复后的sql
      */
-    protected static String repairSyntaxError(String sql) {
+    protected String repairSyntaxError(String sql) {
         Pattern p;
         Matcher m;
         String firstLine = sql.substring(0, sql.indexOf("\n")).trim();

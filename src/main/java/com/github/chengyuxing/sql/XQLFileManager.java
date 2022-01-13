@@ -2,16 +2,16 @@ package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.console.Color;
 import com.github.chengyuxing.common.console.Printer;
+import com.github.chengyuxing.common.io.FileResource;
+import com.github.chengyuxing.common.script.Comparators;
 import com.github.chengyuxing.common.script.impl.FastExpression;
 import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.sql.exceptions.IORuntimeException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.github.chengyuxing.common.io.FileResource;
-import com.github.chengyuxing.common.utils.ResourceUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.exceptions.DuplicateException;
+import com.github.chengyuxing.sql.exceptions.IORuntimeException;
 import com.github.chengyuxing.sql.utils.SqlUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.FileNotFoundException;
@@ -19,42 +19,45 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URISyntaxException;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.github.chengyuxing.common.utils.StringUtil.containsAllIgnoreCase;
-import static com.github.chengyuxing.common.utils.StringUtil.startsWithIgnoreCase;
+import static com.github.chengyuxing.common.utils.StringUtil.*;
 import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
 
 /**
- * <h2>SQL文件解析管理器</h2>
- * <h3>SQL文件配置</h3>
+ * <h1>支持扩展脚本解析动态SQL的文件管理器</h1>
+ * <h2>文件配置</h2>
  * <p>支持外部sql(本地文件系统)和classpath下的sql，
  * 本地sql文件以 {@code file:} 开头，默认读取<strong>classpath</strong>下的sql文件</p>
- * e.g. SQL文件格式
+ * <p>识别的文件格式支持: {@code .xql.sql}</p>
+ * e.g.
  * <blockquote>
  *     <ul>
- *         <li><pre>windows: file:\\D:\\rabbit.sql</pre></li>
- *         <li><pre>Linux/Unix: file:/root/rabbit.sql</pre></li>
- *         <li><pre>ClassPath: sql/rabbit.sql</pre></li>
+ *         <li><pre>windows: file:\\D:\\rabbit.s(x)ql</pre></li>
+ *         <li><pre>Linux/Unix: file:/root/rabbit.s(x)ql</pre></li>
+ *         <li><pre>ClassPath: sql/rabbit.s(x)ql</pre></li>
  *     </ul>
  * </blockquote>
- * <h3>动态SQL</h3>
+ * <h2>动态sql：</h2>
+ * e.g.
  * <blockquote>
  * <pre>
  * select *
  * from test.student t
  * WHERE
  * --#choose
- *      --#if :age{@code <} 21
+ *      --#when :age{@code <} 21
  *      t.age = 21
- *      --#fi
- *      --#if :age{@code <>} blank{@code &&} :age{@code <} 90
+ *      --#break
+ *      --#when :age{@code <>} blank{@code &&} :age{@code <} 90
  *      and age{@code <} 90
- *      --#fi
+ *      --#break
+ *      --#default
+ *      and age = 89
+ *      --#break
  *  --#end
  *  --#if :name != null
  *      and t.name ~ :name
@@ -62,105 +65,84 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
  * ;
  *     </pre>
  * </blockquote>
- * <h3>参考</h3>
+ * <h2>参考：</h2>
  * <blockquote>
- * data.sql.template
+ * data.xql.template
  * </blockquote>
  */
-public class SQLFileManager {
-    private final static Logger log = LoggerFactory.getLogger(SQLFileManager.class);
+public class XQLFileManager {
+    private final static Logger log = LoggerFactory.getLogger(XQLFileManager.class);
     private final ReentrantLock lock = new ReentrantLock();
     private final Map<String, String> RESOURCE = new HashMap<>();
-    private final AtomicInteger UN_NAMED_SQL_INDEX = new AtomicInteger();
-    private final String UN_NAMED_SQL_NAME = "UN_NAMED_SQL_";
     private final Map<String, Long> LAST_MODIFIED = new HashMap<>();
     private static final Pattern NAME_PATTERN = Pattern.compile("/\\*\\s*\\[\\s*(?<name>\\S+)\\s*]\\s*\\*/");
     private static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+)\\s*}\\s*\\*/");
     public static final String IF = "--#if";
     public static final String FI = "--#fi";
     public static final String CHOOSE = "--#choose";
+    public static final String WHEN = "--#when";
+
+    public static final String SWITCH = "--#switch";
+    public static final String CASE = "--#case";
+
+    public static final String DEFAULT = "--#default";
+    public static final String BREAK = "--#break";
     public static final String END = "--#end";
     // ----------------optional properties------------------
     private volatile boolean checkModified;
     private Map<String, String> constants = new HashMap<>();
-    private String[] sqls;
-    private Map<String, String> sqlMap;
-    private List<String> sqlList;
+    private Map<String, String> files = new HashMap<>();
 
     /**
      * Sql文件解析器实例
      */
-    public SQLFileManager() {
+    public XQLFileManager() {
     }
 
     /**
      * Sql文件解析器实例<br>
      *
-     * @param sqls 多个文件名，以逗号(,)分割
+     * @param files 文件：[别名，文件名]
      */
-    public SQLFileManager(String sqls) {
-        this.sqls = sqls.split(",");
+    public XQLFileManager(Map<String, String> files) {
+        this.files = files;
     }
 
     /**
      * 添加命名的sql文件
      *
-     * @param alias       sql文件别名
-     * @param sqlFileName sql文件全路径名
+     * @param alias    文件别名
+     * @param fileName 文件全路径名
      */
-    public void add(String alias, String sqlFileName) {
-        if (sqlMap == null) {
-            sqlMap = new HashMap<>();
-        }
-        sqlMap.put(alias, sqlFileName);
+    public void add(String alias, String fileName) {
+        files.put(alias, fileName);
     }
 
     /**
      * 设置命名的sql文件
      *
-     * @param sqlMap 命名sql文件名和路径对应关系
+     * @param files 文件 [别名，文件名]
      */
-    public void setSqlMap(Map<String, String> sqlMap) {
-        this.sqlMap = sqlMap;
-    }
-
-    /**
-     * 添加未命名的sql文件
-     *
-     * @param sqlFileName sql文件全路径名
-     */
-    public void add(String sqlFileName) {
-        if (sqlList == null) {
-            sqlList = new ArrayList<>();
+    public void setFiles(Map<String, String> files) {
+        if (!this.files.isEmpty()) {
+            this.files.putAll(files);
+        } else {
+            this.files = files;
         }
-        sqlList.add(sqlFileName);
-    }
-
-    /**
-     * 设置未命名的sql文件
-     *
-     * @param sqlList sql文件全路径列表
-     */
-    public void setSqlList(List<String> sqlList) {
-        this.sqlList = sqlList;
     }
 
     /**
      * 解析sql文件
      *
-     * @param name     sql文件自定义名
-     * @param resource 类路径sql资源
-     * @throws IOException        如果sql文件不存在或路径无效
-     * @throws DuplicateException 如果同一个sql文件中有重复的sql名
+     * @param name     文件别名
+     * @param resource 文件资源
+     * @throws IOException        如果文件不存在或路径无效
+     * @throws DuplicateException 如果同一个文件中有重复的内容命名
      */
-    private void resolveSqlContent(String name, FileResource resource) throws IOException {
+    protected void resolveSqlContent(String name, FileResource resource) throws IOException {
         Map<String, String> singleResource = new HashMap<>();
-        String pkgPath = ResourceUtil.path2package(resource.getPath());
-        String prefix = pkgPath.substring(0, pkgPath.length() - 3);
-        if (!name.startsWith(UN_NAMED_SQL_NAME)) {
-            prefix = name + ".";
-        }
-        String previousSqlName = "";
+        String prefix = name + ".";
+        String blockName = "";
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()))) {
             String line;
             while ((line = reader.readLine()) != null) {
@@ -169,29 +151,29 @@ public class SQLFileManager {
                     Matcher m_name = NAME_PATTERN.matcher(trimLine);
                     Matcher m_part = PART_PATTERN.matcher(trimLine);
                     if (m_name.matches()) {
-                        previousSqlName = prefix + m_name.group("name");
-                        if (singleResource.containsKey(previousSqlName)) {
-                            throw new DuplicateException("same sql name: " + previousSqlName);
+                        blockName = prefix + m_name.group("name");
+                        if (singleResource.containsKey(blockName)) {
+                            throw new DuplicateException("same block fragment name: " + blockName);
                         }
-                        singleResource.put(previousSqlName, "");
+                        singleResource.put(blockName, "");
                     } else if (m_part.matches()) {
-                        previousSqlName = "${" + prefix + m_part.group("part") + "}";
-                        if (singleResource.containsKey(previousSqlName)) {
-                            throw new DuplicateException("same sql part: " + previousSqlName);
+                        blockName = "${" + prefix + m_part.group("part") + "}";
+                        if (singleResource.containsKey(blockName)) {
+                            throw new DuplicateException("same block template name: " + blockName);
                         }
-                        singleResource.put(previousSqlName, "");
+                        singleResource.put(blockName, "");
                     } else {
                         // exclude single line annotation except expression keywords
-                        if (!trimLine.startsWith("--") || StringUtil.startsWithsIgnoreCase(trimLine, IF, FI, CHOOSE, END)) {
-                            if (!previousSqlName.equals("")) {
-                                String prepareLine = singleResource.get(previousSqlName) + line;
+                        if (!trimLine.startsWith("--") || StringUtil.startsWithsIgnoreCase(trimLine, IF, FI, CHOOSE, WHEN, SWITCH, CASE, DEFAULT, BREAK, END)) {
+                            if (!blockName.equals("")) {
+                                String prepareLine = singleResource.get(blockName) + line;
                                 if (trimLine.endsWith(";")) {
                                     String naSql = removeAnnotationBlock(prepareLine);
-                                    singleResource.put(previousSqlName, naSql.substring(0, naSql.lastIndexOf(";")));
-                                    log.debug("scan to get SQL [{}]：{}", previousSqlName, SqlUtil.highlightSql(singleResource.get(previousSqlName)));
-                                    previousSqlName = "";
+                                    singleResource.put(blockName, naSql.substring(0, naSql.lastIndexOf(";")));
+                                    log.debug("scan to get block [{}]：{}", blockName, SqlUtil.highlightSql(singleResource.get(blockName)));
+                                    blockName = "";
                                 } else {
-                                    singleResource.put(previousSqlName, prepareLine.concat("\n"));
+                                    singleResource.put(blockName, prepareLine.concat("\n"));
                                 }
                             }
                         }
@@ -199,10 +181,10 @@ public class SQLFileManager {
                 }
             }
             // if last part of sql is not ends with ';' symbol
-            if (!previousSqlName.equals("")) {
-                String lastSql = singleResource.get(previousSqlName);
-                singleResource.put(previousSqlName, removeAnnotationBlock(lastSql));
-                log.debug("scan to get SQL [{}]：{}", previousSqlName, SqlUtil.highlightSql(lastSql));
+            if (!blockName.equals("")) {
+                String lastSql = singleResource.get(blockName);
+                singleResource.put(blockName, removeAnnotationBlock(lastSql));
+                log.debug("scan to get block [{}]：{}", blockName, SqlUtil.highlightSql(lastSql));
             }
         }
         mergeSqlPartIfNecessary(singleResource, prefix);
@@ -216,7 +198,7 @@ public class SQLFileManager {
      * @param prefix      sql名前缀，自定义名或sql文件路径名
      * @param sqlResource sql字符串文件资源
      */
-    private void doMergeSqlPart(final String partName, final String prefix, Map<String, String> sqlResource) {
+    protected void doMergeSqlPart(final String partName, final String prefix, Map<String, String> sqlResource) {
         // inner sql part name like: '${filename.part1}'
         //innerPartName will be '${part1}'
         String innerPartName = "${" + partName.substring(prefix.length() + 2);
@@ -249,7 +231,7 @@ public class SQLFileManager {
      * @param sqlResource sql字符串资源
      * @param prefix      sql名前缀，自定义名或sql文件路径名
      */
-    private void mergeSqlPartIfNecessary(Map<String, String> sqlResource, String prefix) {
+    protected void mergeSqlPartIfNecessary(Map<String, String> sqlResource, String prefix) {
         for (String key : sqlResource.keySet()) {
             if (key.startsWith("${")) {
                 doMergeSqlPart(key, prefix, sqlResource);
@@ -283,56 +265,20 @@ public class SQLFileManager {
     }
 
     /**
-     * 获取没有命名的防止重复的自增sql文件路径名
-     *
-     * @return sql路径名
-     */
-    private String getUnnamedPathName() {
-        return UN_NAMED_SQL_NAME + UN_NAMED_SQL_INDEX.getAndIncrement();
-    }
-
-    /**
-     * 整合所有命名和无命名Sql
-     *
-     * @return 所有sql
-     */
-    private Map<String, String> allPaths() {
-        Map<String, String> pathMap = new LinkedHashMap<>();
-        // add unnamed paths
-        if (sqlList != null && sqlList.size() > 0) {
-            for (String path : sqlList) {
-                pathMap.put(getUnnamedPathName(), path);
-            }
-        }
-        // add paths from constructor's args
-        if (sqls != null && sqls.length > 0) {
-            for (String path : sqls) {
-                pathMap.put(getUnnamedPathName(), path);
-            }
-        }
-        // add named paths
-        if (sqlMap != null && sqlMap.size() > 0) {
-            pathMap.putAll(sqlMap);
-        }
-        return pathMap;
-    }
-
-    /**
      * 如果有检测到文件修改过，则重新加载已修改过的sql文件
      *
      * @throws IOException           如果sql文件读取错误
      * @throws URISyntaxException    如果sql文件路径格式错误
      * @throws FileNotFoundException 如果sql文件不存在或路径无效
      */
-    private void reloadIfNecessary() throws IOException, URISyntaxException {
+    protected void reloadIfNecessary() throws IOException, URISyntaxException {
         lock.lock();
         try {
-            Map<String, String> mappedPaths = allPaths();
-            for (String name : mappedPaths.keySet()) {
-                FileResource cr = new FileResource(mappedPaths.get(name));
+            for (String name : files.keySet()) {
+                FileResource cr = new FileResource(files.get(name));
                 if (cr.exists()) {
                     String suffix = cr.getFilenameExtension();
-                    if (suffix != null && suffix.equals("sql")) {
+                    if (suffix != null && (suffix.equals("sql") || suffix.equals("xql"))) {
                         String fileName = cr.getFileName();
                         if (LAST_MODIFIED.containsKey(fileName)) {
                             long timestamp = LAST_MODIFIED.get(fileName);
@@ -360,27 +306,6 @@ public class SQLFileManager {
 
     /**
      * 解析一条动态sql<br>
-     * e.g. data.sql.template
-     * <blockquote>
-     * <pre>
-     *         select *
-     * from test.student t
-     * WHERE
-     * --#choose
-     *     --#if :age{@code <} 21
-     *     t.age = 21
-     *     --#fi
-     *     --#if :age{@code  <>} blank{@code &&} :age{@code <} 90
-     *     and age{@code <} 90
-     *     --#fi
-     * --#end
-     * --#if :name != null
-     * and t.name ~ :name
-     * --#fi
-     * ;
-     *     </pre>
-     * </blockquote>
-     *
      * @param sql          动态sql字符串
      * @param args         动态sql逻辑表达式参数字典
      * @param checkArgsKey 检查参数中是否必须存在表达式中需要计算的key
@@ -389,72 +314,155 @@ public class SQLFileManager {
      * @throws NullPointerException     如果 {@code args} 为null
      * @see FastExpression
      */
-    public static String calcDynamicSql(String sql, Map<String, ?> args, boolean checkArgsKey) {
-        if (!containsAllIgnoreCase(sql, IF, FI)) {
-            return sql;
-        }
-        String nSql = removeAnnotationBlock(sql);
-        String[] lines = nSql.split("\n");
-        StringBuilder sb = new StringBuilder();
-        boolean first = true;
-        boolean ok = true;
-        boolean start = false;
-        boolean inBlock = false;
-        boolean blockFirstOk = false;
-        boolean hasChooseBlock = containsAllIgnoreCase(sql, CHOOSE, END);
-        for (String line : lines) {
-            String trimLine = line.trim();
-            if (!trimLine.isEmpty()) {
-                if (first) {
-                    if (!trimLine.startsWith("--")) {
-                        first = false;
-                    }
-                }
-                if (hasChooseBlock) {
-                    if (startsWithIgnoreCase(trimLine, CHOOSE)) {
-                        blockFirstOk = false;
-                        inBlock = true;
-                        continue;
-                    }
-                    if (startsWithIgnoreCase(trimLine, END)) {
-                        inBlock = false;
-                        continue;
-                    }
-                }
-                if (startsWithIgnoreCase(trimLine, IF) && !start) {
-                    start = true;
-                    if (inBlock) {
-                        if (!blockFirstOk) {
-                            String filter = trimLine.substring(5);
-                            FastExpression expression = FastExpression.of(filter);
-                            expression.setCheckArgsKey(checkArgsKey);
-                            ok = expression.calc(args);
-                            blockFirstOk = ok;
+    protected static String dynamicCalc(String sql, Map<String, ?> args, boolean checkArgsKey) {
+        String[] lines = sql.split(NEW_LINE);
+        StringJoiner output = new StringJoiner(NEW_LINE);
+        for (int i = 0, j = lines.length; i < j; i++) {
+            String outerLine = lines[i];
+            String trimOuterLine = outerLine.trim();
+            int count = 0;
+            // 处理if表达式块
+            if (startsWithIgnoreCase(trimOuterLine, IF)) {
+                count++;
+                StringJoiner innerSb = new StringJoiner(NEW_LINE);
+                // 内循环推进游标，用来判断嵌套if表达式块
+                while (++i < j) {
+                    String line = lines[i];
+                    String trimLine = line.trim();
+                    if (startsWithIgnoreCase(trimLine, IF)) {
+                        innerSb.add(line);
+                        count++;
+                    } else if (startsWithIgnoreCase(trimLine, FI)) {
+                        count--;
+                        // 说明此处已经达到了嵌套fi的末尾
+                        if (count == 0) {
+                            // 此处计算外层if逻辑表达式，逻辑同程序语言的if逻辑
+                            FastExpression fx = FastExpression.of(trimOuterLine.substring(5));
+                            fx.setCheckArgsKey(checkArgsKey);
+                            boolean res = fx.calc(args);
+                            // 如果外层判断为真，如果内层还有if表达式块或choose...end块，则进入内层继续处理
+                            // 否则就认为是原始sql逻辑判断需要保留片段
+                            if (res) {
+                                String innerStr = innerSb.toString();
+                                if (containsAllIgnoreCase(innerStr, IF, FI) || containsAllIgnoreCase(innerStr, CHOOSE, END) || containsAllIgnoreCase(innerStr, SWITCH, END)) {
+                                    output.add(dynamicCalc(innerStr, args, checkArgsKey));
+                                } else {
+                                    output.add(innerStr);
+                                }
+                            }
+                            break;
                         } else {
-                            ok = false;
+                            // 说明此处没有达到外层fi，内层fi后面还有外层的sql表达式需要保留
+                            // e.g.
+                            // --#if
+                            // ...
+                            //      --#if
+                            //      ...
+                            //      --#fi
+                            //      and t.a = :a    --此处为需要保留的地方
+                            // --#fi
+                            innerSb.add(line);
                         }
                     } else {
-                        String filter = trimLine.substring(5);
-                        FastExpression expression = FastExpression.of(filter);
-                        expression.setCheckArgsKey(checkArgsKey);
-                        ok = expression.calc(args);
-                    }
-                    continue;
-                }
-                if (startsWithIgnoreCase(trimLine, FI) && start) {
-                    ok = true;
-                    start = false;
-                    continue;
-                }
-                if (ok) {
-                    sb.append(line).append("\n");
-                    if (!inBlock) {
-                        blockFirstOk = false;
+                        // 非表达式的部分sql需要保留
+                        innerSb.add(line);
                     }
                 }
+                // 处理choose表达式块
+            } else if (startsWithIgnoreCase(trimOuterLine, CHOOSE)) {
+                while (++i < j) {
+                    String line = lines[i];
+                    String trimLine = line.trim();
+                    if (startsWithsIgnoreCase(trimLine, WHEN, DEFAULT)) {
+                        boolean res = false;
+                        if (startsWithIgnoreCase(trimLine, WHEN)) {
+                            FastExpression fx = FastExpression.of(trimLine.substring(7));
+                            fx.setCheckArgsKey(checkArgsKey);
+                            res = fx.calc(args);
+                        }
+                        // choose表达式块效果类似于程序语言的switch块，从前往后，只要满足一个分支，就跳出整个choose块
+                        // 如果有default分支，前面所有when都不满足的情况下，就会直接选择default分支的sql作为结果保留
+                        if (res || startsWithIgnoreCase(trimLine, DEFAULT)) {
+                            StringJoiner innerSb = new StringJoiner(NEW_LINE);
+                            // 移动游标直到此分支的break之前都是符合判断结果的sql保留下来
+                            while (++i < j && !startsWithIgnoreCase(lines[i].trim(), BREAK)) {
+                                innerSb.add(lines[i]);
+                            }
+                            String innerStr = innerSb.toString();
+                            // when...break块中还可以包含if表达式块
+                            if (containsAllIgnoreCase(innerStr, IF, FI)) {
+                                output.add(dynamicCalc(innerStr, args, checkArgsKey));
+                            } else {
+                                output.add(innerStr);
+                            }
+                            // 到此处说明已经将满足条件的分支的sql保留下来
+                            // 在接下来的分支都直接略过，移动游标直到end结束标签，就跳出整个choose块
+                            //noinspection StatementWithEmptyBody
+                            while (++i < j && !startsWithIgnoreCase(lines[i].trim(), END)) ;
+                            break;
+                        } else {
+                            // 如果此分支when语句表达式不满足条件，就移动游标到当前分支break结束，进入下一个when分支
+                            //noinspection StatementWithEmptyBody
+                            while (++i < j && !startsWithIgnoreCase(lines[i].trim(), BREAK)) ;
+                        }
+                    } else if (startsWithIgnoreCase(trimLine, END)) {
+                        //在语句块为空的情况下，遇到end结尾，就跳出整个choose块
+                        break;
+                    } else {
+                        output.add(line);
+                    }
+                }
+                // 处理switch表达式块，逻辑等同于choose表达式块
+            } else if (startsWithIgnoreCase(trimOuterLine, SWITCH)) {
+                Pattern p = Pattern.compile(":(?<name>[\\S]+)");
+                Matcher m = p.matcher(trimOuterLine.substring(9));
+                String name = null;
+                if (m.find()) {
+                    name = m.group("name");
+                }
+                if (name == null) {
+                    throw new IllegalArgumentException("switch syntax error, cannot find var.");
+                }
+                Object value = args.get(name);
+                while (++i < j) {
+                    String line = lines[i];
+                    String trimLine = line.trim();
+                    if (startsWithsIgnoreCase(trimLine, CASE, DEFAULT)) {
+                        boolean res = false;
+                        if (startsWithIgnoreCase(trimLine, CASE)) {
+                            res = Comparators.compare(value, "=", trimLine.substring(8));
+                        }
+                        if (res || startsWithIgnoreCase(trimLine, DEFAULT)) {
+                            StringJoiner innerSb = new StringJoiner(NEW_LINE);
+                            while (++i < j && !startsWithIgnoreCase(lines[i].trim(), BREAK)) {
+                                innerSb.add(lines[i]);
+                            }
+                            String innerStr = innerSb.toString();
+                            // case...break块中还可以包含if表达式块
+                            if (containsAllIgnoreCase(innerStr, IF, FI)) {
+                                output.add(dynamicCalc(innerStr, args, checkArgsKey));
+                            } else {
+                                output.add(innerStr);
+                            }
+                            //noinspection StatementWithEmptyBody
+                            while (++i < j && !startsWithIgnoreCase(lines[i].trim(), END)) ;
+                            break;
+                        } else {
+                            //noinspection StatementWithEmptyBody
+                            while (++i < j && !startsWithIgnoreCase(lines[i].trim(), BREAK)) ;
+                        }
+                    } else if (startsWithIgnoreCase(trimLine, END)) {
+                        break;
+                    } else {
+                        output.add(line);
+                    }
+                }
+            } else {
+                // 没有表达式的行，说明是原始sql的需要保留的部分
+                output.add(outerLine);
             }
         }
-        return repairSyntaxError(sb.toString());
+        return output.toString();
     }
 
     /**
@@ -469,7 +477,7 @@ public class SQLFileManager {
      * @param sql sql语句
      * @return 修复后的sql
      */
-    private static String repairSyntaxError(String sql) {
+    protected static String repairSyntaxError(String sql) {
         Pattern p;
         Matcher m;
         String firstLine = sql.substring(0, sql.indexOf("\n")).trim();
@@ -511,12 +519,11 @@ public class SQLFileManager {
      * @throws DuplicateException    如果同一个sql文件中有重复的sql名
      */
     public void init() throws IOException, URISyntaxException {
-        Map<String, String> mappedPaths = allPaths();
-        for (String name : mappedPaths.keySet()) {
-            FileResource cr = new FileResource(mappedPaths.get(name));
+        for (String name : files.keySet()) {
+            FileResource cr = new FileResource(files.get(name));
             if (cr.exists()) {
                 String suffix = cr.getFilenameExtension();
-                if (suffix != null && suffix.equals("sql")) {
+                if (suffix != null && (suffix.equals("sql") || suffix.equals("xql"))) {
                     resolveSqlContent(name, cr);
                     LAST_MODIFIED.put(cr.getFileName(), cr.getLastModified());
                 }
@@ -578,11 +585,7 @@ public class SQLFileManager {
     /**
      * 是否包含指定名称的sql
      *
-     * @param name sql名<br>
-     *             <blockquote>
-     *             命名sql格式：sql文件命名.sql名<br>
-     *             未命名sql格式：UN_NAMED_SQL_序号.sql名
-     *             </blockquote>
+     * @param name sql名格式：别名.sql块命名<br>
      * @return 是否存在
      */
     public boolean containsSql(String name) {
@@ -613,69 +616,27 @@ public class SQLFileManager {
 
     /**
      * 获取一条动态sql<br>
-     * e.g. data.sql.template
-     * <blockquote>
-     * <pre>
-     *         select *
-     * from test.student t
-     * WHERE
-     * --#choose
-     *     --#if :ageX{@code <} 21
-     *     t.age = 21
-     *     --#fi
-     *     --#if :age{@code <>} blank{@code &&} :age{@code <} 90
-     *     and age{@code <} 90
-     *     --#fi
-     * --#end
-     * --#if :name != null
-     * and t.name ~ :name
-     * --#fi
-     * ;
-     *     </pre>
-     * </blockquote>
-     *
      * @param name         sql名字
      * @param args         动态sql逻辑表达式参数字典
      * @param checkArgsKey 检查参数中是否必须存在表达式中需要计算的key
      * @return 解析后的sql
      * @throws NoSuchElementException 如果没有找到相应名字的sql片段
      * @throws IORuntimeException     如果 {@code checkModified} 属性为true重载sql文件发生错误
-     * @see #calcDynamicSql(String, Map, boolean)
+     * @see #dynamicCalc(String, Map, boolean)
      */
     public String get(String name, Map<String, ?> args, boolean checkArgsKey) {
         String sql = get(name);
-        return calcDynamicSql(sql, args, checkArgsKey);
+        return repairSyntaxError(dynamicCalc(sql, args, checkArgsKey));
     }
 
     /**
      * 获取一条动态sql<br>
-     * e.g. data.sql.template
-     * <blockquote>
-     * <pre>
-     *         select *
-     * from test.student t
-     * WHERE
-     * --#choose
-     *     --#if :age{@code <} 21
-     *     t.age = 21
-     *     --#fi
-     *     --#if :age{@code <>} blank{@code &&} :age{@code <} 90
-     *     and age{@code <} 90
-     *     --#fi
-     * --#end
-     * --#if :name != null
-     * and t.name ~ :name
-     * --#fi
-     * ;
-     *     </pre>
-     * </blockquote>
-     *
      * @param name sql名字
      * @param args 动态sql逻辑表达式参数字典
      * @return 解析后的sql
      * @throws NoSuchElementException 如果没有找到相应名字的sql片段
      * @throws IORuntimeException     如果 {@code checkModified} 属性为true重载sql文件发生错误
-     * @see #calcDynamicSql(String, Map, boolean)
+     * @see #dynamicCalc(String, Map, boolean)
      */
     public String get(String name, Map<String, ?> args) {
         return get(name, args, true);

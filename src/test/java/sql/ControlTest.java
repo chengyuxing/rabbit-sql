@@ -2,11 +2,13 @@ package sql;
 
 import com.github.chengyuxing.common.script.impl.CExpression;
 import com.github.chengyuxing.sql.Args;
-import com.github.chengyuxing.sql.SQLFileManager;
+import com.github.chengyuxing.sql.XQLFileManager;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.regex.Pattern;
 
 import static com.github.chengyuxing.common.utils.StringUtil.searchIndexUntilNotBlank;
@@ -121,7 +123,7 @@ public class ControlTest {
 
     @Test
     public void dynamicTest() throws Exception {
-        SQLFileManager sqlFileManager = new SQLFileManager();
+        XQLFileManager sqlFileManager = new XQLFileManager();
         sqlFileManager.add("dynamic", "pgsql/dynamic.sql");
         sqlFileManager.init();
         sqlFileManager.foreach((name, sql) -> {

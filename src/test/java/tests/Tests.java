@@ -2,7 +2,7 @@ package tests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.chengyuxing.sql.BakiDao;
-import com.github.chengyuxing.sql.SQLFileManager;
+import com.github.chengyuxing.sql.XQLFileManager;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.zaxxer.hikari.HikariDataSource;
 import func.BeanUtil;
@@ -132,7 +132,7 @@ public class Tests {
                 "--#fi\n" +
                 "--#end\n" +
                 "where id = 10";
-        String dq = SQLFileManager.calcDynamicSql(sql, Args.<Object>of("name", "")
+        String dq = XQLFileManager.dynamicCalc(sql, Args.<Object>of("name", "")
                 .add("age", 27)
                 .add("address", "beijing")
                 .add("open", "sad"), true);
@@ -275,7 +275,7 @@ public class Tests {
 
     @Test
     public void SqlFileTest() throws IOException, URISyntaxException {
-        SQLFileManager manager = new SQLFileManager();
+        XQLFileManager manager = new XQLFileManager();
         manager.add("pg", "pgsql/test.sql");
         manager.setConstants(Args.of("db", "test").add("fields", "name, address, enable"));
         manager.init();

@@ -3,8 +3,9 @@ package tests;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.BakiDao;
-import com.github.chengyuxing.sql.SQLFileManager;
+import com.github.chengyuxing.sql.XQLFileManager;
 import com.github.chengyuxing.sql.utils.SqlUtil;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.nutz.dao.impl.NutDao;
 import org.nutz.ioc.Ioc;
@@ -19,14 +20,14 @@ public class SqlFileTest {
 
     private static Ioc ioc;
 
-    //    @BeforeClass
+    @BeforeClass
     public static void init() {
         ioc = new NutIoc(new JsonLoader("ioc.js"));
     }
 
     @Test
     public void dynamicSqlFileManagerTest() throws Exception {
-        SQLFileManager sqlFileManager = new SQLFileManager();
+        XQLFileManager sqlFileManager = new XQLFileManager();
         sqlFileManager.add("data", "pgsql/data.sql");
         sqlFileManager.init();
         System.out.println("-------");
@@ -41,7 +42,7 @@ public class SqlFileTest {
 
     @Test
     public void sqlf() throws Exception {
-        SQLFileManager sqlFileManager = new SQLFileManager();
+        XQLFileManager sqlFileManager = new XQLFileManager();
         sqlFileManager.add("rabbit", "file:/Users/chengyuxing/Downloads/local.sql");
         sqlFileManager.init();
         sqlFileManager.look();
@@ -61,19 +62,7 @@ public class SqlFileTest {
 
     @Test
     public void nutzIoc() throws Exception {
-        SQLFileManager sqlFileManager = ioc.get(SQLFileManager.class, "sqlFileManager");
-        sqlFileManager.init();
-        sqlFileManager.look();
-    }
-
-    @Test
-    public void sqlTest() throws Exception {
-        SQLFileManager sqlFileManager = new SQLFileManager("pgsql/nest.sql");
-        sqlFileManager.setConstants(Args.of("db", "qbpt_deve"));
-        sqlFileManager.setCheckModified(true);
-//        sqlFileManager.add("pgsql/other.sql");
-//        sqlFileManager.add("mac", "file:/Users/chengyuxing/Downloads/local.sql");
-
+        XQLFileManager sqlFileManager = ioc.get(XQLFileManager.class, "sqlFileManager");
         sqlFileManager.init();
         sqlFileManager.look();
     }

@@ -45,10 +45,10 @@ public class MyTest {
         dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
         dataSource.setUsername("chengyuxing");
 
-        SQLFileManager manager = new SQLFileManager("pgsql/data.sql");
+        XQLFileManager manager = new XQLFileManager(Args.of("data", "pgsql/data.sql"));
 
         BakiDao bakiDao = BakiDao.of(dataSource);
-        bakiDao.setSqlFileManager(manager);
+        bakiDao.setXqlFileManager(manager);
         baki = bakiDao;
         baki2 = BakiDao.of(dataSource);
 //        bakiDao.setSqlPath("pgsql");
@@ -323,12 +323,6 @@ public class MyTest {
     public void pageTest() throws Exception {
         long c = baki.query("select * from test.region where id = 100").count();
         System.out.println(c);
-    }
-
-    @Test
-    public void manager() throws Exception {
-        SQLFileManager manager = new SQLFileManager("pgsql");
-        manager.init();
     }
 
     @Test

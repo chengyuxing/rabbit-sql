@@ -3,7 +3,7 @@ package tests;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.BakiDao;
-import com.github.chengyuxing.sql.SQLFileManager;
+import com.github.chengyuxing.sql.XQLFileManager;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -30,9 +30,9 @@ public class BakiSessionTest {
         dataSource.setDriverClassName("org.postgresql.Driver");
         baki = BakiDao.of(dataSource);
         baki.setCheckParameterType(false);
-        SQLFileManager sqlFileManager = new SQLFileManager("pgsql/nest.sql");
+        XQLFileManager sqlFileManager = new XQLFileManager(Args.of("nest","pgsql/nest.sql"));
         sqlFileManager.setConstants(Args.of("db", "test"));
-        baki.setSqlFileManager(sqlFileManager);
+        baki.setXqlFileManager(sqlFileManager);
     }
 
     @Test

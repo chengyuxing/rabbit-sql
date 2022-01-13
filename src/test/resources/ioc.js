@@ -1,15 +1,14 @@
 var ioc = {
     sqlFileManager: {
-        type: 'com.github.chengyuxing.sql.SQLFileManager',
+        type: 'com.github.chengyuxing.sql.XQLFileManager',
         fields: {
             constants: {
                 db: "qbpt_deve"
             },
-            sqlMap: {
+            files: {
                 sys: 'pgsql/test.sql',
                 mac: 'file:/Users/chengyuxing/Downloads/local.sql'
-            },
-            sqlList: ['pgsql/test.sql']
+            }
         }, events: {
             create: 'init'
         }

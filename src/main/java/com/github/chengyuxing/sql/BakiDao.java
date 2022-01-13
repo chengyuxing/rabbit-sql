@@ -30,21 +30,16 @@ import java.util.stream.Stream;
 
 /**
  * <h2>数据库DAO对象实现</h2>
- * <p>如果配置了{@link SQLFileManager },则接口所有方法都可以通过取地址符号来获取sql文件内的sql</p>
+ * <p>如果配置了{@link XQLFileManager },则接口所有方法都可以通过取地址符号来获取sql文件内的sql</p>
  * 取SQL通过 {@code &}符号前缀+sql键名：
  * <blockquote>
  * e.g. 配置类型:
  * <pre>
- *  sqlMap: {
+ *  files: {
  *       sys: 'pgsql/test.sql',
  *       mac: 'file:/Users/chengyuxing/Downloads/local.sql'
- *   },
- *  sqlList: ['pgsql/test.sql']
+ *   }
  * </pre>
- *  <ul>
- *      <li>包路径表示法: {@code &pgsql.test.getUser}</li>
- *      <li>别名表示法: {@code &sys.getUser} (推荐)</li>
- *  </ul>
  * </blockquote>
  * 指定sql名执行：
  * <blockquote>
@@ -61,7 +56,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     private final DataSource dataSource;
     private DatabaseMetaData metaData;
     //---------optional properties------
-    private SQLFileManager sqlFileManager;
+    private XQLFileManager xqlFileManager;
     private boolean strictDynamicSqlArg = true;
     private boolean checkParameterType = true;
 
@@ -87,15 +82,15 @@ public class BakiDao extends JdbcSupport implements Baki {
     /**
      * 指定sql文件解析管理器
      *
-     * @param sqlFileManager sql文件解析管理器
+     * @param xqlFileManager sql文件解析管理器
      * @throws IOException        如果文件读取错误
      * @throws URISyntaxException 如果文件uri地址语法错误
      * @throws DuplicateException 如果同一个文件出现同名sql
      */
-    public void setSqlFileManager(SQLFileManager sqlFileManager) throws IOException, URISyntaxException, DuplicateException {
-        this.sqlFileManager = sqlFileManager;
-        if (!sqlFileManager.isInitialized()) {
-            sqlFileManager.init();
+    public void setXqlFileManager(XQLFileManager xqlFileManager) throws IOException, URISyntaxException, DuplicateException {
+        this.xqlFileManager = xqlFileManager;
+        if (!xqlFileManager.isInitialized()) {
+            xqlFileManager.init();
         }
     }
 
@@ -534,14 +529,14 @@ public class BakiDao extends JdbcSupport implements Baki {
     protected String prepareSql(String sql, Map<String, ?> args) {
         String trimEndedSql = SqlUtil.trimEnd(sql);
         if (sql.startsWith("&")) {
-            if (sqlFileManager != null) {
-                trimEndedSql = SqlUtil.trimEnd(sqlFileManager.get(sql.substring(1), args, strictDynamicSqlArg));
+            if (xqlFileManager != null) {
+                trimEndedSql = SqlUtil.trimEnd(xqlFileManager.get(sql.substring(1), args, strictDynamicSqlArg));
             } else {
                 throw new NullPointerException("can not find property 'sqlFileManager' or SQLFileManager object init failed!");
             }
         }
-        if (sqlFileManager != null) {
-            Map<String, String> constants = sqlFileManager.getConstants();
+        if (xqlFileManager != null) {
+            Map<String, String> constants = xqlFileManager.getConstants();
             if (!constants.isEmpty()) {
                 for (String key : constants.keySet()) {
                     String constantName = "${" + key + "}";

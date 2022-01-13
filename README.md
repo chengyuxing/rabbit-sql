@@ -56,7 +56,7 @@ BakiDao(DataSource dataSource)
 
 ### 可选属性
 
-- [**sqlFileManager**](#SQLFileManager)
+- [**xqlFileManager**](#XQLFileManager)
 
   接口中需要写sql的所有方法都可以使用``&别名或文件包路径.sql名``取地址符来获取sql文件中的sql；
 
@@ -77,28 +77,27 @@ BakiDao(DataSource dataSource)
   ⚠️ 由于jdbc驱动实现问题，此特性暂不支持Oracle，请将此属性设置为false。
   
 
-## <a href="#SQLFileManager">SQLFileManager</a>
+## <a href="#XQLFileManager">XQLFileManager</a>
 
-sql文件结尾以`.sql`结尾，sql文件中可以包含任意符合标准的注释，sql格式参考```data.sql.template```；
+文件结尾以`.sql`或`.xql`结尾，文件中可以包含任意符合标准的注释，格式参考```data.xql.template```；
 
-sql对象名格式为``/*[name]*/``，sql文件中可以嵌套sql片段，使用`${片段名}`指定;
+对象名格式为``/*[name]*/``，sql文件中可以嵌套sql片段，使用`${片段名}`指定;
 
-sql片段名格式化``/*{name}*/``，sql片段中可以嵌套sql片段，使用`${片段名}`指定。
+片段名格式化``/*{name}*/``，sql片段中可以嵌套sql片段，使用`${片段名}`指定。
 
 IOC容器配置例子，这里使用**Nutz**框架的ioc容器，其他框架同理：
 
 ```javascript
-sqlFileManager: {
-        type: 'com.github.chengyuxing.sql.SQLFileManager',
+xqlFileManager: {
+        type: 'com.github.chengyuxing.sql.XQLFileManager',
         fields: {
             constants: {
                 db: "test"
             },
-            sqlMap: {
+            files: {
                 sys: 'pgsql/test.sql',
                 mac: 'file:/Users/chengyuxing/Downloads/local.sql'
-            },
-            sqlList:['pgsql/test.sql']
+            }
         }, events: {
             create: 'init'
         }
@@ -107,11 +106,10 @@ sqlFileManager: {
 
 #### 构造函数
 
-- SQLFileManager()
+- XQLFileManager()
 
-- SQLFileManager(String sqls)
+- XQLFileManager(Map<String, String> files)
 
-  多个sql文件以逗号分隔。
 
 #### 属性
 
@@ -132,17 +130,9 @@ sqlFileManager: {
   // --> update test.user ...
   ```
 
-- **sqlList** 
+- **files** 
 
-  sql文件路径集合列表
-
-  取sql写法，**&文件包路径表示法.sql名**：`&pgsql.test.getUser`
-
-  💡 推荐使用`sqlMap`属性来配置，更简短方便。
-
-- **sqlMap** 
-
-  命名别名的sql文件路径集合列表
+  命名别名的文件路径集合字典
 
   取sql写法，**&文件别名.sql名**：`&sys.getUser`
 
@@ -150,7 +140,9 @@ sqlFileManager: {
 
 - 支持`--#if`和`--#fi`块标签，必须成对出现，类似于Mybatis的`if`标签；
 
-- 支持`--#choose`和`--#end`块标签，内部可以有多对`--#if`块判断，但只返回第一个条件满足的`--#if`块，效果类似于mybatis的`choose...when`标签；
+- 支持`--#switch`和`--#end`块标签，内部为：`--#case`, `--#default`和`--#break`，效果类似于程序代码的`switch`；
+
+- 支持`--#choose`和`--#end`块标签，内部为`--#when`, `--#default`和`--#break`，效果类似于mybatis的`choose...when`标签；
 
 - 支持的运算符：
 
@@ -169,23 +161,93 @@ sqlFileManager: {
 
 - 内置常量：`null` , `blank`(null或空白字符) , `true` , `false`
 
+**动态SQL具体语法例子如下：**
+
 ```sql
 select *
-from test.student t
-WHERE
---#choose
-  --#if :age < 21
-    t.age = 21
-  --#fi
-  --#if :age <> blank && :age < 90
-  and age < 90
-  --#fi
---#end
---#if :name != null
-  and t.name ~ :name
+from test.region t
+where t.enable = true
+--#if :a <> blank
+      and t.a = :a
+      --#if :a1 <> blank
+        and t.a1 = :a1
+        and t.a1 = :a1
+        and t.a1 = :a1
+      --#fi
+      --#if :a2 <> blank
+        and t.a2 = :a2
+          --#choose
+              --#when :xx <> blank
+                and t.xx = :xx
+              --#break
+              --#when :yy <> blank
+                and t.yy = :yy
+              --#break
+              --#default
+                and t.zz = :zz
+              --#break
+          --#end
+      --#fi
 --#fi
+--#choose
+      --#when :x <> blank
+        and t.x = :x
+      --#break
+      --#when :y <> blank
+        and t.y = :y
+      --#break
+--#end
+--#switch :name
+      --#case blank
+        and t.name = 'blank'
+      --#break
+      --#case 'chengyuxing'
+        and t.name = 'chengyuxing'
+      --#break
+      --#default
+        and t.name = 'unset'
+      --#break
+--#end
+--#if :b <> blank
+    and t.b = :b
+--#fi
+--#if :c <> blank
+      --#if :c1 <> blank
+        and t.c1 = :c1
+          --#if :cc1 <> blank
+            and t.cc1 = :cc1
+          --#fi
+          --#if :cc2 <> blank
+            and t.cc2 = :cc2
+          --#fi
+      --#fi
+      --#if :c2 <> blank
+        and t.c2 = :c2
+      --#fi
+      and cc = :cc
+--#fi
+--#choose
+      --#when :e <> blank
+        and t.e = :e
+        and t.ee = :e
+        and t.eee = :e
+      --#break
+      --#when :f <> blank
+        and t.f = :f
+        --#if :ff <> blank
+          and t.ff = :ff
+          and t.ff2 = :ff
+        --#fi
+      --#break
+      --#when :g <> blank
+        and t.g = :g
+      --#break
+--#end
+and x = :x
 ;
 ```
+
+⚠️ **case**和**when**分支中可以嵌套**if**语句，但不可以嵌套**choose**和**switch**，**if**语句中可以嵌套**choose**和**switch**，以此类推，理论上可以无限嵌套，但过于复杂，不太推荐，**3层以内**较为合理。
 
 ## 对 *IntelliJ IDEA* 的友好支持
 
@@ -200,9 +262,9 @@ WHERE
 ```java
 dataSource=new HikariDataSource();
 dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
-dataSource.setUsername("chengyuxing");
+dataSource.setUsername(...);
 dataSource.setDriverClassName("org.postgresql.Driver");
-SQLFileManager manager=new SQLFileManager("pgsql/data.sql, pgsql/other.sql");
+XQLFileManager manager=new XQLFileManager(...);
 BakiDao baki=new BakiDao(dataSource);
 baki.setSqlFileManager(manager);
 ```

@@ -2,17 +2,18 @@ package sql;
 
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.XQLFileManager;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class DynamicTests {
 
     static XQLFileManager sqlFileManager = new XQLFileManager();
 
-    @BeforeClass
+//    @BeforeClass
     public static void init() throws IOException, URISyntaxException {
         sqlFileManager.add("nest", "pgsql/deep_nest.sql");
         sqlFileManager.init();
@@ -43,5 +44,19 @@ public class DynamicTests {
         );
         String sql = sqlFileManager.get("nest.region", args);
         System.out.println(sql);
+    }
+
+    @Test
+    public void forTest() throws Exception {
+        String forExp = "for item of :items separator ','";
+        Pattern p = Pattern.compile("for\\s+(?<var>\\w+)\\s+of\\s+:\\w+\\s+");
+
+        Matcher m = p.matcher(forExp);
+        if (m.find()) {
+            System.out.println(m.group("var"));
+        }
+
+        String[] arr = new String[]{"a", "b", "c", "d"};
+
     }
 }

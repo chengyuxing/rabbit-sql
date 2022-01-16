@@ -41,8 +41,55 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
  *         <li><pre>ClassPath: sql/rabbit.s(x)ql</pre></li>
  *     </ul>
  * </blockquote>
- * <h2>动态sql：</h2>
- * e.g.
+ * <h2>动态sql支持语法</h2>
+ * <h3>if语句</h3>
+ * <blockquote>
+ * 支持嵌套if，choose，switch
+ * <pre>
+ * --#if 表达式1
+ *      --#if 表达式2
+ *      ...
+ *      --#fi
+ * --#fi
+ * </pre>
+ * </blockquote>
+ * <h3>choose语句块</h3>
+ * <blockquote>
+ *  分支中还可以嵌套if语句
+ * <pre>
+ * --#choose
+ *      --#when 表达式1
+ *      ...
+ *      --#break
+ *      --#when 表达式2
+ *      ...
+ *      --#break
+ *      ...
+ *      --#default
+ *      ...
+ *      --#break
+ * --#end
+ * </pre>
+ * </blockquote>
+ * <h3>switch语句块</h3>
+ * <blockquote>
+ *  分支中还可以嵌套if语句
+ * <pre>
+ * --#switch :变量
+ *      --#case 值1
+ *      ...
+ *      --#break
+ *      --#case 值2
+ *      ...
+ *      --#break
+ *      ...
+ *      --#default
+ *      ...
+ *      --#break
+ * --#end
+ * </pre>
+ * </blockquote>
+ * <h3>e.g.</h3>
  * <blockquote>
  * <pre>
  * select *
@@ -306,6 +353,7 @@ public class XQLFileManager {
 
     /**
      * 解析一条动态sql<br>
+     *
      * @param sql          动态sql字符串
      * @param args         动态sql逻辑表达式参数字典
      * @param checkArgsKey 检查参数中是否必须存在表达式中需要计算的key
@@ -616,6 +664,7 @@ public class XQLFileManager {
 
     /**
      * 获取一条动态sql<br>
+     *
      * @param name         sql名字
      * @param args         动态sql逻辑表达式参数字典
      * @param checkArgsKey 检查参数中是否必须存在表达式中需要计算的key
@@ -631,6 +680,7 @@ public class XQLFileManager {
 
     /**
      * 获取一条动态sql<br>
+     *
      * @param name sql名字
      * @param args 动态sql逻辑表达式参数字典
      * @return 解析后的sql

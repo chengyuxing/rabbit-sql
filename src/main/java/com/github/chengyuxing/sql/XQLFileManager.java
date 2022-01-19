@@ -8,6 +8,7 @@ import com.github.chengyuxing.common.script.impl.FastExpression;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.exceptions.DuplicateException;
+import com.github.chengyuxing.sql.exceptions.DynamicSQLException;
 import com.github.chengyuxing.sql.exceptions.IORuntimeException;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.slf4j.Logger;
@@ -383,7 +384,7 @@ public class XQLFileManager {
                     } else if (startsWithIgnoreCase(trimLine, FI)) {
                         count--;
                         if (count < 0) {
-                            throw new SecurityException("if block syntax rule error at line " + i + ", no pair.");
+                            throw new DynamicSQLException("can not find pair of 'if-fi' block at line " + i);
                         }
                         // 说明此处已经达到了嵌套fi的末尾
                         if (count == 0) {
@@ -420,7 +421,7 @@ public class XQLFileManager {
                     }
                 }
                 if (count != 0) {
-                    throw new SecurityException("if block syntax rule error at line " + i + ", no pair.");
+                    throw new DynamicSQLException("can not find pair of 'if-fi' block at line " + i);
                 }
                 // 处理choose表达式块
             } else if (startsWithIgnoreCase(trimOuterLine, CHOOSE)) {

@@ -220,7 +220,7 @@ public class XQLFileManager {
                                     log.debug("scan to get block [{}]：{}", blockName, SqlUtil.highlightSql(singleResource.get(blockName)));
                                     blockName = "";
                                 } else {
-                                    singleResource.put(blockName, prepareLine.concat("\n"));
+                                    singleResource.put(blockName, prepareLine.concat(NEW_LINE));
                                 }
                             }
                         }
@@ -255,7 +255,7 @@ public class XQLFileManager {
             String sql = sqlAndSubstr.getItem1();
             int partIndex;
             while ((partIndex = sql.indexOf(innerPartName)) != -1) {
-                String part = "\n" + sqlResource.get(partName).trim() + "\n";
+                String part = NEW_LINE + sqlResource.get(partName).trim() + NEW_LINE;
                 int start = StringUtil.searchIndexUntilNotBlank(sql, partIndex, true);
                 int end = StringUtil.searchIndexUntilNotBlank(sql, partIndex + innerPartName.length() - 1, false);
                 // insert sql part first without substr because we not allow substr sql part e.g. '${partName}'
@@ -382,6 +382,9 @@ public class XQLFileManager {
                         count++;
                     } else if (startsWithIgnoreCase(trimLine, FI)) {
                         count--;
+                        if (count < 0) {
+                            throw new SecurityException("if block syntax rule error at line " + i + ", no pair.");
+                        }
                         // 说明此处已经达到了嵌套fi的末尾
                         if (count == 0) {
                             // 此处计算外层if逻辑表达式，逻辑同程序语言的if逻辑
@@ -415,6 +418,9 @@ public class XQLFileManager {
                         // 非表达式的部分sql需要保留
                         innerSb.add(line);
                     }
+                }
+                if (count != 0) {
+                    throw new SecurityException("if block syntax rule error at line " + i + ", no pair.");
                 }
                 // 处理choose表达式块
             } else if (startsWithIgnoreCase(trimOuterLine, CHOOSE)) {
@@ -528,7 +534,7 @@ public class XQLFileManager {
     protected String repairSyntaxError(String sql) {
         Pattern p;
         Matcher m;
-        String firstLine = sql.substring(0, sql.indexOf("\n")).trim();
+        String firstLine = sql.substring(0, sql.indexOf(NEW_LINE)).trim();
         // if update statement
         if (startsWithIgnoreCase(firstLine, "update")) {
             p = Pattern.compile(",\\s*where", Pattern.CASE_INSENSITIVE);

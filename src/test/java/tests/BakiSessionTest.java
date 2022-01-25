@@ -67,11 +67,14 @@ public class BakiSessionTest {
         System.out.println(metaData.getDatabaseProductVersion());
         System.out.println(metaData.getDriverName());
         System.out.println(metaData.getDatabaseProductName());
+        System.out.println(metaData.getConnection().getCatalog());
     }
 
     @Test
     public void dst() throws Exception {
-        System.out.println(dataSource.getConnectionTimeout());
+        DataRow res = baki.execute("create table test.tx(a int)");
+//        DataRow res = baki.execute("drop table test.tx");
+        System.out.println(res);
     }
 
     @Test

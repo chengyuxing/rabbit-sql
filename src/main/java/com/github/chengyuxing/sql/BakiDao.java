@@ -54,7 +54,7 @@ import java.util.stream.Stream;
 public class BakiDao extends JdbcSupport implements Baki {
     private final static Logger log = LoggerFactory.getLogger(BakiDao.class);
     private final DataSource dataSource;
-    private DatabaseMetaData metaData;
+    private DatabaseMetaData currentMetaData;
     //---------optional properties------
     private XQLFileManager xqlFileManager;
     private boolean strictDynamicSqlArg = true;
@@ -496,6 +496,26 @@ public class BakiDao extends JdbcSupport implements Baki {
         } finally {
             releaseConnection(connection, getDataSource());
         }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @return 获取当前数据库元数据对象（连接为关闭状态）
+     */
+    @Override
+    public DatabaseMetaData metaData() {
+        if (currentMetaData != null) {
+            return currentMetaData;
+        }
+        return using(c -> {
+            try {
+                currentMetaData = c.getMetaData();
+                return currentMetaData;
+            } catch (SQLException e) {
+                throw new SqlRuntimeException("get metadata error: ", e);
+            }
+        });
     }
 
     /**

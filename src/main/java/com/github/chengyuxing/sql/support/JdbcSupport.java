@@ -144,11 +144,7 @@ public abstract class JdbcSupport {
                 }
             } else {
                 int count = sc.getUpdateCount();
-                if (count <= 0) {
-                    result = DataRow.fromPair("result", 0, "type", "DDL statement");
-                } else {
-                    result = DataRow.fromPair("result", count, "type", "DML statement");
-                }
+                result = DataRow.fromPair("result", count, "type", "DD(M)L statement");
             }
             return result;
         });

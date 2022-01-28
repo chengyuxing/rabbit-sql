@@ -441,6 +441,9 @@ public class XQLFileManager {
                             StringJoiner innerSb = new StringJoiner(NEW_LINE);
                             // 移动游标直到此分支的break之前都是符合判断结果的sql保留下来
                             while (++i < j && !startsWithIgnoreCase(lines[i].trim(), BREAK)) {
+                                if (startsWithsIgnoreCase(lines[i].trim(), WHEN, DEFAULT)) {
+                                    throw new DynamicSQLException("missing '--#break' tag of expression '" + trimLine + "'");
+                                }
                                 innerSb.add(lines[i]);
                             }
                             String innerStr = innerSb.toString();
@@ -454,11 +457,17 @@ public class XQLFileManager {
                             // 在接下来的分支都直接略过，移动游标直到end结束标签，就跳出整个choose块
                             //noinspection StatementWithEmptyBody
                             while (++i < j && !startsWithIgnoreCase(lines[i].trim(), END)) ;
+                            if (i == j) {
+                                throw new DynamicSQLException("missing '--#end' close tag of choose expression block.");
+                            }
                             break;
                         } else {
                             // 如果此分支when语句表达式不满足条件，就移动游标到当前分支break结束，进入下一个when分支
-                            //noinspection StatementWithEmptyBody
-                            while (++i < j && !startsWithIgnoreCase(lines[i].trim(), BREAK)) ;
+                            while (++i < j && !startsWithIgnoreCase(lines[i].trim(), BREAK)) {
+                                if (startsWithsIgnoreCase(lines[i].trim(), WHEN, DEFAULT)) {
+                                    throw new DynamicSQLException("missing '--#break' tag of expression '" + trimLine + "'");
+                                }
+                            }
                         }
                     } else if (startsWithIgnoreCase(trimLine, END)) {
                         //在语句块为空的情况下，遇到end结尾，就跳出整个choose块
@@ -490,6 +499,9 @@ public class XQLFileManager {
                         if (res || startsWithIgnoreCase(trimLine, DEFAULT)) {
                             StringJoiner innerSb = new StringJoiner(NEW_LINE);
                             while (++i < j && !startsWithIgnoreCase(lines[i].trim(), BREAK)) {
+                                if (startsWithsIgnoreCase(lines[i].trim(), CASE, DEFAULT)) {
+                                    throw new DynamicSQLException("missing '--#break' tag of expression '" + trimLine + "'");
+                                }
                                 innerSb.add(lines[i]);
                             }
                             String innerStr = innerSb.toString();
@@ -501,10 +513,16 @@ public class XQLFileManager {
                             }
                             //noinspection StatementWithEmptyBody
                             while (++i < j && !startsWithIgnoreCase(lines[i].trim(), END)) ;
+                            if (i == j) {
+                                throw new DynamicSQLException("missing '--#end' close tag of switch expression block.");
+                            }
                             break;
                         } else {
-                            //noinspection StatementWithEmptyBody
-                            while (++i < j && !startsWithIgnoreCase(lines[i].trim(), BREAK)) ;
+                            while (++i < j && !startsWithIgnoreCase(lines[i].trim(), BREAK)) {
+                                if (startsWithsIgnoreCase(lines[i].trim(), WHEN, DEFAULT)) {
+                                    throw new DynamicSQLException("missing '--#break' tag of expression '" + trimLine + "'");
+                                }
+                            }
                         }
                     } else if (startsWithIgnoreCase(trimLine, END)) {
                         break;
@@ -535,9 +553,8 @@ public class XQLFileManager {
     protected String repairSyntaxError(String sql) {
         Pattern p;
         Matcher m;
-        String firstLine = sql.substring(0, sql.indexOf(NEW_LINE)).trim();
         // if update statement
-        if (startsWithIgnoreCase(firstLine, "update")) {
+        if (startsWithIgnoreCase(sql.trim(), "update")) {
             p = Pattern.compile(",\\s*where", Pattern.CASE_INSENSITIVE);
             m = p.matcher(sql);
             if (m.find()) {

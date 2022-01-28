@@ -84,3 +84,15 @@ where t.enable = true
 --#end
 and x = :x
 ;
+
+/*[choose]*/
+select * from test.user where
+--#choose
+    --#when :id <> blank
+        id = :id
+    --#break
+    --#when :name <> blank
+        and name = :name
+    --#break
+--#end
+;

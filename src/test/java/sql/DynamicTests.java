@@ -2,6 +2,7 @@ package sql;
 
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.XQLFileManager;
+import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -13,11 +14,16 @@ public class DynamicTests {
 
     static XQLFileManager sqlFileManager = new XQLFileManager();
 
-//    @BeforeClass
+    @BeforeClass
     public static void init() throws IOException, URISyntaxException {
         sqlFileManager.add("nest", "pgsql/deep_nest.sql");
         sqlFileManager.init();
         System.out.println("------------------");
+    }
+
+    @Test
+    public void test2() throws Exception {
+        System.out.println(sqlFileManager.get("nest.choose", Args.create("id", null, "name", "cyx")));
     }
 
     @Test

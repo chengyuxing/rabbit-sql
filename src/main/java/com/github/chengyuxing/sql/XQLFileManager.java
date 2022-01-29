@@ -699,6 +699,9 @@ public class XQLFileManager {
      */
     public String get(String name, Map<String, ?> args, boolean checkArgsKey) {
         String sql = get(name);
+        if (args == null || args.isEmpty()) {
+            return sql;
+        }
         return repairSyntaxError(dynamicCalc(sql, args, checkArgsKey));
     }
 

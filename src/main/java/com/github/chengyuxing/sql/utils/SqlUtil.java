@@ -258,6 +258,9 @@ public class SqlUtil {
      * @return 预编译sql或普通sql
      */
     public static Pair<String, List<String>> generateSql(final String sql, Map<String, ?> args, boolean prepare) {
+        if (args.isEmpty()) {
+            return Pair.of(sql, Collections.emptyList());
+        }
         // exclude substr first
         Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSqlSubstr(sql);
         // resolve the sql string template next

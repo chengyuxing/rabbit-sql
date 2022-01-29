@@ -547,6 +547,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     @Override
     protected String prepareSql(String sql, Map<String, ?> args) {
+        boolean hasArgs = args != null && !args.isEmpty();
         String trimEndedSql = SqlUtil.trimEnd(sql);
         if (sql.startsWith("&")) {
             if (xqlFileManager != null) {
@@ -562,7 +563,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                     String constantName = "${" + key + "}";
                     if (trimEndedSql.contains(constantName)) {
                         // use args first, if not exists then constants.
-                        if (!args.containsKey(constantName)) {
+                        if (!hasArgs || !args.containsKey(constantName)) {
                             trimEndedSql = trimEndedSql.replace(constantName, constants.get(key));
                         }
                     }

@@ -243,7 +243,7 @@ public class SqlUtil {
      *
      * @param sql  带参数占位符的SQL
      * @param args 参数
-     * @return 预编译SQL和参数名的集合
+     * @return 预编译SQL和顺序的参数名集合
      */
     public static Pair<String, List<String>> getPreparedSql(final String sql, Map<String, ?> args) {
         return generateSql(sql, args, true);
@@ -255,7 +255,7 @@ public class SqlUtil {
      * @param sql     sql字符串
      * @param args    参数
      * @param prepare 是否生成预编译sql
-     * @return 预编译sql或普通sql
+     * @return 预编译/普通sql和顺序的参数名集合
      */
     public static Pair<String, List<String>> generateSql(final String sql, Map<String, ?> args, boolean prepare) {
         if (args.isEmpty()) {

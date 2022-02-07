@@ -485,7 +485,7 @@ public class XQLFileManager {
                     name = m.group("name");
                 }
                 if (name == null) {
-                    throw new IllegalArgumentException("switch syntax error, cannot find var.");
+                    throw new DynamicSQLException("switch syntax error, cannot find var.");
                 }
                 Object value = args.get(name);
                 while (++i < j) {

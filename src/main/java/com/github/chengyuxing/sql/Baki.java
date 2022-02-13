@@ -283,6 +283,7 @@ public interface Baki {
 
     /**
      * 获取当前数据库元数据信息
+     *
      * @return 数据库元数据信息
      */
     DatabaseMetaData metaData();

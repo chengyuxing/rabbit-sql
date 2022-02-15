@@ -396,7 +396,7 @@ public class JdbcUtil {
                         }
                     }
                 } catch (SQLException e) {
-                    throw new SqlRuntimeException("maybe jdbc driver not support the check parameter type, set 'checkParameterType' false to disabled the check.");
+                    throw new SqlRuntimeException("maybe jdbc driver not support the check parameter type, set 'checkParameterType' false to disabled the check: ", e);
                 }
             } else {
                 setSqlPoolArgs(statement, args, names);

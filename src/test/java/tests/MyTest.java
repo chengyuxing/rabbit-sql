@@ -55,6 +55,15 @@ public class MyTest {
 //        baki2 = new BakiDao(dataSource2);
     }
 
+    @Test
+    public void bakiTestQuery() throws Exception {
+        Map<String, Object> res = baki.fetchMap("select * from test.region where id > :id", Args.of("id", 10));
+        System.out.println(res);
+        while (true) {
+
+        }
+    }
+
     @SuppressWarnings("unchecked")
     public void mergeTreeInverse(List<Map<String, Object>> list, List<Map<String, Object>> tree) {
         System.out.println("xxxx");

@@ -295,24 +295,26 @@ public class JdbcUtil {
     public static void setSpecialStatementValue(PreparedStatement statement, int index, Object value) throws SQLException {
         ParameterMetaData pmd;
         String pClass;
-        String pType;
+        String pTypeName;
+        int pType;
         try {
             pmd = statement.getParameterMetaData();
             pClass = pmd.getParameterClassName(index);
-            pType = pmd.getParameterTypeName(index);
+            pTypeName = pmd.getParameterTypeName(index);
+            pType = pmd.getParameterType(index);
         } catch (SQLException e) {
             throw new SQLException("maybe jdbc driver not support the check parameter type, set 'checkParameterType' false to disabled the check: ", e);
         }
         if (null == value) {
-            statement.setNull(index, pmd.getParameterType(index));
+            statement.setNull(index, pType);
         } else {
             // if postgresql, insert as json(b) type
             // if column is json type
-            if (pType.equals("json") || pType.equals("jsonb")) {
+            if (pTypeName.equals("json") || pTypeName.equals("jsonb")) {
                 if (value instanceof String) {
-                    statement.setObject(index, createPgObject(pType, value.toString()));
+                    statement.setObject(index, createPgObject(pTypeName, value.toString()));
                 } else {
-                    statement.setObject(index, createPgObject(pType, obj2Json(value)));
+                    statement.setObject(index, createPgObject(pTypeName, obj2Json(value)));
                 }
             } else if (pClass.equals("java.lang.String") && !(value instanceof String)) {
                 if (value instanceof Map || value instanceof Collection) {

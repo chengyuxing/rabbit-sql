@@ -57,10 +57,17 @@ public class MyTest {
 
     @Test
     public void bakiTestQuery() throws Exception {
-        Map<String, Object> res = baki.fetchMap("select * from test.region where id > :id", Args.of("id", 10));
-        System.out.println(res);
+        int i = 0;
         while (true) {
-
+            if (i == 1) {
+                try {
+                    Map<String, Object> res = baki.fetchMap("select * from test.region where id > :id", Args.of("id", 10));
+                    System.out.println(res);
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+            i++;
         }
     }
 

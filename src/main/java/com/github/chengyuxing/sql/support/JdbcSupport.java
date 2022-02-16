@@ -98,12 +98,20 @@ public abstract class JdbcSupport {
             statement = connection.prepareStatement(sql);
             return callback.doInStatement(statement);
         } catch (SQLException e) {
-            JdbcUtil.closeStatement(statement);
+            try {
+                JdbcUtil.closeStatement(statement);
+            } catch (SQLException ex) {
+                e.addSuppressed(ex);
+            }
             statement = null;
             releaseConnection(connection, getDataSource());
             throw new SqlRuntimeException("execute sql:\n[" + sql + "]\nerror: ", e);
         } finally {
-            JdbcUtil.closeStatement(statement);
+            try {
+                JdbcUtil.closeStatement(statement);
+            } catch (SQLException e) {
+                log.error("close statement error:", e);
+            }
             releaseConnection(connection, getDataSource());
         }
     }
@@ -185,7 +193,6 @@ public abstract class JdbcSupport {
                 close = UncheckedCloseable.wrap(connection);
             }
             PreparedStatement statement = connection.prepareStatement(preparedSql);
-            JdbcUtil.setSqlTypedArgs(statement, checkParameterType(), args, argNames);
             // if close is null. it means this query in transaction currently,
             // it's connection managed by Tx(transaction)
             // connection will not be close when read stream to the end in 'try-with-resource' block
@@ -196,6 +203,7 @@ public abstract class JdbcSupport {
             } else {
                 close = close.nest(statement);
             }
+            JdbcUtil.setSqlTypedArgs(statement, checkParameterType(), args, argNames);
             ResultSet resultSet = statement.executeQuery();
             close = close.nest(resultSet);
             return StreamSupport.stream(new Spliterators.AbstractSpliterator<DataRow>(Long.MAX_VALUE, Spliterator.ORDERED) {
@@ -217,7 +225,7 @@ public abstract class JdbcSupport {
                     }
                 }
             }, false).onClose(close);
-        } catch (SQLException sqlEx) {
+        } catch (SQLException | SqlRuntimeException sqlEx) {
             if (close != null) {
                 try {
                     close.close();
@@ -250,12 +258,20 @@ public abstract class JdbcSupport {
                     }
                     return statement.executeBatch();
                 } catch (SQLException e) {
-                    JdbcUtil.closeStatement(statement);
+                    try {
+                        JdbcUtil.closeStatement(statement);
+                    } catch (SQLException ex) {
+                        e.addSuppressed(ex);
+                    }
                     statement = null;
                     releaseConnection(connection, getDataSource());
                     throw new SqlRuntimeException("execute batch error: ", e);
                 } finally {
-                    JdbcUtil.closeStatement(statement);
+                    try {
+                        JdbcUtil.closeStatement(statement);
+                    } catch (SQLException e) {
+                        log.error("close statement error: ", e);
+                    }
                     releaseConnection(connection, getDataSource());
                 }
             }
@@ -398,12 +414,20 @@ public abstract class JdbcSupport {
             }
             return DataRow.empty();
         } catch (SQLException e) {
-            JdbcUtil.closeStatement(statement);
+            try {
+                JdbcUtil.closeStatement(statement);
+            } catch (SQLException ex) {
+                e.addSuppressed(ex);
+            }
             statement = null;
             releaseConnection(connection, getDataSource());
             throw new SqlRuntimeException("execute procedure [" + procedure + "] error:", e);
         } finally {
-            JdbcUtil.closeStatement(statement);
+            try {
+                JdbcUtil.closeStatement(statement);
+            } catch (SQLException e) {
+                log.error("close statement error: ", e);
+            }
             releaseConnection(connection, getDataSource());
         }
     }

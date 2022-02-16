@@ -3,7 +3,6 @@ package com.github.chengyuxing.sql.utils;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.DateTimes;
 import com.github.chengyuxing.sql.exceptions.IORuntimeException;
-import com.github.chengyuxing.sql.exceptions.SqlRuntimeException;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.types.ParamMode;
 import org.slf4j.Logger;
@@ -166,16 +165,13 @@ public class JdbcUtil {
      * 关闭结果集
      *
      * @param resultSet 结果集
+     * @throws SQLException sqlEx
      */
-    public static void closeResultSet(ResultSet resultSet) {
-        try {
-            if (resultSet != null) {
-                if (!resultSet.isClosed()) {
-                    resultSet.close();
-                }
+    public static void closeResultSet(ResultSet resultSet) throws SQLException {
+        if (resultSet != null) {
+            if (!resultSet.isClosed()) {
+                resultSet.close();
             }
-        } catch (SQLException e) {
-            throw new SqlRuntimeException("close result error:", e);
         }
     }
 
@@ -183,16 +179,13 @@ public class JdbcUtil {
      * 关闭connection声明对象
      *
      * @param statement 声明对象
+     * @throws SQLException sqlEx
      */
-    public static void closeStatement(Statement statement) {
-        try {
-            if (statement != null) {
-                if (!statement.isClosed()) {
-                    statement.close();
-                }
+    public static void closeStatement(Statement statement) throws SQLException {
+        if (statement != null) {
+            if (!statement.isClosed()) {
+                statement.close();
             }
-        } catch (SQLException e) {
-            throw new SqlRuntimeException("close statement error:", e);
         }
     }
 
@@ -300,9 +293,16 @@ public class JdbcUtil {
      * @throws SQLException sqlExp
      */
     public static void setSpecialStatementValue(PreparedStatement statement, int index, Object value) throws SQLException {
-        ParameterMetaData pmd = statement.getParameterMetaData();
-        String pClass = pmd.getParameterClassName(index);
-        String pType = pmd.getParameterTypeName(index);
+        ParameterMetaData pmd;
+        String pClass;
+        String pType;
+        try {
+            pmd = statement.getParameterMetaData();
+            pClass = pmd.getParameterClassName(index);
+            pType = pmd.getParameterTypeName(index);
+        } catch (SQLException e) {
+            throw new SQLException("maybe jdbc driver not support the check parameter type, set 'checkParameterType' false to disabled the check: ", e);
+        }
         if (null == value) {
             statement.setNull(index, pmd.getParameterType(index));
         } else {
@@ -366,7 +366,7 @@ public class JdbcUtil {
             try {
                 statement.setBinaryStream(index, new FileInputStream((File) value));
             } catch (FileNotFoundException e) {
-                throw new SqlRuntimeException("set value failed:", e);
+                throw new SQLException("set value failed:", e);
             }
         } else {
             statement.setObject(index, value);
@@ -385,18 +385,14 @@ public class JdbcUtil {
     public static void setSqlTypedArgs(PreparedStatement statement, boolean checkParameterType, Map<String, ?> args, List<String> names) throws SQLException {
         if (args != null && !args.isEmpty()) {
             if (checkParameterType) {
-                try {
-                    for (int i = 0; i < names.size(); i++) {
-                        int index = i + 1;
-                        String name = names.get(i);
-                        if (args.containsKey(name)) {
-                            setSpecialStatementValue(statement, index, args.get(name));
-                        } else if (args.containsKey(":" + name)) {
-                            setSpecialStatementValue(statement, index, args.get(":" + name));
-                        }
+                for (int i = 0; i < names.size(); i++) {
+                    int index = i + 1;
+                    String name = names.get(i);
+                    if (args.containsKey(name)) {
+                        setSpecialStatementValue(statement, index, args.get(name));
+                    } else if (args.containsKey(":" + name)) {
+                        setSpecialStatementValue(statement, index, args.get(":" + name));
                     }
-                } catch (SQLException e) {
-                    throw new SqlRuntimeException("maybe jdbc driver not support the check parameter type, set 'checkParameterType' false to disabled the check: ", e);
                 }
             } else {
                 setSqlPoolArgs(statement, args, names);

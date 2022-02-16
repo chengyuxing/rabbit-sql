@@ -78,7 +78,6 @@ public final class Tx {
      * @param runnable   sql执行操作
      * @param definition 事务定义
      * @throws SqlRuntimeException  如果在此事务中，sql执行错误则抛出异常
-     * @throws TransactionException 如果数据库错误，或者连接被关闭，或者数据库事务为自动提交
      * @see #begin(Definition)
      * @see #commit()
      * @see #rollback()
@@ -88,11 +87,9 @@ public final class Tx {
             begin(definition);
             runnable.run();
             commit();
-        } catch (SqlRuntimeException e) {
+        } catch (Exception e) {
             rollback();
             throw new SqlRuntimeException("transaction will rollback cause:", e);
-        } catch (TransactionException e) {
-            throw new TransactionException("transaction error:", e);
         }
     }
 
@@ -104,7 +101,6 @@ public final class Tx {
      * @param <T>        类型参数
      * @return 回调结果
      * @throws SqlRuntimeException  如果在此事务中，sql执行错误则抛出异常
-     * @throws TransactionException 如果数据库错误，或者连接被关闭，或者数据库事务为自动提交
      * @see #begin(Definition)
      * @see #commit()
      * @see #rollback()
@@ -115,11 +111,9 @@ public final class Tx {
             begin(definition);
             result = supplier.get();
             commit();
-        } catch (SqlRuntimeException e) {
+        } catch (Exception e) {
             rollback();
             throw new SqlRuntimeException("transaction will rollback cause:", e);
-        } catch (TransactionException e) {
-            throw new TransactionException("transaction error:", e);
         }
         return result;
     }

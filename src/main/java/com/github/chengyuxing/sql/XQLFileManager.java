@@ -137,7 +137,7 @@ public class XQLFileManager {
     public static final String BREAK = "--#break";
     public static final String END = "--#end";
     // ----------------optional properties------------------
-    private volatile boolean checkModified;
+    private boolean checkModified;
     private Map<String, String> constants = new HashMap<>();
     private Map<String, String> files = new HashMap<>();
 
@@ -319,7 +319,7 @@ public class XQLFileManager {
      * @throws URISyntaxException    如果sql文件路径格式错误
      * @throws FileNotFoundException 如果sql文件不存在或路径无效
      */
-    protected void reloadIfNecessary() throws IOException, URISyntaxException {
+    protected void loadResource() throws IOException, URISyntaxException {
         lock.lock();
         try {
             for (String name : files.keySet()) {
@@ -350,6 +350,18 @@ public class XQLFileManager {
         } finally {
             lock.unlock();
         }
+    }
+
+    /**
+     * 初始化加载sql到缓存中
+     *
+     * @throws IOException           如果sql文件读取错误
+     * @throws URISyntaxException    如果sql文件路径格式错误
+     * @throws FileNotFoundException 如果sql文件没有找到
+     * @throws DuplicateException    如果同一个sql文件中有重复的sql名
+     */
+    public void init() throws IOException, URISyntaxException {
+        loadResource();
     }
 
     /**
@@ -583,29 +595,6 @@ public class XQLFileManager {
     }
 
     /**
-     * 初始化加载sql到缓存中
-     *
-     * @throws IOException           如果sql文件读取错误
-     * @throws URISyntaxException    如果sql文件路径格式错误
-     * @throws FileNotFoundException 如果sql文件没有找到
-     * @throws DuplicateException    如果同一个sql文件中有重复的sql名
-     */
-    public void init() throws IOException, URISyntaxException {
-        for (String name : files.keySet()) {
-            FileResource cr = new FileResource(files.get(name));
-            if (cr.exists()) {
-                String suffix = cr.getFilenameExtension();
-                if (suffix != null && (suffix.equals("sql") || suffix.equals("xql"))) {
-                    resolveSqlContent(name, cr);
-                    LAST_MODIFIED.put(cr.getFileName(), cr.getLastModified());
-                }
-            } else {
-                throw new FileNotFoundException("sql file of name'" + name + "' not found!");
-            }
-        }
-    }
-
-    /**
      * 是否已进行过初始化
      *
      * @return 初始化状态
@@ -675,7 +664,7 @@ public class XQLFileManager {
     public String get(String name) {
         if (checkModified) {
             try {
-                reloadIfNecessary();
+                loadResource();
             } catch (URISyntaxException | IOException e) {
                 throw new IORuntimeException("reload sql file error: ", e);
             }

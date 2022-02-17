@@ -1,7 +1,6 @@
 package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.DataRow;
-import com.github.chengyuxing.sql.exceptions.SqlRuntimeException;
 import com.github.chengyuxing.sql.page.IPageable;
 import com.github.chengyuxing.sql.types.Param;
 
@@ -108,7 +107,6 @@ public interface Baki {
      * @param where     条件
      * @param arg       条件参数
      * @return 受影响的行数
-     * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
      */
     int delete(String tableName, String where, Map<String, ?> arg);
 
@@ -118,7 +116,6 @@ public interface Baki {
      * @param tableName 表名
      * @param where     条件
      * @return 受影响的行数
-     * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
      */
     int delete(String tableName, String where);
 

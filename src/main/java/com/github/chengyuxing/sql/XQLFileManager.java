@@ -667,8 +667,7 @@ public class XQLFileManager {
      * @throws IORuntimeException     如果 {@code checkModified} 属性为true重载sql文件发生错误
      */
     public String get(String name) {
-        reloadIfNecessary();
-        if (RESOURCE.containsKey(name)) {
+        if (contains(name)) {
             return RESOURCE.get(name);
         }
         throw new NoSuchElementException(String.format("no SQL named [%s] was found.", name));

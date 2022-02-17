@@ -43,8 +43,9 @@ public class SqlFileTest {
     @Test
     public void sqlf() throws Exception {
         XQLFileManager sqlFileManager = new XQLFileManager();
+        sqlFileManager.setCheckModified(true);
         sqlFileManager.add("rabbit", "file:/Users/chengyuxing/Downloads/local.sql");
-        sqlFileManager.init();
+//        sqlFileManager.init();
         sqlFileManager.look();
     }
 

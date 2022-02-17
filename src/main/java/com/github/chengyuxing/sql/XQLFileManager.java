@@ -607,6 +607,7 @@ public class XQLFileManager {
      * 遍历查看已扫描的sql资源
      */
     public void look() {
+        reloadIfNecessary();
         RESOURCE.forEach((k, v) -> {
             Color color = Color.PURPLE;
             if (k.startsWith("${")) {
@@ -622,6 +623,7 @@ public class XQLFileManager {
      * @param kvFunc 回调函数
      */
     public void foreach(BiConsumer<String, String> kvFunc) {
+        reloadIfNecessary();
         RESOURCE.forEach(kvFunc);
     }
 
@@ -631,6 +633,7 @@ public class XQLFileManager {
      * @return sql名集合
      */
     public Set<String> names() {
+        reloadIfNecessary();
         return RESOURCE.keySet();
     }
 
@@ -640,6 +643,7 @@ public class XQLFileManager {
      * @return sql总条数
      */
     public int size() {
+        reloadIfNecessary();
         return RESOURCE.size();
     }
 
@@ -650,6 +654,7 @@ public class XQLFileManager {
      * @return 是否存在
      */
     public boolean contains(String name) {
+        reloadIfNecessary();
         return RESOURCE.containsKey(name);
     }
 
@@ -662,13 +667,7 @@ public class XQLFileManager {
      * @throws IORuntimeException     如果 {@code checkModified} 属性为true重载sql文件发生错误
      */
     public String get(String name) {
-        if (checkModified) {
-            try {
-                loadResource();
-            } catch (URISyntaxException | IOException e) {
-                throw new IORuntimeException("reload sql file error: ", e);
-            }
-        }
+        reloadIfNecessary();
         if (RESOURCE.containsKey(name)) {
             return RESOURCE.get(name);
         }
@@ -706,6 +705,19 @@ public class XQLFileManager {
      */
     public String get(String name, Map<String, ?> args) {
         return get(name, args, true);
+    }
+
+    /**
+     * 如果属性{@code checkModified}为 true 就进行文件检查修改更新
+     */
+    private void reloadIfNecessary() {
+        if (checkModified) {
+            try {
+                loadResource();
+            } catch (URISyntaxException | IOException e) {
+                throw new IORuntimeException("reload sql file error: ", e);
+            }
+        }
     }
 
     /**

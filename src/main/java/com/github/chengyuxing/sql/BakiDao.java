@@ -553,7 +553,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             if (xqlFileManager != null) {
                 trimEndedSql = SqlUtil.trimEnd(xqlFileManager.get(sql.substring(1), args, strictDynamicSqlArg));
             } else {
-                throw new NullPointerException("can not find property 'sqlFileManager' or SQLFileManager object init failed!");
+                throw new NullPointerException("can not find property 'xqlFileManager' or XQLFileManager object init failed!");
             }
         }
         if (xqlFileManager != null) {

@@ -721,7 +721,7 @@ public class XQLFileManager {
     }
 
     /**
-     * 是否在每次获取sql时都检查文件是否更新
+     * 设置在每次获取（{@code get(...)}）sql或调用其他查询方法（{@code look(), size()...}）时都检查文件是否更新
      *
      * @param checkModified 是否检查更新
      */

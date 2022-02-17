@@ -136,6 +136,7 @@ public class XQLFileManager {
     public static final String DEFAULT = "--#default";
     public static final String BREAK = "--#break";
     public static final String END = "--#end";
+    private volatile boolean initialized = false;
     // ----------------optional properties------------------
     private boolean checkModified;
     private Map<String, String> constants = new HashMap<>();
@@ -320,35 +321,30 @@ public class XQLFileManager {
      * @throws FileNotFoundException 如果sql文件不存在或路径无效
      */
     protected void loadResource() throws IOException, URISyntaxException {
-        lock.lock();
-        try {
-            for (String name : files.keySet()) {
-                FileResource cr = new FileResource(files.get(name));
-                if (cr.exists()) {
-                    String suffix = cr.getFilenameExtension();
-                    if (suffix != null && (suffix.equals("sql") || suffix.equals("xql"))) {
-                        String fileName = cr.getFileName();
-                        if (LAST_MODIFIED.containsKey(fileName)) {
-                            long timestamp = LAST_MODIFIED.get(fileName);
-                            long lastModified = cr.getLastModified();
-                            if (timestamp != -1 && timestamp != 0 && timestamp != lastModified) {
-                                log.debug("removing expired SQL cache...");
-                                resolveSqlContent(name, cr);
-                                LAST_MODIFIED.put(fileName, lastModified);
-                                log.debug("reload modified sql file:{}", fileName);
-                            }
-                        } else {
-                            log.debug("load new sql file:{}", fileName);
+        for (String name : files.keySet()) {
+            FileResource cr = new FileResource(files.get(name));
+            if (cr.exists()) {
+                String suffix = cr.getFilenameExtension();
+                if (suffix != null && (suffix.equals("sql") || suffix.equals("xql"))) {
+                    String fileName = cr.getFileName();
+                    if (LAST_MODIFIED.containsKey(fileName)) {
+                        long timestamp = LAST_MODIFIED.get(fileName);
+                        long lastModified = cr.getLastModified();
+                        if (timestamp != -1 && timestamp != 0 && timestamp != lastModified) {
+                            log.debug("removing expired SQL cache...");
                             resolveSqlContent(name, cr);
-                            LAST_MODIFIED.put(fileName, cr.getLastModified());
+                            LAST_MODIFIED.put(fileName, lastModified);
+                            log.debug("reload modified sql file:{}", fileName);
                         }
+                    } else {
+                        log.debug("load new sql file:{}", fileName);
+                        resolveSqlContent(name, cr);
+                        LAST_MODIFIED.put(fileName, cr.getLastModified());
                     }
-                } else {
-                    throw new FileNotFoundException("sql file of name'" + name + "' not found!");
                 }
+            } else {
+                throw new FileNotFoundException("sql file of name'" + name + "' not found!");
             }
-        } finally {
-            lock.unlock();
         }
     }
 
@@ -361,7 +357,7 @@ public class XQLFileManager {
      * @throws DuplicateException    如果同一个sql文件中有重复的sql名
      */
     public void init() throws IOException, URISyntaxException {
-        loadResource();
+        reloadIfNecessary();
     }
 
     /**
@@ -600,7 +596,7 @@ public class XQLFileManager {
      * @return 初始化状态
      */
     public boolean isInitialized() {
-        return !RESOURCE.isEmpty() && !LAST_MODIFIED.isEmpty();
+        return initialized;
     }
 
     /**
@@ -710,11 +706,16 @@ public class XQLFileManager {
      * 如果属性{@code checkModified}为 true 就进行文件检查修改更新
      */
     private void reloadIfNecessary() {
-        if (checkModified) {
+        if (checkModified || !initialized) {
+            initialized = true;
+            lock.lock();
             try {
                 loadResource();
-            } catch (URISyntaxException | IOException e) {
-                throw new IORuntimeException("reload sql file error: ", e);
+            } catch (IOException | URISyntaxException e) {
+                initialized = false;
+                throw new IORuntimeException("load sql file error: ", e);
+            } finally {
+                lock.unlock();
             }
         }
     }

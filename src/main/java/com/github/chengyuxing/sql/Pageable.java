@@ -2,7 +2,7 @@ package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
-import com.github.chengyuxing.sql.exceptions.SqlRuntimeException;
+import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 import com.github.chengyuxing.sql.page.IPageable;
 import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.impl.MysqlPageHelper;
@@ -42,7 +42,7 @@ public class Pageable<T> extends IPageable<T> {
      *
      * @param mapper 行数据映射函数
      * @return 分页数据
-     * @throws SqlRuntimeException           sql执行过程中出现错误或读取结果集是出现错误
+     * @throws UncheckedSqlException           sql执行过程中出现错误或读取结果集是出现错误
      * @throws UnsupportedOperationException 如果没有自定分页，而默认分页不支持当前数据库
      * @throws ConnectionStatusException     如果连接对象异常
      */
@@ -90,7 +90,7 @@ public class Pageable<T> extends IPageable<T> {
                     throw new UnsupportedOperationException("pager of \"" + dbName + "\" not support currently, see method 'pageHelper'!");
             }
         } catch (SQLException e) {
-            throw new SqlRuntimeException("get database metadata error: ", e);
+            throw new UncheckedSqlException("get database metadata error: ", e);
         }
     }
 }

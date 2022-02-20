@@ -2,7 +2,6 @@ package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.DateTimes;
-import com.github.chengyuxing.sql.exceptions.IORuntimeException;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.types.ParamMode;
 import org.slf4j.Logger;
@@ -86,7 +85,7 @@ public class JdbcUtil {
                 //noinspection ResultOfMethodCallIgnored
                 ins.read(bytes);
             } catch (IOException e) {
-                throw new IORuntimeException("read blob catch an error:", e);
+                throw new UncheckedIOException("read blob catch an error:", e);
             }
         }
         return bytes;

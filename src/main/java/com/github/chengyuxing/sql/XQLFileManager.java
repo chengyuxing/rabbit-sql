@@ -1,5 +1,6 @@
 package com.github.chengyuxing.sql;
 
+import com.github.chengyuxing.common.WatchDog;
 import com.github.chengyuxing.common.console.Color;
 import com.github.chengyuxing.common.console.Printer;
 import com.github.chengyuxing.common.io.FileResource;
@@ -9,17 +10,14 @@ import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.exceptions.DuplicateException;
 import com.github.chengyuxing.sql.exceptions.DynamicSQLException;
-import com.github.chengyuxing.sql.exceptions.IORuntimeException;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.net.URISyntaxException;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
@@ -37,8 +35,8 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
  * e.g.
  * <blockquote>
  *     <ul>
- *         <li><pre>windows: file:\\D:\\rabbit.s(x)ql</pre></li>
- *         <li><pre>Linux/Unix: file:/root/rabbit.s(x)ql</pre></li>
+ *         <li><pre>windows文件系统: file:\\D:\\rabbit.s(x)ql</pre></li>
+ *         <li><pre>Linux/Unix文件系统: file:/root/rabbit.s(x)ql</pre></li>
  *         <li><pre>ClassPath: sql/rabbit.s(x)ql</pre></li>
  *     </ul>
  * </blockquote>
@@ -136,9 +134,10 @@ public class XQLFileManager {
     public static final String DEFAULT = "--#default";
     public static final String BREAK = "--#break";
     public static final String END = "--#end";
-    private volatile boolean initialized = false;
+    private WatchDog watchDog = null;
     // ----------------optional properties------------------
     private boolean checkModified;
+    private int checkPeriod = 30;
     private Map<String, String> constants = new HashMap<>();
     private Map<String, String> files = new HashMap<>();
 
@@ -155,6 +154,7 @@ public class XQLFileManager {
      */
     public XQLFileManager(Map<String, String> files) {
         this.files = files;
+
     }
 
     /**
@@ -316,48 +316,78 @@ public class XQLFileManager {
     /**
      * 如果有检测到文件修改过，则重新加载已修改过的sql文件
      *
-     * @throws IOException           如果sql文件读取错误
-     * @throws URISyntaxException    如果sql文件路径格式错误
-     * @throws FileNotFoundException 如果sql文件不存在或路径无效
+     * @return 已修改或新增的解析文件信息
+     * @throws UncheckedIOException 如果sql文件读取错误
      */
-    protected void loadResource() throws IOException, URISyntaxException {
-        for (String name : files.keySet()) {
-            FileResource cr = new FileResource(files.get(name));
-            if (cr.exists()) {
-                String suffix = cr.getFilenameExtension();
-                if (suffix != null && (suffix.equals("sql") || suffix.equals("xql"))) {
-                    String fileName = cr.getFileName();
-                    if (LAST_MODIFIED.containsKey(fileName)) {
-                        long timestamp = LAST_MODIFIED.get(fileName);
-                        long lastModified = cr.getLastModified();
-                        if (timestamp != -1 && timestamp != 0 && timestamp != lastModified) {
-                            log.debug("removing expired SQL cache...");
+    protected List<String> loadResource() {
+        lock.lock();
+        try {
+            List<String> msg = new ArrayList<>();
+            for (String name : files.keySet()) {
+                FileResource cr = new FileResource(files.get(name));
+                if (cr.exists()) {
+                    String suffix = cr.getFilenameExtension();
+                    if (suffix != null && (suffix.equals("sql") || suffix.equals("xql"))) {
+                        String fileName = cr.getFileName();
+                        if (LAST_MODIFIED.containsKey(fileName)) {
+                            long timestamp = LAST_MODIFIED.get(fileName);
+                            long lastModified = cr.getLastModified();
+                            if (timestamp != -1 && timestamp != 0 && timestamp != lastModified) {
+                                resolveSqlContent(name, cr);
+                                LAST_MODIFIED.put(fileName, lastModified);
+                                msg.add("reload modified sql file: " + fileName);
+                            }
+                        } else {
                             resolveSqlContent(name, cr);
-                            LAST_MODIFIED.put(fileName, lastModified);
-                            log.debug("reload modified sql file:{}", fileName);
+                            LAST_MODIFIED.put(fileName, cr.getLastModified());
+                            msg.add("load new sql file: " + fileName);
                         }
-                    } else {
-                        log.debug("load new sql file:{}", fileName);
-                        resolveSqlContent(name, cr);
-                        LAST_MODIFIED.put(fileName, cr.getLastModified());
                     }
+                } else {
+                    throw new FileNotFoundException("sql file of name'" + name + "' not found!");
                 }
-            } else {
-                throw new FileNotFoundException("sql file of name'" + name + "' not found!");
             }
+            return msg;
+        } catch (IOException e) {
+            throw new UncheckedIOException("load sql file error: ", e);
+        } catch (URISyntaxException e) {
+            throw new RuntimeException("sql file uri syntax error: ", e);
+        } finally {
+            lock.unlock();
         }
     }
 
     /**
      * 初始化加载sql到缓存中
      *
-     * @throws IOException           如果sql文件读取错误
-     * @throws URISyntaxException    如果sql文件路径格式错误
-     * @throws FileNotFoundException 如果sql文件没有找到
-     * @throws DuplicateException    如果同一个sql文件中有重复的sql名
+     * @throws UncheckedIOException 如果sql文件读取错误或sql文件没有找到
+     * @throws RuntimeException     如果sql文件路径格式错误
+     * @throws DuplicateException   如果同一个sql文件中有重复的sql名
      */
-    public void init() throws IOException, URISyntaxException {
-        reloadIfNecessary();
+    public void init() {
+        loadResource();
+        if (this.checkModified) {
+            if (watchDog == null) {
+                watchDog = new WatchDog(1);
+                watchDog.addListener("sqlFileUpdateListener", () -> {
+                    List<String> msg = loadResource();
+                    if (log.isDebugEnabled()) {
+                        if (msg.size() > 0) {
+                            for (String m : msg) {
+                                log.debug("sqlFileUpdateListener: {}", m);
+                            }
+                        } else {
+                            log.debug("sqlFileUpdateListener: no sql file need to (re)load.");
+                        }
+                    }
+                }, checkPeriod, TimeUnit.SECONDS);
+            }
+        } else {
+            if (watchDog != null) {
+                watchDog.removeListener("sqlFileUpdateListener");
+                watchDog.shutdown();
+            }
+        }
     }
 
     /**
@@ -591,19 +621,9 @@ public class XQLFileManager {
     }
 
     /**
-     * 是否已进行过初始化
-     *
-     * @return 初始化状态
-     */
-    public boolean isInitialized() {
-        return initialized;
-    }
-
-    /**
      * 遍历查看已扫描的sql资源
      */
     public void look() {
-        reloadIfNecessary();
         RESOURCE.forEach((k, v) -> {
             Color color = Color.PURPLE;
             if (k.startsWith("${")) {
@@ -619,7 +639,6 @@ public class XQLFileManager {
      * @param kvFunc 回调函数
      */
     public void foreach(BiConsumer<String, String> kvFunc) {
-        reloadIfNecessary();
         RESOURCE.forEach(kvFunc);
     }
 
@@ -629,7 +648,6 @@ public class XQLFileManager {
      * @return sql名集合
      */
     public Set<String> names() {
-        reloadIfNecessary();
         return RESOURCE.keySet();
     }
 
@@ -639,7 +657,6 @@ public class XQLFileManager {
      * @return sql总条数
      */
     public int size() {
-        reloadIfNecessary();
         return RESOURCE.size();
     }
 
@@ -650,7 +667,6 @@ public class XQLFileManager {
      * @return 是否存在
      */
     public boolean contains(String name) {
-        reloadIfNecessary();
         return RESOURCE.containsKey(name);
     }
 
@@ -660,7 +676,6 @@ public class XQLFileManager {
      * @param name sql名
      * @return sql
      * @throws NoSuchElementException 如果没有找到相应名字的sql片段
-     * @throws IORuntimeException     如果 {@code checkModified} 属性为true重载sql文件发生错误
      */
     public String get(String name) {
         if (contains(name)) {
@@ -677,7 +692,6 @@ public class XQLFileManager {
      * @param checkArgsKey 检查参数中是否必须存在表达式中需要计算的key
      * @return 解析后的sql
      * @throws NoSuchElementException 如果没有找到相应名字的sql片段
-     * @throws IORuntimeException     如果 {@code checkModified} 属性为true重载sql文件发生错误
      * @see #dynamicCalc(String, Map, boolean)
      */
     public String get(String name, Map<String, ?> args, boolean checkArgsKey) {
@@ -695,7 +709,6 @@ public class XQLFileManager {
      * @param args 动态sql逻辑表达式参数字典
      * @return 解析后的sql
      * @throws NoSuchElementException 如果没有找到相应名字的sql片段
-     * @throws IORuntimeException     如果 {@code checkModified} 属性为true重载sql文件发生错误
      * @see #dynamicCalc(String, Map, boolean)
      */
     public String get(String name, Map<String, ?> args) {
@@ -703,30 +716,43 @@ public class XQLFileManager {
     }
 
     /**
-     * 如果属性{@code checkModified}为 true 就进行文件检查修改更新
-     */
-    private void reloadIfNecessary() {
-        if (checkModified || !initialized) {
-            initialized = true;
-            lock.lock();
-            try {
-                loadResource();
-            } catch (IOException | URISyntaxException e) {
-                initialized = false;
-                throw new IORuntimeException("load sql file error: ", e);
-            } finally {
-                lock.unlock();
-            }
-        }
-    }
-
-    /**
-     * 设置在每次获取（{@code get(...)}）sql或调用其他查询方法（{@code look(), size()...}）时都检查文件是否更新
+     * 设置检查文件是否更新
      *
      * @param checkModified 是否检查更新
      */
     public void setCheckModified(boolean checkModified) {
         this.checkModified = checkModified;
+    }
+
+    /**
+     * 获取是否启用文件自动检查更新
+     *
+     * @return 文件检查更新状态
+     */
+    public boolean isCheckModified() {
+        return checkModified;
+    }
+
+    /**
+     * 设置文件检查周期（单位：秒）
+     *
+     * @param checkPeriod 文件检查周期，默认30秒
+     */
+    public void setCheckPeriod(int checkPeriod) {
+        if (checkPeriod < 5) {
+            this.checkPeriod = 5;
+            log.warn("period cannot less than 5 seconds, auto set 5 seconds.");
+        } else
+            this.checkPeriod = checkPeriod;
+    }
+
+    /**
+     * 获取文件检查周期
+     *
+     * @return 文件检查周期
+     */
+    public int getCheckPeriod() {
+        return checkPeriod;
     }
 
     /**

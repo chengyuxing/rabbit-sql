@@ -6,7 +6,7 @@ import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.datasource.DataSourceUtil;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
 import com.github.chengyuxing.sql.exceptions.DuplicateException;
-import com.github.chengyuxing.sql.exceptions.SqlRuntimeException;
+import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 import com.github.chengyuxing.sql.page.IPageable;
 import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.support.JdbcSupport;
@@ -18,8 +18,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.io.IOException;
-import java.net.URISyntaxException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -83,15 +81,13 @@ public class BakiDao extends JdbcSupport implements Baki {
      * 指定sql文件解析管理器
      *
      * @param xqlFileManager sql文件解析管理器
-     * @throws IOException        如果文件读取错误
-     * @throws URISyntaxException 如果文件uri地址语法错误
-     * @throws DuplicateException 如果同一个文件出现同名sql
+     * @throws java.io.UncheckedIOException 如果文件读取错误
+     * @throws RuntimeException             如果文件uri地址语法错误
+     * @throws DuplicateException           如果同一个文件出现同名sql
      */
-    public void setXqlFileManager(XQLFileManager xqlFileManager) throws IOException, URISyntaxException, DuplicateException {
+    public void setXqlFileManager(XQLFileManager xqlFileManager) {
         this.xqlFileManager = xqlFileManager;
-        if (!xqlFileManager.isInitialized()) {
-            xqlFileManager.init();
-        }
+        xqlFileManager.init();
     }
 
     /**
@@ -102,7 +98,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      *
      * @param sql 原始sql
      * @return (结果 ， 类型)
-     * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
+     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
      */
     @Override
     public DataRow execute(String sql) {
@@ -116,7 +112,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param data      数据
      * @param strict    true：根据数据生成insert语句，不论表是否存在相应的字段，false：根据表字段筛选数据中存在的字段生成insert语句
      * @return 受影响的行数
-     * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
+     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
      * @see #fastInsert(String, Collection, boolean)
      * @see #fastInsert(String, Collection)
      */
@@ -139,7 +135,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param tableName 表名
      * @param data      数据
      * @return 受影响的行数
-     * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
+     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
      * @see #fastInsert(String, Collection, boolean)
      * @see #fastInsert(String, Collection)
      */
@@ -155,7 +151,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param data      数据
      * @param strict    true：根据数据生成insert语句，不论表是否存在相应的字段，false：根据表字段筛选数据中存在的字段生成insert语句
      * @return 受影响的行数
-     * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
+     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
      * @see #fastInsert(String, Collection, boolean)
      * @see #fastInsert(String, Collection)
      */
@@ -171,7 +167,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param tableName 表名
      * @param data      数据
      * @return 受影响的行数
-     * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
+     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
      * @see #fastInsert(String, Collection, boolean)
      * @see #fastInsert(String, Collection)
      */
@@ -188,7 +184,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param data      数据
      * @param strict    true：根据数据生成insert语句，不论表是否存在相应的字段，false：根据表字段筛选数据中存在的字段生成insert语句
      * @return 受影响的行数
-     * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
+     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
      */
     @Override
     public int fastInsert(String tableName, Collection<? extends Map<String, ?>> data, boolean strict) {
@@ -216,7 +212,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param tableName 表名
      * @param data      数据
      * @return 受影响的行数
-     * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
+     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
      */
     @Override
     public int fastInsert(String tableName, Collection<? extends Map<String, ?>> data) {
@@ -230,7 +226,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param where     条件
      * @param arg       条件参数
      * @return 受影响的行数
-     * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
+     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
      */
     @Override
     public int delete(String tableName, String where, Map<String, ?> arg) {
@@ -244,7 +240,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param tableName 表名
      * @param where     条件
      * @return 受影响的行数
-     * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
+     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
      */
     @Override
     public int delete(String tableName, String where) {
@@ -270,7 +266,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param data      数据：需要更新的数据和条件参数
      * @param where     条件：条件中需要有传名参数作为更新的条件依据
      * @return 受影响的行数
-     * @throws SqlRuntimeException sql执行过程中出现错误
+     * @throws UncheckedSqlException sql执行过程中出现错误
      * @see Baki#fastUpdate(String, Collection, String)
      */
     @Override
@@ -307,7 +303,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param data      数据：需要更新的数据和条件参数
      * @param where     条件：条件中需要有传名参数作为更新的条件依据
      * @return 受影响的行数
-     * @throws SqlRuntimeException sql执行过程中出现错误
+     * @throws UncheckedSqlException sql执行过程中出现错误
      * @see Baki#fastUpdate(String, Collection, String)
      */
     @Override
@@ -335,7 +331,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param args      参数：需要更新的数据和条件参数
      * @param where     条件：条件中需要有传名参数作为更新的条件依据
      * @return 受影响的行数
-     * @throws SqlRuntimeException           执行批量操作时发生错误
+     * @throws UncheckedSqlException         执行批量操作时发生错误
      * @throws UnsupportedOperationException 数据库或驱动版本不支持批量操作
      * @throws IllegalArgumentException      数据条数少于一条
      */
@@ -361,7 +357,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      *
      * @param sql 查询sql
      * @return 收集为流的结果集
-     * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
+     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
      */
     @Override
     public Stream<DataRow> query(String sql) {
@@ -374,7 +370,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param sql  查询sql
      * @param args 参数
      * @return 收集为流的结果集
-     * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
+     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
      */
     @Override
     public Stream<DataRow> query(String sql, Map<String, ?> args) {
@@ -408,7 +404,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      *
      * @param sql 查询sql
      * @return 空或一条
-     * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
+     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
      */
     @Override
     public Optional<DataRow> fetch(String sql) {
@@ -421,7 +417,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param sql  查询sql
      * @param args 参数
      * @return 空或一条
-     * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
+     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
      */
     @Override
     public Optional<DataRow> fetch(String sql, Map<String, ?> args) {
@@ -435,7 +431,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      *
      * @param sql sql
      * @return 是否存在
-     * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
+     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
      */
     @Override
     public boolean exists(String sql) {
@@ -448,7 +444,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param sql  sql
      * @param args 参数
      * @return 是否存在
-     * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误
+     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
      */
     @Override
     public boolean exists(String sql, Map<String, ?> args) {
@@ -470,7 +466,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param name 过程名
      * @param args 参数 （占位符名字，参数对象）
      * @return DataRow
-     * @throws SqlRuntimeException 存储过程或函数执行过程中出现错误
+     * @throws UncheckedSqlException 存储过程或函数执行过程中出现错误
      * @see #executeCallStatement(String, Map)
      */
     @Override
@@ -513,7 +509,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 currentMetaData = c.getMetaData();
                 return currentMetaData;
             } catch (SQLException e) {
-                throw new SqlRuntimeException("get metadata error: ", e);
+                throw new UncheckedSqlException("get metadata error: ", e);
             }
         });
     }
@@ -523,7 +519,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      *
      * @param tableName 表名
      * @return 表字段
-     * @throws SqlRuntimeException 执行查询表字段出现异常
+     * @throws UncheckedSqlException 执行查询表字段出现异常
      */
     private List<String> getTableFields(String tableName) {
         return execute("select * from " + tableName + " where 1 = 2", sc -> {

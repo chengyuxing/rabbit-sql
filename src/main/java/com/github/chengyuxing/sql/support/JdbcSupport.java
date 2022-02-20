@@ -9,7 +9,7 @@ import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.UncheckedCloseable;
 import com.github.chengyuxing.sql.datasource.AbstractTransactionSyncManager;
-import com.github.chengyuxing.sql.exceptions.SqlRuntimeException;
+import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.types.ParamMode;
 import com.github.chengyuxing.sql.utils.SqlUtil;
@@ -88,7 +88,7 @@ public abstract class JdbcSupport {
      * @param callback 执行声明回调函数
      * @param <T>      结果类型参数
      * @return 任意类型
-     * @throws SqlRuntimeException sql执行过程中出现异常
+     * @throws UncheckedSqlException sql执行过程中出现异常
      */
     protected <T> T execute(final String sql, StatementCallback<T> callback) {
         PreparedStatement statement = null;
@@ -105,7 +105,7 @@ public abstract class JdbcSupport {
             }
             statement = null;
             releaseConnection(connection, getDataSource());
-            throw new SqlRuntimeException("execute sql:\n[" + sql + "]\nerror: ", e);
+            throw new UncheckedSqlException("execute sql:\n[" + sql + "]\nerror: ", e);
         } finally {
             try {
                 JdbcUtil.closeStatement(statement);
@@ -125,7 +125,7 @@ public abstract class JdbcSupport {
      * @param sql  原始sql
      * @param args 参数
      * @return 查询语句返回List，DML语句返回受影响的行数，DDL语句返回0
-     * @throws SqlRuntimeException sql执行过程中出现错误
+     * @throws UncheckedSqlException sql执行过程中出现错误
      */
     public DataRow execute(final String sql, Map<String, ?> args) {
         String sourceSql = prepareSql(sql, args);
@@ -171,7 +171,7 @@ public abstract class JdbcSupport {
      * @param sql  e.g. <code>select * from test.user where id = :id</code>
      * @param args 参数 （占位符名字，参数对象）
      * @return Stream数据流
-     * @throws SqlRuntimeException sql执行过程中出现错误或读取结果集是出现错误.
+     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误.
      */
     public Stream<DataRow> executeQueryStream(final String sql, Map<String, ?> args) {
         if (args == null) {
@@ -221,11 +221,11 @@ public abstract class JdbcSupport {
                         action.accept(JdbcUtil.createDataRow(names, resultSet));
                         return true;
                     } catch (SQLException ex) {
-                        throw new SqlRuntimeException("reading result set of query:[" + preparedSql + "]\nerror: ", ex);
+                        throw new UncheckedSqlException("reading result set of query:[" + preparedSql + "]\nerror: ", ex);
                     }
                 }
             }, false).onClose(close);
-        } catch (SQLException | SqlRuntimeException sqlEx) {
+        } catch (SQLException sqlEx) {
             if (close != null) {
                 try {
                     close.close();
@@ -233,7 +233,7 @@ public abstract class JdbcSupport {
                     sqlEx.addSuppressed(e);
                 }
             }
-            throw new SqlRuntimeException("\nexecute sql:[" + preparedSql + "]\nargs:" + args + "\nerror: ", sqlEx);
+            throw new UncheckedSqlException("\nexecute sql:[" + preparedSql + "]\nargs:" + args + "\nerror: ", sqlEx);
         }
     }
 
@@ -242,7 +242,7 @@ public abstract class JdbcSupport {
      *
      * @param sqls 一组sql
      * @return 每条sql的执行结果
-     * @throws SqlRuntimeException           执行批量操作时发生错误
+     * @throws UncheckedSqlException           执行批量操作时发生错误
      * @throws UnsupportedOperationException 数据库或驱动版本不支持批量操作
      * @throws IllegalArgumentException      如果执行的sql条数少1条
      */
@@ -265,7 +265,7 @@ public abstract class JdbcSupport {
                     }
                     statement = null;
                     releaseConnection(connection, getDataSource());
-                    throw new SqlRuntimeException("execute batch error: ", e);
+                    throw new UncheckedSqlException("execute batch error: ", e);
                 } finally {
                     try {
                         JdbcUtil.closeStatement(statement);
@@ -291,7 +291,7 @@ public abstract class JdbcSupport {
      * @param sql  sql
      * @param args 数据 --每行数据类型和参数个数都必须相同
      * @return 总的受影响的行数
-     * @throws SqlRuntimeException sql执行过程中出现错误
+     * @throws UncheckedSqlException sql执行过程中出现错误
      */
     public int executeNonQuery(final String sql, final Collection<? extends Map<String, ?>> args) {
         String sourceSql = sql;
@@ -338,7 +338,7 @@ public abstract class JdbcSupport {
      * @param sql sql
      * @param arg 数据
      * @return 总的受影响的行数
-     * @throws SqlRuntimeException sql执行过程中出现错误
+     * @throws UncheckedSqlException sql执行过程中出现错误
      */
     public int executeNonQuery(final String sql, final Map<String, ?> arg) {
         return executeNonQuery(sql, Collections.singletonList(arg));
@@ -360,7 +360,7 @@ public abstract class JdbcSupport {
      * @param procedure 存储过程名
      * @param args      参数
      * @return DataRow
-     * @throws SqlRuntimeException 存储过程或函数执行过程中出现错误
+     * @throws UncheckedSqlException 存储过程或函数执行过程中出现错误
      */
     public DataRow executeCallStatement(final String procedure, Map<String, Param> args) {
         String sourceSql = procedure;
@@ -421,7 +421,7 @@ public abstract class JdbcSupport {
             }
             statement = null;
             releaseConnection(connection, getDataSource());
-            throw new SqlRuntimeException("execute procedure [" + procedure + "] error:", e);
+            throw new UncheckedSqlException("execute procedure [" + procedure + "] error:", e);
         } finally {
             try {
                 JdbcUtil.closeStatement(statement);

@@ -3,10 +3,9 @@ package com.github.chengyuxing.sql.transaction;
 import com.github.chengyuxing.sql.datasource.AbstractTransactionSyncManager;
 import com.github.chengyuxing.sql.datasource.ConnectionHolder;
 import com.github.chengyuxing.sql.datasource.DataSourceUtil;
+import com.github.chengyuxing.sql.exceptions.TransactionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import com.github.chengyuxing.sql.exceptions.SqlRuntimeException;
-import com.github.chengyuxing.sql.exceptions.TransactionException;
 
 import java.sql.SQLException;
 import java.util.function.Supplier;
@@ -77,7 +76,7 @@ public final class Tx {
      *
      * @param runnable   sql执行操作
      * @param definition 事务定义
-     * @throws SqlRuntimeException  如果在此事务中，sql执行错误则抛出异常
+     * @throws TransactionException  如果在此事务中，sql执行错误则抛出异常
      * @see #begin(Definition)
      * @see #commit()
      * @see #rollback()
@@ -89,7 +88,7 @@ public final class Tx {
             commit();
         } catch (Exception e) {
             rollback();
-            throw new SqlRuntimeException("transaction will rollback cause:", e);
+            throw new TransactionException("transaction will rollback cause:", e);
         }
     }
 
@@ -100,7 +99,7 @@ public final class Tx {
      * @param definition 事务定义
      * @param <T>        类型参数
      * @return 回调结果
-     * @throws SqlRuntimeException  如果在此事务中，sql执行错误则抛出异常
+     * @throws TransactionException  如果在此事务中，sql执行错误则抛出异常
      * @see #begin(Definition)
      * @see #commit()
      * @see #rollback()
@@ -113,7 +112,7 @@ public final class Tx {
             commit();
         } catch (Exception e) {
             rollback();
-            throw new SqlRuntimeException("transaction will rollback cause:", e);
+            throw new TransactionException("transaction will rollback cause:", e);
         }
         return result;
     }
@@ -122,8 +121,7 @@ public final class Tx {
      * 新建一个事务自动提交/回滚事务
      *
      * @param runnable sql执行操作
-     * @throws SqlRuntimeException  如果在此事务中，sql执行错误则抛出异常
-     * @throws TransactionException 如果数据库错误，或者连接被关闭，或者数据库事务为自动提交
+     * @throws TransactionException 如果事物过程中出现错误，或者数据库事务为自动提交
      * @see #begin()
      * @see #commit()
      * @see #rollback()
@@ -138,8 +136,7 @@ public final class Tx {
      * @param supplier sql执行操作
      * @param <T>      类型参数
      * @return 回调结果
-     * @throws SqlRuntimeException  如果在此事务中，sql执行错误则抛出异常
-     * @throws TransactionException 如果数据库错误，或者连接被关闭，或者数据库事务为自动提交
+     * @throws TransactionException 如果事物过程中出现错误，或者数据库事务为自动提交
      * @see #begin()
      * @see #commit()
      * @see #rollback()

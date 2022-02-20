@@ -48,6 +48,13 @@ public class SqlFileTest {
         sqlFileManager.look();
     }
 
+    public static void main(String[] args) {
+        XQLFileManager sqlFileManager = new XQLFileManager();
+        sqlFileManager.add("rabbit", "file:/Users/chengyuxing/Downloads/local.sql");
+        sqlFileManager.setCheckModified(true);
+        sqlFileManager.init();
+    }
+
     @Test
     public void ref() throws Exception {
         Pair<String, List<String>> pair = SqlUtil.getPreparedSql(":res = call getUser(:id, :name)", Collections.emptyMap());

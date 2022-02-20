@@ -376,8 +376,6 @@ public class XQLFileManager {
                             for (String m : msg) {
                                 log.debug("sqlFileUpdateListener: {}", m);
                             }
-                        } else {
-                            log.debug("sqlFileUpdateListener: no sql file need to (re)load.");
                         }
                     }
                 }, checkPeriod, TimeUnit.SECONDS);

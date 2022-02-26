@@ -27,7 +27,7 @@ public class Args<V> extends HashMap<String, V> {
      * @return Args对象
      */
     public static Args<Object> create(Object... pairOfArgs) {
-        if (pairOfArgs.length == 0 || pairOfArgs.length % 2 != 0) {
+        if (pairOfArgs.length == 0 || (pairOfArgs.length & 1) != 0) {
             throw new IllegalArgumentException("key value are not a pair.");
         }
         int length = pairOfArgs.length >> 1;

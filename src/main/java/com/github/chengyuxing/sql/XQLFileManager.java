@@ -123,17 +123,17 @@ public class XQLFileManager {
     private final Map<String, Long> LAST_MODIFIED = new HashMap<>();
     private static final Pattern NAME_PATTERN = Pattern.compile("/\\*\\s*\\[\\s*(?<name>\\S+)\\s*]\\s*\\*/");
     private static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+)\\s*}\\s*\\*/");
-    public static final String IF = "--#if";
-    public static final String FI = "--#fi";
-    public static final String CHOOSE = "--#choose";
-    public static final String WHEN = "--#when";
+    public static final String IF = "#if";
+    public static final String FI = "#fi";
+    public static final String CHOOSE = "#choose";
+    public static final String WHEN = "#when";
 
-    public static final String SWITCH = "--#switch";
-    public static final String CASE = "--#case";
+    public static final String SWITCH = "#switch";
+    public static final String CASE = "#case";
 
-    public static final String DEFAULT = "--#default";
-    public static final String BREAK = "--#break";
-    public static final String END = "--#end";
+    public static final String DEFAULT = "#default";
+    public static final String BREAK = "#break";
+    public static final String END = "#end";
     private WatchDog watchDog = null;
     // ----------------optional properties------------------
     private boolean checkModified;
@@ -154,7 +154,6 @@ public class XQLFileManager {
      */
     public XQLFileManager(Map<String, String> files) {
         this.files = files;
-
     }
 
     /**
@@ -213,7 +212,7 @@ public class XQLFileManager {
                         singleResource.put(blockName, "");
                     } else {
                         // exclude single line annotation except expression keywords
-                        if (!trimLine.startsWith("--") || StringUtil.startsWithsIgnoreCase(trimLine, IF, FI, CHOOSE, WHEN, SWITCH, CASE, DEFAULT, BREAK, END)) {
+                        if (!trimLine.startsWith("--") || (StringUtil.startsWithsIgnoreCase(formatAnonExpIf(trimLine), IF, FI, CHOOSE, WHEN, SWITCH, CASE, DEFAULT, BREAK, END))) {
                             if (!blockName.equals("")) {
                                 String prepareLine = singleResource.get(blockName) + line;
                                 if (trimLine.endsWith(";")) {
@@ -404,7 +403,7 @@ public class XQLFileManager {
         StringJoiner output = new StringJoiner(NEW_LINE);
         for (int i = 0, j = lines.length; i < j; i++) {
             String outerLine = lines[i];
-            String trimOuterLine = outerLine.trim();
+            String trimOuterLine = formatAnonExpIf(outerLine);
             int count = 0;
             // 处理if表达式块
             if (startsWithIgnoreCase(trimOuterLine, IF)) {
@@ -413,7 +412,7 @@ public class XQLFileManager {
                 // 内循环推进游标，用来判断嵌套if表达式块
                 while (++i < j) {
                     String line = lines[i];
-                    String trimLine = line.trim();
+                    String trimLine = formatAnonExpIf(line);
                     if (startsWithIgnoreCase(trimLine, IF)) {
                         innerSb.add(line);
                         count++;
@@ -425,7 +424,7 @@ public class XQLFileManager {
                         // 说明此处已经达到了嵌套fi的末尾
                         if (count == 0) {
                             // 此处计算外层if逻辑表达式，逻辑同程序语言的if逻辑
-                            FastExpression fx = FastExpression.of(trimOuterLine.substring(5));
+                            FastExpression fx = FastExpression.of(trimOuterLine.substring(3));
                             fx.setCheckArgsKey(checkArgsKey);
                             boolean res = fx.calc(args);
                             // 如果外层判断为真，如果内层还有if表达式块或choose...end块，则进入内层继续处理
@@ -463,11 +462,11 @@ public class XQLFileManager {
             } else if (startsWithIgnoreCase(trimOuterLine, CHOOSE)) {
                 while (++i < j) {
                     String line = lines[i];
-                    String trimLine = line.trim();
+                    String trimLine = formatAnonExpIf(line);
                     if (startsWithsIgnoreCase(trimLine, WHEN, DEFAULT)) {
                         boolean res = false;
                         if (startsWithIgnoreCase(trimLine, WHEN)) {
-                            FastExpression fx = FastExpression.of(trimLine.substring(7));
+                            FastExpression fx = FastExpression.of(trimLine.substring(5));
                             fx.setCheckArgsKey(checkArgsKey);
                             res = fx.calc(args);
                         }
@@ -476,8 +475,8 @@ public class XQLFileManager {
                         if (res || startsWithIgnoreCase(trimLine, DEFAULT)) {
                             StringJoiner innerSb = new StringJoiner(NEW_LINE);
                             // 移动游标直到此分支的break之前都是符合判断结果的sql保留下来
-                            while (++i < j && !startsWithIgnoreCase(lines[i].trim(), BREAK)) {
-                                if (startsWithsIgnoreCase(lines[i].trim(), WHEN, DEFAULT)) {
+                            while (++i < j && !startsWithIgnoreCase(formatAnonExpIf(lines[i]), BREAK)) {
+                                if (startsWithsIgnoreCase(formatAnonExpIf(lines[i]), WHEN, DEFAULT)) {
                                     throw new DynamicSQLException("missing '--#break' tag of expression '" + trimLine + "'");
                                 }
                                 innerSb.add(lines[i]);
@@ -492,15 +491,15 @@ public class XQLFileManager {
                             // 到此处说明已经将满足条件的分支的sql保留下来
                             // 在接下来的分支都直接略过，移动游标直到end结束标签，就跳出整个choose块
                             //noinspection StatementWithEmptyBody
-                            while (++i < j && !startsWithIgnoreCase(lines[i].trim(), END)) ;
+                            while (++i < j && !startsWithIgnoreCase(formatAnonExpIf(lines[i]), END)) ;
                             if (i == j) {
                                 throw new DynamicSQLException("missing '--#end' close tag of choose expression block.");
                             }
                             break;
                         } else {
                             // 如果此分支when语句表达式不满足条件，就移动游标到当前分支break结束，进入下一个when分支
-                            while (++i < j && !startsWithIgnoreCase(lines[i].trim(), BREAK)) {
-                                if (startsWithsIgnoreCase(lines[i].trim(), WHEN, DEFAULT)) {
+                            while (++i < j && !startsWithIgnoreCase(formatAnonExpIf(lines[i]), BREAK)) {
+                                if (startsWithsIgnoreCase(formatAnonExpIf(lines[i]), WHEN, DEFAULT)) {
                                     throw new DynamicSQLException("missing '--#break' tag of expression '" + trimLine + "'");
                                 }
                             }
@@ -526,16 +525,16 @@ public class XQLFileManager {
                 Object value = args.get(name);
                 while (++i < j) {
                     String line = lines[i];
-                    String trimLine = line.trim();
+                    String trimLine = formatAnonExpIf(line);
                     if (startsWithsIgnoreCase(trimLine, CASE, DEFAULT)) {
                         boolean res = false;
                         if (startsWithIgnoreCase(trimLine, CASE)) {
-                            res = Comparators.compare(value, "=", trimLine.substring(8));
+                            res = Comparators.compare(value, "=", trimLine.substring(6));
                         }
                         if (res || startsWithIgnoreCase(trimLine, DEFAULT)) {
                             StringJoiner innerSb = new StringJoiner(NEW_LINE);
-                            while (++i < j && !startsWithIgnoreCase(lines[i].trim(), BREAK)) {
-                                if (startsWithsIgnoreCase(lines[i].trim(), CASE, DEFAULT)) {
+                            while (++i < j && !startsWithIgnoreCase(formatAnonExpIf(lines[i]), BREAK)) {
+                                if (startsWithsIgnoreCase(formatAnonExpIf(lines[i]), CASE, DEFAULT)) {
                                     throw new DynamicSQLException("missing '--#break' tag of expression '" + trimLine + "'");
                                 }
                                 innerSb.add(lines[i]);
@@ -548,14 +547,14 @@ public class XQLFileManager {
                                 output.add(innerStr);
                             }
                             //noinspection StatementWithEmptyBody
-                            while (++i < j && !startsWithIgnoreCase(lines[i].trim(), END)) ;
+                            while (++i < j && !startsWithIgnoreCase(formatAnonExpIf(lines[i]), END)) ;
                             if (i == j) {
                                 throw new DynamicSQLException("missing '--#end' close tag of switch expression block.");
                             }
                             break;
                         } else {
-                            while (++i < j && !startsWithIgnoreCase(lines[i].trim(), BREAK)) {
-                                if (startsWithsIgnoreCase(lines[i].trim(), WHEN, DEFAULT)) {
+                            while (++i < j && !startsWithIgnoreCase(formatAnonExpIf(lines[i]), BREAK)) {
+                                if (startsWithsIgnoreCase(formatAnonExpIf(lines[i]), WHEN, DEFAULT)) {
                                     throw new DynamicSQLException("missing '--#break' tag of expression '" + trimLine + "'");
                                 }
                             }
@@ -616,6 +615,23 @@ public class XQLFileManager {
             return sql.substring(0, m.start());
         }
         return sql;
+    }
+
+    /**
+     * 如果有必要则格式化注释表达式
+     *
+     * @param s 注释行
+     * @return 前缀满足动态sql表达式的字符串或者首尾去除空白字符的字符串
+     */
+    private String formatAnonExpIf(String s) {
+        String trimS = s.trim();
+        if (trimS.startsWith("--")) {
+            String expAnon = trimS.substring(2).trim();
+            if (expAnon.startsWith("#")) {
+                return expAnon;
+            }
+        }
+        return trimS;
     }
 
     /**

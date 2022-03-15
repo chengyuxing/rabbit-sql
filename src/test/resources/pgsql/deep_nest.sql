@@ -87,12 +87,12 @@ and x = :x
 
 /*[choose]*/
 select * from test.user where
---#choose
-    --#when :id <> blank
+-- #choose
+    -- #when :id <> blank
         id = :id
-    --#break
-    --#when :name <> blank
+    -- #break
+    -- #when :name <> blank
         and name = :name
-    --#break
---#end
+    -- #break
+-- #end
 ;

@@ -8,7 +8,7 @@
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>6.0.6</version>
+    <version>6.1.0</version>
 </dependency>
 ```
 
@@ -16,7 +16,7 @@
 
 - `:name` (jdbc标准的传名参数写法，参数将被预编译安全处理，参数名为：`name`)
 
-- `${}` (通用的字符串模版占位符，不进行预编译，用于动态sql的拼接)
+- `${[:]name}` (通用的字符串模版占位符，不进行预编译，用于动态sql的拼接)
 
   字符串模版参数名两种格式：
 
@@ -30,16 +30,16 @@
   sql：
 
   ```sql
-  select ${fields}, ${moreFields} from <tableName> where word in (${words}) or id = :id;
+  select ${fields}, ${moreFields} from <tableName> where word in (${:words}) or id = :id;
   ```
 
   参数：
 
   ```java
   Args<Object> args = Args.<Object>of("id","uuid")
-    .add("${fields}", "id, name, address")
-    .add("${moreFields}", Arrays.asList("email", "enable"))
-    .add("${:words}", Arrays.asList("I'm OK!", "book", "warning"));
+    .add("fields", "id, name, address")
+    .add("moreFields", Arrays.asList("email", "enable"))
+    .add("words", Arrays.asList("I'm OK!", "book", "warning"));
   ```
   
   最终执行的SQL：
@@ -77,7 +77,7 @@ BakiDao(DataSource dataSource)
   ⚠️ 由于jdbc驱动实现问题，此特性暂不支持Oracle，请将此属性设置为false。
   
 
-## <a href="#XQLFileManager">XQLFileManager</a>
+## XQLFileManager
 
 文件结尾以`.sql`或`.xql`结尾，文件中可以包含任意符合标准的注释，格式参考```data.xql.template```；
 
@@ -115,7 +115,11 @@ xqlFileManager: {
 
 - **checkModified**
 
-  如果为`true`，则每次执行获取sql时都检查一次sql文件是否被修改过，如果修改过则重新加载，生产环境建议设置为`false`
+  如果为`true`，则开启sql文件修改监听器，默认30秒检测一次，如果修改过则重新加载，生产环境建议设置为`false`
+
+- **checkPeriod**
+
+  sql文件修改监听检查周期，默认为30秒。
 
 - **constants**
 

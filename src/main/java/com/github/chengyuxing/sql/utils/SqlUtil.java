@@ -555,7 +555,7 @@ public class SqlUtil {
                 String key = maybeKeywords.get(i);
                 if (!key.trim().equals("")) {
                     // keywords highlight
-                    if (StringUtil.matchesAnyIgnoreCase(key, Keywords.STANDARD) || StringUtil.matchesAnyIgnoreCase(key, Keywords.POSTGRESQL)) {
+                    if (StringUtil.equalsAnyIgnoreCase(key, Keywords.STANDARD) || StringUtil.equalsAnyIgnoreCase(key, Keywords.POSTGRESQL)) {
                         maybeKeywords.set(i, Printer.colorful(key, Color.DARK_PURPLE));
                         // functions highlight
                     } else if (StringUtil.containsAnyIgnoreCase(key, Keywords.FUNCTIONS)) {

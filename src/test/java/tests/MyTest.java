@@ -226,6 +226,8 @@ public class MyTest {
     public void query() throws Exception {
         try (Stream<DataRow> s = baki.query("select * from test.region")) {
             s.forEach(System.out::println);
+        } catch (Exception e) {
+            e.printStackTrace();
         }
         while (true) {
 

@@ -391,8 +391,6 @@ public class JdbcUtil {
                     String name = names.get(i);
                     if (args.containsKey(name)) {
                         setSpecialStatementValue(statement, index, args.get(name));
-                    } else if (args.containsKey(":" + name)) {
-                        setSpecialStatementValue(statement, index, args.get(":" + name));
                     }
                 }
             } else {
@@ -415,8 +413,6 @@ public class JdbcUtil {
             String name = names.get(i);
             if (args.containsKey(name)) {
                 setStatementValue(statement, index, args.get(name));
-            } else if (args.containsKey(":" + name)) {
-                setStatementValue(statement, index, args.get(":" + name));
             }
         }
     }
@@ -438,8 +434,6 @@ public class JdbcUtil {
                 Param param = null;
                 if (args.containsKey(name)) {
                     param = args.get(name);
-                } else if (args.containsKey(":" + name)) {
-                    param = args.get(":" + name);
                 }
                 if (param != null) {
                     if (param.getParamMode() == ParamMode.OUT || param.getParamMode() == ParamMode.IN_OUT) {
@@ -454,8 +448,6 @@ public class JdbcUtil {
                 Param param = null;
                 if (args.containsKey(name)) {
                     param = args.get(name);
-                } else if (args.containsKey(":" + name)) {
-                    param = args.get(":" + name);
                 }
                 if (param != null) {
                     if (param.getParamMode() == ParamMode.IN || param.getParamMode() == ParamMode.IN_OUT) {

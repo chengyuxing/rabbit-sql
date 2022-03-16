@@ -225,15 +225,15 @@ public abstract class JdbcSupport {
                     }
                 }
             }, false).onClose(close);
-        } catch (SQLException sqlEx) {
+        } catch (Exception ex) {
             if (close != null) {
                 try {
                     close.close();
                 } catch (Exception e) {
-                    sqlEx.addSuppressed(e);
+                    ex.addSuppressed(e);
                 }
             }
-            throw new UncheckedSqlException("\nexecute sql:[" + preparedSql + "]\nargs:" + args + "\nerror: ", sqlEx);
+            throw new RuntimeException("\nstreaming query error:[" + preparedSql + "]\nargs:" + args, ex);
         }
     }
 
@@ -242,7 +242,7 @@ public abstract class JdbcSupport {
      *
      * @param sqls 一组sql
      * @return 每条sql的执行结果
-     * @throws UncheckedSqlException           执行批量操作时发生错误
+     * @throws UncheckedSqlException         执行批量操作时发生错误
      * @throws UnsupportedOperationException 数据库或驱动版本不支持批量操作
      * @throws IllegalArgumentException      如果执行的sql条数少1条
      */

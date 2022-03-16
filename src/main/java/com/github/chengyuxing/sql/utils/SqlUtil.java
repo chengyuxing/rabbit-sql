@@ -308,7 +308,7 @@ public class SqlUtil {
      * @return 替换模版占位符后的字符串
      */
     @SuppressWarnings("unchecked")
-    public static String resolveSqlStrTemplate(final String str, final Map<String, ?> args, boolean exceptSubstr) {
+    public static String resolveSqlStrTemplate2(final String str, final Map<String, ?> args, boolean exceptSubstr) {
         if (args == null || args.isEmpty()) {
             return str;
         }
@@ -340,6 +340,70 @@ public class SqlUtil {
                     if (key.startsWith("${:")) {
                         // expand and quote safe args
                         trueKey = "${" + key.substring(3);
+                        for (Object v : values) {
+                            sb.add(quoteFormatValueIfNecessary(v));
+                        }
+                    } else {
+                        // just expand
+                        for (Object v : values) {
+                            if (v != null) {
+                                sb.add(v.toString());
+                            }
+                        }
+                    }
+                    subSql = "\n" + sb.toString().trim() + "\n";
+                }
+                int partIndex;
+                while ((partIndex = noneStrSql.indexOf(trueKey)) != -1) {
+                    int start = StringUtil.searchIndexUntilNotBlank(noneStrSql, partIndex, true);
+                    int end = StringUtil.searchIndexUntilNotBlank(noneStrSql, partIndex + trueKey.length() - 1, false);
+                    noneStrSql = noneStrSql.substring(0, start + 1) + subSql + noneStrSql.substring(end);
+                }
+            }
+        }
+        if (exceptSubstr) {
+            for (String key : substrMapper.keySet()) {
+                noneStrSql = noneStrSql.replace(key, substrMapper.get(key));
+            }
+        }
+        return noneStrSql;
+    }
+
+    @SuppressWarnings("unchecked")
+    public static String resolveSqlStrTemplate(final String str, final Map<String, ?> args, boolean exceptSubstr) {
+        if (args == null || args.isEmpty()) {
+            return str;
+        }
+        String noneStrSql = str;
+        Map<String, String> substrMapper = null;
+        if (exceptSubstr) {
+            Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSqlSubstr(str);
+            noneStrSql = noneStrSqlAndHolder.getItem1();
+            substrMapper = noneStrSqlAndHolder.getItem2();
+        }
+        if (!noneStrSql.contains("${")) {
+            return str;
+        }
+        for (String key : args.keySet()) {
+            String tempKey = "${" + key + "}";
+            String tempArrKey = "${:" + key + "}";
+            if (StringUtil.containsAny(noneStrSql, tempKey, tempArrKey)) {
+                String trueKey = tempKey;
+                Object value = args.get(key);
+                String subSql = "";
+                if (value != null) {
+                    Object[] values;
+                    if (value instanceof Object[]) {
+                        values = (Object[]) value;
+                    } else if (value instanceof Collection) {
+                        values = ((Collection<Object>) value).toArray();
+                    } else {
+                        values = new Object[]{value};
+                    }
+                    StringJoiner sb = new StringJoiner(", ");
+                    if (noneStrSql.contains(tempArrKey)) {
+                        // expand and quote safe args
+                        trueKey = tempArrKey;
                         for (Object v : values) {
                             sb.add(quoteFormatValueIfNecessary(v));
                         }

@@ -224,13 +224,11 @@ public class MyTest {
 
     @Test
     public void query() throws Exception {
-        try (Stream<DataRow> s = baki.query("select * from test.region")) {
+        try (Stream<DataRow> s = baki.query("select ${fields} from test.region where id = :id",
+                Args.create("fields", Arrays.asList("name", "pid"), "id", 11))) {
             s.forEach(System.out::println);
         } catch (Exception e) {
             e.printStackTrace();
-        }
-        while (true) {
-
         }
     }
 

@@ -542,7 +542,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @throws IllegalArgumentException 如果严格模式下动态sql参数为null或空
      */
     @Override
-    protected String prepareSql(String sql, Map<String, ?> args) {
+    protected String getSql(String sql, Map<String, ?> args) {
         boolean hasArgs = args != null && !args.isEmpty();
         String trimEndedSql = SqlUtil.trimEnd(sql);
         if (sql.startsWith("&")) {

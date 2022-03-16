@@ -48,7 +48,7 @@ public class Pageable<T> extends IPageable<T> {
      */
     @Override
     public PagedResource<T> collect(Function<DataRow, T> mapper) {
-        String query = baki.prepareSql(recordQuery, args);
+        String query = baki.getSql(recordQuery, args);
         if (count == null) {
             String cq = countQuery;
             if (cq == null) {

@@ -72,7 +72,7 @@ public abstract class JdbcSupport {
      * @param args 参数
      * @return 处理后的sql
      */
-    protected abstract String prepareSql(String sql, Map<String, ?> args);
+    protected abstract String getSql(String sql, Map<String, ?> args);
 
     /**
      * 是否检查预编译sql对应的参数类型
@@ -128,7 +128,7 @@ public abstract class JdbcSupport {
      * @throws UncheckedSqlException sql执行过程中出现错误
      */
     public DataRow execute(final String sql, Map<String, ?> args) {
-        String sourceSql = prepareSql(sql, args);
+        String sourceSql = getSql(sql, args);
         log.debug("SQL:{}", SqlUtil.highlightSql(sourceSql));
         log.debug("Args:{}", args);
 
@@ -177,7 +177,7 @@ public abstract class JdbcSupport {
         if (args == null) {
             args = Collections.emptyMap();
         }
-        String sourceSql = prepareSql(sql, args);
+        String sourceSql = getSql(sql, args);
         log.debug("SQL:{}", SqlUtil.highlightSql(sourceSql));
         log.debug("Args:{}", args);
 
@@ -254,7 +254,7 @@ public abstract class JdbcSupport {
                 try {
                     statement = connection.createStatement();
                     for (String sql : sqls) {
-                        statement.addBatch(prepareSql(sql, Collections.emptyMap()));
+                        statement.addBatch(getSql(sql, Collections.emptyMap()));
                     }
                     return statement.executeBatch();
                 } catch (SQLException e) {
@@ -299,7 +299,7 @@ public abstract class JdbcSupport {
         boolean hasArgs = args != null && !args.isEmpty();
         if (hasArgs) {
             firstArg = args.iterator().next();
-            sourceSql = prepareSql(sql, firstArg);
+            sourceSql = getSql(sql, firstArg);
         }
         log.debug("SQL:{}", SqlUtil.highlightSql(sourceSql));
         if (hasArgs) {
@@ -366,7 +366,7 @@ public abstract class JdbcSupport {
         String sourceSql = procedure;
         boolean hasArgs = args != null && !args.isEmpty();
         if (hasArgs) {
-            sourceSql = prepareSql(procedure, Collections.emptyMap());
+            sourceSql = getSql(procedure, Collections.emptyMap());
         }
         log.debug("Procedure:{}", Printer.colorful(sourceSql, Color.YELLOW));
         log.debug("Args:{}", args);

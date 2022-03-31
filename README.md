@@ -8,7 +8,7 @@
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>6.1.0</version>
+    <version>6.1.1</version>
 </dependency>
 ```
 
@@ -167,7 +167,7 @@ xqlFileManager: {
 
 - 支持嵌套括号：`(`, `)`
 
-- 内置常量：`null` , `blank`(null或空白字符) , `true` , `false`
+- 内置常量：`null` , `blank`(null、空白字符、空数组、空集合) , `true` , `false`
 
 **表达式语法例子如下：**
 
@@ -280,7 +280,7 @@ dataSource.setUsername(...);
 dataSource.setDriverClassName("org.postgresql.Driver");
 XQLFileManager manager=new XQLFileManager(...);
 BakiDao baki=new BakiDao(dataSource);
-baki.setSqlFileManager(manager);
+baki.setXqlFileManager(manager);
 ```
 
 ### 流查询

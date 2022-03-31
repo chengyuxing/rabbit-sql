@@ -709,6 +709,16 @@ public class XQLFileManager {
     }
 
     /**
+     * 获取sql集
+     *
+     * @param name sql文件别名
+     * @return sql集
+     */
+    public DataRow getSqlEntry(String name) {
+        return RESOURCE.get(name);
+    }
+
+    /**
      * 获取一条sql
      *
      * @param name sql名

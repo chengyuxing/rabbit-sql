@@ -243,6 +243,7 @@ public class XQLFileManager {
      *
      * @param partName    sql片段名
      * @param sqlResource sql字符串文件资源
+     * @return 合并sql片段后的的sql资源
      */
     protected DataRow doMergeSqlPart(final String partName, DataRow sqlResource) {
         DataRow newSqlResource = sqlResource.cloneNew();
@@ -278,6 +279,7 @@ public class XQLFileManager {
      * 合并SQL可复用片段到包含片段名的SQL中
      *
      * @param sqlResource sql字符串资源
+     * @return 合并sql片段和常量后的sql资源
      */
     protected DataRow mergeSqlPartIfNecessary(DataRow sqlResource) {
         DataRow newSqlResource = sqlResource.cloneNew();

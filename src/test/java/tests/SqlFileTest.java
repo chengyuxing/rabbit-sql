@@ -31,8 +31,16 @@ public class SqlFileTest {
         sqlFileManager.add("data", "pgsql/data.sql");
         sqlFileManager.init();
         System.out.println("-------");
+        System.out.println("-------");
+        System.out.println("-------");
         System.out.println(sqlFileManager.get("data.logical", Args.<Object>of("name", "cyx").add("age", 101)));
-
+        sqlFileManager.foreachEntry((k, r) -> {
+            System.out.println(k + "----->" + r);
+        });
+        System.out.println(sqlFileManager.size());
+        System.out.println(sqlFileManager.names());
+        System.out.println(sqlFileManager.contains("data.${order}"));
+        System.out.println(sqlFileManager.contains("data.great.insert"));
     }
 
     @Test
@@ -44,7 +52,7 @@ public class SqlFileTest {
     public void sqlf() throws Exception {
         XQLFileManager sqlFileManager = new XQLFileManager();
         sqlFileManager.add("rabbit", "file:/Users/chengyuxing/Downloads/local.sql");
-//        sqlFileManager.init();
+        sqlFileManager.init();
         sqlFileManager.look();
     }
 

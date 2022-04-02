@@ -39,7 +39,17 @@ public interface Baki {
      * @param sqls 一组sql
      * @return 每条sql执行的结果
      */
-    int[] batchExecute(String... sqls);
+    int[] batchExecute(List<String> sqls);
+
+    /**
+     * 批量执行非查询sql
+     *
+     * @param sqls 一组sql
+     * @return 每条sql执行的结果
+     */
+    default int[] batchExecute(String... sqls) {
+        return batchExecute(Arrays.asList(sqls));
+    }
 
     /**
      * 插入

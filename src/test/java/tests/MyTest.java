@@ -170,8 +170,10 @@ public class MyTest {
                 .add("ts", "2020年2月12日 11:22:33")
                 .add("dtm", "")
                 .add("tm", "23时55分13秒")
+                .add("strs", Arrays.asList("1", "2", "3", "4"))
                 .add("bak", "ccc");
-        baki.insert("test.tb", args, false);
+//        baki.insert("test.tb", args, false);
+        baki.execute("insert into test.tb (ints) values (:arr)", Args.of("arr", new int[]{1, 2, 3, 4}));
     }
 
     @Test

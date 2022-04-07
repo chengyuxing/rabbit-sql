@@ -203,6 +203,17 @@ public class SqlUtil {
         if (clazz == Date.class) {
             return quote(((Date) obj).toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime().toString());
         }
+        if (clazz == byte[].class) {
+            return quote("blob:" + StringUtil.getSize((byte[]) obj));
+        }
+        if (Object[].class.isAssignableFrom(clazz)) {
+            Object[] objArr = (Object[]) obj;
+            String[] res = new String[objArr.length];
+            for (int i = 0; i < res.length; i++) {
+                res[i] = objArr[i].toString();
+            }
+            return quote("{" + String.join(",", res) + "}");
+        }
         // I think you wanna save json string
         if (Map.class.isAssignableFrom(clazz) ||
                 Collection.class.isAssignableFrom(clazz) ||
@@ -258,19 +269,20 @@ public class SqlUtil {
      * @return 预编译/普通sql和顺序的参数名集合
      */
     public static Pair<String, List<String>> generateSql(final String sql, Map<String, ?> args, boolean prepare) {
-        if (args.isEmpty()) {
-            return Pair.of(sql, Collections.emptyList());
+        Map<String, ?> argx = new HashMap<>();
+        if (args != null) {
+            argx = new HashMap<>(args);
         }
         // exclude substr first
         Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSqlSubstr(sql);
         // resolve the sql string template next
-        String noneStrSql = resolveSqlStrTemplate(noneStrSqlAndHolder.getItem1(), args, false);
+        String noneStrSql = resolveSqlStrTemplate(noneStrSqlAndHolder.getItem1(), argx, false);
         Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
         // maybe args contains substr.
         int x, y;
         while ((x = noneStrSql.indexOf("'")) >= 0 && (y = noneStrSql.lastIndexOf("'")) >= 0 && x != y) {
             Pair<String, Map<String, String>> againNoneStrSqlAndHolder = replaceSqlSubstr(noneStrSql);
-            noneStrSql = resolveSqlStrTemplate(againNoneStrSqlAndHolder.getItem1(), args, false);
+            noneStrSql = resolveSqlStrTemplate(againNoneStrSqlAndHolder.getItem1(), argx, false);
             placeholderMapper.putAll(againNoneStrSqlAndHolder.getItem2());
         }
         // safe to replace arg by name placeholder
@@ -279,7 +291,7 @@ public class SqlUtil {
         while (matcher.find()) {
             String name = matcher.group("name");
             names.add(name);
-            String value = prepare ? "?" : quoteFormatValueIfNecessary(args.get(name));
+            String value = prepare ? "?" : quoteFormatValueIfNecessary(argx.get(name));
             noneStrSql = noneStrSql.replaceFirst(":" + name, value);
         }
         // finally, set placeholder into none-string-part sql
@@ -307,68 +319,6 @@ public class SqlUtil {
      * @param exceptSubstr 是否排除子字符串 --如果子字符串中包含字符串模版占位符，true：不解析，false：解析
      * @return 替换模版占位符后的字符串
      */
-    @SuppressWarnings("unchecked")
-    public static String resolveSqlStrTemplate2(final String str, final Map<String, ?> args, boolean exceptSubstr) {
-        if (args == null || args.isEmpty()) {
-            return str;
-        }
-        String noneStrSql = str;
-        Map<String, String> substrMapper = null;
-        if (exceptSubstr) {
-            Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSqlSubstr(str);
-            noneStrSql = noneStrSqlAndHolder.getItem1();
-            substrMapper = noneStrSqlAndHolder.getItem2();
-        }
-        if (!noneStrSql.contains("${")) {
-            return str;
-        }
-        for (String key : args.keySet()) {
-            if (key.startsWith("${") && key.endsWith("}")) {
-                String trueKey = key;
-                Object value = args.get(key);
-                String subSql = "";
-                if (value != null) {
-                    Object[] values;
-                    if (value instanceof Object[]) {
-                        values = (Object[]) value;
-                    } else if (value instanceof Collection) {
-                        values = ((Collection<Object>) value).toArray();
-                    } else {
-                        values = new Object[]{value};
-                    }
-                    StringJoiner sb = new StringJoiner(", ");
-                    if (key.startsWith("${:")) {
-                        // expand and quote safe args
-                        trueKey = "${" + key.substring(3);
-                        for (Object v : values) {
-                            sb.add(quoteFormatValueIfNecessary(v));
-                        }
-                    } else {
-                        // just expand
-                        for (Object v : values) {
-                            if (v != null) {
-                                sb.add(v.toString());
-                            }
-                        }
-                    }
-                    subSql = "\n" + sb.toString().trim() + "\n";
-                }
-                int partIndex;
-                while ((partIndex = noneStrSql.indexOf(trueKey)) != -1) {
-                    int start = StringUtil.searchIndexUntilNotBlank(noneStrSql, partIndex, true);
-                    int end = StringUtil.searchIndexUntilNotBlank(noneStrSql, partIndex + trueKey.length() - 1, false);
-                    noneStrSql = noneStrSql.substring(0, start + 1) + subSql + noneStrSql.substring(end);
-                }
-            }
-        }
-        if (exceptSubstr) {
-            for (String key : substrMapper.keySet()) {
-                noneStrSql = noneStrSql.replace(key, substrMapper.get(key));
-            }
-        }
-        return noneStrSql;
-    }
-
     @SuppressWarnings("unchecked")
     public static String resolveSqlStrTemplate(final String str, final Map<String, ?> args, boolean exceptSubstr) {
         if (args == null || args.isEmpty()) {

@@ -118,7 +118,7 @@ public class BakiSessionTest {
         baki.query("select * from test.files")
                 .forEach(r -> {
                     System.out.println(r);
-                    byte[] bytes = r.get("file");
+                    byte[] bytes = r.getAs("file");
                     System.out.println(bytes.length);
 //                    baki.update("test.files", Args.builder()
 //                                    .putIn("name", "cyx's file")

@@ -194,7 +194,7 @@ public class MyTest {
     public void executeAny() throws Exception {
         DataRow row = baki.execute("(select current_date, current_time)");
         System.out.println(row);
-        row.<List<DataRow>>get(0)
+        row.<List<DataRow>>getAs(0)
                 .forEach(System.out::println);
         int i = OracleTypes.CURSOR;
 //        DataRow row1 = baki.execute("insert into test.tb(a,b) values (:a,:b)", Args.<Object>of("a", 5).add("b", 5));
@@ -423,9 +423,7 @@ public class MyTest {
     public void testCall() throws Exception {
         Tx.using(() -> baki.call("{:res = call test.fun_query()}",
                         Args.of("res", Param.OUT(OUTParamType.REF_CURSOR)))
-                .<List<DataRow>>get(0)
-                .stream()
-                .map(DataRow::toMap)
+                .<List<DataRow>>getAs(0)
                 .forEach(System.out::println));
     }
 
@@ -512,7 +510,7 @@ public class MyTest {
                         .add("b", Param.IN(22))
                         .add("sum", Param.OUT(OUTParamType.INTEGER))
                         .add("tm", Param.OUT(new TIME())));
-        Timestamp dt = row.get("dt");
+        Timestamp dt = row.getAs("dt");
         System.out.println(dt.toLocalDateTime());
         System.out.println(row);
         System.out.println((int) row.get("sum"));

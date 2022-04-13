@@ -220,11 +220,11 @@ public class JdbcUtil {
      * @throws SQLException sqlEx
      */
     public static DataRow createDataRow(String[] names, ResultSet resultSet) throws SQLException {
-        Object[] values = new Object[names.length];
+        DataRow row = DataRow.empty();
         for (int i = 0; i < names.length; i++) {
-            values[i] = JdbcUtil.getResultValue(resultSet, i + 1);
+            row.put(names[i], JdbcUtil.getResultValue(resultSet, i + 1));
         }
-        return DataRow.of(names, values);
+        return row;
     }
 
     /**

@@ -75,13 +75,6 @@ public class Tests {
 
     @Test
     public void Datarows() throws Exception {
-        Map<Integer, Object> map = new HashMap<>();
-        map.put(1, "a");
-        map.put(2, "2");
-        map.put(3, false);
-        map.put(4, 10.01);
-
-        DataRow row = DataRow.fromMap(map);
 
     }
 

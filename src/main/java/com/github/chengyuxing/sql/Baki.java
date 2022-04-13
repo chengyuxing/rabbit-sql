@@ -187,7 +187,7 @@ public interface Baki {
      */
     default List<Map<String, Object>> queryMaps(String sql) {
         try (Stream<DataRow> s = query(sql)) {
-            return s.map(DataRow::toMap).collect(Collectors.toList());
+            return s.collect(Collectors.toList());
         }
     }
 
@@ -200,7 +200,7 @@ public interface Baki {
      */
     default List<Map<String, Object>> queryMaps(String sql, Map<String, ?> args) {
         try (Stream<DataRow> s = query(sql, args)) {
-            return s.map(DataRow::toMap).collect(Collectors.toList());
+            return s.collect(Collectors.toList());
         }
     }
 
@@ -239,7 +239,7 @@ public interface Baki {
      * @return 一条数据
      */
     default Map<String, Object> fetchMap(String sql) {
-        return fetch(sql).map(DataRow::toMap).orElseGet(HashMap::new);
+        return fetch(sql).orElseGet(DataRow::new);
     }
 
     /**
@@ -250,7 +250,7 @@ public interface Baki {
      * @return 一条数据
      */
     default Map<String, Object> fetchMap(String sql, Map<String, ?> args) {
-        return fetch(sql, args).map(DataRow::toMap).orElseGet(HashMap::new);
+        return fetch(sql, args).orElseGet(DataRow::new);
     }
 
     /**

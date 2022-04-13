@@ -112,13 +112,14 @@ public class ControlTest {
 
     @Test
     public void sqlPart() throws Exception {
-        String sql = "select ${fields} from test.user where id in (${:ids},${fields}) and id = :id";
+        String sql = "select ${fields} from test.user where ${cnd}";
         System.out.println(sql.length());
         Args<Object> args = Args.<Object>of("ids", Arrays.asList("I'm Ok!", "b", "c"))
                 .add("fields", "id, name, age")
-                .add("id", 10);
+                .add("id", 10)
+                .add("cnd", "id in (${:ids},${fields}) and id = :id");
 
-        System.out.println(SqlUtil.resolveSqlStrTemplate(sql, args, true));
+        System.out.println(SqlUtil.resolveSqlStrTemplate(sql, args));
     }
 
     @Test

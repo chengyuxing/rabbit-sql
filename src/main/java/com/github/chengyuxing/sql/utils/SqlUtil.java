@@ -276,13 +276,13 @@ public class SqlUtil {
         // exclude substr first
         Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSqlSubstr(sql);
         // resolve the sql string template next
-        String noneStrSql = resolveSqlStrTemplate(noneStrSqlAndHolder.getItem1(), argx, false);
+        String noneStrSql = resolveSqlStrTemplate(noneStrSqlAndHolder.getItem1(), argx);
         Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
         // maybe args contains substr.
         int x, y;
         while ((x = noneStrSql.indexOf("'")) >= 0 && (y = noneStrSql.lastIndexOf("'")) >= 0 && x != y) {
             Pair<String, Map<String, String>> againNoneStrSqlAndHolder = replaceSqlSubstr(noneStrSql);
-            noneStrSql = resolveSqlStrTemplate(againNoneStrSqlAndHolder.getItem1(), argx, false);
+            noneStrSql = resolveSqlStrTemplate(againNoneStrSqlAndHolder.getItem1(), argx);
             placeholderMapper.putAll(againNoneStrSqlAndHolder.getItem2());
         }
         // safe to replace arg by name placeholder
@@ -314,23 +314,16 @@ public class SqlUtil {
     /**
      * 解析字符串模版
      *
-     * @param str          带有字符串模版占位符的字符串
-     * @param args         参数
-     * @param exceptSubstr 是否排除子字符串 --如果子字符串中包含字符串模版占位符，true：不解析，false：解析
+     * @param str  带有字符串模版占位符的字符串
+     * @param args 参数
      * @return 替换模版占位符后的字符串
      */
     @SuppressWarnings("unchecked")
-    public static String resolveSqlStrTemplate(final String str, final Map<String, ?> args, boolean exceptSubstr) {
+    public static String resolveSqlStrTemplate(final String str, final Map<String, ?> args) {
         if (args == null || args.isEmpty()) {
             return str;
         }
         String noneStrSql = str;
-        Map<String, String> substrMapper = null;
-        if (exceptSubstr) {
-            Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSqlSubstr(str);
-            noneStrSql = noneStrSqlAndHolder.getItem1();
-            substrMapper = noneStrSqlAndHolder.getItem2();
-        }
         if (!noneStrSql.contains("${")) {
             return str;
         }
@@ -375,10 +368,8 @@ public class SqlUtil {
                 }
             }
         }
-        if (exceptSubstr) {
-            for (String key : substrMapper.keySet()) {
-                noneStrSql = noneStrSql.replace(key, substrMapper.get(key));
-            }
+        if (noneStrSql.contains("${")) {
+            return resolveSqlStrTemplate(noneStrSql, args);
         }
         return noneStrSql;
     }

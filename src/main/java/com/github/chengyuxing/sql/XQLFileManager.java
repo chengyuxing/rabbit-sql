@@ -1,6 +1,5 @@
 package com.github.chengyuxing.sql;
 
-import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.WatchDog;
 import com.github.chengyuxing.common.console.Color;
 import com.github.chengyuxing.common.console.Printer;
@@ -120,7 +119,7 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
 public class XQLFileManager {
     private final static Logger log = LoggerFactory.getLogger(XQLFileManager.class);
     private final ReentrantLock lock = new ReentrantLock();
-    private final Map<String, DataRow> RESOURCE = new HashMap<>();
+    private final Map<String, Map<String, String>> RESOURCE = new HashMap<>();
     private final Map<String, Long> LAST_MODIFIED = new HashMap<>();
     private static final Pattern NAME_PATTERN = Pattern.compile("/\\*\\s*\\[\\s*(?<name>\\S+)\\s*]\\s*\\*/");
     private static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+)\\s*}\\s*\\*/");
@@ -189,7 +188,7 @@ public class XQLFileManager {
      * @throws DuplicateException 如果同一个文件中有重复的内容命名
      */
     protected void resolveSqlContent(String name, FileResource resource) throws IOException {
-        DataRow singleResource = DataRow.empty();
+        Map<String, String> singleResource = new LinkedHashMap<>();
         String blockName = "";
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()))) {
             String line;
@@ -200,16 +199,16 @@ public class XQLFileManager {
                     Matcher m_part = PART_PATTERN.matcher(trimLine);
                     if (m_name.matches()) {
                         blockName = m_name.group("name");
-                        if (singleResource.containsName(blockName)) {
+                        if (singleResource.containsKey(blockName)) {
                             throw new DuplicateException("same sql fragment name: " + blockName);
                         }
-                        singleResource = singleResource.put(blockName, "");
+                        singleResource.put(blockName, "");
                     } else if (m_part.matches()) {
                         blockName = "${" + m_part.group("part") + "}";
-                        if (singleResource.containsName(blockName)) {
+                        if (singleResource.containsKey(blockName)) {
                             throw new DuplicateException("same sql template name: " + blockName);
                         }
-                        singleResource = singleResource.put(blockName, "");
+                        singleResource.put(blockName, "");
                     } else {
                         // exclude single line annotation except expression keywords
                         if (!trimLine.startsWith("--") || (StringUtil.startsWithsIgnoreCase(formatAnonExpIf(trimLine), IF, FI, CHOOSE, WHEN, SWITCH, CASE, DEFAULT, BREAK, END))) {
@@ -217,11 +216,11 @@ public class XQLFileManager {
                                 String prepareLine = singleResource.get(blockName) + line;
                                 if (trimLine.endsWith(";")) {
                                     String naSql = removeAnnotationBlock(prepareLine);
-                                    singleResource = singleResource.put(blockName, naSql.substring(0, naSql.lastIndexOf(";")));
+                                    singleResource.put(blockName, naSql.substring(0, naSql.lastIndexOf(";")));
                                     log.debug("scan to get sql [{}]：{}", blockName, SqlUtil.highlightSql(singleResource.get(blockName)));
                                     blockName = "";
                                 } else {
-                                    singleResource = singleResource.put(blockName, prepareLine.concat(NEW_LINE));
+                                    singleResource.put(blockName, prepareLine.concat(NEW_LINE));
                                 }
                             }
                         }
@@ -231,11 +230,12 @@ public class XQLFileManager {
             // if last part of sql is not ends with ';' symbol
             if (!blockName.equals("")) {
                 String lastSql = singleResource.get(blockName);
-                singleResource = singleResource.put(blockName, removeAnnotationBlock(lastSql));
+                singleResource.put(blockName, removeAnnotationBlock(lastSql));
                 log.debug("scan to get sql [{}]：{}", blockName, SqlUtil.highlightSql(lastSql));
             }
         }
-        RESOURCE.put(name, mergeSqlPartIfNecessary(singleResource));
+        mergeSqlPartIfNecessary(singleResource);
+        RESOURCE.put(name, singleResource);
     }
 
     /**
@@ -243,17 +243,15 @@ public class XQLFileManager {
      *
      * @param partName    sql片段名
      * @param sqlResource sql字符串文件资源
-     * @return 合并sql片段后的的sql资源
      */
-    protected DataRow doMergeSqlPart(final String partName, DataRow sqlResource) {
-        DataRow newSqlResource = sqlResource.cloneNew();
-        for (String key : newSqlResource.getNames()) {
-            Pair<String, Map<String, String>> sqlAndSubstr = SqlUtil.replaceSqlSubstr(newSqlResource.get(key));
+    protected void doMergeSqlPart(final String partName, Map<String, String> sqlResource) {
+        for (String key : sqlResource.keySet()) {
+            Pair<String, Map<String, String>> sqlAndSubstr = SqlUtil.replaceSqlSubstr(sqlResource.get(key));
             // get sql without substr first.
             String sql = sqlAndSubstr.getItem1();
             int partIndex;
             while ((partIndex = sql.indexOf(partName)) != -1) {
-                String sqlPart = newSqlResource.getString(partName);
+                String sqlPart = sqlResource.get(partName);
                 if (sqlPart != null) {
                     sqlPart = sqlPart.trim();
                     String part = NEW_LINE + sqlPart + NEW_LINE;
@@ -268,29 +266,26 @@ public class XQLFileManager {
                             sql = sql.replace(substrKey, substr.get(substrKey));
                         }
                     }
-                    newSqlResource = newSqlResource.put(key, sql);
+                    sqlResource.put(key, sql);
                 }
             }
         }
-        return newSqlResource;
     }
 
     /**
      * 合并SQL可复用片段到包含片段名的SQL中
      *
      * @param sqlResource sql字符串资源
-     * @return 合并sql片段和常量后的sql资源
      */
-    protected DataRow mergeSqlPartIfNecessary(DataRow sqlResource) {
-        DataRow newSqlResource = sqlResource.cloneNew();
-        for (String key : newSqlResource.getNames()) {
+    protected void mergeSqlPartIfNecessary(Map<String, String> sqlResource) {
+        for (String key : sqlResource.keySet()) {
             if (key.startsWith("${")) {
-                newSqlResource = doMergeSqlPart(key, newSqlResource);
+                doMergeSqlPart(key, sqlResource);
             }
         }
         if (constants != null && !constants.isEmpty()) {
-            for (String name : newSqlResource.getNames()) {
-                Pair<String, Map<String, String>> sqlAndSubstr = SqlUtil.replaceSqlSubstr(newSqlResource.get(name));
+            for (String name : sqlResource.keySet()) {
+                Pair<String, Map<String, String>> sqlAndSubstr = SqlUtil.replaceSqlSubstr(sqlResource.get(name));
                 // get sql without substr first.
                 String sql = sqlAndSubstr.getItem1();
                 for (String key : constants.keySet()) {
@@ -310,10 +305,9 @@ public class XQLFileManager {
                         sql = sql.replace(substrKey, substr.get(substrKey));
                     }
                 }
-                newSqlResource = newSqlResource.put(name, sql);
+                sqlResource.put(name, sql);
             }
         }
-        return newSqlResource;
     }
 
     /**
@@ -642,12 +636,12 @@ public class XQLFileManager {
      * 遍历查看已扫描的sql资源
      */
     public void look() {
-        RESOURCE.forEach((k, v) -> v.foreach((n, o) -> {
+        RESOURCE.forEach((k, v) -> v.forEach((n, o) -> {
             Color color = Color.PURPLE;
             if (n.startsWith("${")) {
                 color = Color.GREEN;
             }
-            System.out.println(Printer.colorful(k + "." + n, color) + " -> " + SqlUtil.highlightSql(o.toString()));
+            System.out.println(Printer.colorful(k + "." + n, color) + " -> " + SqlUtil.highlightSql(o));
         }));
     }
 
@@ -657,7 +651,7 @@ public class XQLFileManager {
      * @param kvFunc 回调函数
      */
     public void foreach(BiConsumer<String, String> kvFunc) {
-        foreachEntry((k, r) -> r.foreach((n, o) -> kvFunc.accept(k + "." + n, o.toString())));
+        foreachEntry((k, r) -> r.forEach((n, o) -> kvFunc.accept(k + "." + n, o)));
     }
 
     /**
@@ -665,7 +659,7 @@ public class XQLFileManager {
      *
      * @param krFunc 回调函数
      */
-    public void foreachEntry(BiConsumer<String, DataRow> krFunc) {
+    public void foreachEntry(BiConsumer<String, Map<String, String>> krFunc) {
         RESOURCE.forEach(krFunc);
     }
 
@@ -676,7 +670,7 @@ public class XQLFileManager {
      */
     public Set<String> names() {
         Set<String> names = new HashSet<>();
-        foreachEntry((k, r) -> r.getNames().forEach(n -> names.add(k + "." + n)));
+        foreachEntry((k, r) -> r.keySet().forEach(n -> names.add(k + "." + n)));
         return names;
     }
 
@@ -705,7 +699,7 @@ public class XQLFileManager {
             return false;
         }
         String sqlName = name.substring(name.indexOf(".") + 1);
-        return RESOURCE.get(fileAlias).containsName(sqlName);
+        return RESOURCE.get(fileAlias).containsKey(sqlName);
     }
 
     /**
@@ -714,7 +708,7 @@ public class XQLFileManager {
      * @param name sql文件别名
      * @return sql集
      */
-    public DataRow getSqlEntry(String name) {
+    public Map<String, String> getSqlEntry(String name) {
         return RESOURCE.get(name);
     }
 
@@ -728,10 +722,10 @@ public class XQLFileManager {
     public String get(String name) {
         String fileAlias = name.substring(0, name.indexOf("."));
         if (RESOURCE.containsKey(fileAlias)) {
-            DataRow sqlsRow = RESOURCE.get(fileAlias);
+            Map<String, String> sqlsRow = RESOURCE.get(fileAlias);
             String sqlName = name.substring(name.indexOf(".") + 1);
-            if (sqlsRow.containsName(sqlName)) {
-                return sqlsRow.getString(sqlName);
+            if (sqlsRow.containsKey(sqlName)) {
+                return sqlsRow.get(sqlName);
             }
         }
         throw new NoSuchElementException(String.format("no SQL named [%s] was found.", name));

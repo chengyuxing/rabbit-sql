@@ -34,18 +34,17 @@ public class SqlUtil {
      * @param fields 需要包含的字段集合
      * @return 满足条件的字段
      */
-    @SuppressWarnings("Java8CollectionRemoveIf")
     public static Set<String> filterKeys(final Map<String, ?> row, List<String> fields) {
-        Set<String> keys = row.keySet();
-        if (fields != null && !fields.isEmpty()) {
-            Iterator<String> keyIterator = keys.iterator();
-            while (keyIterator.hasNext()) {
-                if (!fields.contains(keyIterator.next())) {
-                    keyIterator.remove();
-                }
+        if (fields == null || fields.isEmpty()) {
+            return row.keySet();
+        }
+        Set<String> set = new HashSet<>();
+        for (String k : row.keySet()) {
+            if (fields.contains(k)) {
+                set.add(k);
             }
         }
-        return keys;
+        return set;
     }
 
     /**

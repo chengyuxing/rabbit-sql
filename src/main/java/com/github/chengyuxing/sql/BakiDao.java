@@ -361,7 +361,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     @Override
     public Stream<DataRow> query(String sql) {
-        return query(sql, Args.create());
+        return query(sql, new DataRow(0));
     }
 
     /**
@@ -408,7 +408,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     @Override
     public Optional<DataRow> fetch(String sql) {
-        return fetch(sql, Args.create());
+        return fetch(sql, new DataRow(0));
     }
 
     /**

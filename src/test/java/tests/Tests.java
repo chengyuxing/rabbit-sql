@@ -292,8 +292,14 @@ public class Tests {
                 "words", "it's my time!",
                 "dt", LocalDateTime.now());
         System.out.println(row);
-        System.out.println(SqlUtil.generatePreparedInsert("t.user", row.toMap(), Collections.emptyList()));
-        System.out.println(SqlUtil.generateInsert("t.user", row.toMap(), Collections.emptyList()));
+
+        Args<Object> args = Args.create("id", 15,
+                "name", "chengyuxing",
+                "words", "it's my time!",
+                "dt", LocalDateTime.now());
+
+        System.out.println(SqlUtil.generatePreparedInsert("t.user", args, Arrays.asList("id","name","asx")));
+        System.out.println(SqlUtil.generateInsert("t.user", args, Collections.emptyList()));
 
     }
 }

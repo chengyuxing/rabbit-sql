@@ -239,7 +239,7 @@ public interface Baki {
      * @return 一条数据
      */
     default Map<String, Object> fetchMap(String sql) {
-        return fetch(sql).orElseGet(DataRow::new);
+        return fetch(sql).orElseGet(() -> new DataRow(0));
     }
 
     /**
@@ -250,7 +250,7 @@ public interface Baki {
      * @return 一条数据
      */
     default Map<String, Object> fetchMap(String sql, Map<String, ?> args) {
-        return fetch(sql, args).orElseGet(DataRow::new);
+        return fetch(sql, args).orElseGet(() -> new DataRow(0));
     }
 
     /**

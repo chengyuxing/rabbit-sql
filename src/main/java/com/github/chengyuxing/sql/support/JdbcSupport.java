@@ -412,7 +412,7 @@ public abstract class JdbcSupport {
                 }
                 return DataRow.of(outNames.toArray(new String[0]), values);
             }
-            return DataRow.empty();
+            return new DataRow(0);
         } catch (SQLException e) {
             try {
                 JdbcUtil.closeStatement(statement);

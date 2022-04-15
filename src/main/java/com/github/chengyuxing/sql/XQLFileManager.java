@@ -109,11 +109,12 @@ public class XQLFileManager {
     public static final String BREAK = "#break";
     public static final String END = "#end";
     private WatchDog watchDog = null;
+    private volatile boolean loading;
     // ----------------optional properties------------------
     private Map<String, String> files = new HashMap<>();
     private Map<String, String> constants = new HashMap<>();
+    private int checkPeriod = 30; //seconds
     private volatile boolean checkModified;
-    private int checkPeriod = 30;
     private volatile boolean initialized;
     private Charset charset = StandardCharsets.UTF_8;
     private String delimiter = ";";
@@ -268,6 +269,7 @@ public class XQLFileManager {
     protected List<String> loadResource() {
         lock.lock();
         try {
+            loading = true;
             List<String> msg = new ArrayList<>();
             for (Map.Entry<String, String> fileE : files.entrySet()) {
                 FileResource cr = new FileResource(fileE.getValue());
@@ -299,6 +301,7 @@ public class XQLFileManager {
         } catch (URISyntaxException e) {
             throw new RuntimeException("sql file uri syntax error: ", e);
         } finally {
+            loading = false;
             lock.unlock();
         }
     }
@@ -758,6 +761,7 @@ public class XQLFileManager {
      * @param charset 编码
      */
     public void setCharset(Charset charset) {
+        checkConcurrentModify("cannot set charset when loading...");
         this.charset = charset;
     }
 
@@ -783,6 +787,7 @@ public class XQLFileManager {
      * @param constants 常量集合
      */
     public void setConstants(Map<String, String> constants) {
+        checkConcurrentModify("cannot set when loading...");
         this.constants = constants;
         log.debug("global constants defined: {}", constants);
     }
@@ -814,6 +819,18 @@ public class XQLFileManager {
      * @param delimiter sql块分隔符
      */
     public void setDelimiter(String delimiter) {
+        checkConcurrentModify("cannot set delimiter when loading...");
         this.delimiter = delimiter;
+    }
+
+    /**
+     * 如果在多线程情况下进行非法操作，抛出异常
+     *
+     * @param msg 异常信息
+     */
+    private void checkConcurrentModify(String msg) {
+        if (loading) {
+            throw new ConcurrentModificationException(msg);
+        }
     }
 }

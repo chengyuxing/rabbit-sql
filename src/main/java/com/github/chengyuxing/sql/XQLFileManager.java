@@ -6,7 +6,6 @@ import com.github.chengyuxing.common.console.Printer;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.script.Comparators;
 import com.github.chengyuxing.common.script.impl.FastExpression;
-import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.exceptions.DuplicateException;
 import com.github.chengyuxing.sql.exceptions.DynamicSQLException;
@@ -16,6 +15,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
@@ -27,10 +28,11 @@ import static com.github.chengyuxing.common.utils.StringUtil.*;
 import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
 
 /**
- * 支持扩展脚本解析动态SQL的文件管理器<br>
- * <p>支持外部sql(本地文件系统)和classpath下的sql，
+ * <h2>支持扩展脚本解析动态SQL的文件管理器</h2>
+ * 基于按行解析的逻辑，理论上单个SQL文件大小没有限制，可以无压力快速解析，每个SQL文件解析到的SQL块都是有序的。<br>
+ * 支持外部sql(本地文件系统)和classpath下的sql，
  * 本地sql文件以 {@code file:} 开头，默认读取<strong>classpath</strong>下的sql文件，识别的文件格式支持: {@code .xql.sql}，
- * 默认情况下两种文件内容没区别，仅需内容遵循格式。</p>
+ * 默认情况下两种文件内容没区别，仅需内容遵循格式，{@code .xql}结尾用来表示此类型文件是{@link XQLFileManager}所支持的扩展的sql文件。
  * <blockquote>
  *     <ul>
  *         <li><pre>windows文件系统: file:\\D:\\rabbit.s(x)ql</pre></li>
@@ -86,10 +88,7 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
  * --#end
  * </pre>
  * </blockquote>
- * <p>参考：</p>
- * <blockquote>
- * data.xql.template
- * </blockquote>
+ * 具体参考classpath下的文件：data.xql.template
  */
 public class XQLFileManager {
     private final static Logger log = LoggerFactory.getLogger(XQLFileManager.class);
@@ -111,11 +110,13 @@ public class XQLFileManager {
     public static final String END = "#end";
     private WatchDog watchDog = null;
     // ----------------optional properties------------------
+    private Map<String, String> files = new HashMap<>();
+    private Map<String, String> constants = new HashMap<>();
     private volatile boolean checkModified;
     private int checkPeriod = 30;
-    private Map<String, String> constants = new HashMap<>();
-    private Map<String, String> files = new HashMap<>();
-    private volatile boolean initialized = false;
+    private volatile boolean initialized;
+    private Charset charset = StandardCharsets.UTF_8;
+    private String delimiter = ";";
 
     /**
      * Sql文件解析器实例
@@ -166,7 +167,7 @@ public class XQLFileManager {
     protected void resolveSqlContent(String name, FileResource resource) throws IOException {
         Map<String, String> singleResource = new LinkedHashMap<>();
         String blockName = "";
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()))) {
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream(), charset))) {
             String line;
             while ((line = reader.readLine()) != null) {
                 String trimLine = line.trim();
@@ -190,9 +191,9 @@ public class XQLFileManager {
                         if (!trimLine.startsWith("--") || (StringUtil.startsWithsIgnoreCase(formatAnonExpIf(trimLine), IF, FI, CHOOSE, WHEN, SWITCH, CASE, DEFAULT, BREAK, END))) {
                             if (!blockName.equals("")) {
                                 String prepareLine = singleResource.get(blockName) + line;
-                                if (trimLine.endsWith(";")) {
+                                if (trimLine.endsWith(delimiter)) {
                                     String naSql = removeAnnotationBlock(prepareLine);
-                                    singleResource.put(blockName, naSql.substring(0, naSql.lastIndexOf(";")).trim());
+                                    singleResource.put(blockName, naSql.substring(0, naSql.lastIndexOf(delimiter)).trim());
                                     log.debug("scan to get sql [{}]：{}", blockName, SqlUtil.highlightSql(singleResource.get(blockName)));
                                     blockName = "";
                                 } else {
@@ -221,12 +222,12 @@ public class XQLFileManager {
      * @param sqlResource sql字符串文件资源
      */
     protected void doMergeSqlPart(final String partName, Map<String, String> sqlResource) {
-        for (String key : sqlResource.keySet()) {
-            String sql = sqlResource.get(key);
+        for (Map.Entry<String, String> e : sqlResource.entrySet()) {
+            String sql = e.getValue();
             if (sql.contains(partName)) {
                 String sqlPart = sqlResource.get(partName);
                 sql = sql.replace(partName, sqlPart);
-                sqlResource.put(key, sql);
+                e.setValue(sql);
             }
         }
     }
@@ -243,28 +244,17 @@ public class XQLFileManager {
             }
         }
         if (constants != null && !constants.isEmpty()) {
-            for (String name : sqlResource.keySet()) {
-                Pair<String, Map<String, String>> sqlAndSubstr = SqlUtil.replaceSqlSubstr(sqlResource.get(name));
-                // get sql without substr first.
-                String sql = sqlAndSubstr.getItem1();
-                for (String key : constants.keySet()) {
-                    String constantName = "${" + key + "}";
+            for (Map.Entry<String, String> sqlE : sqlResource.entrySet()) {
+                String sql = sqlE.getValue();
+                for (Map.Entry<String, String> constE : constants.entrySet()) {
+                    String constantName = "${" + constE.getKey() + "}";
                     if (sql.contains(constantName)) {
-                        String constant = getConstant(key);
-                        // insert sql part first without substr because we not allow substr sql part e.g. '${partName}'
-                        sql = sql.replace(constantName, constant);
+                        sql = sql.replace(constantName, constE.getValue());
                     } else {
                         break;
                     }
                 }
-                // then reinsert substr into the sql
-                Map<String, String> substr = sqlAndSubstr.getItem2();
-                if (!substr.isEmpty()) {
-                    for (String substrKey : substr.keySet()) {
-                        sql = sql.replace(substrKey, substr.get(substrKey));
-                    }
-                }
-                sqlResource.put(name, sql);
+                sqlE.setValue(sql);
             }
         }
     }
@@ -279,8 +269,8 @@ public class XQLFileManager {
         lock.lock();
         try {
             List<String> msg = new ArrayList<>();
-            for (String name : files.keySet()) {
-                FileResource cr = new FileResource(files.get(name));
+            for (Map.Entry<String, String> fileE : files.entrySet()) {
+                FileResource cr = new FileResource(fileE.getValue());
                 if (cr.exists()) {
                     String suffix = cr.getFilenameExtension();
                     if (suffix != null && (suffix.equals("sql") || suffix.equals("xql"))) {
@@ -289,18 +279,18 @@ public class XQLFileManager {
                             long timestamp = LAST_MODIFIED.get(fileName);
                             long lastModified = cr.getLastModified();
                             if (timestamp != -1 && timestamp != 0 && timestamp != lastModified) {
-                                resolveSqlContent(name, cr);
+                                resolveSqlContent(fileE.getKey(), cr);
                                 LAST_MODIFIED.put(fileName, lastModified);
                                 msg.add("reload modified sql file: " + fileName);
                             }
                         } else {
-                            resolveSqlContent(name, cr);
+                            resolveSqlContent(fileE.getKey(), cr);
                             LAST_MODIFIED.put(fileName, cr.getLastModified());
                             msg.add("load new sql file: " + fileName);
                         }
                     }
                 } else {
-                    throw new FileNotFoundException("sql file of name'" + name + "' not found!");
+                    throw new FileNotFoundException("sql file of name'" + fileE.getKey() + "' not found!");
                 }
             }
             return msg;
@@ -641,8 +631,8 @@ public class XQLFileManager {
      */
     public int size() {
         int i = 0;
-        for (String key : RESOURCE.keySet()) {
-            i += RESOURCE.get(key).size();
+        for (Map<String, String> e : RESOURCE.values()) {
+            i += e.size();
         }
         return i;
     }
@@ -754,7 +744,7 @@ public class XQLFileManager {
     }
 
     /**
-     * 获取文件检查周期
+     * 获取文件检查周期，默认为30秒，配合方法：{@link #setCheckModified(boolean)} -> true 来使用
      *
      * @return 文件检查周期
      */
@@ -763,7 +753,16 @@ public class XQLFileManager {
     }
 
     /**
-     * 获取是否已调用过初始化方法
+     * 设置解析sql文件使用的编码格式，默认为UTF-8
+     *
+     * @param charset 编码
+     */
+    public void setCharset(Charset charset) {
+        this.charset = charset;
+    }
+
+    /**
+     * 获取是否已调用过初始化方法，此方法不影响重复初始化
      *
      * @return 是否已调用过初始化方法
      */
@@ -805,5 +804,16 @@ public class XQLFileManager {
      */
     public String getConstant(String key) {
         return constants.get(key);
+    }
+
+    /**
+     * 每个文件的sql片段块解析分隔符，每一段完整的sql根据此设置来进行区分，生效于方法：{@link #resolveSqlContent(String, FileResource)}，
+     * 默认是单个分号（{@code ;}）遵循标准sql文件多段sql分隔符，但是有一种情况，如果sql文件内有<b>psql</b>：{@code create function...} 或 {@code create procedure...}等，
+     * 内部会包含多段sql多个分号，为防止解析异常，单独设置自定义的分隔符，例如（{@code ;;}）双分号，也是标准sql所支持的，此处别有他用。
+     *
+     * @param delimiter sql块分隔符
+     */
+    public void setDelimiter(String delimiter) {
+        this.delimiter = delimiter;
     }
 }

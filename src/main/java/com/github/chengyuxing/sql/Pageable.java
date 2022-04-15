@@ -42,7 +42,7 @@ public class Pageable<T> extends IPageable<T> {
      *
      * @param mapper 行数据映射函数
      * @return 分页数据
-     * @throws UncheckedSqlException           sql执行过程中出现错误或读取结果集是出现错误
+     * @throws UncheckedSqlException         sql执行过程中出现错误或读取结果集是出现错误
      * @throws UnsupportedOperationException 如果没有自定分页，而默认分页不支持当前数据库
      * @throws ConnectionStatusException     如果连接对象异常
      */

@@ -327,14 +327,14 @@ public class SqlUtil {
         if (args == null || args.isEmpty()) {
             return str;
         }
-        String noneStrSql = str;
-        if (!noneStrSql.contains("${") || deep == 0) {
+        String sql = str;
+        if (!sql.contains("${") || deep == 0) {
             return str;
         }
         for (String key : args.keySet()) {
             String tempKey = "${" + key + "}";
             String tempArrKey = "${:" + key + "}";
-            if (StringUtil.containsAny(noneStrSql, tempKey, tempArrKey)) {
+            if (StringUtil.containsAny(sql, tempKey, tempArrKey)) {
                 String trueKey = tempKey;
                 Object value = args.get(key);
                 String subSql = "";
@@ -348,7 +348,7 @@ public class SqlUtil {
                         values = new Object[]{value};
                     }
                     StringJoiner sb = new StringJoiner(", ");
-                    if (noneStrSql.contains(tempArrKey)) {
+                    if (sql.contains(tempArrKey)) {
                         // expand and quote safe args
                         trueKey = tempArrKey;
                         for (Object v : values) {
@@ -364,13 +364,13 @@ public class SqlUtil {
                     }
                     subSql = sb.toString().trim();
                 }
-                noneStrSql = noneStrSql.replace(trueKey, subSql);
+                sql = sql.replace(trueKey, subSql);
             }
         }
-        if (noneStrSql.contains("${")) {
-            return resolveSqlStrTemplateRec(noneStrSql, args, --deep);
+        if (sql.contains("${") && sql.contains("}")) {
+            return resolveSqlStrTemplateRec(sql, args, --deep);
         }
-        return noneStrSql;
+        return sql;
     }
 
     /**

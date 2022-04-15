@@ -117,9 +117,38 @@ public class ControlTest {
         Args<Object> args = Args.<Object>of("ids", Arrays.asList("I'm Ok!", "b", "c"))
                 .add("fields", "id, name, age")
                 .add("id", 10)
-                .add("cnd", "id in (${:ids},${fields}) and id = :id");
+                .add("ids",Arrays.asList("a","b","c"))
+                .add("date", "2020-12-23 ${:time}")
+                .add("time", "11:23:44")
+                .add("cnd", "id in (${:ids},${fields}) and id = :id or ${date} '${'");
+
+//        mergeMap(args);
 
         System.out.println(SqlUtil.resolveSqlStrTemplate(sql, args));
+    }
+
+    public static void mergeMap(Map<String, Object> args) {
+        Map<String, Object> deepMergedArgs = new HashMap<>(args);
+        for (Map.Entry<String, ?> entry : deepMergedArgs.entrySet()) {
+            String key = entry.getKey();
+            String k1 = "${" + key + "}";
+            String k2 = "${:" + key + "}";
+            if (entry.getValue() instanceof String) {
+                for (String x : deepMergedArgs.keySet()) {
+                    String sql = deepMergedArgs.get(x).toString();
+                    if (sql.contains(k1) || sql.contains(k2)) {
+                        String sqlPart = deepMergedArgs.get(key).toString();
+                        if (sql.contains(k1)) {
+                            sql = sql.replace(k1, sqlPart);
+                        } else {
+                            sql = sql.replace(k2, sqlPart);
+                        }
+                        deepMergedArgs.put(x, sql);
+                    }
+                }
+            }
+        }
+        deepMergedArgs.forEach((k, v) -> System.out.println(k + " -> " + v));
     }
 
     @Test

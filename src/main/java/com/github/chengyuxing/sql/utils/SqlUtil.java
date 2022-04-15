@@ -1,5 +1,6 @@
 package com.github.chengyuxing.sql.utils;
 
+import com.github.chengyuxing.common.DateTimes;
 import com.github.chengyuxing.common.console.Color;
 import com.github.chengyuxing.common.console.Printer;
 import com.github.chengyuxing.common.tuple.Pair;
@@ -7,6 +8,9 @@ import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.Keywords;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -113,9 +117,10 @@ public class SqlUtil {
         List<String> cndFields = sqlAndFields.getItem2();
         String w = sqlAndFields.getItem1();
         StringJoiner sb = new StringJoiner(",\n\t");
-        for (String key : data.keySet()) {
+        for (Map.Entry<String, ?> e : data.entrySet()) {
+            String key = e.getKey();
             if (!key.startsWith("${") && !key.endsWith("}")) {
-                String value = quoteFormatValueIfNecessary(data.get(key));
+                String value = quoteFormatValueIfNecessary(e.getValue());
                 if (!cndFields.contains(key)) {
                     sb.add(key + " = " + value);
                 } else {
@@ -200,7 +205,16 @@ public class SqlUtil {
             return obj.toString();
         }
         if (clazz == Date.class) {
-            return quote(((Date) obj).toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime().toString());
+            return quote(DateTimes.of(((Date) obj).toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()).toString("yyyy-MM-dd HH:mm:ss"));
+        }
+        if (clazz == LocalDateTime.class) {
+            return quote(DateTimes.of((LocalDateTime) obj).toString("yyyy-MM-dd HH:mm:ss"));
+        }
+        if (clazz == LocalDate.class) {
+            return quote(DateTimes.of((LocalDate) obj).toString("yyyy-MM-dd"));
+        }
+        if (clazz == LocalTime.class) {
+            return quote(DateTimes.of((LocalTime) obj).toString("HH:mm:ss"));
         }
         if (clazz == byte[].class) {
             return quote("blob:" + StringUtil.getSize((byte[]) obj));
@@ -209,7 +223,9 @@ public class SqlUtil {
             Object[] objArr = (Object[]) obj;
             String[] res = new String[objArr.length];
             for (int i = 0; i < res.length; i++) {
-                res[i] = objArr[i].toString();
+                Object o = objArr[i];
+                if (o != null)
+                    res[i] = o.toString();
             }
             return quote("{" + String.join(",", res) + "}");
         }
@@ -287,8 +303,8 @@ public class SqlUtil {
             noneStrSql = noneStrSql.replaceFirst(":" + name, value);
         }
         // finally, set placeholder into none-string-part sql
-        for (String key : placeholderMapper.keySet()) {
-            noneStrSql = noneStrSql.replace(key, placeholderMapper.get(key));
+        for (Map.Entry<String, String> e : placeholderMapper.entrySet()) {
+            noneStrSql = noneStrSql.replace(e.getKey(), e.getValue());
         }
         return Pair.of(noneStrSql, names);
     }
@@ -331,12 +347,12 @@ public class SqlUtil {
         if (!sql.contains("${") || deep == 0) {
             return str;
         }
-        for (String key : args.keySet()) {
-            String tempKey = "${" + key + "}";
-            String tempArrKey = "${:" + key + "}";
+        for (Map.Entry<String, ?> e : args.entrySet()) {
+            String tempKey = "${" + e.getKey() + "}";
+            String tempArrKey = "${:" + e.getKey() + "}";
             if (StringUtil.containsAny(sql, tempKey, tempArrKey)) {
                 String trueKey = tempKey;
-                Object value = args.get(key);
+                Object value = e.getValue();
                 String subSql = "";
                 if (value != null) {
                     Object[] values;

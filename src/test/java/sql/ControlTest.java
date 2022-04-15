@@ -125,6 +125,7 @@ public class ControlTest {
 //        mergeMap(args);
 
         System.out.println(SqlUtil.resolveSqlStrTemplate(sql, args));
+        System.out.println(SqlUtil.generateSql(sql,args,true));
     }
 
     public static void mergeMap(Map<String, Object> args) {

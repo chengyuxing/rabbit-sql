@@ -27,7 +27,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
- * <h1>数据库DAO对象实现</h1>
+ * 数据库DAO对象实现
  * <p>如果配置了{@link XQLFileManager },则接口所有方法都可以通过取地址符号来获取sql文件内的sql</p>
  * 取SQL通过 {@code &}符号前缀+sql键名：
  * <blockquote>

@@ -23,9 +23,16 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
- * <h2>jdbc基本操作支持</h2><br>
- * <p>:name (jdbc标准的传名参数写法，参数将被预编译安全处理)</p><br>
- * <p>${part} (通用的字符串模版占位符，不进行预编译，用于动态sql的拼接)</p><br>
+ * <p>jdbc基本操作支持</p>
+ * <p>:name (jdbc标准的传名参数写法，参数将被预编译安全处理)</p>
+ * <p>${...} (通用的字符串模版占位符，不进行预编译，用于动态sql的拼接)</p>
+ * 字符串模版参数名两种格式：
+ * <blockquote>
+ *     <ul>
+ *         <li>${part} 如果类型是装箱类型数组(String[], Integer[]...)或集合(Set, List...)，则先展开（逗号分割），再进行sql片段的替换；</li>
+ *         <li>${:part} 名字前多了前缀符号(:)，如果类型是装箱类型数组(String[], Integer[]...)或集合(Set, List...)，则先展开（逗号分隔），并做一定的字符串安全处理，再进行sql片段的替换。</li>
+ *     </ul>
+ * </blockquote>
  * <p>小提示：PostgreSQL中，带有问号的操作符(?,?|,?&amp;,@?)可以使用双问号(??,??|,??&amp;,@??)解决预编译sql参数未设定的报错，或者直接使用函数</p><br>
  * 执行的SQL字符串例如：
  * <blockquote>

@@ -27,12 +27,10 @@ import static com.github.chengyuxing.common.utils.StringUtil.*;
 import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
 
 /**
- * <h1>支持扩展脚本解析动态SQL的文件管理器</h1>
- * <h2>文件配置</h2>
+ * 支持扩展脚本解析动态SQL的文件管理器<br>
  * <p>支持外部sql(本地文件系统)和classpath下的sql，
- * 本地sql文件以 {@code file:} 开头，默认读取<strong>classpath</strong>下的sql文件</p>
- * <p>识别的文件格式支持: {@code .xql.sql}</p>
- * e.g.
+ * 本地sql文件以 {@code file:} 开头，默认读取<strong>classpath</strong>下的sql文件，识别的文件格式支持: {@code .xql.sql}，
+ * 默认情况下两种文件内容没区别，仅需内容遵循格式。</p>
  * <blockquote>
  *     <ul>
  *         <li><pre>windows文件系统: file:\\D:\\rabbit.s(x)ql</pre></li>
@@ -40,8 +38,8 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
  *         <li><pre>ClassPath: sql/rabbit.s(x)ql</pre></li>
  *     </ul>
  * </blockquote>
- * <h2>动态sql支持语法</h2>
- * <h3>if语句</h3>
+ * <p>动态sql支持语法：</p>
+ * <p>if语句块</p>
  * <blockquote>
  * 支持嵌套if，choose，switch
  * <pre>
@@ -52,7 +50,7 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
  * --#fi
  * </pre>
  * </blockquote>
- * <h3>choose语句块</h3>
+ * <p>choose语句块</p>
  * <blockquote>
  *  分支中还可以嵌套if语句
  * <pre>
@@ -70,7 +68,7 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
  * --#end
  * </pre>
  * </blockquote>
- * <h3>switch语句块</h3>
+ * <p>switch语句块</p>
  * <blockquote>
  *  分支中还可以嵌套if语句
  * <pre>
@@ -88,30 +86,7 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
  * --#end
  * </pre>
  * </blockquote>
- * <h3>e.g.</h3>
- * <blockquote>
- * <pre>
- * select *
- * from test.student t
- * WHERE
- * --#choose
- *      --#when :age{@code <} 21
- *      t.age = 21
- *      --#break
- *      --#when :age{@code <>} blank{@code &&} :age{@code <} 90
- *      and age{@code <} 90
- *      --#break
- *      --#default
- *      and age = 89
- *      --#break
- *  --#end
- *  --#if :name != null
- *      and t.name ~ :name
- *  --#fi
- * ;
- *     </pre>
- * </blockquote>
- * <h2>参考：</h2>
+ * <p>参考：</p>
  * <blockquote>
  * data.xql.template
  * </blockquote>

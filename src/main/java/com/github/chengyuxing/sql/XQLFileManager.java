@@ -216,7 +216,7 @@ public class XQLFileManager {
                                 String prepareLine = singleResource.get(blockName) + line;
                                 if (trimLine.endsWith(";")) {
                                     String naSql = removeAnnotationBlock(prepareLine);
-                                    singleResource.put(blockName, naSql.substring(0, naSql.lastIndexOf(";")));
+                                    singleResource.put(blockName, naSql.substring(0, naSql.lastIndexOf(";")).trim());
                                     log.debug("scan to get sql [{}]：{}", blockName, SqlUtil.highlightSql(singleResource.get(blockName)));
                                     blockName = "";
                                 } else {
@@ -229,7 +229,7 @@ public class XQLFileManager {
             }
             // if last part of sql is not ends with ';' symbol
             if (!blockName.equals("")) {
-                String lastSql = singleResource.get(blockName);
+                String lastSql = singleResource.get(blockName).trim();
                 singleResource.put(blockName, removeAnnotationBlock(lastSql));
                 log.debug("scan to get sql [{}]：{}", blockName, SqlUtil.highlightSql(lastSql));
             }
@@ -246,28 +246,11 @@ public class XQLFileManager {
      */
     protected void doMergeSqlPart(final String partName, Map<String, String> sqlResource) {
         for (String key : sqlResource.keySet()) {
-            Pair<String, Map<String, String>> sqlAndSubstr = SqlUtil.replaceSqlSubstr(sqlResource.get(key));
-            // get sql without substr first.
-            String sql = sqlAndSubstr.getItem1();
-            int partIndex;
-            while ((partIndex = sql.indexOf(partName)) != -1) {
+            String sql = sqlResource.get(key);
+            if (sql.contains(partName)) {
                 String sqlPart = sqlResource.get(partName);
-                if (sqlPart != null) {
-                    sqlPart = sqlPart.trim();
-                    String part = NEW_LINE + sqlPart + NEW_LINE;
-                    int start = StringUtil.searchIndexUntilNotBlank(sql, partIndex, true);
-                    int end = StringUtil.searchIndexUntilNotBlank(sql, partIndex + partName.length() - 1, false);
-                    // insert sql part first without substr because we not allow substr sql part e.g. '${partName}'
-                    sql = sql.substring(0, start + 1) + part + sql.substring(end);
-                    // reinsert substr into the sql finally
-                    Map<String, String> substr = sqlAndSubstr.getItem2();
-                    if (!substr.isEmpty()) {
-                        for (String substrKey : substr.keySet()) {
-                            sql = sql.replace(substrKey, substr.get(substrKey));
-                        }
-                    }
-                    sqlResource.put(key, sql);
-                }
+                sql = sql.replace(partName, sqlPart);
+                sqlResource.put(key, sql);
             }
         }
     }

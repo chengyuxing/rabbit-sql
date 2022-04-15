@@ -82,6 +82,13 @@ public abstract class JdbcSupport {
     protected abstract boolean checkParameterType();
 
     /**
+     * debug模式输出完整的sql，否则仅输出原始sql
+     *
+     * @return 是否输出已执行sql
+     */
+//    protected abstract boolean debugFullSql();
+
+    /**
      * 执行一句预编译的sql
      *
      * @param sql      sql

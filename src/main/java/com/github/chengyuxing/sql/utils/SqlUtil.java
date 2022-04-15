@@ -272,19 +272,12 @@ public class SqlUtil {
         if (args != null) {
             argx = new HashMap<>(args);
         }
-        // exclude substr first
-        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSqlSubstr(sql);
-        // resolve the sql string template next
-        String noneStrSql = resolveSqlStrTemplate(noneStrSqlAndHolder.getItem1(), argx);
+        // resolve the sql string template first
+        String fullSql = resolveSqlStrTemplate(sql, argx);
+        // exclude substr next
+        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSqlSubstr(fullSql);
+        String noneStrSql = noneStrSqlAndHolder.getItem1();
         Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
-        // maybe args contains substr.
-        int x, y;
-        while ((x = noneStrSql.indexOf("'")) >= 0 && (y = noneStrSql.lastIndexOf("'")) >= 0 && x != y) {
-            Pair<String, Map<String, String>> againNoneStrSqlAndHolder = replaceSqlSubstr(noneStrSql);
-            noneStrSql = resolveSqlStrTemplate(againNoneStrSqlAndHolder.getItem1(), argx);
-            placeholderMapper.putAll(againNoneStrSqlAndHolder.getItem2());
-        }
-        // safe to replace arg by name placeholder
         Matcher matcher = ARG_PATTERN.matcher(noneStrSql);
         List<String> names = new ArrayList<>();
         while (matcher.find()) {
@@ -311,19 +304,31 @@ public class SqlUtil {
     }
 
     /**
-     * 解析字符串模版
+     * 解析字符串模版，子字符串嵌套深度最大为8层
      *
      * @param str  带有字符串模版占位符的字符串
      * @param args 参数
      * @return 替换模版占位符后的字符串
      */
-    @SuppressWarnings("unchecked")
     public static String resolveSqlStrTemplate(final String str, final Map<String, ?> args) {
+        return resolveSqlStrTemplateRec(str, args, 8);
+    }
+
+    /**
+     * 解析字符串模版
+     *
+     * @param str  带有字符串模版占位符的字符串
+     * @param args 参数
+     * @param deep 子字符串嵌套最大深度
+     * @return 替换模版占位符后的字符串
+     */
+    @SuppressWarnings("unchecked")
+    public static String resolveSqlStrTemplateRec(final String str, final Map<String, ?> args, int deep) {
         if (args == null || args.isEmpty()) {
             return str;
         }
         String noneStrSql = str;
-        if (!noneStrSql.contains("${")) {
+        if (!noneStrSql.contains("${") || deep == 0) {
             return str;
         }
         for (String key : args.keySet()) {
@@ -357,18 +362,13 @@ public class SqlUtil {
                             }
                         }
                     }
-                    subSql = "\n" + sb.toString().trim() + "\n";
+                    subSql = sb.toString().trim();
                 }
-                int partIndex;
-                while ((partIndex = noneStrSql.indexOf(trueKey)) != -1) {
-                    int start = StringUtil.searchIndexUntilNotBlank(noneStrSql, partIndex, true);
-                    int end = StringUtil.searchIndexUntilNotBlank(noneStrSql, partIndex + trueKey.length() - 1, false);
-                    noneStrSql = noneStrSql.substring(0, start + 1) + subSql + noneStrSql.substring(end);
-                }
+                noneStrSql = noneStrSql.replace(trueKey, subSql);
             }
         }
         if (noneStrSql.contains("${")) {
-            return resolveSqlStrTemplate(noneStrSql, args);
+            return resolveSqlStrTemplateRec(noneStrSql, args, --deep);
         }
         return noneStrSql;
     }

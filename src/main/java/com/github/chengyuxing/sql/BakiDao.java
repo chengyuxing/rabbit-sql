@@ -27,7 +27,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
- * <h2>数据库DAO对象实现</h2>
+ * <h1>数据库DAO对象实现</h1>
  * <p>如果配置了{@link XQLFileManager },则接口所有方法都可以通过取地址符号来获取sql文件内的sql</p>
  * 取SQL通过 {@code &}符号前缀+sql键名：
  * <blockquote>
@@ -42,7 +42,7 @@ import java.util.stream.Stream;
  * 指定sql名执行：
  * <blockquote>
  * <pre>try ({@link Stream}&lt;{@link DataRow}&gt; s = baki.query("&amp;sys.getUser")) {
- *     s.map({@link DataRow}::toMap).forEach(System.out::println);
+ *     s.forEach(System.out::println);
  *   }</pre>
  * </blockquote>
  *
@@ -381,12 +381,14 @@ public class BakiDao extends JdbcSupport implements Baki {
      * {@inheritDoc}
      *
      * @param recordQuery 查询SQL或自定义分页查询的SQL<br>
-     *                    由于默认的分页处理无法满足所有情况，关于自定义分页SQL配置如下:
+     *                    可能默认的构建分页SQL无法满足所有情况，例如PostgreSQL中:
+     *                    <pre>with a as (select ... limit 0 offset 5)<br>select * from a;</pre>
+     *                    关于自定义分页SQL配置如下:
      *                    <blockquote>
      *                    <ul>
      *                    <li>需要手动指定分页对象：{@link IPageable#pageHelper(PageHelper)}</li>
      *                    <li>自定义count查询语句：{@link IPageable#count(String)}</li>
-     *                    <li>重写{@link com.github.chengyuxing.sql.page.PageHelper#pagedSql(String) }方法解除自动分页构建</li>
+     *                    <li>重写{@link com.github.chengyuxing.sql.page.PageHelper#pagedSql(String) }方法解除自动分页构建，因为如上例子，否则会在SQL结尾加{@code limit ... offset ...}</li>
      *                    </ul>
      *                    </blockquote>
      * @param page        当前页

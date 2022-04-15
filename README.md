@@ -58,11 +58,13 @@ BakiDao(DataSource dataSource)
 
 - [**xqlFileManager**](#XQLFileManager)
 
-  接口中需要写sql的所有方法都可以使用``&别名或文件包路径.sql名``取地址符来获取sql文件中的sql；
+  接口中需要写sql的所有方法都可以使用``&别名或文件包路径.sql名``取地址符来获取sql文件中的sql。
 
 - **debugFullSql**
 
-  debug模式下打印拼接完整的sql；
+  默认值: false
+
+  debug模式下打印拼接完整的sql。
 
 - **strictDynamicSqlArg**
 

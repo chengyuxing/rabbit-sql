@@ -57,6 +57,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     private XQLFileManager xqlFileManager;
     private boolean strictDynamicSqlArg = true;
     private boolean checkParameterType = true;
+    private boolean debugFullSql = false;
 
     /**
      * 构造函数
@@ -87,7 +88,9 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     public void setXqlFileManager(XQLFileManager xqlFileManager) {
         this.xqlFileManager = xqlFileManager;
-        xqlFileManager.init();
+        if (!xqlFileManager.isInitialized()) {
+            xqlFileManager.init();
+        }
     }
 
     /**
@@ -577,6 +580,11 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
+    protected boolean debugFullSql() {
+        return debugFullSql;
+    }
+
+    @Override
     protected DataSource getDataSource() {
         return dataSource;
     }
@@ -635,5 +643,14 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     public void setCheckParameterType(boolean checkParameterType) {
         this.checkParameterType = checkParameterType;
+    }
+
+    /**
+     * 设置是否打印拼接完整的SQL，否则只打印原始SQL与参数
+     *
+     * @param debugFullSql 是否调试模式输出拼接完整的sql
+     */
+    public void setDebugFullSql(boolean debugFullSql) {
+        this.debugFullSql = debugFullSql;
     }
 }

@@ -86,7 +86,7 @@ public abstract class JdbcSupport {
      *
      * @return 是否输出已执行sql
      */
-//    protected abstract boolean debugFullSql();
+    protected abstract boolean debugFullSql();
 
     /**
      * 执行一句预编译的sql
@@ -136,12 +136,18 @@ public abstract class JdbcSupport {
      */
     public DataRow execute(final String sql, Map<String, ?> args) {
         String sourceSql = getSql(sql, args);
-        log.debug("SQL:{}", SqlUtil.highlightSql(sourceSql));
-        log.debug("Args:{}", args);
-
         Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSql(sourceSql, args);
         final List<String> argNames = preparedSqlAndArgNames.getItem2();
         final String preparedSql = preparedSqlAndArgNames.getItem1();
+
+        if (log.isDebugEnabled()) {
+            log.debug("SQL:{}", SqlUtil.highlightSql(sourceSql));
+            log.debug("Args:{}", args);
+            if (debugFullSql()) {
+                String fullSql = SqlUtil.generateSql(sourceSql, args, false).getItem1();
+                log.debug("Full SQL: {}", SqlUtil.highlightSql(fullSql));
+            }
+        }
 
         return execute(preparedSql, sc -> {
             if (args != null && !args.isEmpty()) {
@@ -185,12 +191,18 @@ public abstract class JdbcSupport {
             args = Collections.emptyMap();
         }
         String sourceSql = getSql(sql, args);
-        log.debug("SQL:{}", SqlUtil.highlightSql(sourceSql));
-        log.debug("Args:{}", args);
-
         Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSql(sourceSql, args);
         final List<String> argNames = preparedSqlAndArgNames.getItem2();
         final String preparedSql = preparedSqlAndArgNames.getItem1();
+
+        if (log.isDebugEnabled()) {
+            log.debug("SQL:{}", SqlUtil.highlightSql(sourceSql));
+            log.debug("Args:{}", args);
+            if (debugFullSql()) {
+                String fullSql = SqlUtil.generateSql(sourceSql, args, false).getItem1();
+                log.debug("Full SQL: {}", SqlUtil.highlightSql(fullSql));
+            }
+        }
 
         UncheckedCloseable close = null;
         try {
@@ -308,17 +320,24 @@ public abstract class JdbcSupport {
             firstArg = args.iterator().next();
             sourceSql = getSql(sql, firstArg);
         }
-        log.debug("SQL:{}", SqlUtil.highlightSql(sourceSql));
-        if (hasArgs) {
-            if (args.size() == 1) {
-                log.debug("Args:{}", args);
-            } else {
-                log.debug("Args:{},...", firstArg);
-            }
-        }
         Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSql(sourceSql, firstArg);
         final List<String> argNames = preparedSqlAndArgNames.getItem2();
         final String preparedSql = preparedSqlAndArgNames.getItem1();
+
+        if (log.isDebugEnabled()) {
+            log.debug("SQL:{}", SqlUtil.highlightSql(sourceSql));
+            if (hasArgs) {
+                if (args.size() == 1) {
+                    log.debug("Args:{}", args);
+                } else {
+                    log.debug("Args:{},...", firstArg);
+                }
+            }
+            if (debugFullSql()) {
+                String fullSql = SqlUtil.generateSql(sourceSql, firstArg, false).getItem1();
+                log.debug("Full SQL: {}", SqlUtil.highlightSql(fullSql));
+            }
+        }
 
         return execute(preparedSql, sc -> {
             int i = 0;
@@ -375,12 +394,18 @@ public abstract class JdbcSupport {
         if (hasArgs) {
             sourceSql = getSql(procedure, Collections.emptyMap());
         }
-        log.debug("Procedure:{}", Printer.colorful(sourceSql, Color.YELLOW));
-        log.debug("Args:{}", args);
-
         Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSql(sourceSql, Collections.emptyMap());
         final String executeSql = preparedSqlAndArgNames.getItem1();
         final List<String> argNames = preparedSqlAndArgNames.getItem2();
+
+        if (log.isDebugEnabled()) {
+            log.debug("Procedure:{}", Printer.colorful(sourceSql, Color.YELLOW));
+            log.debug("Args:{}", args);
+            if (debugFullSql()) {
+                String fullSql = SqlUtil.generateSql(sourceSql, args, false).getItem1();
+                log.debug("Full SQL: {}", Printer.colorful(fullSql, Color.YELLOW));
+            }
+        }
 
         CallableStatement statement = null;
         Connection connection = getConnection();

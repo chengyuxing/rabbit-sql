@@ -136,10 +136,11 @@ public class XQLFileManager {
     public static final String END = "#end";
     private WatchDog watchDog = null;
     // ----------------optional properties------------------
-    private boolean checkModified;
+    private volatile boolean checkModified;
     private int checkPeriod = 30;
     private Map<String, String> constants = new HashMap<>();
     private Map<String, String> files = new HashMap<>();
+    private volatile boolean initialized = false;
 
     /**
      * Sql文件解析器实例
@@ -345,6 +346,7 @@ public class XQLFileManager {
      * @throws DuplicateException   如果同一个sql文件中有重复的sql名
      */
     public void init() {
+        initialized = true;
         loadResource();
         if (this.checkModified) {
             if (watchDog == null) {
@@ -783,6 +785,15 @@ public class XQLFileManager {
      */
     public int getCheckPeriod() {
         return checkPeriod;
+    }
+
+    /**
+     * 获取是否已调用过初始化方法
+     *
+     * @return 是否已调用过初始化方法
+     */
+    public boolean isInitialized() {
+        return initialized;
     }
 
     /**

@@ -49,6 +49,7 @@ public class MyTest {
 
         BakiDao bakiDao = BakiDao.of(dataSource);
         bakiDao.setXqlFileManager(manager);
+        bakiDao.setDebugFullSql(true);
         baki = bakiDao;
         baki2 = BakiDao.of(dataSource);
 //        bakiDao.setSqlPath("pgsql");
@@ -172,8 +173,7 @@ public class MyTest {
                 .add("tm", "23时55分13秒")
                 .add("strs", Arrays.asList("1", "2", "3", "4"))
                 .add("bak", "ccc");
-//        baki.insert("test.tb", args, false);
-        baki.execute("insert into test.tb (ints) values (:arr)", Args.of("arr", new int[]{1, 2, 3, 4}));
+        baki.insert("test.tb", args, false);
     }
 
     @Test

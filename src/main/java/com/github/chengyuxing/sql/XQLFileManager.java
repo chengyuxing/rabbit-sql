@@ -678,7 +678,7 @@ public class XQLFileManager {
             Map<String, String> sqlsRow = RESOURCE.get(fileAlias);
             String sqlName = name.substring(name.indexOf(".") + 1);
             if (sqlsRow.containsKey(sqlName)) {
-                return sqlsRow.get(sqlName);
+                return SqlUtil.trimEnd(sqlsRow.get(sqlName));
             }
         }
         throw new NoSuchElementException(String.format("no SQL named [%s] was found.", name));

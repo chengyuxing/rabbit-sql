@@ -40,7 +40,7 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
  *         <li><pre>ClassPath: sql/rabbit.s(x)ql</pre></li>
  *     </ul>
  * </blockquote>
- * <p>动态sql支持语法：</p>
+ * <p>动态sql {@link #get(String, Map)}, {@link #get(String, Map, boolean)}支持语法：</p>
  * <p>if语句块</p>
  * <blockquote>
  * 支持嵌套if，choose，switch

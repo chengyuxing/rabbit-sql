@@ -236,7 +236,7 @@ public class MyTest {
 
     @Test
     public void pagerTest() throws Exception {
-        PagedResource<DataRow> res = baki.<DataRow>query("&pgsql.data.custom_paged", 1, 7)
+        PagedResource<DataRow> res = baki.<DataRow>query("&data.custom_paged", 1, 7)
                 .count("select count(*) from test.region where id > :id")
                 .args(Args.create("id", 8))
                 .pageHelper(new PGPageHelper() {

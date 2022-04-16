@@ -747,7 +747,7 @@ public class XQLFileManager {
     }
 
     /**
-     * 获取文件检查周期，默认为30秒，配合方法：{@link #setCheckModified(boolean)} -> true 来使用
+     * 获取文件检查周期，默认为30秒，配合方法：{@link #setCheckModified(boolean)} {@code -> true} 来使用
      *
      * @return 文件检查周期
      */

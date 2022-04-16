@@ -185,7 +185,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      *
      * @param tableName 表名
      * @param data      数据
-     * @param immobile    true：根据数据生成insert语句，不论表是否存在相应的字段，false：根据表字段筛选数据中存在的字段生成insert语句
+     * @param immobile  true：根据数据生成insert语句，不论表是否存在相应的字段，false：根据表字段筛选数据中存在的字段生成insert语句
      * @return 受影响的行数
      * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
      */
@@ -552,6 +552,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         String trimEndedSql = SqlUtil.trimEnd(sql);
         if (sql.startsWith("&")) {
             if (xqlFileManager != null) {
+                // 经过XQLFileManager获取的sql，已经去除了段落注释和行注释
                 trimEndedSql = SqlUtil.trimEnd(xqlFileManager.get(sql.substring(1), args, strictDynamicSqlArg));
             } else {
                 throw new NullPointerException("can not find property 'xqlFileManager' or XQLFileManager object init failed!");

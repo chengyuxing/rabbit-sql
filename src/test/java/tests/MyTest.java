@@ -194,7 +194,7 @@ public class MyTest {
     public void executeAny() throws Exception {
         DataRow row = baki.execute("(select current_date, current_time)");
         System.out.println(row);
-        row.<List<DataRow>>getAs(0)
+        row.<List<DataRow>>getFirstAs()
                 .forEach(System.out::println);
         int i = OracleTypes.CURSOR;
 //        DataRow row1 = baki.execute("insert into test.tb(a,b) values (:a,:b)", Args.<Object>of("a", 5).add("b", 5));
@@ -286,7 +286,7 @@ public class MyTest {
         baki.fetch("select array [12,13,11,4,5,6.7]:: varchar[], '{\"a\":\"chengyuxing\"}'::jsonb")
                 .ifPresent(r -> {
                     System.out.println(r);
-                    System.out.println(r.getType(0));
+                    System.out.println(r.getFirst());
 
 //                        Array arr = r.get(0);
 //                        Integer[] ints = (Integer[]) arr.getArray();
@@ -423,7 +423,7 @@ public class MyTest {
     public void testCall() throws Exception {
         Tx.using(() -> baki.call("{:res = call test.fun_query()}",
                         Args.of("res", Param.OUT(OUTParamType.REF_CURSOR)))
-                .<List<DataRow>>getAs(0)
+                .<List<DataRow>>getFirstAs()
                 .forEach(System.out::println));
     }
 

@@ -117,7 +117,7 @@ public class ControlTest {
         Args<Object> args = Args.<Object>of("ids", Arrays.asList("I'm Ok!", "b", "c"))
                 .add("fields", "id, name, age")
                 .add("id", 10)
-                .add("ids",Arrays.asList("a","b","c"))
+                .add("ids", Arrays.asList("a", "b", "c"))
                 .add("date", "2020-12-23 ${:time}")
                 .add("time", "11:23:44")
                 .add("cnd", "id in (${:ids},${fields}) and id = :id or ${date} '${'");
@@ -125,7 +125,7 @@ public class ControlTest {
 //        mergeMap(args);
 
         System.out.println(SqlUtil.resolveSqlStrTemplate(sql, args));
-        System.out.println(SqlUtil.generateSql(sql,args,true));
+        System.out.println(SqlUtil.generateSql(sql, args, true));
     }
 
     public static void mergeMap(Map<String, Object> args) {
@@ -178,5 +178,25 @@ public class ControlTest {
         System.out.println(a.length());
         System.out.println(searchIndexUntilNotBlank(a, 5, false));
         System.out.println("abc".substring(0, 0));
+    }
+
+    @Test
+    public void testMap() throws Exception {
+        Map<String, Object> data = new HashMap<>();
+        data.put("a", 1);
+        data.put("b", null);
+        data.put("name", "cyx");
+
+        Map<String, ?> newMap = new HashMap<>(data);
+        for (Map.Entry<String, ?> e : newMap.entrySet()) {
+            if (e.getValue() == null) {
+                newMap.remove(e.getKey());
+            }
+        }
+
+        System.out.println(newMap);
+        System.out.println(data);
+        Integer a = 100000;
+        System.out.println((int)a);
     }
 }

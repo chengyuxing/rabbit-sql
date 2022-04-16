@@ -54,7 +54,13 @@ public class Pageable<T> extends IPageable<T> {
             if (cq == null) {
                 cq = SqlUtil.generateCountQuery(query);
             }
-            count = baki.fetch(cq, args).map(cn -> cn.getInt(0)).orElse(0);
+            count = baki.fetch(cq, args).map(cn -> {
+                Object num = cn.getFirst();
+                if (num instanceof Integer) {
+                    return (Integer) num;
+                }
+                return Integer.parseInt(num.toString());
+            }).orElse(0);
         }
         PageHelper pageHelper = customPageHelper;
         if (pageHelper == null) {

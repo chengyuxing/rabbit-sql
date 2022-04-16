@@ -109,7 +109,7 @@ public class BakiSessionTest {
     public void oracleBlobTest() throws Exception {
         baki.query("select * from nutzbook.files")
                 .forEach(r -> {
-                    String a = r.getString(0);
+                    String a = r.getFirstAs();
                 });
     }
 

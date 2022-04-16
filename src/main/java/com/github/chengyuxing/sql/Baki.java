@@ -54,17 +54,17 @@ public interface Baki {
     /**
      * 插入
      *
-     * @param tableName 数据对象
+     * @param tableName 表名
      * @param data      数据
-     * @param strict    是否严格插入
+     * @param immobile  是否插入数据全部键值（若有表不存在的字段，将抛出异常）
      * @return 受影响的行数
      */
-    int insert(String tableName, Collection<? extends Map<String, ?>> data, boolean strict);
+    int insert(String tableName, Collection<? extends Map<String, ?>> data, boolean immobile);
 
     /**
      * 插入
      *
-     * @param tableName 数据对象
+     * @param tableName 表名
      * @param data      数据
      * @return 受影响的行数
      */
@@ -73,12 +73,12 @@ public interface Baki {
     /**
      * 插入
      *
-     * @param tableName 数据对象
+     * @param tableName 表名
      * @param data      数据
-     * @param strict    是否严格插入
+     * @param immobile  是否插入数据全部键值（若有表不存在的字段，将抛出异常）
      * @return 受影响的行数
      */
-    int insert(String tableName, Map<String, ?> data, boolean strict);
+    int insert(String tableName, Map<String, ?> data, boolean immobile);
 
     /**
      * 插入
@@ -95,10 +95,10 @@ public interface Baki {
      *
      * @param tableName 表名
      * @param data      数据
-     * @param strict    是否严格插入
+     * @param immobile  是否严格插入
      * @return 受影响的行数
      */
-    int fastInsert(String tableName, Collection<? extends Map<String, ?>> data, boolean strict);
+    int fastInsert(String tableName, Collection<? extends Map<String, ?>> data, boolean immobile);
 
     /**
      * 快速插入

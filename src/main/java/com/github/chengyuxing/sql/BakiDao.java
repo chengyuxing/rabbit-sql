@@ -27,7 +27,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
- * 数据库DAO对象实现
+ * <h2>数据库DAO对象实现</h2>
  * <p>如果配置了{@link XQLFileManager },则接口所有方法都可以通过取地址符号来获取sql文件内的sql</p>
  * 取SQL通过 {@code &}符号前缀+sql键名：
  * <blockquote>
@@ -113,18 +113,18 @@ public class BakiDao extends JdbcSupport implements Baki {
      *
      * @param tableName 表名
      * @param data      数据
-     * @param strict    true：根据数据生成insert语句，不论表是否存在相应的字段，false：根据表字段筛选数据中存在的字段生成insert语句
+     * @param immobile  true：不论表是否存在相应的字段，始终根据数据生成insert语句，false：根据表字段筛选数据中存在的字段生成insert语句
      * @return 受影响的行数
      * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
      * @see #fastInsert(String, Collection, boolean)
      * @see #fastInsert(String, Collection)
      */
     @Override
-    public int insert(String tableName, Collection<? extends Map<String, ?>> data, boolean strict) {
+    public int insert(String tableName, Collection<? extends Map<String, ?>> data, boolean immobile) {
         Iterator<? extends Map<String, ?>> iterator = data.iterator();
         if (iterator.hasNext()) {
             Map<String, ?> first = iterator.next();
-            List<String> tableFields = strict ? new ArrayList<>() : getTableFields(tableName);
+            List<String> tableFields = immobile ? new ArrayList<>() : getTableFields(tableName);
             String insertSql = SqlUtil.generatePreparedInsert(tableName, first, tableFields);
             return executeNonQuery(insertSql, data);
         }
@@ -185,16 +185,16 @@ public class BakiDao extends JdbcSupport implements Baki {
      *
      * @param tableName 表名
      * @param data      数据
-     * @param strict    true：根据数据生成insert语句，不论表是否存在相应的字段，false：根据表字段筛选数据中存在的字段生成insert语句
+     * @param immobile    true：根据数据生成insert语句，不论表是否存在相应的字段，false：根据表字段筛选数据中存在的字段生成insert语句
      * @return 受影响的行数
      * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
      */
     @Override
-    public int fastInsert(String tableName, Collection<? extends Map<String, ?>> data, boolean strict) {
+    public int fastInsert(String tableName, Collection<? extends Map<String, ?>> data, boolean immobile) {
         if (data.size() > 0) {
             Iterator<? extends Map<String, ?>> iterator = data.iterator();
             String[] sqls = new String[data.size()];
-            List<String> tableFields = strict ? new ArrayList<>() : getTableFields(tableName);
+            List<String> tableFields = immobile ? new ArrayList<>() : getTableFields(tableName);
             for (int i = 0; iterator.hasNext(); i++) {
                 String insertSql = SqlUtil.generateInsert(tableName, iterator.next(), tableFields);
                 sqls[i] = insertSql;

@@ -7,14 +7,14 @@
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
     <packaging>jar</packaging>
-    <version>6.1.6</version>
+    <version>6.1.7</version>
     <name>rabbit-sql</name>
     <url>https://github.com/chengyuxing/rabbit-sql/tree/rabbit-sql-6</url>
 
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <rabbit.common.version>2.1.9</rabbit.common.version>
+        <rabbit.common.version>2.2.0</rabbit.common.version>
     </properties>
 
     <licenses>

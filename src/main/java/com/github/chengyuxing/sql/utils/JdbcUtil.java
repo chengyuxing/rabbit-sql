@@ -427,6 +427,7 @@ public class JdbcUtil {
      */
     public static void setStoreArgs(CallableStatement statement, Map<String, Param> args, List<String> names) throws SQLException {
         if (args != null && !args.isEmpty()) {
+            // adapt postgresql
             // out and inout param first
             for (int i = 0; i < names.size(); i++) {
                 int index = i + 1;
@@ -441,7 +442,7 @@ public class JdbcUtil {
                     }
                 }
             }
-            // in param first
+            // in param next
             for (int i = 0; i < names.size(); i++) {
                 int index = i + 1;
                 String name = names.get(i);

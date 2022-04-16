@@ -80,7 +80,7 @@ BakiDao(DataSource dataSource)
 
   例如：PostgreSQL中，字段类型为`jsonb`，参数为一个`HashMap<>()`，则将对参数进行json序列化并插入；
 
-  ⚠️ 由于jdbc驱动实现问题，此特性暂不支持Oracle，请将此属性设置为false。
+  ⚠️ 由于jdbc驱动实现问题，此特性暂不支持Oracle和某些数据库，如果发生异常，请将此属性设置为false。
   
 
 ## XQLFileManager
@@ -121,11 +121,21 @@ xqlFileManager: {
 
 - **checkModified**
 
-  如果为`true`，则开启sql文件修改监听器，默认30秒检测一次，如果修改过则重新加载，生产环境建议设置为`false`
+  如果为`true`，则开启sql文件修改监听器，默认30秒检测一次，如果修改过则重新加载，生产环境建议设置为`false`。
 
 - **checkPeriod**
 
   sql文件修改监听检查周期，默认为30秒。
+
+- **charset**
+
+  设置解析SQL文件使用的编码，默认**UTF-8**。
+
+- **delimiter**
+
+  解析文件时的SQL块分隔符。
+
+  每个文件的sql片段块解析分隔符，每一段完整的sql根据此设置来进行区分，**默认是单个分号（;）**遵循标准sql文件多段sql分隔符，但是有一种情况，如果sql文件内有psql：**create function...** 或 **create procedure...**等， 内部会包含多段sql多个分号，为防止解析异常，单独设置自定义的分隔符，例如（;;）双分号，也是标准sql所支持的，此处别有他用。
 
 - **constants**
 
@@ -272,8 +282,9 @@ and x = :x
 ## 对 *IntelliJ IDEA* 的友好支持
 
 - 配置了数据源的情况下，可以直接选中需要执行的sql右键，点击`Execute`执行sql，参数占位符(`:name`)和sql片段占位符(`${part}`)都会弹出输入框方便填写，直接进行测试sql
-  ![](https://github.com/chengyuxing/rabbit-sql/blob/master/img/p.jpg)
-  ![](https://github.com/chengyuxing/rabbit-sql/blob/master/img/p2.png)
+  ![](img/p.jpg)
+  
+  ![](img/p2.png)
 
 ## Example
 
@@ -348,9 +359,9 @@ Tx.using(()->{
 ```java
 Tx.using(()->baki.call("{call test.fun_query(:c::refcursor)}",
         Args.of("c",Param.IN_OUT("result",OUTParamType.REF_CURSOR)))
-        .<List<DataRow>>get(0)
+        .<List<DataRow>>getFirstAs()
         .stream()
-        .map(DataRow::toMap)
+        .map(DataRow::toJson)
         .forEach(System.out::println));
 ```
 

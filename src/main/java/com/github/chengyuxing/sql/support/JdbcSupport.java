@@ -23,7 +23,7 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
- * <p>jdbc基本操作支持</p>
+ * <h2>jdbc基本操作支持</h2>
  * <p>:name (jdbc标准的传名参数写法，参数将被预编译安全处理)</p>
  * <p>${...} (通用的字符串模版占位符，不进行预编译，用于动态sql的拼接)</p>
  * 字符串模版参数名两种格式：
@@ -33,7 +33,7 @@ import java.util.stream.StreamSupport;
  *         <li>${:part} 名字前多了前缀符号(:)，如果类型是装箱类型数组(String[], Integer[]...)或集合(Set, List...)，则先展开（逗号分隔），并做一定的字符串安全处理，再进行sql片段的替换。</li>
  *     </ul>
  * </blockquote>
- * <p>小提示：PostgreSQL中，带有问号的操作符(?,?|,?&amp;,@?)可以使用双问号(??,??|,??&amp;,@??)解决预编译sql参数未设定的报错，或者直接使用函数</p><br>
+ * <p>小提示：PostgreSQL中，带有问号的操作符(?,?|,?&amp;,@?)可以使用双问号(??,??|,??&amp;,@??)解决预编译sql参数未设定的报错，或者直接使用函数</p>
  * 执行的SQL字符串例如：
  * <blockquote>
  * <pre>
@@ -50,7 +50,7 @@ public abstract class JdbcSupport {
     private final static Logger log = LoggerFactory.getLogger(JdbcSupport.class);
 
     /**
-     * 设置数据源
+     * 获取数据源
      *
      * @return 数据源
      */
@@ -179,13 +179,21 @@ public abstract class JdbcSupport {
     }
 
     /**
-     * 惰性执行一句查询，只有调用终端操作和短路操作才会真正开始执行<br>
-     * 使用完请务必关闭流，否则将一直占用连接对象直到连接池耗尽<br>
+     * 惰性执行一句查询，只有调用终端操作和短路操作才会真正开始执行，
+     * 使用完请务必关闭流，否则将一直占用连接对象直到连接池耗尽。<br>
      * 使用{@code try-with-resource}进行包裹：
      * <blockquote>
-     * <pre>try ({@link Stream}&lt;{@link DataRow}&gt; stream = ...) {
+     * <pre>try ({@link Stream}&lt;{@link DataRow}&gt; stream = queryStream(...)) {
      *       stream.limit(10).forEach(System.out::println);
      *         }</pre>
+     * </blockquote>
+     * 或者使用完手动关闭流：
+     * <blockquote>
+     * <pre>
+     *     {@link Stream}&lt;{@link DataRow}&gt; stream = queryStream(...);
+     *     ...
+     *     stream.close();
+     *     </pre>
      * </blockquote>
      *
      * @param sql  e.g. <code>select * from test.user where id = :id</code>
@@ -279,8 +287,9 @@ public abstract class JdbcSupport {
             if (JdbcUtil.supportsBatchUpdates(connection)) {
                 try {
                     statement = connection.createStatement();
+                    Map<String, ?> empty = Collections.emptyMap();
                     for (String sql : sqls) {
-                        statement.addBatch(getSql(sql, Collections.emptyMap()));
+                        statement.addBatch(getSql(sql, empty));
                     }
                     return statement.executeBatch();
                 } catch (SQLException e) {
@@ -303,7 +312,7 @@ public abstract class JdbcSupport {
             }
             throw new UnsupportedOperationException("your database or jdbc driver not support batch execute currently!");
         }
-        throw new IllegalArgumentException("must be no less than one SQL.");
+        throw new IllegalArgumentException("must not be less than one SQL.");
     }
 
     /**
@@ -379,14 +388,14 @@ public abstract class JdbcSupport {
 
     /**
      * 执行存储过程或函数<br>
-     * 所有出参结果都放入到{@link DataRow}中，可通过命名参数名来取得，或者通过索引来取，索引从0开始<br>
+     * 所有出参结果都放入到{@link DataRow}中，可通过命名参数名来取得。<br>
      * 语句形如原生jdbc，只是将?号改为命名参数（:参数名）：
      * <blockquote>
      * <pre>
      *         {call test.func1(:arg1, :arg2, :result1, :result2)};
      *         {call test.func2(:result::refcursor)}; //PostgreSQL
      *         {:result = call test.func3()};
-     *         call test.procedure(); //PostgreSQL 13版 存储过程不需要加大括号(非函数)
+     *         call test.procedure(); //PostgreSQL 13版+ 存储过程不需要加大括号(非函数)
      *     </pre>
      * </blockquote>
      *
@@ -441,10 +450,10 @@ public abstract class JdbcSupport {
                         } else if (result instanceof ResultSet) {
                             List<DataRow> rows = JdbcUtil.createDataRows((ResultSet) result, executeSql, -1);
                             values[resultIndex] = rows;
-                            log.debug("boxing a result with type: cursor, convert to ArrayList<DataRow>, get result by name:{} or index:{}!", outNames.get(resultIndex), resultIndex);
+                            log.debug("boxing a result with type: cursor, convert to ArrayList<DataRow>, get result by name:{}!", outNames.get(resultIndex));
                         } else {
                             values[resultIndex] = result;
-                            log.debug("boxing a result, get result by name:{} or index:{}!", outNames.get(resultIndex), resultIndex);
+                            log.debug("boxing a result, get result by name:{}!", outNames.get(resultIndex));
                         }
                         resultIndex++;
                     }

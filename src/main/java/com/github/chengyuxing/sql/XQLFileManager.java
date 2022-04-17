@@ -29,7 +29,7 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
 
 /**
  * <h2>支持扩展脚本解析动态SQL的文件管理器</h2>
- * 基于按行解析的逻辑，理论上单个SQL文件大小没有限制，可以无压力快速解析，每个SQL文件解析到的SQL块都是有序的。<br>
+ * 合理利用sql所支持的块注释（{@code /**}{@code /}）、行注释（{@code --}）、传名参数（{@code :name}）和字符串模版占位符（{@code ${template}}），对其进行了语法结构扩展，几乎没有对sql文件标准进行过改动，各种支持sql的IDE依然可以工作。<br>
  * 支持外部sql(本地文件系统)和classpath下的sql，
  * 本地sql文件以 {@code file:} 开头，默认读取<strong>classpath</strong>下的sql文件，识别的文件格式支持: {@code .xql.sql}，
  * 默认情况下两种文件内容没区别，仅需内容遵循格式，{@code .xql}结尾用来表示此类型文件是{@link XQLFileManager}所支持的扩展的sql文件。
@@ -40,7 +40,25 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
  *         <li><pre>ClassPath: sql/rabbit.s(x)ql</pre></li>
  *     </ul>
  * </blockquote>
- * <p>动态sql {@link #get(String, Map)}, {@link #get(String, Map, boolean)}支持语法：</p>
+ * <h3>文件内容结构</h3>
+ * <p>{@code key-value} 形式，key 为sql名，value为sql字符串，例如：</p>
+ * <blockquote>
+ *  /*[sq名1]*{@code /}<br>
+ *  <pre>select * from test.region where
+ *  --#if :id != blank
+ *      id = :id
+ *  --#fi
+ * ${order};</pre>
+ *  ...<br>
+ *  /*[sql名n]*{@code /}<br>
+ *    <pre>sql字符串n;</pre>
+ *    ...<br>
+ *  /*{order}*{@code /}<br>
+ *    <pre>order by id desc;</pre>
+ *    ...
+ * </blockquote>
+ * <h3>动态sql</h3>
+ * <p>{@link #get(String, Map)}, {@link #get(String, Map, boolean)}支持语法：</p>
  * <p>if语句块</p>
  * <blockquote>
  * 支持嵌套if，choose，switch

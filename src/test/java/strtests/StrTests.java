@@ -42,6 +42,13 @@ public class StrTests {
     }
 
     @Test
+    public void testLineAnno() throws Exception {
+        String lineSql1 = "'hello' --world be 'happy' 'annotation'";
+        String lineSql2 = "--hello world be 'happy' 'annotation'";
+        String lineSql3 = "hello --world be 'happy' --'annotation'";
+    }
+
+    @Test
     public void dt() throws Exception {
         WatchDog watchDog = new WatchDog();
         watchDog.addListener("tick", () -> {

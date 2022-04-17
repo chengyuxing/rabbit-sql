@@ -390,6 +390,16 @@ public class SqlUtil {
     }
 
     /**
+     * 去除行注释，可能需要配合方法 {@link #replaceSqlSubstr(String)} 方法进行字符串安全处理
+     *
+     * @param line 行
+     * @return 去除行注释的字符串
+     */
+    public static String cleanLineAnnotation(String line) {
+        return line.substring(0, line.indexOf("--"));
+    }
+
+    /**
      * 移除sql的块注释
      *
      * @param sql sql

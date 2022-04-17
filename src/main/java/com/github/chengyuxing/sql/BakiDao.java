@@ -553,7 +553,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         if (sql.startsWith("&")) {
             if (xqlFileManager != null) {
                 // 经过XQLFileManager获取的sql，已经去除了段落注释和行注释
-                trimEndedSql = SqlUtil.trimEnd(xqlFileManager.get(sql.substring(1), args, strictDynamicSqlArg));
+                trimEndedSql = xqlFileManager.get(sql.substring(1), args, strictDynamicSqlArg);
             } else {
                 throw new NullPointerException("can not find property 'xqlFileManager' or XQLFileManager object init failed!");
             }

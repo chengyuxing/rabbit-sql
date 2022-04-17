@@ -46,6 +46,12 @@ public class StrTests {
         String lineSql1 = "'hello' --world be 'happy' 'annotation'";
         String lineSql2 = "--hello world be 'happy' 'annotation'";
         String lineSql3 = "hello --world be 'happy' --'annotation'";
+        Args<Object> args = Args.<Object>of("a", 1)
+                .add("name", null)
+                .add("b", "2")
+                .add("c", null)
+                .removeIfAbsentExclude("name");
+        System.out.println(args);
     }
 
     @Test

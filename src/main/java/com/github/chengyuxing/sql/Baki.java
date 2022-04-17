@@ -7,6 +7,7 @@ import com.github.chengyuxing.sql.types.Param;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.util.*;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -52,7 +53,11 @@ public interface Baki {
     }
 
     /**
-     * 插入
+     * 批量插入<br>
+     * 忽略null值插入接口不提供单独方法，不如变通下参考：<br>
+     * {@link Args#removeIfAbsent()},<br>
+     * {@link Args#removeIfAbsentExclude(String...)},<br>
+     * {@link Args#removeIf(BiPredicate)}<br>
      *
      * @param tableName 表名
      * @param data      数据
@@ -62,7 +67,11 @@ public interface Baki {
     int insert(String tableName, Collection<? extends Map<String, ?>> data, boolean immobile);
 
     /**
-     * 插入
+     * 批量插入<br>
+     * 忽略null值插入接口不提供单独方法，不如变通下参考：<br>
+     * {@link Args#removeIfAbsent()},<br>
+     * {@link Args#removeIfAbsentExclude(String...)},<br>
+     * {@link Args#removeIf(BiPredicate)}<br>
      *
      * @param tableName 表名
      * @param data      数据
@@ -71,7 +80,11 @@ public interface Baki {
     int insert(String tableName, Collection<? extends Map<String, ?>> data);
 
     /**
-     * 插入
+     * 插入<br>
+     * 忽略null值插入接口不提供单独方法，不如变通下参考：<br>
+     * {@link Args#removeIfAbsent()},<br>
+     * {@link Args#removeIfAbsentExclude(String...)},<br>
+     * {@link Args#removeIf(BiPredicate)}<br>
      *
      * @param tableName 表名
      * @param data      数据
@@ -81,7 +94,11 @@ public interface Baki {
     int insert(String tableName, Map<String, ?> data, boolean immobile);
 
     /**
-     * 插入
+     * 插入<br>
+     * 忽略null值插入接口不提供单独方法，不如变通下参考：<br>
+     * {@link Args#removeIfAbsent()},<br>
+     * {@link Args#removeIfAbsentExclude(String...)},<br>
+     * {@link Args#removeIf(BiPredicate)}<br>
      *
      * @param tableName 数据对象
      * @param data      数据
@@ -90,7 +107,11 @@ public interface Baki {
     int insert(String tableName, Map<String, ?> data);
 
     /**
-     * 快速插入
+     * 快速批量插入<br>
+     * 忽略null值插入接口不提供单独方法，不如变通下参考：<br>
+     * {@link Args#removeIfAbsent()},<br>
+     * {@link Args#removeIfAbsentExclude(String...)},<br>
+     * {@link Args#removeIf(BiPredicate)}<br>
      * 具体逻辑可参考实现
      *
      * @param tableName 表名
@@ -101,7 +122,11 @@ public interface Baki {
     int fastInsert(String tableName, Collection<? extends Map<String, ?>> data, boolean immobile);
 
     /**
-     * 快速插入
+     * 快速批量插入<br>
+     * 忽略null值插入接口不提供单独方法，不如变通下参考：<br>
+     * {@link Args#removeIfAbsent()},<br>
+     * {@link Args#removeIfAbsentExclude(String...)},<br>
+     * {@link Args#removeIf(BiPredicate)}<br>
      * 具体逻辑可参考实现
      *
      * @param tableName 表名
@@ -115,7 +140,7 @@ public interface Baki {
      *
      * @param tableName 表名
      * @param where     条件
-     * @param arg       条件参数
+     * @param arg       条件参数，支持参数占位符e.g. {@code id = :id}
      * @return 受影响的行数
      */
     int delete(String tableName, String where, Map<String, ?> arg);
@@ -131,33 +156,45 @@ public interface Baki {
 
     /**
      * 批量更新<br>
+     * 忽略null值更新接口不提供单独方法，不如变通下参考：<br>
+     * {@link Args#removeIfAbsent()},<br>
+     * {@link Args#removeIfAbsentExclude(String...)},<br>
+     * {@link Args#removeIf(BiPredicate)}<br>
      * 具体逻辑可参考实现
      *
      * @param tableName 表名
      * @param data      数据
-     * @param where     条件
+     * @param where     条件，支持参数占位符e.g. {@code id = :id}
      * @return 受影响的行数
      */
     int update(String tableName, Collection<? extends Map<String, ?>> data, String where);
 
     /**
      * 更新<br>
+     * 忽略null值更新接口不提供单独方法，不如变通下参考：<br>
+     * {@link Args#removeIfAbsent()},<br>
+     * {@link Args#removeIfAbsentExclude(String...)},<br>
+     * {@link Args#removeIf(BiPredicate)}<br>
      * 具体逻辑可参考实现
      *
      * @param tableName 表名
      * @param data      数据
-     * @param where     条件
+     * @param where     条件，支持参数占位符e.g. {@code id = :id}
      * @return 受影响的行数
      */
     int update(String tableName, Map<String, ?> data, String where);
 
     /**
-     * 快速更新<br>
+     * 快速批量更新<br>
+     * 忽略null值更新接口不提供单独方法，不如变通下参考：<br>
+     * {@link Args#removeIfAbsent()},<br>
+     * {@link Args#removeIfAbsentExclude(String...)},<br>
+     * {@link Args#removeIf(BiPredicate)}<br>
      * 具体逻辑可参考实现
      *
      * @param tableName 表名
      * @param args      参数
-     * @param where     条件
+     * @param where     条件，支持参数占位符e.g. {@code id = :id}
      * @return 受影响的行数
      */
     int fastUpdate(String tableName, Collection<? extends Map<String, ?>> args, String where);

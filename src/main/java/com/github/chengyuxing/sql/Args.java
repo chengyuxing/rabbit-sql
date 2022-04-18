@@ -52,12 +52,15 @@ public class Args<V> extends HashMap<String, V> {
     /**
      * 从一个Map创建一个Args对象
      *
-     * @param m   map
-     * @param <V> 类型参数
+     * @param m map
      * @return Args
      */
-    public static <V> Args<V> of(Map<? extends String, ? extends V> m) {
-        return new Args<>(m);
+    public static Args<Object> of(Map<?, ?> m) {
+        Args<Object> args = new Args<>();
+        for (Entry<?, ?> e : m.entrySet()) {
+            args.put(e.getKey().toString(), e.getValue());
+        }
+        return args;
     }
 
     /**

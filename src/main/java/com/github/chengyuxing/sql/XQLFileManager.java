@@ -134,7 +134,7 @@ public class XQLFileManager {
     private int checkPeriod = 30; //seconds
     private volatile boolean checkModified;
     private volatile boolean initialized;
-    private Charset charset = StandardCharsets.UTF_8;
+    private String charset = "UTF-8";
     private String delimiter = ";";
 
     /**
@@ -482,7 +482,7 @@ public class XQLFileManager {
                 }
                 // 处理switch表达式块，逻辑等同于choose表达式块
             } else if (startsWithIgnoreCase(trimOuterLine, SWITCH)) {
-                Pattern p = Pattern.compile(":(?<name>[\\S]+)");
+                Pattern p = Pattern.compile(":(?<name>\\S+)");
                 Matcher m = p.matcher(trimOuterLine.substring(9));
                 String name = null;
                 if (m.find()) {
@@ -777,8 +777,20 @@ public class XQLFileManager {
      * 设置解析sql文件使用的编码格式，默认为UTF-8
      *
      * @param charset 编码
+     * @see StandardCharsets
      */
     public void setCharset(Charset charset) {
+        checkConcurrentModify("cannot set charset when loading...");
+        this.charset = charset.name();
+    }
+
+    /**
+     * 设置解析sql文件使用的编码格式，默认为UTF-8
+     *
+     * @param charset 编码
+     * @see #setCharset(Charset) 
+     */
+    public void setCharset(String charset) {
         checkConcurrentModify("cannot set charset when loading...");
         this.charset = charset;
     }

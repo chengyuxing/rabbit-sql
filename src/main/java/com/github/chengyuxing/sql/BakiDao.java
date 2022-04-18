@@ -234,7 +234,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     @Override
     public int delete(String tableName, String where, Map<String, ?> arg) {
         String w = StringUtil.startsWithIgnoreCase(where.trim(), "where") ? where : "\nwhere " + where;
-        return executeNonQuery("delete from " + tableName + w, arg);
+        return executeNonQuery("delete from " + tableName + w, Collections.singletonList(arg));
     }
 
     /**
@@ -301,6 +301,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      *  </pre>
      * 解释：where中至少指定一个传名参数，数据中必须包含where条件中的所有传名参数
      * </blockquote>
+     *
      * @param tableName 表名
      * @param data      数据：需要更新的数据和条件参数
      * @param where     条件：条件中需要有传名参数作为更新的条件依据

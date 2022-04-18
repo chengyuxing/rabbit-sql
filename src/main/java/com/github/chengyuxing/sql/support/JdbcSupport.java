@@ -371,22 +371,6 @@ public abstract class JdbcSupport {
     }
 
     /**
-     * 执行一句非查询语句(insert，update，delete)<br>
-     * e.g.
-     * <blockquote>
-     * <pre>insert into table (a,b,c) values (:v1,:v2,:v3)</pre>
-     * </blockquote>
-     *
-     * @param sql sql
-     * @param arg 数据
-     * @return 总的受影响的行数
-     * @throws UncheckedSqlException sql执行过程中出现错误
-     */
-    public int executeNonQuery(final String sql, final Map<String, ?> arg) {
-        return executeNonQuery(sql, Collections.singletonList(arg));
-    }
-
-    /**
      * 执行存储过程或函数<br>
      * 所有出参结果都放入到{@link DataRow}中，可通过命名参数名来取得。<br>
      * 语句形如原生jdbc，只是将?号改为命名参数（:参数名）：

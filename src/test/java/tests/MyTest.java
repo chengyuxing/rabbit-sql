@@ -210,9 +210,6 @@ public class MyTest {
                 .count(10)
                 .collect(d -> d);
         System.out.println(pagedResource);
-        while (true) {
-
-        }
     }
 
     @Test

@@ -5,7 +5,6 @@ import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.sql.*;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
-import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.github.chengyuxing.sql.support.IOutParam;
 import com.github.chengyuxing.sql.transaction.Tx;
 import com.github.chengyuxing.sql.types.OUTParamType;
@@ -50,6 +49,7 @@ public class MyTest {
         BakiDao bakiDao = BakiDao.of(dataSource);
         bakiDao.setXqlFileManager(manager);
         bakiDao.setDebugFullSql(true);
+        bakiDao.setPageHelpers(Args.of("postgresql", "com.github.chengyuxing.sql.page.impl.PGPageHelper"));
         baki = bakiDao;
         baki2 = BakiDao.of(dataSource);
 //        bakiDao.setSqlPath("pgsql");
@@ -236,14 +236,9 @@ public class MyTest {
         PagedResource<DataRow> res = baki.<DataRow>query("&data.custom_paged", 1, 7)
                 .count("select count(*) from test.region where id > :id")
                 .args(Args.create("id", 8))
-                .pageHelper(new PGPageHelper() {
-                    @Override
-                    public String pagedSql(String sql) {
-                        return sql;
-                    }
-                }).collect(d -> d);
-
-        System.out.println(res);
+                .disableDefaultPageSql()
+                .collect(d -> d);
+        res.getData().forEach(System.out::println);
     }
 
     @Test

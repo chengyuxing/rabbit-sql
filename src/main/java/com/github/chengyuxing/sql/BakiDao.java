@@ -9,6 +9,9 @@ import com.github.chengyuxing.sql.exceptions.DuplicateException;
 import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 import com.github.chengyuxing.sql.page.IPageable;
 import com.github.chengyuxing.sql.page.PageHelper;
+import com.github.chengyuxing.sql.page.impl.MysqlPageHelper;
+import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
+import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.github.chengyuxing.sql.support.JdbcSupport;
 import com.github.chengyuxing.sql.transaction.Tx;
 import com.github.chengyuxing.sql.types.Param;
@@ -24,6 +27,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -54,6 +58,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     private final DataSource dataSource;
     private DatabaseMetaData currentMetaData;
     //---------optional properties------
+    private Map<String, PageHelper> pageHelpers = new HashMap<>();
     private XQLFileManager xqlFileManager;
     private boolean strictDynamicSqlArg = true;
     private boolean checkParameterType = true;
@@ -389,9 +394,9 @@ public class BakiDao extends JdbcSupport implements Baki {
      *                    关于自定义分页SQL配置如下:
      *                    <blockquote>
      *                    <ul>
-     *                    <li>需要手动指定分页对象：{@link IPageable#pageHelper(PageHelper)}</li>
+     *                    <li>禁用自动分页构建：{@link IPageable#disableDefaultPageSql(String...)}，因为如上例子，否则会在SQL结尾加{@code limit ... offset ...}</li>
      *                    <li>自定义count查询语句：{@link IPageable#count(String)}</li>
-     *                    <li>重写{@link com.github.chengyuxing.sql.page.PageHelper#pagedSql(String) }方法解除自动分页构建，因为如上例子，否则会在SQL结尾加{@code limit ... offset ...}</li>
+     *                    <li>如有必要自定义个性化参数名：{@link IPageable#rewriteDefaultPageArgs(Function)}</li>
      *                    </ul>
      *                    </blockquote>
      * @param page        当前页
@@ -401,7 +406,55 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     @Override
     public <T> IPageable<T> query(String recordQuery, int page, int size) {
-        return new Pageable<>(this, recordQuery, page, size);
+        return new SimplePageable<>(recordQuery, page, size);
+    }
+
+    /**
+     * 简单的分页构建器实现
+     *
+     * @param <T> 结果类型参数
+     */
+    class SimplePageable<T> extends IPageable<T> {
+
+        /**
+         * 简单分页构建器构造函数
+         *
+         * @param recordQuery 查询sql
+         * @param page        当前页
+         * @param size        页大小
+         */
+        public SimplePageable(String recordQuery, int page, int size) {
+            super(recordQuery, page, size);
+        }
+
+        @Override
+        public PagedResource<T> collect(Function<DataRow, T> mapper) {
+            String query = getSql(recordQuery, args);
+            if (count == null) {
+                String cq = countQuery;
+                if (cq == null) {
+                    cq = SqlUtil.generateCountQuery(query);
+                }
+                count = fetch(cq, args).map(cn -> {
+                    Object num = cn.getFirst();
+                    if (num instanceof Integer) {
+                        return (Integer) num;
+                    }
+                    return Integer.parseInt(num.toString());
+                }).orElse(0);
+            }
+            PageHelper pageHelper = customPageHelper;
+            if (pageHelper == null) {
+                pageHelper = defaultPager();
+            }
+            pageHelper.init(page, size, count);
+            args.putAll(rewriteArgsFunc == null ? pageHelper.pagedArgs() : rewriteArgsFunc.apply(pageHelper.pagedArgs()));
+            String executeQuery = disableDefaultPageSql ? query : pageHelper.pagedSql(query);
+            try (Stream<DataRow> s = query(executeQuery, args)) {
+                List<T> list = s.map(mapper).collect(Collectors.toList());
+                return PagedResource.of(pageHelper, list);
+            }
+        }
     }
 
     /**
@@ -520,6 +573,36 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
+     * 根据数据库名字自动选择合适的默认分页帮助类
+     *
+     * @return 分页帮助类
+     * @throws UnsupportedOperationException 如果没有自定分页，而默认分页不支持当前数据库
+     * @throws ConnectionStatusException     如果连接对象异常
+     */
+    protected PageHelper defaultPager() {
+        try {
+            String dbName = metaData().getDatabaseProductName().toLowerCase();
+            if (!pageHelpers.isEmpty()) {
+                if (pageHelpers.containsKey(dbName))
+                    return pageHelpers.get(dbName);
+            }
+            switch (dbName) {
+                case "oracle":
+                    return new OraclePageHelper();
+                case "postgresql":
+                case "sqlite":
+                    return new PGPageHelper();
+                case "mysql":
+                    return new MysqlPageHelper();
+                default:
+                    throw new UnsupportedOperationException("pager of \"" + dbName + "\" default not implement currently, see method 'pageHelpers' or 'registerPageHelper'.");
+            }
+        } catch (SQLException e) {
+            throw new UncheckedSqlException("get database metadata error: ", e);
+        }
+    }
+
+    /**
      * 根据严格模式获取表字段
      *
      * @param tableName 表名
@@ -608,6 +691,34 @@ public class BakiDao extends JdbcSupport implements Baki {
     @Override
     protected void releaseConnection(Connection connection, DataSource dataSource) {
         DataSourceUtil.releaseConnectionIfNecessary(connection, dataSource);
+    }
+
+    /**
+     * 设置自定义的分页帮助工具类实现
+     *
+     * @param pageHelpers 分页帮助类集合 [数据库名字: 分页帮助工具类类名]
+     * @see DatabaseMetaData#getDatabaseProductName()
+     */
+    public void setPageHelpers(Map<String, String> pageHelpers) {
+        Map<String, PageHelper> map = new HashMap<>();
+        try {
+            for (Map.Entry<String, String> e : pageHelpers.entrySet()) {
+                map.put(e.getKey(), (PageHelper) Class.forName(e.getValue()).newInstance());
+            }
+            this.pageHelpers = map;
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * 注册分页帮助工具类
+     *
+     * @param databaseName 数据库名字，来自于：{@link DatabaseMetaData#getDatabaseProductName()}
+     * @param pageHelper   分页帮助工具类
+     */
+    public void registerPageHelper(String databaseName, PageHelper pageHelper) {
+        this.pageHelpers.put(databaseName.toLowerCase(), pageHelper);
     }
 
     /**

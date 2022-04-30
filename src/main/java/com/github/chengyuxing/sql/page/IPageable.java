@@ -2,9 +2,6 @@ package com.github.chengyuxing.sql.page;
 
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.PagedResource;
-import com.github.chengyuxing.sql.page.impl.MysqlPageHelper;
-import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
-import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -22,6 +19,8 @@ public abstract class IPageable<T> {
     protected final int page;
     protected final int size;
     protected Integer count;
+    protected boolean disableDefaultPageSql;
+    protected Function<Map<String, Integer>, Map<String, Integer>> rewriteArgsFunc;
     protected PageHelper customPageHelper;
 
     /**
@@ -71,13 +70,39 @@ public abstract class IPageable<T> {
     }
 
     /**
-     * 设置自定义的分页帮助工具类
+     * 禁用默认生成（{@link PageHelper#pagedSql(String)}）的的分页sql，将不进行内部的分页sql构建，意味着需要自己实现个性化的分页sql，
+     * 必须指定count查询语句：{@link #count(String)}
+     *
+     * @param countQuery count查询语句或者 {@link #count(String)}
+     * @return 当前原生的查询sql
+     */
+    public IPageable<T> disableDefaultPageSql(String... countQuery) {
+        this.disableDefaultPageSql = true;
+        if (countQuery.length > 0) {
+            this.countQuery = countQuery[0];
+        }
+        return this;
+    }
+
+    /**
+     * 重写默认（{@link PageHelper#pagedArgs()}）的分页参数
+     *
+     * @param func 分页参数重写函数
+     * @return 自定义的分页参数
+     */
+    public IPageable<T> rewriteDefaultPageArgs(Function<Map<String, Integer>, Map<String, Integer>> func) {
+        this.rewriteArgsFunc = func;
+        return this;
+    }
+
+    /**
+     * 设置自定义的分页帮助工具类，非必要尽量不要使用此选项，硬编码缺少灵活性
      *
      * @param pageHelper 分页帮助类
      * @return 分页构建器
-     * @see OraclePageHelper
-     * @see PGPageHelper
-     * @see MysqlPageHelper
+     * @see #disableDefaultPageSql
+     * @see #rewriteArgsFunc
+     * @deprecated
      */
     public IPageable<T> pageHelper(PageHelper pageHelper) {
         this.customPageHelper = pageHelper;

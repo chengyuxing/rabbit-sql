@@ -8,7 +8,7 @@
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>6.2.3</version>
+    <version>6.2.4</version>
 </dependency>
 ```
 
@@ -59,6 +59,10 @@ BakiDao(DataSource dataSource)
 - [**xqlFileManager**](#XQLFileManager)
 
   接口中需要写sql的所有方法都可以使用``&别名或文件包路径.sql名``取地址符来获取sql文件中的sql。
+
+- **pageHelpers**
+
+  默认为空，内置不满足的情况下，用于注册自定义的分页帮助工具类。
 
 - **debugFullSql**
 
@@ -332,13 +336,8 @@ offset :offset;
 PagedResource<DataRow> res = baki.<DataRow>query("&pgsql.data.custom_paged", 1, 7)
                 .count("select count(*) from <table> where id > :id")
                 .args(Args.create("id", 8))
-                .pageHelper(new PGPageHelper() {
-                  // 重写此方法覆盖默认的分页构建逻辑，否则默认进行分页处理导致异常
-                    @Override
-                    public String pagedSql(String sql) {
-                        return sql;
-                    }
-                }).collect(d -> d);
+                .disableDefaultPageSql() //禁用默认生成的分页sql
+                .collect(d -> d);
 ```
 
 ### 事务

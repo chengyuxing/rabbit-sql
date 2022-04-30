@@ -19,7 +19,7 @@ public abstract class IPageable<T> {
     protected final int page;
     protected final int size;
     protected Integer count;
-    protected boolean disableDefaultPageSql;
+    protected boolean disablePageSql;
     protected Function<Map<String, Integer>, Map<String, Integer>> rewriteArgsFunc;
     protected PageHelper customPageHelper;
 
@@ -77,7 +77,7 @@ public abstract class IPageable<T> {
      * @return 当前原生的查询sql
      */
     public IPageable<T> disableDefaultPageSql(String... countQuery) {
-        this.disableDefaultPageSql = true;
+        this.disablePageSql = true;
         if (countQuery.length > 0) {
             this.countQuery = countQuery[0];
         }
@@ -100,8 +100,8 @@ public abstract class IPageable<T> {
      *
      * @param pageHelper 分页帮助类
      * @return 分页构建器
-     * @see #disableDefaultPageSql
-     * @see #rewriteArgsFunc
+     * @see #disableDefaultPageSql(String...)
+     * @see #rewriteDefaultPageArgs(Function)
      * @deprecated
      */
     public IPageable<T> pageHelper(PageHelper pageHelper) {

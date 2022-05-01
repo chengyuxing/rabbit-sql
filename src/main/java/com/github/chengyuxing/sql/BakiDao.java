@@ -58,7 +58,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     private final DataSource dataSource;
     private DatabaseMetaData currentMetaData;
     //---------optional properties------
-    private Map<String, PageHelper> pageHelpers = new HashMap<>();
+    private Map<String, Class<? extends PageHelper>> pageHelpers = new HashMap<>();
     private XQLFileManager xqlFileManager;
     private boolean strictDynamicSqlArg = true;
     private boolean checkParameterType = true;
@@ -584,7 +584,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             String dbName = metaData().getDatabaseProductName().toLowerCase();
             if (!pageHelpers.isEmpty()) {
                 if (pageHelpers.containsKey(dbName))
-                    return pageHelpers.get(dbName);
+                    return pageHelpers.get(dbName).newInstance();
             }
             switch (dbName) {
                 case "oracle":
@@ -599,6 +599,8 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
         } catch (SQLException e) {
             throw new UncheckedSqlException("get database metadata error: ", e);
+        } catch (InstantiationException | IllegalAccessException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -699,14 +701,15 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param pageHelpers 分页帮助类集合 [数据库名字: 分页帮助工具类类名]
      * @see DatabaseMetaData#getDatabaseProductName()
      */
+    @SuppressWarnings("unchecked")
     public void setPageHelpers(Map<String, String> pageHelpers) {
-        Map<String, PageHelper> map = new HashMap<>();
+        Map<String, Class<? extends PageHelper>> map = new HashMap<>();
         try {
             for (Map.Entry<String, String> e : pageHelpers.entrySet()) {
-                map.put(e.getKey(), (PageHelper) Class.forName(e.getValue()).newInstance());
+                map.put(e.getKey(), (Class<? extends PageHelper>) Class.forName(e.getValue()));
             }
             this.pageHelpers = map;
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+        } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
     }
@@ -717,7 +720,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param databaseName 数据库名字，来自于：{@link DatabaseMetaData#getDatabaseProductName()}
      * @param pageHelper   分页帮助工具类
      */
-    public void registerPageHelper(String databaseName, PageHelper pageHelper) {
+    public void registerPageHelper(String databaseName, Class<? extends PageHelper> pageHelper) {
         this.pageHelpers.put(databaseName.toLowerCase(), pageHelper);
     }
 

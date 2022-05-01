@@ -70,7 +70,7 @@ public abstract class IPageable<T> {
     }
 
     /**
-     * 禁用默认生成（{@link PageHelper#pagedSql(String)}）的的分页sql，将不进行内部的分页sql构建，意味着需要自己实现个性化的分页sql，
+     * 禁用默认生成（{@link PageHelper#pagedSql(String)}）的分页sql，将不进行内部的分页sql构建，意味着需要自己实现个性化的分页sql，
      * 必须指定count查询语句：{@link #count(String)}
      *
      * @param countQuery count查询语句或者 {@link #count(String)}
@@ -102,7 +102,6 @@ public abstract class IPageable<T> {
      * @return 分页构建器
      * @see #disableDefaultPageSql(String...)
      * @see #rewriteDefaultPageArgs(Function)
-     * @deprecated
      */
     public IPageable<T> pageHelper(PageHelper pageHelper) {
         this.customPageHelper = pageHelper;

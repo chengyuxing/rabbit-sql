@@ -47,12 +47,7 @@ public class JdbcUtil {
             Clob clob = (Clob) obj;
             obj = clob.getSubString(1, (int) clob.length());
         } else if ("org.postgresql.jdbc.PgArray".equals(className)) {
-            try {
-                Method method = obj.getClass().getDeclaredMethod("getArray");
-                obj = method.invoke(obj);
-            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-                throw new RuntimeException("invoke PgArray.getArray() with wrong:{}", e);
-            }
+            obj = resultSet.getArray(index).getArray();
         } else if ("oracle.sql.TIMESTAMP".equals(className) || "oracle.sql.TIMESTAMPTZ".equals(className)) {
             obj = resultSet.getTimestamp(index);
         } else if (className != null && className.startsWith("oracle.sql.DATE")) {

@@ -237,6 +237,12 @@ public class MyTest {
                 .count("select count(*) from test.region where id > :id")
                 .args(Args.create("id", 8))
                 .disableDefaultPageSql()
+//                .pageHelper(new MysqlPageHelper(){
+//                    @Override
+//                    public String pagedSql(String sql) {
+//                        return super.pagedSql(sql);
+//                    }
+//                })
                 .collect(d -> d);
         res.getData().forEach(System.out::println);
     }

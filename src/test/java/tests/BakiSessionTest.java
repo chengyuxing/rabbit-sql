@@ -36,6 +36,12 @@ public class BakiSessionTest {
     }
 
     @Test
+    public void testA() throws Exception{
+        baki.fetch("select now(), array ['a','b','c']")
+                .ifPresent(System.out::println);
+    }
+
+    @Test
     public void upd() throws Exception {
         int i = baki.update("${db}.region",
                 Args.of("name", "南亚风情第一城").add("oldName", "南亚风情园"),

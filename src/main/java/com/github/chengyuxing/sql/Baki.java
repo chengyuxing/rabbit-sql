@@ -220,10 +220,35 @@ public interface Baki {
      * 查询
      *
      * @param sql 查询sql
+     * @return 一组DataRow类型结果
+     */
+    default List<DataRow> queryRows(String sql) {
+        try (Stream<DataRow> s = query(sql)) {
+            return s.collect(Collectors.toList());
+        }
+    }
+
+    /**
+     * 查询
+     *
+     * @param sql 查询sql
      * @return 一组map类型结果
      */
     default List<Map<String, Object>> queryMaps(String sql) {
         try (Stream<DataRow> s = query(sql)) {
+            return s.collect(Collectors.toList());
+        }
+    }
+
+    /**
+     * 查询
+     *
+     * @param sql  查询sql
+     * @param args 参数
+     * @return 一组DataRow类型结果
+     */
+    default List<DataRow> queryRows(String sql, Map<String, ?> args) {
+        try (Stream<DataRow> s = query(sql, args)) {
             return s.collect(Collectors.toList());
         }
     }
@@ -275,8 +300,29 @@ public interface Baki {
      * @param sql 查询sql
      * @return 一条数据
      */
-    default Map<String, Object> fetchMap(String sql) {
+    default DataRow fetchRow(String sql) {
         return fetch(sql).orElseGet(() -> new DataRow(0));
+    }
+
+    /**
+     * 获取一条
+     *
+     * @param sql 查询sql
+     * @return 一条数据
+     */
+    default Map<String, Object> fetchMap(String sql) {
+        return fetchRow(sql);
+    }
+
+    /**
+     * 获取一条
+     *
+     * @param sql  查询sql
+     * @param args 参数
+     * @return 一条数据
+     */
+    default DataRow fetchRow(String sql, Map<String, ?> args) {
+        return fetch(sql, args).orElseGet(() -> new DataRow(0));
     }
 
     /**
@@ -287,7 +333,7 @@ public interface Baki {
      * @return 一条数据
      */
     default Map<String, Object> fetchMap(String sql, Map<String, ?> args) {
-        return fetch(sql, args).orElseGet(() -> new DataRow(0));
+        return fetchRow(sql, args);
     }
 
     /**

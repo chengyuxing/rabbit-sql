@@ -5,12 +5,12 @@
 - maven dependency (jdk1.8)
 
 ## 此版本已不再更新
-请使用最新版本V6，详情可查看分之`rabbit-sql-v6`
+请使用最新版本V6，详情可查看分之`rabbit-sql-6`
 ```xml
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>6.2.7</version>
+    <version>6.2.8</version>
 </dependency>
 ```
 ## 老版本

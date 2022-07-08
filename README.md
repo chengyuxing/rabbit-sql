@@ -4,6 +4,16 @@
 - 此库以追求简单稳定高效为目标，不支持查询结果实体映射，返回对象类型统一为[`DataRow`](https://github.com/chengyuxing/rabbit-common/blob/master/src/main/java/rabbit/common/types/DataRow.java)，[`DataRow`](https://github.com/chengyuxing/rabbit-common/blob/master/src/main/java/rabbit/common/types/DataRow.java)提供了了简单的实体互相转换，若需要复杂映射，可自行通过[`DataRow`](https://github.com/chengyuxing/rabbit-common/blob/master/src/main/java/rabbit/common/types/DataRow.java)来实现。
 - maven dependency (jdk1.8)
 
+## 此版本已不再更新
+请使用最新版本V6，详情可查看分之`rabbit-sql-v6`
+```xml
+<dependency>
+    <groupId>com.github.chengyuxing</groupId>
+    <artifactId>rabbit-sql</artifactId>
+    <version>6.2.7</version>
+</dependency>
+```
+## 老版本
 ```xml
 <dependency>
     <groupId>com.github.chengyuxing</groupId>

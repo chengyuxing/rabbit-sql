@@ -176,6 +176,15 @@ public class XQLFileManager {
     }
 
     /**
+     * 获取所有sql映射文件
+     *
+     * @return 以配置的sql映射文件
+     */
+    public Map<String, String> getFiles() {
+        return files;
+    }
+
+    /**
      * 解析sql文件
      *
      * @param name     文件别名
@@ -788,11 +797,20 @@ public class XQLFileManager {
      * 设置解析sql文件使用的编码格式，默认为UTF-8
      *
      * @param charset 编码
-     * @see #setCharset(Charset) 
+     * @see #setCharset(Charset)
      */
     public void setCharset(String charset) {
         checkConcurrentModify("cannot set charset when loading...");
         this.charset = charset;
+    }
+
+    /**
+     * 获取当前解析sql文件使用的编码格式，默认为UTF-8
+     *
+     * @return 当前解析sql文件使用的编码格式
+     */
+    public String getCharset() {
+        return charset;
     }
 
     /**
@@ -851,6 +869,16 @@ public class XQLFileManager {
     public void setDelimiter(String delimiter) {
         checkConcurrentModify("cannot set delimiter when loading...");
         this.delimiter = delimiter;
+    }
+
+    /**
+     * 获取当前的每个文件的sql片段块解析分隔符，默认是单个分号（{@code ;}）
+     *
+     * @return sql块分隔符
+     * @see #setDelimiter(String)
+     */
+    public String getDelimiter() {
+        return delimiter;
     }
 
     /**

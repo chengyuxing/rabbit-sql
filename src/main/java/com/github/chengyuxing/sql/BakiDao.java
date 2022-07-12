@@ -99,6 +99,15 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
+     * 获取当前sql文件解析管理器
+     *
+     * @return sql文件解析管理器
+     */
+    public XQLFileManager getXqlFileManager() {
+        return xqlFileManager;
+    }
+
+    /**
      * 执行query语句，ddl或dml语句<br>
      * 返回数据为:<br>
      * 执行结果：{@code DataRow.get(0)} 或 {@code DataRow.get("result")}<br>

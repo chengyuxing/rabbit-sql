@@ -114,6 +114,30 @@ xqlFileManager: {
     }
 ```
 
+**springboot** 配置例子：
+
+`application.yml`
+
+```yaml
+xql:
+  files:
+    home: xql/home.sql
+    index: xql/index.sql
+  constants:
+    db: qbpt_deve
+    db2: mysql
+```
+
+`RabbitConfig.java`
+
+```java
+@Bean(initMethod = "init")
+@ConfigurationProperties(prefix = "xql")
+public XQLFileManager xqlFileManager() {
+  return new XQLFileManager();
+}
+```
+
 #### 构造函数
 
 - XQLFileManager()

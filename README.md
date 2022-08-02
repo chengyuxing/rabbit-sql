@@ -8,7 +8,7 @@
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>6.2.9</version>
+    <version>6.2.10</version>
 </dependency>
 ```
 
@@ -186,11 +186,75 @@ public XQLFileManager xqlFileManager() {
 
 #### 动态SQL
 
-- 支持`--#if`和`--#fi`块标签，必须成对出现，类似于Mybatis的`if`标签；
+- 支持`--#if`和`--#fi`块标签，必须成对出现，类似于Mybatis的`if`标签，支持嵌套if，choose，switch：
 
-- 支持`--#switch`和`--#end`块标签，内部为：`--#case`, `--#default`和`--#break`，效果类似于程序代码的`switch`；
+  ```sql
+  --#if 表达式1
+         --#if 表达式2
+         ...
+         --#fi
+  --#fi
+  ```
 
-- 支持`--#choose`和`--#end`块标签，内部为`--#when`, `--#default`和`--#break`，效果类似于mybatis的`choose...when`标签；
+- 支持`--#switch`和`--#end`块标签，内部为：`--#case`, `--#default`和`--#break`，效果类似于程序代码的`switch`，分支中还可以嵌套if语句:
+
+  ```sql
+  --#switch :变量
+         --#case 值1
+         ...
+         --#break
+         --#case 值2
+         ...
+         --#break
+         ...
+         --#default
+         ...
+         --#break
+  --#end
+  ```
+
+- 支持`--#choose`和`--#end`块标签，内部为`--#when`, `--#default`和`--#break`，效果类似于mybatis的`choose...when`标签，分支中还可以嵌套if语句：
+
+  ```sql
+  --#choose
+         --#when 表达式1
+         ...
+         --#break
+         --#when 表达式2
+         ...
+         --#break
+         ...
+         --#default
+         ...
+         --#break
+  --#end
+  ```
+
+- 支持`--#for`循环标签，**内部不能嵌套其他任何标签，不进行解析**，但可以嵌套在`--#if`标签中，类似于程序的`foreach`，并进行了一些扩展：
+
+  ```sql
+  --#for 表达式
+  ...
+  --#end
+  ```
+
+  表达式语法：
+
+  ```bash
+  item[,idx] of :list [delimiter ','] [filter ${item.name} <> blank]
+  ```
+
+  :bulb: 关于for表达式的说明：
+
+  - **[]**内表示为可选参数；
+
+  - `item`表示迭代对象的当前值，`idx`表示当前索引，可以随意命名，但不能一样；
+
+  - 如果没有指定`delimiter`分割符，则默认迭代的sql使用逗号`,`连接；
+
+  - 如果指定`filter`过滤器，则对迭代对象进行筛选匹配值影响最终生成的sql；
+
+    `filter`的表达式语法和标准的有些不同，因为**被比较值**来自于for循环，不能使用`:参数名`，所以只能使用`${for定义的参数名}`来表示。
 
 - 支持的运算符：
 
@@ -229,8 +293,6 @@ where t.enable = true
       and t.a = :a
       --#if :a1 <> blank && :a1 = 90
         and t.a1 = :a1
-        and t.a1 = :a1
-        and t.a1 = :a1
       --#fi
       --#if :a2 <> blank
         and t.a2 = :a2
@@ -247,14 +309,6 @@ where t.enable = true
           --#end
       --#fi
 --#fi
---#choose
-      --#when :x <> blank
-        and t.x = :x
-      --#break
-      --#when :y <> blank
-        and t.y = :y
-      --#break
---#end
 --#switch :name
       --#case blank
         and t.name = 'blank'
@@ -269,43 +323,45 @@ where t.enable = true
 --#if :b <> blank
     and t.b = :b
 --#fi
---#if :c <> blank
-      --#if :c1 <> blank
-        and t.c1 = :c1
-          --#if :cc1 <> blank
-            and t.cc1 = :cc1
-          --#fi
-          --#if :cc2 <> blank
-            and t.cc2 = :cc2
-          --#fi
-      --#fi
-      --#if :c2 <> blank
-        and t.c2 = :c2
-      --#fi
-      and cc = :cc
---#fi
---#choose
-      --#when :e <> blank
-        and t.e = :e
-        and t.ee = :e
-        and t.eee = :e
-      --#break
-      --#when :f <> blank
-        and t.f = :f
-        --#if :ff <> blank
-          and t.ff = :ff
-          and t.ff2 = :ff
-        --#fi
-      --#break
-      --#when :g <> blank
-        and t.g = :g
-      --#break
---#end
 and x = :x
 ;
 ```
 
-⚠️ **case**和**when**分支中可以嵌套**if**语句，但不可以嵌套**choose**和**switch**，**if**语句中可以嵌套**choose**和**switch**，以此类推，理论上可以无限嵌套，但过于复杂，不太推荐，**3层以内**较为合理。
+**for的例子如下**：
+
+`a.sql`
+
+```sql
+select * from test.user t where
+--#if :names <> blank
+    --#for u,i of :users delimiter ' and ' filter ${i} > 0 && ${u.name} ~ 'a'
+    t.name = ${:name}
+    --#end
+--#fi
+;
+```
+
+`test.java`
+
+```java
+List<Map<String, Object>> users = Arrays.asList(
+  Args.of("name", "cyxa"), 
+  Args.of("name", "jack"), 
+  Args.of("name", "lisa"), 
+  Args.of("name", "lion")
+);
+Args<Object> args = Args.create("users", users, "names", names, "id", 10);
+System.out.println(sqlFileManager.get("for.q", args));
+```
+
+`输出`
+
+```sql
+select * from test.user t where
+t.name = 'jack' and t.name = 'lisa';
+```
+
+⚠️ **case**和**when**分支中可以嵌套**if**语句，但不可以嵌套**choose**和**switch**，**if**语句中可以嵌套**choose**、**switch**和**for**，以此类推，理论上可以无限嵌套，但过于复杂，不太推荐，**3层以内**较为合理。
 
 ## 对 *IntelliJ IDEA* 的友好支持
 

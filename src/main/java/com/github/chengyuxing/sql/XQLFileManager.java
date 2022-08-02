@@ -112,7 +112,7 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
  * <blockquote>
  * 内部不能嵌套其他任何标签，不进行解析
  * <pre>
- * {@code --#for item[,idx] of :list [delimiter ','] [filter ${item.name} <> blank]}
+ * --#for item[,idx] of :list [delimiter ','] [filter{@code $}{item.name}{@code <>} blank]
  *     ...
  * --#end
  * </pre>

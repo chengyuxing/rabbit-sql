@@ -6,6 +6,7 @@ import com.github.chengyuxing.common.console.Printer;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.script.Comparators;
 import com.github.chengyuxing.common.script.impl.FastExpression;
+import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.exceptions.DuplicateException;
 import com.github.chengyuxing.sql.exceptions.DynamicSQLException;
@@ -14,6 +15,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -106,6 +108,15 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
  * --#end
  * </pre>
  * </blockquote>
+ * <p>for语句块</p>
+ * <blockquote>
+ * 内部不能嵌套其他任何标签，不进行解析
+ * <pre>
+ * {@code --#for item[,idx] of :list [delimiter ','] [filter ${item.name} <> blank]}
+ *     ...
+ * --#end
+ * </pre>
+ * </blockquote>
  * 具体参考classpath下的文件：data.xql.template
  */
 public class XQLFileManager {
@@ -115,14 +126,14 @@ public class XQLFileManager {
     private final Map<String, Long> LAST_MODIFIED = new HashMap<>();
     private static final Pattern NAME_PATTERN = Pattern.compile("/\\*\\s*\\[\\s*(?<name>\\S+)\\s*]\\s*\\*/");
     private static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+)\\s*}\\s*\\*/");
+    private static final Pattern FOR_PATTERN = Pattern.compile("\\s+(?<item>[^,\\s]+)(\\s*,\\s*(?<index>\\S+))?\\s+of\\s+:(?<list>\\S+)((\\s+)delimiter\\s+'(?<delimiter>[^']+)')?(\\s+filter\\s+(?<filter>[\\S\\s]+))?");
     public static final String IF = "#if";
     public static final String FI = "#fi";
     public static final String CHOOSE = "#choose";
     public static final String WHEN = "#when";
-
     public static final String SWITCH = "#switch";
     public static final String CASE = "#case";
-
+    public static final String FOR = "#for";
     public static final String DEFAULT = "#default";
     public static final String BREAK = "#break";
     public static final String END = "#end";
@@ -216,7 +227,7 @@ public class XQLFileManager {
                         singleResource.put(blockName, "");
                     } else {
                         // exclude single line annotation except expression keywords
-                        if (!trimLine.startsWith("--") || (StringUtil.startsWithsIgnoreCase(formatAnonExpIf(trimLine), IF, FI, CHOOSE, WHEN, SWITCH, CASE, DEFAULT, BREAK, END))) {
+                        if (!trimLine.startsWith("--") || (StringUtil.startsWithsIgnoreCase(formatAnonExpIf(trimLine), IF, FI, CHOOSE, WHEN, SWITCH, FOR, CASE, DEFAULT, BREAK, END))) {
                             if (!blockName.equals("")) {
                                 String prepareLine = singleResource.get(blockName) + line;
                                 if (trimLine.endsWith(delimiter)) {
@@ -409,7 +420,7 @@ public class XQLFileManager {
                             // 否则就认为是原始sql逻辑判断需要保留片段
                             if (res) {
                                 String innerStr = innerSb.toString();
-                                if (containsAllIgnoreCase(innerStr, IF, FI) || containsAllIgnoreCase(innerStr, CHOOSE, END) || containsAllIgnoreCase(innerStr, SWITCH, END)) {
+                                if (containsAllIgnoreCase(innerStr, IF, FI) || containsAllIgnoreCase(innerStr, CHOOSE, END) || containsAllIgnoreCase(innerStr, SWITCH, END) || containsAllIgnoreCase(innerStr, FOR, END)) {
                                     output.add(dynamicCalc(innerStr, args, checkArgsKey));
                                 } else {
                                     output.add(innerStr);
@@ -492,13 +503,13 @@ public class XQLFileManager {
                 // 处理switch表达式块，逻辑等同于choose表达式块
             } else if (startsWithIgnoreCase(trimOuterLine, SWITCH)) {
                 Pattern p = Pattern.compile(":(?<name>\\S+)");
-                Matcher m = p.matcher(trimOuterLine.substring(9));
+                Matcher m = p.matcher(trimOuterLine.substring(7));
                 String name = null;
                 if (m.find()) {
                     name = m.group("name");
                 }
                 if (name == null) {
-                    throw new DynamicSQLException("switch syntax error, cannot find var.");
+                    throw new DynamicSQLException("switch syntax error of expression '" + trimOuterLine + "', cannot find var.");
                 }
                 Object value = args.get(name);
                 while (++i < j) {
@@ -507,7 +518,7 @@ public class XQLFileManager {
                     if (startsWithsIgnoreCase(trimLine, CASE, DEFAULT)) {
                         boolean res = false;
                         if (startsWithIgnoreCase(trimLine, CASE)) {
-                            res = Comparators.compare(value, "=", trimLine.substring(6));
+                            res = Comparators.compare(value, "=", trimLine.substring(5).trim());
                         }
                         if (res || startsWithIgnoreCase(trimLine, DEFAULT)) {
                             StringJoiner innerSb = new StringJoiner(NEW_LINE);
@@ -542,6 +553,102 @@ public class XQLFileManager {
                     } else {
                         output.add(line);
                     }
+                }
+            } else if (startsWithIgnoreCase(trimOuterLine, FOR)) {
+                Matcher m = FOR_PATTERN.matcher(trimOuterLine.substring(4));
+                if (m.find()) {
+                    // 完整的表达式例如：item[,idx] of :list [delimiter ','] [filter ${item.name} <> blank]
+                    // 方括号中为可选参数
+                    String itemName = m.group("item");
+                    String idxName = m.group("index");
+                    String listName = m.group("list");
+                    String delimiter = m.group("delimiter");
+                    String filter = m.group("filter");
+                    // 认为for表达式块中有多行需要迭代的sql片段，在此全部找出来用换行分割，保留格式
+                    StringJoiner loopPart = new StringJoiner("\n");
+                    while (++i < j && !startsWithIgnoreCase(formatAnonExpIf(lines[i]), END)) {
+                        loopPart.add(lines[i]);
+                    }
+                    Object loopObj = args.get(listName);
+                    Object[] loopArr;
+                    if (loopObj instanceof Object[]) {
+                        loopArr = (Object[]) loopObj;
+                    } else if (loopObj instanceof Collection) {
+                        //noinspection unchecked
+                        loopArr = ((Collection<Object>) loopObj).toArray();
+                    } else {
+                        loopArr = new Object[]{loopObj};
+                    }
+                    // 如果没指定分割符，默认迭代sql片段最终使用逗号连接
+                    StringJoiner forSql = new StringJoiner(delimiter == null ? ", " : delimiter.replace("\\n", "\n").replace("\\t", "\t"));
+                    // 用于查找for定义变量的正则表达式
+                    Pattern itemP = Pattern.compile("\\$\\{:?(?<tmp>(" + itemName + ")(.\\w+)*|" + idxName + ")}");
+                    for (int x = 0; x < loopArr.length; x++) {
+                        // 如果定义了过滤器，首先对数据进行筛选操作
+                        if (filter != null) {
+                            Matcher vx = itemP.matcher(filter);
+                            Map<String, Object> filterArgs = new HashMap<>();
+                            String expStr = filter;
+                            while (vx.find()) {
+                                String tmp = vx.group("tmp");
+                                // 如果变量占位符和索引名一样，则添加索引到参数中
+                                if (tmp.equals(idxName)) {
+                                    filterArgs.put(idxName, x);
+                                } else {
+                                    // 如果是对象类型参数，使用路径表示法取得参数值
+                                    Object value = loopArr[x];
+                                    if (tmp.startsWith(itemName + ".")) {
+                                        String valuePath = tmp.substring(itemName.length());
+                                        String jPath = valuePath.replace(".", "/");
+                                        try {
+                                            value = ObjectUtil.getDeepNestValue(value, jPath);
+                                        } catch (NoSuchFieldException | InvocationTargetException |
+                                                 NoSuchMethodException | IllegalAccessException e) {
+                                            throw new RuntimeException("get value error :", e);
+                                        }
+                                    }
+                                    filterArgs.put(tmp, value);
+                                }
+                                // 将filter子句转为支持表达式解析的子句格式
+                                expStr = expStr.replace("${" + tmp + "}", ":" + tmp);
+                            }
+                            FastExpression expression = FastExpression.of(expStr);
+                            if (!expression.calc(filterArgs)) {
+                                continue;
+                            }
+                        }
+                        String sqlPart = loopPart.toString().trim();
+                        Matcher mx = itemP.matcher(sqlPart);
+                        while (mx.find()) {
+                            String tmp = mx.group("tmp");
+                            if (tmp.equals(idxName)) {
+                                sqlPart = sqlPart.replace("${" + idxName + "}", x + "");
+                            } else {
+                                Object value = loopArr[x];
+                                if (tmp.startsWith(itemName + ".")) {
+                                    String valuePath = tmp.substring(itemName.length());
+                                    String jPath = valuePath.replace(".", "/");
+                                    try {
+                                        value = ObjectUtil.getDeepNestValue(value, jPath);
+                                    } catch (NoSuchFieldException | InvocationTargetException |
+                                             NoSuchMethodException |
+                                             IllegalAccessException e) {
+                                        throw new RuntimeException("get value error :", e);
+                                    }
+                                }
+                                // 此处为了统一，还是支持字符串模版占位符的两种处理格式
+                                if (sqlPart.contains("${" + tmp + "}")) {
+                                    sqlPart = sqlPart.replace("${" + tmp + "}", value.toString());
+                                } else if (sqlPart.contains("${:" + tmp + "}")) {
+                                    sqlPart = sqlPart.replace("${:" + tmp + "}", SqlUtil.quoteFormatValueIfNecessary(value));
+                                }
+                            }
+                        }
+                        forSql.add(sqlPart);
+                    }
+                    output.add(forSql.toString());
+                } else {
+                    throw new DynamicSQLException("for syntax error of expression '" + trimOuterLine + "' ");
                 }
             } else {
                 // 没有表达式的行，说明是原始sql的需要保留的部分

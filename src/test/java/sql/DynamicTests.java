@@ -7,6 +7,9 @@ import org.junit.Test;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -17,8 +20,18 @@ public class DynamicTests {
     @BeforeClass
     public static void init() throws IOException, URISyntaxException {
         sqlFileManager.add("nest", "pgsql/deep_nest.sql");
+        sqlFileManager.add("for", "pgsql/for.sql");
         sqlFileManager.init();
         System.out.println("------------------");
+    }
+
+    @Test
+    public void test() throws Exception {
+        List<Map<String, Object>> users = Arrays.asList(Args.of("name", "cyx"), Args.of("name", "jack"), Args.of("name", "lisa"));
+        List<String> names = Arrays.asList("jackson", "mike", "book", "Bob");
+        Args<Object> args = Args.create("users", users, "names", names, "id", 10);
+        System.out.println(sqlFileManager.get("for.q", args));
+        System.out.println(sqlFileManager.get("for.q2", args));
     }
 
     @Test

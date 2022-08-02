@@ -112,6 +112,15 @@ where t.enable = true
 and x = :x
 ;
 
+/*[q2]*/
+select * from test.user t where
+--#if :names <> blank
+    -- #for name,idx of :names delimiter ' and ' filter ${idx} > 0 && ${name} ~ 'o'
+    t.name = ${:name}
+    -- #end
+--#fi
+;
+
 /*[good_query]*/
 /*一段稍微复杂的sql也可以被正确的解析*/
 select t.id || 'number' || 'name:cyx',

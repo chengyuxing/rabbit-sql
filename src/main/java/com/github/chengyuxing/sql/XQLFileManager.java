@@ -126,7 +126,7 @@ public class XQLFileManager {
     private final Map<String, Long> LAST_MODIFIED = new HashMap<>();
     private static final Pattern NAME_PATTERN = Pattern.compile("/\\*\\s*\\[\\s*(?<name>\\S+)\\s*]\\s*\\*/");
     private static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+)\\s*}\\s*\\*/");
-    private static final Pattern FOR_PATTERN = Pattern.compile("\\s+(?<item>[^,\\s]+)(\\s*,\\s*(?<index>\\S+))?\\s+of\\s+:(?<list>\\S+)((\\s+)delimiter\\s+'(?<delimiter>[^']+)')?(\\s+filter\\s+(?<filter>[\\S\\s]+))?");
+    private static final Pattern FOR_PATTERN = Pattern.compile("(?<item>[^,\\s]+)(\\s*,\\s*(?<index>\\S+))?\\s+of\\s+:(?<list>\\S+)((\\s+)delimiter\\s+'(?<delimiter>[^']+)')?(\\s+filter\\s+(?<filter>[\\S\\s]+))?");
     public static final String IF = "#if";
     public static final String FI = "#fi";
     public static final String CHOOSE = "#choose";
@@ -555,7 +555,7 @@ public class XQLFileManager {
                     }
                 }
             } else if (startsWithIgnoreCase(trimOuterLine, FOR)) {
-                Matcher m = FOR_PATTERN.matcher(trimOuterLine.substring(4));
+                Matcher m = FOR_PATTERN.matcher(trimOuterLine.substring(4).trim());
                 if (m.find()) {
                     // 完整的表达式例如：item[,idx] of :list [delimiter ','] [filter ${item.name} <> blank]
                     // 方括号中为可选参数

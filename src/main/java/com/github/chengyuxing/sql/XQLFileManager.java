@@ -584,19 +584,20 @@ public class XQLFileManager {
                     // 用于查找for定义变量的正则表达式
                     Pattern itemP = Pattern.compile("\\$\\{:?(?<tmp>(" + itemName + ")(.\\w+)*|" + idxName + ")}");
                     for (int x = 0; x < loopArr.length; x++) {
-                        // 如果定义了过滤器，首先对数据进行筛选操作
+                        // 如果定义了过滤器，首先对数据进行筛选操作，不满足条件的直接过滤
                         if (filter != null) {
+                            // 查找过滤器中的引用变量
                             Matcher vx = itemP.matcher(filter);
                             Map<String, Object> filterArgs = new HashMap<>();
                             String expStr = filter;
                             while (vx.find()) {
                                 String tmp = vx.group("tmp");
-                                // 如果变量占位符和索引名一样，则添加索引到参数中
+                                // 如果变量占位符和索引名一样，表明使用索引，则添加索引到参数中
                                 if (tmp.equals(idxName)) {
                                     filterArgs.put(idxName, x);
                                 } else {
-                                    // 如果是对象类型参数，使用路径表示法取得参数值
                                     Object value = loopArr[x];
+                                    // 如果是对象类型参数，使用路径表示法取得参数值
                                     if (tmp.startsWith(itemName + ".")) {
                                         String valuePath = tmp.substring(itemName.length());
                                         String jPath = valuePath.replace(".", "/");
@@ -617,11 +618,14 @@ public class XQLFileManager {
                                 continue;
                             }
                         }
+                        // 准备循环迭代生产满足条件的sql片段
                         String sqlPart = loopPart.toString().trim();
+                        // 查找需迭代sql片段中的引用变量
                         Matcher mx = itemP.matcher(sqlPart);
                         while (mx.find()) {
                             String tmp = mx.group("tmp");
                             if (tmp.equals(idxName)) {
+                                // 索引为数字类型，所以直接就替换了，不需要安全处理参数
                                 sqlPart = sqlPart.replace("${" + idxName + "}", x + "");
                             } else {
                                 Object value = loopArr[x];

@@ -8,7 +8,7 @@
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>6.2.10</version>
+    <version>6.2.11</version>
 </dependency>
 ```
 
@@ -88,6 +88,8 @@ BakiDao(DataSource dataSource)
   
 
 ## XQLFileManager
+
+:bulb: 为什么不叫 `SQLFileManager`？并不是写错了，而是对普通sql文件的标准进行了扩展，不破坏标准的前提下通过特殊格式化的注释进行了扩展支持脚本进行逻辑判断，得以支持**动态sql**，所以是更加强大的SQL文件解析器。
 
 文件结尾以`.sql`或`.xql`结尾，文件中可以包含任意符合标准的注释，格式参考```data.xql.template```；
 
@@ -183,6 +185,21 @@ public XQLFileManager xqlFileManager() {
   命名别名的文件路径集合字典
 
   取sql写法，**&文件别名.sql名**：`&sys.getUser`
+  
+- **pipes**
+
+  自定义管道字典集合，key为管道名，value为管道类名，**用于动态sql脚本的参数值**，例如：
+
+  ```sql
+  -- 传入的name参数经过名为length的管道输出长度和3进行大小比较
+  :name|length <= 3
+  ```
+
+  :bulb: 管道顾名思义，可以链式使用 `:id | upper | is_id_card | ...`
+
+- **pipeInstances**
+
+  自定义管道实例的字典集合，和**pipes**字段一样，最终都将合并一同解析装载。
 
 #### 动态SQL
 

@@ -5,6 +5,7 @@ import com.github.chengyuxing.common.console.Color;
 import com.github.chengyuxing.common.console.Printer;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.script.Comparators;
+import com.github.chengyuxing.common.script.IPipe;
 import com.github.chengyuxing.common.script.impl.FastExpression;
 import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
@@ -34,7 +35,7 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
  * 合理利用sql所支持的块注释（{@code /**}{@code /}）、行注释（{@code --}）、传名参数（{@code :name}）和字符串模版占位符（{@code ${template}}），对其进行了语法结构扩展，几乎没有对sql文件标准进行过改动，各种支持sql的IDE依然可以工作。<br>
  * 支持外部sql(本地文件系统)和classpath下的sql，
  * 本地sql文件以 {@code file:} 开头，默认读取<strong>classpath</strong>下的sql文件，识别的文件格式支持: {@code .xql.sql}，
- * 默认情况下两种文件内容没区别，仅需内容遵循格式，{@code .xql}结尾用来表示此类型文件是{@link XQLFileManager}所支持的扩展的sql文件。
+ * 默认情况下两种文件内容没区别，仅需内容遵循格式，{@code .xql}结尾用来表示此类型文件是 {@code XQLFileManager} 所支持的扩展的sql文件。
  * <blockquote>
  *     <ul>
  *         <li><pre>windows文件系统: file:\\D:\\rabbit.s(x)ql</pre></li>
@@ -142,6 +143,8 @@ public class XQLFileManager {
     // ----------------optional properties------------------
     private Map<String, String> files = new HashMap<>();
     private Map<String, String> constants = new HashMap<>();
+    private final Map<String, IPipe<?>> pipeInstances = new HashMap<>();
+    private Map<String, String> pipes = new HashMap<>();
     private int checkPeriod = 30; //seconds
     private volatile boolean checkModified;
     private volatile boolean initialized;
@@ -345,6 +348,25 @@ public class XQLFileManager {
     }
 
     /**
+     * 加载管道
+     */
+    protected void loadPipes() {
+        if (!pipes.isEmpty()) {
+            try {
+                for (Map.Entry<String, String> entry : pipes.entrySet()) {
+                    pipeInstances.put(entry.getKey(), (IPipe<?>) Class.forName(entry.getValue()).newInstance());
+                }
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                throw new RuntimeException("init pipe error: ", e);
+            }
+        }
+        if (log.isDebugEnabled()) {
+            if (!pipeInstances.isEmpty())
+                log.debug("loaded pipes {}", pipeInstances);
+        }
+    }
+
+    /**
      * 初始化加载sql到缓存中
      *
      * @throws UncheckedIOException 如果sql文件读取错误或sql文件没有找到
@@ -354,6 +376,7 @@ public class XQLFileManager {
     public void init() {
         initialized = true;
         loadResource();
+        loadPipes();
         if (this.checkModified) {
             if (watchDog == null) {
                 watchDog = new WatchDog(1);
@@ -414,6 +437,7 @@ public class XQLFileManager {
                         if (count == 0) {
                             // 此处计算外层if逻辑表达式，逻辑同程序语言的if逻辑
                             FastExpression fx = FastExpression.of(trimOuterLine.substring(3));
+                            fx.setCustomPipes(pipeInstances);
                             fx.setCheckArgsKey(checkArgsKey);
                             boolean res = fx.calc(args);
                             // 如果外层判断为真，如果内层还有if表达式块或choose...end块，则进入内层继续处理
@@ -456,6 +480,7 @@ public class XQLFileManager {
                         boolean res = false;
                         if (startsWithIgnoreCase(trimLine, WHEN)) {
                             FastExpression fx = FastExpression.of(trimLine.substring(5));
+                            fx.setCustomPipes(pipeInstances);
                             fx.setCheckArgsKey(checkArgsKey);
                             res = fx.calc(args);
                         }
@@ -582,6 +607,7 @@ public class XQLFileManager {
                     // 如果没指定分割符，默认迭代sql片段最终使用逗号连接
                     StringJoiner forSql = new StringJoiner(delimiter == null ? ", " : delimiter.replace("\\n", "\n").replace("\\t", "\t"));
                     // 用于查找for定义变量的正则表达式
+                    /// 需要验证下正则表达式 例如：user.address.street，超过2级
                     Pattern itemP = Pattern.compile("\\$\\{:?(?<tmp>(" + itemName + ")(.\\w+)*|" + idxName + ")}");
                     for (int x = 0; x < loopArr.length; x++) {
                         // 如果定义了过滤器，首先对数据进行筛选操作，不满足条件的直接过滤
@@ -614,6 +640,8 @@ public class XQLFileManager {
                                 expStr = expStr.replace("${" + tmp + "}", ":" + tmp);
                             }
                             FastExpression expression = FastExpression.of(expStr);
+                            expression.setCustomPipes(pipeInstances);
+                            expression.setCheckArgsKey(checkArgsKey);
                             if (!expression.calc(filterArgs)) {
                                 continue;
                             }
@@ -1001,5 +1029,45 @@ public class XQLFileManager {
         if (loading) {
             throw new ConcurrentModificationException(msg);
         }
+    }
+
+    /**
+     * 获取动态sql脚本自定义管道字典
+     *
+     * @return 自定义管道字典
+     */
+    public Map<String, String> getPipes() {
+        return pipes;
+    }
+
+    /**
+     * 配置动态sql脚本自定义管道字典
+     *
+     * @param pipes 自定义管道字典 [管道名, 管道类全名]
+     * @see IPipe
+     * @see #setPipeInstances(Map)
+     */
+    public void setPipes(Map<String, String> pipes) {
+        this.pipes = pipes;
+    }
+
+    /**
+     * 配置动态sql脚本自定义管道字典
+     *
+     * @param pipeInstances 自定义管道字典 [管道名, 管道类实例]
+     * @see IPipe
+     */
+    public void setPipeInstances(Map<String, IPipe<?>> pipeInstances) {
+        this.pipeInstances.clear();
+        this.pipeInstances.putAll(pipeInstances);
+    }
+
+    /**
+     * 获取动态sql脚本自定义管道字典
+     *
+     * @return 自定义管道字典
+     */
+    public Map<String, IPipe<?>> getPipeInstances() {
+        return pipeInstances;
     }
 }

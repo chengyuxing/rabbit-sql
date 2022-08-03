@@ -8,12 +8,22 @@ where name in (
     );
 
 /*[q2]*/
-select * from test.user t where
+select *
+from test.user t
+where
 --#if :names <> blank
-    -- #for name,idx of :names delimiter ' and ' filter ${idx} > 0 && ${name} ~ 'o'
-    t.name = ${:name}
-    -- #end
+-- #for name,idx of :names delimiter ' and ' filter ${idx} > 0 && ${name} ~ 'o'
+t.name = ${:name}
+-- #end
 --#fi
 ;
 
--- #for item[,idx] of :list [delimiter ','] [filter ${item.name} <> blank]
+/*[pipe]*/
+select *
+from test.user t
+where
+--#if :idCard | is_id_card == true
+t.id = :idCard
+--#fi
+;
+

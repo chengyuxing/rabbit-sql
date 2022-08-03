@@ -121,6 +121,13 @@ select * from test.user t where
 --#fi
 ;
 
+/*[pipe]*/
+select * from test.user t where
+--#if :idCard | is_id_card == true
+t.id = :idCard
+--#fi
+;
+
 /*[good_query]*/
 /*一段稍微复杂的sql也可以被正确的解析*/
 select t.id || 'number' || 'name:cyx',

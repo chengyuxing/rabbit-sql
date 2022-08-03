@@ -21,6 +21,8 @@ public class DynamicTests {
     public static void init() throws IOException, URISyntaxException {
         sqlFileManager.add("nest", "pgsql/deep_nest.sql");
         sqlFileManager.add("for", "pgsql/for.sql");
+        sqlFileManager.setPipeInstances(Args.of("is_id_card", new IsIdCardPipe()));
+//        sqlFileManager.setPipes(Args.of("is_id_card","sql.IsIdCardPipe"));
         sqlFileManager.init();
         System.out.println("------------------");
     }
@@ -32,6 +34,11 @@ public class DynamicTests {
         Args<Object> args = Args.create("users", users, "names", names, "id", 10);
         System.out.println(sqlFileManager.get("for.q", args));
         System.out.println(sqlFileManager.get("for.q2", args));
+    }
+
+    @Test
+    public void test3() throws Exception {
+        System.out.println(sqlFileManager.get("for.pipe",Args.create("idCard","5301111993")));
     }
 
     @Test

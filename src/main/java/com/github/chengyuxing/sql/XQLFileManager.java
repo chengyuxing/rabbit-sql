@@ -95,7 +95,7 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
  * <blockquote>
  *  分支中还可以嵌套if语句
  * <pre>
- * --#switch :变量
+ * --#switch :变量 | {@linkplain IPipe 管道1} | {@linkplain IPipe 管道n} | ...
  *      --#case 值1
  *      ...
  *      --#break
@@ -119,6 +119,8 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
  * </pre>
  * </blockquote>
  * 具体参考classpath下的文件：data.xql.template
+ *
+ * @see FastExpression
  */
 public class XQLFileManager {
     private final static Logger log = LoggerFactory.getLogger(XQLFileManager.class);

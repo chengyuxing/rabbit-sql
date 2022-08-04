@@ -42,6 +42,11 @@ public class DynamicTests {
     }
 
     @Test
+    public void test4() throws Exception{
+        System.out.println(sqlFileManager.get("for.switch", Args.of("name", "cyx")));
+    }
+
+    @Test
     public void test2() throws Exception {
         System.out.println(sqlFileManager.get("nest.choose", Args.create("id", null, "name", "cyx")));
     }

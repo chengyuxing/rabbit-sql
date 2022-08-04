@@ -128,6 +128,7 @@ public class XQLFileManager {
     private static final Pattern NAME_PATTERN = Pattern.compile("/\\*\\s*\\[\\s*(?<name>\\S+)\\s*]\\s*\\*/");
     private static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+)\\s*}\\s*\\*/");
     private static final Pattern FOR_PATTERN = Pattern.compile("(?<item>[^,\\s]+)(\\s*,\\s*(?<index>\\S+))?\\s+of\\s+:(?<list>\\S+)((\\s+)delimiter\\s+'(?<delimiter>[^']+)')?(\\s+filter\\s+(?<filter>[\\S\\s]+))?");
+    private static final Pattern SWITCH_PATTERN = Pattern.compile(":(?<name>[\\w.]+)\\s*(?<pipes>(\\s*\\|\\s*\\w+)*)?");
     public static final String IF = "#if";
     public static final String FI = "#fi";
     public static final String CHOOSE = "#choose";
@@ -527,16 +528,20 @@ public class XQLFileManager {
                 }
                 // 处理switch表达式块，逻辑等同于choose表达式块
             } else if (startsWithIgnoreCase(trimOuterLine, SWITCH)) {
-                Pattern p = Pattern.compile(":(?<name>\\S+)");
-                Matcher m = p.matcher(trimOuterLine.substring(7));
+                Matcher m = SWITCH_PATTERN.matcher(trimOuterLine.substring(7));
                 String name = null;
+                String pipes = null;
                 if (m.find()) {
                     name = m.group("name");
+                    pipes = m.group("pipes");
                 }
                 if (name == null) {
                     throw new DynamicSQLException("switch syntax error of expression '" + trimOuterLine + "', cannot find var.");
                 }
                 Object value = args.get(name);
+                if (pipes != null && !pipes.trim().equals("")) {
+                    value = FastExpression.of("-ignore-").pipedValue(value, pipes);
+                }
                 while (++i < j) {
                     String line = lines[i];
                     String trimLine = formatAnonExpIf(line);

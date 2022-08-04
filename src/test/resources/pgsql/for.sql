@@ -27,3 +27,16 @@ t.id = :idCard
 --#fi
 ;
 
+/*[switch]*/
+select *
+from test.user t
+where
+-- #switch :name | upper
+    -- #case 'CYX'
+    t.id = :id
+    -- #break
+    -- #default
+    t.id = 10
+    -- #break
+-- #end
+;

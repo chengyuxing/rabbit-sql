@@ -1,8 +1,17 @@
 # rabbit-sql 使用说明
 
-- 对JDBC的一个薄封装工具类，提供基本的增删改查操作；
-- 此库以追求简单稳定高效为目标，不支持查询结果实体映射，返回对象类型统一为[`DataRow`](https://github.com/chengyuxing/rabbit-common/blob/master/src/main/java/rabbit/common/types/DataRow.java)，[`DataRow`](https://github.com/chengyuxing/rabbit-common/blob/master/src/main/java/rabbit/common/types/DataRow.java)提供了了简单的实体互相转换，若需要复杂映射，可自行通过[`DataRow`](https://github.com/chengyuxing/rabbit-common/blob/master/src/main/java/rabbit/common/types/DataRow.java)来实现。
-- maven dependency (jdk1.8)
+对**JDBC**的一个薄封装工具类，提供一些基本的操作，此库以追求简单稳定高效为目标（手写sql为主），不支持查询结果实体映射，返回对象类型统一为[`DataRow`](https://github.com/chengyuxing/rabbit-common/blob/master/src/main/java/rabbit/common/types/DataRow.java)，[`DataRow`](https://github.com/chengyuxing/rabbit-common/blob/master/src/main/java/rabbit/common/types/DataRow.java)提供了了简单的实体互相转换，若需要复杂映射，可自行通过[`DataRow`](https://github.com/chengyuxing/rabbit-common/blob/master/src/main/java/rabbit/common/types/DataRow.java)来实现，此库基本功能如下：
+
+- 基本接口增删改查；
+- 简单分页查询；
+- 流查询（java8的**Stream**）；
+- 预编译sql；
+- 调用存储过程/函数；
+- 简单的事务；
+- 代码与sql文件分离（[SQL文件解析器](#XQLFileManager)）；
+- sql文件注释扩展的简单**脚本语法**支持**[动态sql](#XQLFileManager)**；
+
+## maven dependency (jdk1.8)
 
 ```xml
 <dependency>
@@ -184,11 +193,11 @@ public XQLFileManager xqlFileManager() {
 
   命名别名的文件路径集合字典
 
-  取sql写法，**&文件别名.sql名**：`&sys.getUser`
+  取sql写法，**文件别名.sql名**：`sys.getUser`
   
 - **pipes**
 
-  自定义管道字典集合，key为管道名，value为管道类名，**用于动态sql脚本的参数值**，例如：
+  自定义管道字典集合，**key**为管道名，**value**为管道类名，**用于动态sql脚本的参数值**，例如：
 
   ```sql
   -- 传入的name参数经过名为length的管道输出长度和3进行大小比较
@@ -262,6 +271,8 @@ public XQLFileManager xqlFileManager() {
   ```
 
   :bulb: 关于for表达式的说明：
+
+  - 关键字：... **of** ... **delimiter** ... **filter** ...；
 
   - **[]**内表示为可选参数；
 
@@ -393,9 +404,7 @@ t.name = 'jack' and t.name = 'lisa';
 
 ```java
 dataSource=new HikariDataSource();
-dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
-dataSource.setUsername(...);
-dataSource.setDriverClassName("org.postgresql.Driver");
+...
 XQLFileManager manager=new XQLFileManager(...);
 BakiDao baki=new BakiDao(dataSource);
 baki.setXqlFileManager(manager);
@@ -423,10 +432,8 @@ PagedResource<DataRow> res=baki.<DataRow>query("&pgsql.data.select_user", 1, 10)
 
 ```sql
 /*[custom_paged]*/
-select *
-from test.region
-where id > :id limit :limit
-offset :offset;
+select * from test.region
+where id > :id limit :limit offset :offset;
 ```
 
 ```java

@@ -127,7 +127,7 @@ public class XQLFileManager {
     private final Map<String, Long> LAST_MODIFIED = new HashMap<>();
     private static final Pattern NAME_PATTERN = Pattern.compile("/\\*\\s*\\[\\s*(?<name>\\S+)\\s*]\\s*\\*/");
     private static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+)\\s*}\\s*\\*/");
-    private static final Pattern FOR_PATTERN = Pattern.compile("(?<item>[^,\\s]+)(\\s*,\\s*(?<index>\\S+))?\\s+of\\s+:(?<list>\\S+)((\\s+)delimiter\\s+'(?<delimiter>[^']+)')?(\\s+filter\\s+(?<filter>[\\S\\s]+))?");
+    private static final Pattern FOR_PATTERN = Pattern.compile("(?<item>\\w+)(\\s*,\\s*(?<index>\\w+))?\\s+of\\s+:(?<list>[\\w.]+)(?<pipes>(\\s*\\|\\s*[\\w.]+)*)?(\\s+delimiter\\s+'(?<delimiter>[^']*)')?(\\s+filter\\s+(?<filter>[\\S\\s]+))?");
     private static final Pattern SWITCH_PATTERN = Pattern.compile(":(?<name>[\\w.]+)\\s*(?<pipes>(\\s*\\|\\s*\\w+)*)?");
     public static final String IF = "#if";
     public static final String FI = "#fi";
@@ -592,6 +592,7 @@ public class XQLFileManager {
                     String itemName = m.group("item");
                     String idxName = m.group("index");
                     String listName = m.group("list");
+                    String pipes = m.group("pipes");
                     String delimiter = m.group("delimiter");
                     String filter = m.group("filter");
                     // 认为for表达式块中有多行需要迭代的sql片段，在此全部找出来用换行分割，保留格式
@@ -600,6 +601,9 @@ public class XQLFileManager {
                         loopPart.add(lines[i]);
                     }
                     Object loopObj = args.get(listName);
+                    if (pipes != null && !pipes.trim().equals("")) {
+                        loopObj = FastExpression.of("-ignore-").pipedValue(loopObj, pipes);
+                    }
                     Object[] loopArr;
                     if (loopObj instanceof Object[]) {
                         loopArr = (Object[]) loopObj;

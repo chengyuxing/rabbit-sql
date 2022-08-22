@@ -220,12 +220,14 @@ public class XQLFileManager {
                     Matcher m_name = NAME_PATTERN.matcher(trimLine);
                     Matcher m_part = PART_PATTERN.matcher(trimLine);
                     if (m_name.matches()) {
+                        checkNoneDelimiterSqlBlock(singleResource, blockName);
                         blockName = m_name.group("name");
                         if (singleResource.containsKey(blockName)) {
                             throw new DuplicateException("same sql fragment name: " + blockName);
                         }
                         singleResource.put(blockName, "");
                     } else if (m_part.matches()) {
+                        checkNoneDelimiterSqlBlock(singleResource, blockName);
                         blockName = "${" + m_part.group("part") + "}";
                         if (singleResource.containsKey(blockName)) {
                             throw new DuplicateException("same sql template name: " + blockName);
@@ -236,10 +238,10 @@ public class XQLFileManager {
                         if (!trimLine.startsWith("--") || (StringUtil.startsWithsIgnoreCase(formatAnonExpIf(trimLine), IF, FI, CHOOSE, WHEN, SWITCH, FOR, CASE, DEFAULT, BREAK, END))) {
                             if (!blockName.equals("")) {
                                 String prepareLine = singleResource.get(blockName) + line;
-                                if (trimLine.endsWith(delimiter)) {
+                                if (delimiter != null && !delimiter.trim().equals("") && trimLine.endsWith(delimiter)) {
                                     String naSql = removeAnnotationBlock(prepareLine);
                                     singleResource.put(blockName, naSql.substring(0, naSql.lastIndexOf(delimiter)).trim());
-                                    log.debug("scan to get sql [{}]：{}", blockName, SqlUtil.highlightSql(singleResource.get(blockName)));
+                                    log.debug("scan to get sql({}) [{}]：{}", delimiter, blockName, SqlUtil.highlightSql(singleResource.get(blockName)));
                                     blockName = "";
                                 } else {
                                     singleResource.put(blockName, prepareLine.concat(NEW_LINE));
@@ -258,6 +260,20 @@ public class XQLFileManager {
         }
         mergeSqlPartIfNecessary(singleResource);
         RESOURCE.put(name, singleResource);
+    }
+
+    /**
+     * 检查没有分隔符情况时扫描的sql片段
+     *
+     * @param singleResource sql文件资源
+     * @param blockName      sql块命名
+     */
+    private void checkNoneDelimiterSqlBlock(Map<String, String> singleResource, String blockName) {
+        if ((delimiter == null || delimiter.trim().equals("")) && singleResource.containsKey(blockName)) {
+            String naSql = SqlUtil.trimEnd(removeAnnotationBlock(singleResource.get(blockName)));
+            singleResource.put(blockName, naSql);
+            log.debug("scan to get sql() [{}]：{}", blockName, SqlUtil.highlightSql(naSql));
+        }
     }
 
     /**
@@ -1011,8 +1027,12 @@ public class XQLFileManager {
 
     /**
      * 每个文件的sql片段块解析分隔符，每一段完整的sql根据此设置来进行区分，生效于方法：{@link #resolveSqlContent(String, FileResource)}，
-     * 默认是单个分号（{@code ;}）遵循标准sql文件多段sql分隔符，但是有一种情况，如果sql文件内有<b>psql</b>：{@code create function...} 或 {@code create procedure...}等，
-     * 内部会包含多段sql多个分号，为防止解析异常，单独设置自定义的分隔符，例如（{@code ;;}）双分号，也是标准sql所支持的，此处别有他用。
+     * 默认是单个分号（{@code ;}）遵循标准sql文件多段sql分隔符。<br>但是有一种情况，如果sql文件内有<b>psql</b>：{@code create function...} 或 {@code create procedure...}等，
+     * 内部会包含多段sql多个分号，为防止解析异常，单独设置自定义的分隔符：
+     * <ul>
+     *     <li>例如（{@code ;;}）双分号，也是标准sql所支持的, <b>并且支持仅扫描已命名的sql</b>；</li>
+     *     <li>也可以设置为null或空白，那么整个SQL文件多段SQL都应按照此方式分隔。</li>
+     * </ul>
      *
      * @param delimiter sql块分隔符
      */

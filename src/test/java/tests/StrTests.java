@@ -3,6 +3,7 @@ package tests;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.Args;
+import com.github.chengyuxing.sql.XQLFileManager;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
 
@@ -12,6 +13,15 @@ import java.util.List;
 import java.util.Map;
 
 public class StrTests {
+
+    @Test
+    public void test1() throws Exception{
+        XQLFileManager xqlFileManager = new XQLFileManager();
+        xqlFileManager.add("x","pgsql/multi.xql");
+        xqlFileManager.setDelimiter(null);
+        xqlFileManager.init();
+        xqlFileManager.look();
+    }
     @Test
     public void keys() throws Exception {
         String sql = "with t(a, b) as (select * from (values (array [ 1,2,'3,4,5'], /*array [[6',7,8,9'],*/[10,11,12,13] ])) arr)\n" +

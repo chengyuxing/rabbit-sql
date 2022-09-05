@@ -13,6 +13,7 @@ import com.github.chengyuxing.sql.page.impl.MysqlPageHelper;
 import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.github.chengyuxing.sql.support.JdbcSupport;
+import com.github.chengyuxing.sql.utils.SqlTranslator;
 import com.github.chengyuxing.sql.transaction.Tx;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.utils.JdbcUtil;
@@ -57,9 +58,11 @@ public class BakiDao extends JdbcSupport implements Baki {
     private final static Logger log = LoggerFactory.getLogger(BakiDao.class);
     private final DataSource dataSource;
     private DatabaseMetaData currentMetaData;
+    private SqlTranslator sqlTranslator = new SqlTranslator(':');
     //---------optional properties------
     private Map<String, Class<? extends PageHelper>> pageHelpers = new HashMap<>();
     private XQLFileManager xqlFileManager;
+    private char namedParamPrefix = ':';
     private boolean strictDynamicSqlArg = true;
     private boolean checkParameterType = true;
     private boolean debugFullSql = false;
@@ -93,6 +96,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     public void setXqlFileManager(XQLFileManager xqlFileManager) {
         this.xqlFileManager = xqlFileManager;
+        this.xqlFileManager.setNamedParamPrefix(namedParamPrefix);
         if (!xqlFileManager.isInitialized()) {
             xqlFileManager.init();
         }
@@ -105,6 +109,28 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     public XQLFileManager getXqlFileManager() {
         return xqlFileManager;
+    }
+
+    /**
+     * 获取命名参数前缀
+     *
+     * @return 命名参数前缀
+     */
+    public char getNamedParamPrefix() {
+        return namedParamPrefix;
+    }
+
+    /**
+     * 设置命名参数前缀
+     *
+     * @param namedParamPrefix 命名参数前缀
+     */
+    public void setNamedParamPrefix(char namedParamPrefix) {
+        this.namedParamPrefix = namedParamPrefix;
+        this.sqlTranslator = new SqlTranslator(namedParamPrefix);
+        if (xqlFileManager != null) {
+            xqlFileManager.setNamedParamPrefix(namedParamPrefix);
+        }
     }
 
     /**
@@ -136,13 +162,17 @@ public class BakiDao extends JdbcSupport implements Baki {
     @Override
     public int insert(String tableName, Collection<? extends Map<String, ?>> data, boolean immobile) {
         Iterator<? extends Map<String, ?>> iterator = data.iterator();
-        if (iterator.hasNext()) {
-            Map<String, ?> first = iterator.next();
-            List<String> tableFields = immobile ? new ArrayList<>() : getTableFields(tableName);
-            String insertSql = SqlUtil.generatePreparedInsert(tableName, first, tableFields);
-            return executeNonQuery(insertSql, data);
+        List<String> tableFields = immobile ? new ArrayList<>() : getTableFields(tableName);
+        String sql = null;
+        int i = 0;
+        while (iterator.hasNext()) {
+            Map<String, ?> item = iterator.next();
+            if (sql == null) {
+                sql = sqlTranslator.generatePreparedInsert(tableName, item, tableFields);
+            }
+            i += executeNonQuery(sql, item);
         }
-        return -1;
+        return i;
     }
 
     /**
@@ -166,15 +196,15 @@ public class BakiDao extends JdbcSupport implements Baki {
      *
      * @param tableName 表名
      * @param data      数据
-     * @param strict    true：根据数据生成insert语句，不论表是否存在相应的字段，false：根据表字段筛选数据中存在的字段生成insert语句
+     * @param immobile  true：根据数据生成insert语句，不论表是否存在相应的字段，false：根据表字段筛选数据中存在的字段生成insert语句
      * @return 受影响的行数
      * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
      * @see #fastInsert(String, Collection, boolean)
      * @see #fastInsert(String, Collection)
      */
     @Override
-    public int insert(String tableName, Map<String, ?> data, boolean strict) {
-        return insert(tableName, Collections.singletonList(data), strict);
+    public int insert(String tableName, Map<String, ?> data, boolean immobile) {
+        return insert(tableName, Collections.singletonList(data), immobile);
     }
 
     /**
@@ -210,7 +240,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             String[] sqls = new String[data.size()];
             List<String> tableFields = immobile ? new ArrayList<>() : getTableFields(tableName);
             for (int i = 0; iterator.hasNext(); i++) {
-                String insertSql = SqlUtil.generateInsert(tableName, iterator.next(), tableFields);
+                String insertSql = sqlTranslator.generateInsert(tableName, iterator.next(), tableFields);
                 sqls[i] = insertSql;
             }
             log.debug("preview sql: {}\nmore...", SqlUtil.highlightSql(sqls[0]));
@@ -248,7 +278,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     @Override
     public int delete(String tableName, String where, Map<String, ?> arg) {
         String w = StringUtil.startsWithIgnoreCase(where.trim(), "where") ? where : "\nwhere " + where;
-        return executeNonQuery("delete from " + tableName + w, Collections.singletonList(arg));
+        return executeNonQuery("delete from " + tableName + w, arg);
     }
 
     /**
@@ -289,17 +319,20 @@ public class BakiDao extends JdbcSupport implements Baki {
     @Override
     public int update(String tableName, Collection<? extends Map<String, ?>> data, String where) {
         Iterator<? extends Map<String, ?>> iterator = data.iterator();
-        if (iterator.hasNext()) {
-            Map<String, ?> updateData = new HashMap<>(iterator.next());
-            Pair<String, List<String>> cnd = SqlUtil.generateSql(where, updateData, true);
+        int i = 0;
+        while (iterator.hasNext()) {
+            Map<String, ?> item = iterator.next();
+            Map<String, ?> updateData = new HashMap<>(item);
+            Pair<String, List<String>> cnd = sqlTranslator.generateSql(where, updateData, true);
             for (String key : cnd.getItem2()) {
                 updateData.remove(key);
             }
-            String update = SqlUtil.generatePreparedUpdate(tableName, updateData);
+            String update = sqlTranslator.generatePreparedUpdate(tableName, updateData);
             String w = StringUtil.startsWithIgnoreCase(where.trim(), "where") ? where : "\nwhere " + where;
-            return executeNonQuery(update + w, data);
+            String sql = update + w;
+            i += executeNonQuery(sql, item);
         }
-        return -1;
+        return i;
     }
 
     /**
@@ -358,7 +391,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             String[] sqls = new String[args.size()];
             Iterator<? extends Map<String, ?>> iterator = args.iterator();
             for (int i = 0; iterator.hasNext(); i++) {
-                String update = SqlUtil.generateUpdate(tableName, iterator.next(), where);
+                String update = sqlTranslator.generateUpdate(tableName, iterator.next(), where);
                 sqls[i] = update;
             }
             log.debug("preview sql: {}\nmore...", SqlUtil.highlightSql(sqls[0]));
@@ -442,7 +475,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             if (count == null) {
                 String cq = countQuery;
                 if (cq == null) {
-                    cq = SqlUtil.generateCountQuery(query);
+                    cq = sqlTranslator.generateCountQuery(query);
                 }
                 count = fetch(cq, args).map(cn -> {
                     Object num = cn.getFirst();
@@ -667,6 +700,11 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
         }
         return trimEndedSql;
+    }
+
+    @Override
+    protected SqlTranslator sqlTranslator() {
+        return sqlTranslator;
     }
 
     @Override

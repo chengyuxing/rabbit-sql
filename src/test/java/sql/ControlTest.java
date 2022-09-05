@@ -3,7 +3,7 @@ package sql;
 import com.github.chengyuxing.common.script.impl.CExpression;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.XQLFileManager;
-import com.github.chengyuxing.sql.utils.SqlUtil;
+import com.github.chengyuxing.sql.utils.SqlTranslator;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -124,8 +124,8 @@ public class ControlTest {
 
 //        mergeMap(args);
 
-        System.out.println(SqlUtil.resolveSqlStrTemplate(sql, args));
-        System.out.println(SqlUtil.generateSql(sql, args, true));
+        System.out.println(new SqlTranslator(':').resolveSqlStrTemplate(sql, args));
+        System.out.println(new SqlTranslator(':').generateSql(sql, args, true));
     }
 
     public static void mergeMap(Map<String, Object> args) {

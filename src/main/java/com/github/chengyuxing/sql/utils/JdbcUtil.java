@@ -187,7 +187,7 @@ public class JdbcUtil {
      * 创建数据行表头
      *
      * @param resultSet   结果集
-     * @param executedSql 将要执行的原生sql
+     * @param executedSql 将要执行的原生sql，用于识别双引号包含的字段不进行转小写操作
      * @return 一组表头
      * @throws SQLException 数据库异常
      */
@@ -273,7 +273,8 @@ public class JdbcUtil {
             pgObjSetType.invoke(pgObj, type);
             pgObjSetValue.invoke(pgObj, value);
             return pgObj;
-        } catch (IllegalAccessException | NoSuchMethodException | ClassNotFoundException | InvocationTargetException | InstantiationException e) {
+        } catch (IllegalAccessException | NoSuchMethodException | ClassNotFoundException | InvocationTargetException |
+                 InstantiationException e) {
             throw new RuntimeException("create postgresql object type error:", e);
         }
     }

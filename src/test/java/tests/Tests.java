@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.chengyuxing.sql.BakiDao;
 import com.github.chengyuxing.sql.XQLFileManager;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
+import com.github.chengyuxing.sql.utils.SqlTranslator;
 import com.zaxxer.hikari.HikariDataSource;
 import func.BeanUtil;
 import org.junit.BeforeClass;
@@ -114,7 +115,7 @@ public class Tests {
         String sql = "insert into test.user(idd,name,id,age,address) values (:id,:name::integer,:idd::float,integer :age,date :address)";
 //        String sql2 = "select * from test.user where id = '1' and tag = '1' and num = '1' and name = :name";
 //        String jsonSql = "select '{\"a\":[1,2,3],\"b\":[4,5,6]}'::json #>> '{b,1}'";
-        Pair<String, List<String>> pair = SqlUtil.getPreparedSql(str, Collections.emptyMap());
+        Pair<String, List<String>> pair = new SqlTranslator(':').getPreparedSql(str, Collections.emptyMap());
         System.out.println(pair.getItem1());
         System.out.println(pair.getItem2());
 
@@ -125,8 +126,8 @@ public class Tests {
 
     @Test
     public void sqlPlaceHolder() throws Exception {
-        String query = "select * from test where id = :i and id = :id and idCard = '5301111' or name = :name ${cnd}";
-        Pair<String, List<String>> sql = SqlUtil.generateSql(query, Args.of("cnd", "and date <= '${date}'")
+        String query = "select * from test where id = ?i and id = ?id and idCard = '5301111' or name = ?name ${cnd}";
+        Pair<String, List<String>> sql = new SqlTranslator('?').generateSql(query, Args.of("cnd", "and date <= '${date}'")
                 .add("date", "2020-12-23 ${time}")
                 .add("time", "11:23:44"), true);
         System.out.println(sql.getItem1());
@@ -136,14 +137,6 @@ public class Tests {
     @Test
     public void hash() throws Exception {
         System.out.println("null instanceof String".equals(null));
-    }
-
-    @Test
-    public void regex() throws Exception {
-        Matcher m = SqlUtil.ARG_PATTERN.matcher(":now = call test.now()");
-        while (m.find()) {
-            System.out.println(m.group("name"));
-        }
     }
 
     @Test
@@ -185,7 +178,7 @@ public class Tests {
 
 //        String sql = SqlUtil.generateInsert("test.user", paramMap, Ignore.BLANK, Arrays.asList("c", "d", "a"));
 
-        String upd = SqlUtil.generatePreparedUpdate("test.user", paramMap);
+        String upd = new SqlTranslator(':').generatePreparedUpdate("test.user", paramMap);
         System.out.println(upd);
     }
 
@@ -270,7 +263,7 @@ public class Tests {
                 ")\n" +
                 "select *\n" +
                 "from cte;";
-        String cq = SqlUtil.generateCountQuery(sql);
+        String cq = new SqlTranslator(':').generateCountQuery(sql);
         System.out.println(cq);
     }
 
@@ -300,8 +293,8 @@ public class Tests {
                 "words", "it's my time!",
                 "dt", LocalDateTime.now());
 
-        System.out.println(SqlUtil.generatePreparedInsert("t.user", args, Arrays.asList("id", "name", "asx")));
-        System.out.println(SqlUtil.generateInsert("t.user", args, Collections.emptyList()));
+        System.out.println(new SqlTranslator('?').generatePreparedInsert("t.user", args, Arrays.asList("id", "name", "asx")));
+        System.out.println(new SqlTranslator('?').generateInsert("t.user", args, Collections.emptyList()));
 
     }
 }

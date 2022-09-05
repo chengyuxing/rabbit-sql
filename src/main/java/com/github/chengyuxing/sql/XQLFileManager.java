@@ -153,6 +153,7 @@ public class XQLFileManager {
     private volatile boolean initialized;
     private String charset = "UTF-8";
     private String delimiter = ";";
+    private char namedParamPrefix = ':';
 
     /**
      * Sql文件解析器实例
@@ -698,8 +699,8 @@ public class XQLFileManager {
                                 // 此处为了统一，还是支持字符串模版占位符的两种处理格式
                                 if (sqlPart.contains("${" + tmp + "}")) {
                                     sqlPart = sqlPart.replace("${" + tmp + "}", value.toString());
-                                } else if (sqlPart.contains("${:" + tmp + "}")) {
-                                    sqlPart = sqlPart.replace("${:" + tmp + "}", SqlUtil.quoteFormatValueIfNecessary(value));
+                                } else if (sqlPart.contains("${" + namedParamPrefix + tmp + "}")) {
+                                    sqlPart = sqlPart.replace("${" + namedParamPrefix + tmp + "}", SqlUtil.deconstructArrayIfNecessary(value, true));
                                 }
                             }
                         }
@@ -1100,5 +1101,23 @@ public class XQLFileManager {
      */
     public Map<String, IPipe<?>> getPipeInstances() {
         return pipeInstances;
+    }
+
+    /**
+     * 获取命名参数前缀，主要针对sql中形如：{@code ${:name}} 这样的情况
+     *
+     * @return 命名参数前缀
+     */
+    public char getNamedParamPrefix() {
+        return namedParamPrefix;
+    }
+
+    /**
+     * 设置命名参数前缀，主要针对sql中形如：{@code ${:name}} 这样的情况
+     *
+     * @param namedParamPrefix 命名参数前缀
+     */
+    public void setNamedParamPrefix(char namedParamPrefix) {
+        this.namedParamPrefix = namedParamPrefix;
     }
 }

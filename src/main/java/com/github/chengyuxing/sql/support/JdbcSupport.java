@@ -3,6 +3,7 @@ package com.github.chengyuxing.sql.support;
 import com.github.chengyuxing.common.console.Color;
 import com.github.chengyuxing.common.console.Printer;
 import com.github.chengyuxing.sql.utils.JdbcUtil;
+import com.github.chengyuxing.sql.utils.SqlTranslator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.github.chengyuxing.common.tuple.Pair;
@@ -45,6 +46,8 @@ import java.util.stream.StreamSupport;
  *       and '["a","b","c"]'::jsonb{@code ??&} array ['a', 'b'] ${cnd};
  *     </pre>
  * </blockquote>
+ *
+ * @see SqlTranslator
  */
 public abstract class JdbcSupport {
     private final static Logger log = LoggerFactory.getLogger(JdbcSupport.class);
@@ -80,6 +83,13 @@ public abstract class JdbcSupport {
      * @return 处理后的sql
      */
     protected abstract String getSql(String sql, Map<String, ?> args);
+
+    /**
+     * sql翻译帮助
+     *
+     * @return sql翻译帮助实例
+     */
+    protected abstract SqlTranslator sqlTranslator();
 
     /**
      * 是否检查预编译sql对应的参数类型
@@ -142,24 +152,11 @@ public abstract class JdbcSupport {
      * @throws UncheckedSqlException sql执行过程中出现错误
      */
     public DataRow execute(final String sql, Map<String, ?> args) {
-        String sourceSql = getSql(sql, args);
-        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSql(sourceSql, args);
-        final List<String> argNames = preparedSqlAndArgNames.getItem2();
-        final String preparedSql = preparedSqlAndArgNames.getItem1();
-
-        if (log.isDebugEnabled()) {
-            log.debug("SQL:{}", SqlUtil.highlightSql(sourceSql));
-            log.debug("Args:{}", args);
-            if (debugFullSql()) {
-                String fullSql = SqlUtil.generateSql(sourceSql, args, false).getItem1();
-                log.debug("Full SQL: {}", SqlUtil.highlightSql(fullSql));
-            }
-        }
-
+        Pair<String, List<String>> p = compileSql(sql, args);
+        final List<String> argNames = p.getItem2();
+        final String preparedSql = p.getItem1();
         return execute(preparedSql, sc -> {
-            if (args != null && !args.isEmpty()) {
-                JdbcUtil.setSqlTypedArgs(sc, checkParameterType(), args, argNames);
-            }
+            JdbcUtil.setSqlTypedArgs(sc, checkParameterType(), args, argNames);
             boolean isQuery = sc.execute();
             printSqlConsole(sc);
             DataRow result;
@@ -202,22 +199,9 @@ public abstract class JdbcSupport {
      * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误.
      */
     public Stream<DataRow> executeQueryStream(final String sql, Map<String, ?> args) {
-        if (args == null) {
-            args = Collections.emptyMap();
-        }
-        String sourceSql = getSql(sql, args);
-        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSql(sourceSql, args);
+        Pair<String, List<String>> preparedSqlAndArgNames = compileSql(sql, args);
         final List<String> argNames = preparedSqlAndArgNames.getItem2();
         final String preparedSql = preparedSqlAndArgNames.getItem1();
-
-        if (log.isDebugEnabled()) {
-            log.debug("SQL:{}", SqlUtil.highlightSql(sourceSql));
-            log.debug("Args:{}", args);
-            if (debugFullSql()) {
-                String fullSql = SqlUtil.generateSql(sourceSql, args, false).getItem1();
-                log.debug("Full SQL: {}", SqlUtil.highlightSql(fullSql));
-            }
-        }
 
         UncheckedCloseable close = null;
         try {
@@ -328,45 +312,13 @@ public abstract class JdbcSupport {
      * @return 总的受影响的行数
      * @throws UncheckedSqlException sql执行过程中出现错误
      */
-    public int executeNonQuery(final String sql, final Collection<? extends Map<String, ?>> args) {
-        String sourceSql = sql;
-        Map<String, ?> firstArg = Collections.emptyMap();
-        boolean hasArgs = args != null && !args.isEmpty();
-        if (hasArgs) {
-            firstArg = args.iterator().next();
-            sourceSql = getSql(sql, firstArg);
-        }
-        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSql(sourceSql, firstArg);
+    public int executeNonQuery(final String sql, Map<String, ?> args) {
+        Pair<String, List<String>> preparedSqlAndArgNames = compileSql(sql, args);
         final List<String> argNames = preparedSqlAndArgNames.getItem2();
         final String preparedSql = preparedSqlAndArgNames.getItem1();
-
-        if (log.isDebugEnabled()) {
-            log.debug("SQL:{}", SqlUtil.highlightSql(sourceSql));
-            if (hasArgs) {
-                if (args.size() == 1) {
-                    log.debug("Args:{}", args);
-                } else {
-                    log.debug("Args:{},...", firstArg);
-                }
-            }
-            if (debugFullSql()) {
-                String fullSql = SqlUtil.generateSql(sourceSql, firstArg, false).getItem1();
-                log.debug("Full SQL: {}", SqlUtil.highlightSql(fullSql));
-            }
-        }
-
         return execute(preparedSql, sc -> {
-            int i = 0;
-            if (hasArgs) {
-                for (Map<String, ?> arg : args) {
-                    JdbcUtil.setSqlTypedArgs(sc, checkParameterType(), arg, argNames);
-                    i += sc.executeUpdate();
-                }
-            } else {
-                i = sc.executeUpdate();
-            }
-            log.debug("{} rows updated!", i);
-            return i;
+            JdbcUtil.setSqlTypedArgs(sc, checkParameterType(), args, argNames);
+            return sc.executeUpdate();
         });
     }
 
@@ -389,30 +341,16 @@ public abstract class JdbcSupport {
      * @throws UncheckedSqlException 存储过程或函数执行过程中出现错误
      */
     public DataRow executeCallStatement(final String procedure, Map<String, Param> args) {
-        String sourceSql = procedure;
-        boolean hasArgs = args != null && !args.isEmpty();
-        if (hasArgs) {
-            sourceSql = getSql(procedure, Collections.emptyMap());
-        }
-        Pair<String, List<String>> preparedSqlAndArgNames = SqlUtil.getPreparedSql(sourceSql, Collections.emptyMap());
+        Pair<String, List<String>> preparedSqlAndArgNames = compileSql(procedure, Collections.emptyMap());
         final String executeSql = preparedSqlAndArgNames.getItem1();
         final List<String> argNames = preparedSqlAndArgNames.getItem2();
-
-        if (log.isDebugEnabled()) {
-            log.debug("Procedure:{}", Printer.colorful(sourceSql, Color.YELLOW));
-            log.debug("Args:{}", args);
-            if (debugFullSql()) {
-                String fullSql = SqlUtil.generateSql(sourceSql, args, false).getItem1();
-                log.debug("Full SQL: {}", Printer.colorful(fullSql, Color.YELLOW));
-            }
-        }
 
         CallableStatement statement = null;
         Connection connection = getConnection();
         try {
             statement = connection.prepareCall(executeSql);
             List<String> outNames = new ArrayList<>();
-            if (hasArgs) {
+            if (!args.isEmpty()) {
                 JdbcUtil.setStoreArgs(statement, args, argNames);
                 for (String name : argNames) {
                     ParamMode mode = args.get(name).getParamMode();
@@ -462,6 +400,30 @@ public abstract class JdbcSupport {
             }
             releaseConnection(connection, getDataSource());
         }
+    }
+
+    /**
+     * 将自定义的传名参数sql解析为数据库可执行的预编译sql
+     *
+     * @param sql  sql
+     * @param args 参数名
+     * @return 预编译sql和参数名
+     */
+    private Pair<String, List<String>> compileSql(String sql, Map<String, ?> args) {
+        if (args == null) {
+            args = Collections.emptyMap();
+        }
+        String sourceSql = getSql(sql, args);
+        Pair<String, List<String>> preparedSqlAndArgNames = sqlTranslator().getPreparedSql(sourceSql, args);
+        if (log.isDebugEnabled()) {
+            log.debug("SQL:{}", SqlUtil.highlightSql(sourceSql));
+            log.debug("Args:{}", args);
+            if (debugFullSql()) {
+                String fullSql = sqlTranslator().generateSql(sourceSql, args, false).getItem1();
+                log.debug("Full SQL: {}", SqlUtil.highlightSql(fullSql));
+            }
+        }
+        return preparedSqlAndArgNames;
     }
 
     /**

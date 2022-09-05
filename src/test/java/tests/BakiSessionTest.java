@@ -33,6 +33,7 @@ public class BakiSessionTest {
         XQLFileManager sqlFileManager = new XQLFileManager(Args.of("nest","pgsql/nest.sql"));
         sqlFileManager.setConstants(Args.of("db", "test"));
         baki.setXqlFileManager(sqlFileManager);
+        baki.setNamedParamPrefix('?');
     }
 
     @Test
@@ -51,8 +52,8 @@ public class BakiSessionTest {
 
     @Test
     public void engine() throws Exception {
-        baki.query("select * from ${db}.history where length(words) < :num or words ~ :regex",
-                        Args.<Object>of(":num", 5).add("regex", "^tran"))
+        baki.query("select * from ${db}.history where length(words) < ?num or words ~ ?regex",
+                        Args.<Object>of("num", 5).add("regex", "^tran"))
                 .forEach(System.out::println);
     }
 

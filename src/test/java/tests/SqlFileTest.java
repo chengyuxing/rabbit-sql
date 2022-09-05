@@ -4,6 +4,7 @@ import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.BakiDao;
 import com.github.chengyuxing.sql.XQLFileManager;
+import com.github.chengyuxing.sql.utils.SqlTranslator;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -65,7 +66,7 @@ public class SqlFileTest {
 
     @Test
     public void ref() throws Exception {
-        Pair<String, List<String>> pair = SqlUtil.getPreparedSql(":res = call getUser(:id, :name)", Collections.emptyMap());
+        Pair<String, List<String>> pair = new SqlTranslator(':').getPreparedSql(":res = call getUser(:id, :name)", Collections.emptyMap());
         System.out.println(pair.getItem1());
         System.out.println(pair.getItem2());
     }

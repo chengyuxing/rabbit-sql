@@ -4,7 +4,7 @@ import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.Baki;
 import com.github.chengyuxing.sql.BakiDao;
-import com.github.chengyuxing.sql.utils.SqlUtil;
+import com.github.chengyuxing.sql.utils.SqlTranslator;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -65,7 +65,7 @@ public class TestInserts {
                 .add("words", "that's my book, don't touch!")
                 .add("dt", LocalDateTime.now());
 
-        System.out.println(SqlUtil.generateUpdate("test.message", args, "id = :id"));
+        System.out.println(new SqlTranslator(':').generateUpdate("test.message", args, "id = :id"));
     }
 
     @Test

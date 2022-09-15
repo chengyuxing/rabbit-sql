@@ -23,7 +23,7 @@
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>6.2.13</version>
+    <version>6.3.0</version>
 </dependency>
 ```
 
@@ -88,6 +88,10 @@ BakiDao(DataSource dataSource)
 - **strictDynamicSqlArg**
 
   默认值: true
+
+- **namedParamPrefix**
+
+  默认值为冒号 `:`，全局预编译sql传名参数前缀，同样生效于[SQL文件解析器](#XQLFileManager)，例如 `...where id = :id`，如果设置为 `?` 则sql可写为 `where id = ?id`。
 
   如果为false，则动态sql的参数可以为null、空或键值不存在，否则将抛出异常。
 
@@ -175,6 +179,10 @@ public XQLFileManager xqlFileManager() {
 - **charset**
 
   设置解析SQL文件使用的编码，默认**UTF-8**。
+
+- **namedParamPrefix**
+
+  默认值为冒号 `:`，预编译sql传名参数前缀，例如 `...where id = :id`，如果设置为 `?` 则sql可写为 `where id = ?id`。
 
 - **delimiter**
 

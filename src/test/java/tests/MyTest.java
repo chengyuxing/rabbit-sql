@@ -358,6 +358,18 @@ public class MyTest {
 //        xDao2.query("select * from user;", DataRow::toMap, -1).forEach(System.out::println);
     }
 
+
+    @Test
+    public void testX() throws Exception {
+        Tx.begin();
+        try (Stream<DataRow> s = baki.query("select now()")) {
+            s.forEach(System.out::println);
+        }
+        while (true) {
+
+        }
+    }
+
     @Test
     public void testSqlFile() throws InterruptedException {
         try (Stream<DataRow> s = baki.query("select * from current_date,now()",

@@ -1,19 +1,16 @@
 package com.github.chengyuxing.sql.support;
 
-import com.github.chengyuxing.common.console.Color;
-import com.github.chengyuxing.common.console.Printer;
-import com.github.chengyuxing.sql.utils.JdbcUtil;
-import com.github.chengyuxing.sql.utils.SqlTranslator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.UncheckedCloseable;
-import com.github.chengyuxing.sql.datasource.AbstractTransactionSyncManager;
+import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.types.ParamMode;
+import com.github.chengyuxing.sql.utils.JdbcUtil;
+import com.github.chengyuxing.sql.utils.SqlTranslator;
 import com.github.chengyuxing.sql.utils.SqlUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.sql.*;
@@ -207,20 +204,10 @@ public abstract class JdbcSupport {
         try {
             Connection connection = getConnection();
             // if this query is not in transaction, it's connection managed by Stream
-            if (!AbstractTransactionSyncManager.isTransactionActive()) {
-                close = UncheckedCloseable.wrap(connection);
-            }
+            // if transaction is active connection will not be close when read stream to the end in 'try-with-resource' block
+            close = UncheckedCloseable.wrap(() -> releaseConnection(connection, getDataSource()));
             PreparedStatement statement = connection.prepareStatement(preparedSql);
-            // if close is null. it means this query in transaction currently,
-            // it's connection managed by Tx(transaction)
-            // connection will not be close when read stream to the end in 'try-with-resource' block
-            // or Stream.close() method.
-            if (close == null) {
-                log.warn(Printer.colorful("Stream Query in transaction now, I don't recommend it!!!, maybe you should optimize your program.", Color.YELLOW));
-                close = UncheckedCloseable.wrap(statement);
-            } else {
-                close = close.nest(statement);
-            }
+            close = close.nest(statement);
             JdbcUtil.setSqlTypedArgs(statement, checkParameterType(), args, argNames);
             ResultSet resultSet = statement.executeQuery();
             close = close.nest(resultSet);

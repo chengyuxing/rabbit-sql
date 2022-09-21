@@ -48,6 +48,8 @@ public class JdbcUtil {
             obj = clob.getSubString(1, (int) clob.length());
         } else if ("org.postgresql.jdbc.PgArray".equals(className)) {
             obj = resultSet.getArray(index).getArray();
+        } else if ("org.postgresql.util.PGobject".equals(className)) {
+            obj = resultSet.getString(index);
         } else if ("oracle.sql.TIMESTAMP".equals(className) || "oracle.sql.TIMESTAMPTZ".equals(className)) {
             obj = resultSet.getTimestamp(index);
         } else if (className != null && className.startsWith("oracle.sql.DATE")) {

@@ -1,6 +1,7 @@
 package tests;
 
 import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.BakiDao;
 import com.github.chengyuxing.sql.XQLFileManager;
@@ -55,6 +56,15 @@ public class BakiSessionTest {
         baki.query("select * from ${db}.history where length(words) < ?num or words ~ ?regex",
                         Args.<Object>of("num", 5).add("regex", "^tran"))
                 .forEach(System.out::println);
+    }
+
+    @Test
+    public void testX() throws Exception{
+        baki.fetch("select '{\"a\":\"cyx\"}'::jsonb as x").ifPresent(d->{
+            Object v = d.get("x");
+            System.out.println(d.getType(0));
+            System.out.println(ReflectUtil.obj2Json(d.get("x")));
+        });
     }
 
     @Test

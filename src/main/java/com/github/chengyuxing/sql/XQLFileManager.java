@@ -113,7 +113,7 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
  * <blockquote>
  * 内部不能嵌套其他任何标签，不进行解析
  * <pre>
- * --#for item[,idx] of :list [delimiter ','] [filter{@code $}{item.name}{@code <>} blank]
+ * --#for item[,idx] of :list [| {@linkplain IPipe pipe1} | pipe2 | ... ] [delimiter ','] [filter{@code $}{item.name}[| {@linkplain IPipe pipe1} | pipe2 | ... ]{@code <>} blank]
  *     ...
  * --#end
  * </pre>
@@ -221,6 +221,7 @@ public class XQLFileManager {
                     Matcher m_name = NAME_PATTERN.matcher(trimLine);
                     Matcher m_part = PART_PATTERN.matcher(trimLine);
                     if (m_name.matches()) {
+                        // 匹配到名字，那就说明上一段sql已扫描拼接完整，处理一下
                         checkNoneDelimiterSqlBlock(singleResource, blockName);
                         blockName = m_name.group("name");
                         if (singleResource.containsKey(blockName)) {
@@ -264,7 +265,7 @@ public class XQLFileManager {
     }
 
     /**
-     * 检查没有分隔符情况时扫描的sql片段
+     * 检查没有分隔符情况时扫描的sql片段，没有分隔符那么就会在找到下一个sql名字的时候，上一段sql已拼接完整
      *
      * @param singleResource sql文件资源
      * @param blockName      sql块命名
@@ -606,7 +607,7 @@ public class XQLFileManager {
             } else if (startsWithIgnoreCase(trimOuterLine, FOR)) {
                 Matcher m = FOR_PATTERN.matcher(trimOuterLine.substring(4).trim());
                 if (m.find()) {
-                    // 完整的表达式例如：item[,idx] of :list [delimiter ','] [filter ${item.name} <> blank]
+                    // 完整的表达式例如：item[,idx] of :list [| pipe1 | pipe2 | ... ] [delimiter ','] [filter ${item.name}[| pipe1 | pipe2 | ... ] <> blank]
                     // 方括号中为可选参数
                     String itemName = m.group("item");
                     String idxName = m.group("index");

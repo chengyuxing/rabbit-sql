@@ -284,7 +284,7 @@ public XQLFileManager xqlFileManager() {
   表达式语法：
 
   ```bash
-  item[,idx] of :list [delimiter ','] [filter ${item.name} <> blank]
+  item[,idx] of :list [| pipe1 | pipe2 | ... ] [delimiter ','] [filter ${item.name}[| pipe1 | pipe2 | ... ] <> blank]
   ```
 
   :bulb: 关于for表达式的说明：

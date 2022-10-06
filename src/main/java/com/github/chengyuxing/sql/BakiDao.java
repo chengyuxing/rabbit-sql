@@ -749,7 +749,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @see DatabaseMetaData#getDatabaseProductName()
      */
     @SuppressWarnings("unchecked")
-    public void setPageHelpers(Map<String, String> pageHelpers) {
+    public void configPageHelpers(Map<String, String> pageHelpers) {
         Map<String, Class<? extends PageHelper>> map = new HashMap<>();
         try {
             for (Map.Entry<String, String> e : pageHelpers.entrySet()) {
@@ -759,6 +759,14 @@ public class BakiDao extends JdbcSupport implements Baki {
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * 设置自定义的分页帮助工具类实现
+     * @param pageHelpers 分页帮助类集合 [数据库名字: 分页帮助工具类]
+     */
+    public void setPageHelpers(Map<String, Class<? extends PageHelper>> pageHelpers) {
+        this.pageHelpers = pageHelpers;
     }
 
     /**

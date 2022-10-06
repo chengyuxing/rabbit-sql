@@ -49,7 +49,7 @@ public class MyTest {
         BakiDao bakiDao = BakiDao.of(dataSource);
         bakiDao.setXqlFileManager(manager);
         bakiDao.setDebugFullSql(true);
-        bakiDao.setPageHelpers(Args.of("postgresql", "com.github.chengyuxing.sql.page.impl.PGPageHelper"));
+        bakiDao.configPageHelpers(Args.of("postgresql", "com.github.chengyuxing.sql.page.impl.PGPageHelper"));
         baki = bakiDao;
         baki2 = BakiDao.of(dataSource);
 //        bakiDao.setSqlPath("pgsql");

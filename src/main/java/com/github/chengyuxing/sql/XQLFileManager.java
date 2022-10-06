@@ -143,6 +143,7 @@ public class XQLFileManager {
     public static final String END = "#end";
     private WatchDog watchDog = null;
     private volatile boolean loading;
+    private volatile boolean initialized;
     // ----------------optional properties------------------
     private Map<String, String> files = new HashMap<>();
     private Map<String, String> constants = new HashMap<>();
@@ -150,7 +151,6 @@ public class XQLFileManager {
     private Map<String, String> pipes = new HashMap<>();
     private int checkPeriod = 30; //seconds
     private volatile boolean checkModified;
-    private volatile boolean initialized;
     private String charset = "UTF-8";
     private String delimiter = ";";
     private char namedParamPrefix = ':';

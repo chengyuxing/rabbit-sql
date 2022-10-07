@@ -27,6 +27,20 @@
 </dependency>
 ```
 
+## Spring-Boot支持
+
+**maven dependency (jdk1.8)**
+
+```xml
+<dependency>
+    <groupId>com.github.chengyuxing</groupId>
+    <artifactId>rabbit-sql-spring-boot-starter</artifactId>
+    <version>1.0</version>
+</dependency>
+```
+
+具体使用方法和配置可以查看[文档](https://github.com/chengyuxing/rabbit-sql-spring-boot-starter)。
+
 ## 参数占位符说明
 
 - `:name` (jdbc标准的传名参数写法，参数将被预编译安全处理，参数名为：`name`)
@@ -484,4 +498,3 @@ Tx.using(()->baki.call("{call test.fun_query(:c::refcursor)}",
         .map(DataRow::toJson)
         .forEach(System.out::println));
 ```
-

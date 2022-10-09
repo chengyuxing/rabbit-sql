@@ -6,7 +6,7 @@
 2. 除了手写，即使**ORM**也无法解决复杂sql的拼接；
 3. 除了手写，ORM的表关联无法优化。
 
-所以对**JDBC**进行了一个薄封装，提供一些基本的操作，此库以追求简单稳定高效为目标（查询方面以手写sql为主），返回对象类型统一为[`DataRow`](https://github.com/chengyuxing/rabbit-common/blob/master/src/main/java/rabbit/common/types/DataRow.java)，[`DataRow`](https://github.com/chengyuxing/rabbit-common/blob/master/src/main/java/rabbit/common/types/DataRow.java)提供了了简单的实体互相转换，此库基本功能如下：
+所以对**JDBC**进行了一个薄封装，提供一些基本的操作，此库以追求简单稳定高效为目标（查询方面以手写sql为主），返回对象类型统一为[`DataRow`](https://github.com/chengyuxing/rabbit-common/blob/master/src/main/java/rabbit/common/DataRow.java)，[`DataRow`](https://github.com/chengyuxing/rabbit-common/blob/master/src/main/java/rabbit/common/DataRow.java)提供了了简单的实体互相转换，此库基本功能如下：
 
 - 基本接口增删改查；
 - 简单分页查询；

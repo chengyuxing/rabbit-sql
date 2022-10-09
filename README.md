@@ -87,7 +87,7 @@ BakiDao(DataSource dataSource)
 
 - [**xqlFileManager**](#XQLFileManager)
 
-  接口中需要写sql的所有方法都可以使用``&别名或文件包路径.sql名``取地址符来获取sql文件中的sql。
+  接口中需要写sql的所有方法都可以使用``&别名.sql名``取地址符来获取sql文件中的sql。
 
 - **pageHelpers**
 
@@ -103,11 +103,11 @@ BakiDao(DataSource dataSource)
 
   默认值: true
 
+  如果为false，则动态sql的参数可以为null、空或键值不存在，否则将抛出异常。
+
 - **namedParamPrefix**
 
   默认值为冒号 `:`，全局预编译sql传名参数前缀，同样生效于[SQL文件解析器](#XQLFileManager)，例如 `...where id = :id`，如果设置为 `?` 则sql可写为 `where id = ?id`。
-
-  如果为false，则动态sql的参数可以为null、空或键值不存在，否则将抛出异常。
 
 - **checkParameterType**
 

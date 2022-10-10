@@ -767,7 +767,8 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @throws UncheckedSqlException 执行查询表字段出现异常
      */
     private List<String> getTableFields(String tableName) {
-        return execute("select * from " + tableName + " where 1 = 2", sc -> {
+        String sql = getSql("select * from " + tableName + " where 1 = 2", Collections.emptyMap());
+        return execute(sql, sc -> {
             sc.executeQuery();
             ResultSet fieldsResultSet = sc.getResultSet();
             List<String> fields = Arrays.asList(JdbcUtil.createNames(fieldsResultSet, ""));

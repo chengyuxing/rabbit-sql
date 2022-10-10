@@ -48,7 +48,7 @@ public class BakiSessionTest {
         int i = baki.update("${db}.region",
                 Args.of("name", "南亚风情第一城").add("oldName", "南亚风情园").add("abc", "123"),
                 false,
-                "name = :oldName");
+                "name = ?oldName");
         System.out.println(i);
     }
 

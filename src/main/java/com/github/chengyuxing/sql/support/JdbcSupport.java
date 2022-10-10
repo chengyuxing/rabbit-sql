@@ -116,7 +116,7 @@ public abstract class JdbcSupport {
         Connection connection = null;
         try {
             connection = getConnection();
-            statement = connection.prepareStatement(getSql(sql, Collections.emptyMap()));
+            statement = connection.prepareStatement(sql);
             return callback.doInStatement(statement);
         } catch (SQLException e) {
             try {

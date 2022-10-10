@@ -65,7 +65,9 @@ public class TestInserts {
                 .add("words", "that's my book, don't touch!")
                 .add("dt", LocalDateTime.now());
 
-        System.out.println(new SqlTranslator(':').generateUpdate("test.message", args, "id = :id"));
+//        System.out.println(new SqlTranslator(':').generateUpdate("test.message", args, "id = :id"));
+        System.out.println(new SqlTranslator(':').generateUpdate("test.message", args, "id = :id", Arrays.asList()));
+        System.out.println(new SqlTranslator(':').generatePreparedUpdate("test.message", args, Arrays.asList("name")));
     }
 
     @Test

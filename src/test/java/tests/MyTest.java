@@ -57,6 +57,13 @@ public class MyTest {
     }
 
     @Test
+    public void test22() throws Exception {
+//        UpdateExecutor executor = new UpdateExecutor("test.tb", "id = :id")
+//                .safeArgs();
+//        executor.update(Args.create());
+    }
+
+    @Test
     public void bakiTestQuery() throws Exception {
         int i = 0;
         while (true) {

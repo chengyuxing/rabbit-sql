@@ -13,10 +13,10 @@ import com.github.chengyuxing.sql.page.impl.MysqlPageHelper;
 import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.github.chengyuxing.sql.support.JdbcSupport;
-import com.github.chengyuxing.sql.utils.SqlTranslator;
 import com.github.chengyuxing.sql.transaction.Tx;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.utils.JdbcUtil;
+import com.github.chengyuxing.sql.utils.SqlTranslator;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -153,16 +153,19 @@ public class BakiDao extends JdbcSupport implements Baki {
      *
      * @param tableName 表名
      * @param data      数据
-     * @param immobile  true：不论表是否存在相应的字段，始终根据数据生成insert语句，false：根据表字段筛选数据中存在的字段生成insert语句
+     * @param uncheck   <ul>
+     *                  <li>true: 根据数据原封不动完全插入，如果有不存在的字段则抛出异常</li>
+     *                  <li>false: 根据数据库表字段名排除数据中不存在的key，安全的插入</li>
+     *                  </ul>
      * @return 受影响的行数
      * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
      * @see #fastInsert(String, Collection, boolean)
      * @see #fastInsert(String, Collection)
      */
     @Override
-    public int insert(String tableName, Collection<? extends Map<String, ?>> data, boolean immobile) {
+    public int insert(String tableName, Collection<? extends Map<String, ?>> data, boolean uncheck) {
         Iterator<? extends Map<String, ?>> iterator = data.iterator();
-        List<String> tableFields = immobile ? new ArrayList<>() : getTableFields(tableName);
+        List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);
         String sql = null;
         int i = 0;
         while (iterator.hasNext()) {
@@ -196,15 +199,18 @@ public class BakiDao extends JdbcSupport implements Baki {
      *
      * @param tableName 表名
      * @param data      数据
-     * @param immobile  true：根据数据生成insert语句，不论表是否存在相应的字段，false：根据表字段筛选数据中存在的字段生成insert语句
+     * @param uncheck   <ul>
+     *                  <li>true: 根据数据原封不动完全插入，如果有不存在的字段则抛出异常</li>
+     *                  <li>false: 根据数据库表字段名排除数据中不存在的key，安全的插入</li>
+     *                  </ul>
      * @return 受影响的行数
      * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
      * @see #fastInsert(String, Collection, boolean)
      * @see #fastInsert(String, Collection)
      */
     @Override
-    public int insert(String tableName, Map<String, ?> data, boolean immobile) {
-        return insert(tableName, Collections.singletonList(data), immobile);
+    public int insert(String tableName, Map<String, ?> data, boolean uncheck) {
+        return insert(tableName, Collections.singletonList(data), uncheck);
     }
 
     /**
@@ -229,16 +235,19 @@ public class BakiDao extends JdbcSupport implements Baki {
      *
      * @param tableName 表名
      * @param data      数据
-     * @param immobile  true：根据数据生成insert语句，不论表是否存在相应的字段，false：根据表字段筛选数据中存在的字段生成insert语句
+     * @param uncheck   <ul>
+     *                  <li>true: 根据数据原封不动完全插入，如果有不存在的字段则抛出异常</li>
+     *                  <li>false: 根据数据库表字段名排除数据中不存在的key，安全的插入</li>
+     *                  </ul>
      * @return 受影响的行数
      * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
      */
     @Override
-    public int fastInsert(String tableName, Collection<? extends Map<String, ?>> data, boolean immobile) {
+    public int fastInsert(String tableName, Collection<? extends Map<String, ?>> data, boolean uncheck) {
         if (data.size() > 0) {
             Iterator<? extends Map<String, ?>> iterator = data.iterator();
             String[] sqls = new String[data.size()];
-            List<String> tableFields = immobile ? new ArrayList<>() : getTableFields(tableName);
+            List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);
             for (int i = 0; iterator.hasNext(); i++) {
                 String insertSql = sqlTranslator.generateInsert(tableName, iterator.next(), tableFields);
                 sqls[i] = insertSql;
@@ -296,6 +305,7 @@ public class BakiDao extends JdbcSupport implements Baki {
 
     /**
      * {@inheritDoc}<br>
+     * 根据数据生成update语句，不论表是否存在相应的字段<br>
      * e.g. {@code update(<table>, <List>, "id = :id")}<br>
      * 关于此方法的说明举例：
      * <blockquote>
@@ -318,18 +328,55 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     @Override
     public int update(String tableName, Collection<? extends Map<String, ?>> data, String where) {
+        return update(tableName, data, true, where);
+    }
+
+    /**
+     * {@inheritDoc}<br>
+     * e.g. {@code update(<table>, <List>, "id = :id")}<br>
+     * 关于此方法的说明举例：
+     * <blockquote>
+     * 根据第一条数据生成预编译SQL
+     * <pre>
+     *  参数： {id:14, name:'cyx', address:'kunming'},{...}...
+     *  条件："id = :id"
+     *  生成：update{@code <table>} set name = :name, address = :address
+     *       where id = :id
+     *  </pre>
+     * 解释：where中至少指定一个传名参数，数据中必须包含where条件中的所有传名参数
+     * </blockquote>
+     *
+     * @param tableName 表名
+     * @param data      数据：需要更新的数据和条件参数
+     * @param uncheck   <ul>
+     *                  <li>true: 根据数据原封不动进行更新，如果有不存在的字段则抛出异常</li>
+     *                  <li>false: 根据数据库表字段名排除数据中不存在的key，安全的更新</li>
+     *                  </ul>
+     * @param where     条件：条件中需要有传名参数作为更新的条件依据
+     * @return 受影响的行数
+     * @throws UncheckedSqlException sql执行过程中出现错误
+     * @see Baki#fastUpdate(String, Collection, String)
+     */
+    @Override
+    public int update(String tableName, Collection<? extends Map<String, ?>> data, boolean uncheck, String where) {
         Iterator<? extends Map<String, ?>> iterator = data.iterator();
+        List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);
+        String sql = null;
         int i = 0;
         while (iterator.hasNext()) {
+            // 完整的参数字典
             Map<String, ?> item = iterator.next();
             Map<String, ?> updateData = new HashMap<>(item);
+            // 将where条件中的参数排除，因为where中的参数作为条件，而不是需要更新的值
             Pair<String, List<String>> cnd = sqlTranslator.generateSql(where, updateData, true);
             for (String key : cnd.getItem2()) {
                 updateData.remove(key);
             }
-            String update = sqlTranslator.generatePreparedUpdate(tableName, updateData);
-            String w = StringUtil.startsWithIgnoreCase(where.trim(), "where") ? where : "\nwhere " + where;
-            String sql = update + w;
+            if (sql == null) {
+                String update = sqlTranslator.generatePreparedUpdate(tableName, updateData, tableFields);
+                String w = StringUtil.startsWithIgnoreCase(where.trim(), "where") ? where : "\nwhere " + where;
+                sql = update + w;
+            }
             i += executeNonQuery(sql, item);
         }
         return i;
@@ -337,6 +384,7 @@ public class BakiDao extends JdbcSupport implements Baki {
 
     /**
      * {@inheritDoc}<br>
+     * 根据数据生成update语句，不论表是否存在相应的字段<br>
      * e.g. {@code update(<table>, <Map>, "id = :id")}<br>
      * 关于此方法的说明举例：
      * <blockquote>
@@ -362,7 +410,38 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
+     * {@inheritDoc}<br>
+     * e.g. {@code update(<table>, <Map>, "id = :id")}<br>
+     * 关于此方法的说明举例：
+     * <blockquote>
+     * <pre>
+     *  参数： {id:14, name:'cyx', address:'kunming'}
+     *  条件："id = :id"
+     *  生成：update{@code <table>} set name = :name, address = :address
+     *       where id = :id
+     *  </pre>
+     * 解释：where中至少指定一个传名参数，数据中必须包含where条件中的所有传名参数
+     * </blockquote>
+     *
+     * @param tableName 表名
+     * @param data      数据：需要更新的数据和条件参数
+     * @param uncheck   <ul>
+     *                  <li>true: 根据数据原封不动进行更新，如果有不存在的字段则抛出异常</li>
+     *                  <li>false: 根据数据库表字段名排除数据中不存在的key，安全的更新</li>
+     *                  </ul>
+     * @param where     条件：条件中需要有传名参数作为更新的条件依据
+     * @return 受影响的行数
+     * @throws UncheckedSqlException sql执行过程中出现错误
+     * @see Baki#fastUpdate(String, Collection, String)
+     */
+    @Override
+    public int update(String tableName, Map<String, ?> data, boolean uncheck, String where) {
+        return update(tableName, Collections.singletonList(data), uncheck, where);
+    }
+
+    /**
      * {@inheritDoc}（非预编译SQL）<br>
+     * 根据数据生成update语句，不论表是否存在相应的字段<br>
      * 注：不支持插入二进制对象<br>
      * 如果需要插入文件请使用：{@link Baki#update(String, Map, String)}（预编译SQL）<br>
      * e.g. {@code fastUpdate(<table>, <List<Map>>, "id = :id")}
@@ -387,11 +466,45 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     @Override
     public int fastUpdate(String tableName, Collection<? extends Map<String, ?>> args, String where) {
+        return fastUpdate(tableName, args, true, where);
+    }
+
+    /**
+     * {@inheritDoc}（非预编译SQL）<br>
+     * 注：不支持插入二进制对象<br>
+     * 如果需要插入文件请使用：{@link Baki#update(String, Map, String)}（预编译SQL）<br>
+     * e.g. {@code fastUpdate(<table>, <List<Map>>, "id = :id")}
+     * 关于此方法的说明举例：
+     * <blockquote>
+     * <pre>
+     *  参数： [{id:14, name:'cyx', address:'kunming'},...]
+     *  条件："id = :id"
+     *  生成：update{@code <table>} set name = 'cyx', address = 'kunming'
+     *       where id = 14, update...
+     *  </pre>
+     * 解释：where中至少指定一个传名参数，数据中必须包含where条件中的所有传名参数
+     * </blockquote>
+     *
+     * @param tableName 表名
+     * @param args      参数：需要更新的数据和条件参数
+     * @param uncheck   <ul>
+     *                  <li>true: 根据数据原封不动进行更新，如果有不存在的字段则抛出异常</li>
+     *                  <li>false: 根据数据库表字段名排除数据中不存在的key，安全的更新</li>
+     *                  </ul>
+     * @param where     条件：条件中需要有传名参数作为更新的条件依据
+     * @return 受影响的行数
+     * @throws UncheckedSqlException         执行批量操作时发生错误
+     * @throws UnsupportedOperationException 数据库或驱动版本不支持批量操作
+     * @throws IllegalArgumentException      数据条数少于一条
+     */
+    @Override
+    public int fastUpdate(String tableName, Collection<? extends Map<String, ?>> args, boolean uncheck, String where) {
         if (args.size() > 0) {
             String[] sqls = new String[args.size()];
             Iterator<? extends Map<String, ?>> iterator = args.iterator();
+            List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);
             for (int i = 0; iterator.hasNext(); i++) {
-                String update = sqlTranslator.generateUpdate(tableName, iterator.next(), where);
+                String update = sqlTranslator.generateUpdate(tableName, iterator.next(), where, tableFields);
                 sqls[i] = update;
             }
             log.debug("preview sql: {}\nmore...", SqlUtil.highlightSql(sqls[0]));
@@ -763,6 +876,7 @@ public class BakiDao extends JdbcSupport implements Baki {
 
     /**
      * 设置自定义的分页帮助工具类实现
+     *
      * @param pageHelpers 分页帮助类集合 [数据库名字: 分页帮助工具类]
      */
     public void setPageHelpers(Map<String, Class<? extends PageHelper>> pageHelpers) {

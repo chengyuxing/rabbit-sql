@@ -31,14 +31,14 @@ public class BakiSessionTest {
         dataSource.setDriverClassName("org.postgresql.Driver");
         baki = BakiDao.of(dataSource);
         baki.setCheckParameterType(false);
-        XQLFileManager sqlFileManager = new XQLFileManager(Args.of("nest","pgsql/nest.sql"));
+        XQLFileManager sqlFileManager = new XQLFileManager(Args.of("nest", "pgsql/nest.sql"));
         sqlFileManager.setConstants(Args.of("db", "test"));
         baki.setXqlFileManager(sqlFileManager);
-        baki.setNamedParamPrefix('?');
+        baki.setNamedParamPrefix(':');
     }
 
     @Test
-    public void testA() throws Exception{
+    public void testA() throws Exception {
         baki.fetch("select now(), array ['a','b','c']")
                 .ifPresent(System.out::println);
     }
@@ -46,7 +46,8 @@ public class BakiSessionTest {
     @Test
     public void upd() throws Exception {
         int i = baki.update("${db}.region",
-                Args.of("name", "南亚风情第一城").add("oldName", "南亚风情园"),
+                Args.of("name", "南亚风情第一城").add("oldName", "南亚风情园").add("abc", "123"),
+                false,
                 "name = :oldName");
         System.out.println(i);
     }
@@ -59,8 +60,8 @@ public class BakiSessionTest {
     }
 
     @Test
-    public void testX() throws Exception{
-        baki.fetch("select '{\"a\":\"cyx\"}'::jsonb as x").ifPresent(d->{
+    public void testX() throws Exception {
+        baki.fetch("select '{\"a\":\"cyx\"}'::jsonb as x").ifPresent(d -> {
             Object v = d.get("x");
             System.out.println(d.getType(0));
             System.out.println(ReflectUtil.obj2Json(d.get("x")));

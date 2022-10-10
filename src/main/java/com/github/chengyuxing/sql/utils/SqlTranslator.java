@@ -16,6 +16,7 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.replaceSqlSubstr;
  */
 public class SqlTranslator {
     private final String c;
+    private final String regC;
     /**
      * 匹配命名参数
      */
@@ -31,11 +32,12 @@ public class SqlTranslator {
             throw new IllegalArgumentException("prefix char cannot be empty.");
         }
         String cs = String.valueOf(namedParameterPrefix);
+        this.regC = cs.replace(cs, "\\" + cs);
         if (cs.equals(":")) {
-            this.c = cs;
+            this.c = ":";
         } else {
-            this.c = cs.replace(cs, "\\" + cs);
-            PARAM_PATTERN = Pattern.compile("(^" + c + "|[^" + c + "]" + c + ")(?<name>[a-zA-Z_][\\w_]*)", Pattern.MULTILINE);
+            this.c = cs;
+            PARAM_PATTERN = Pattern.compile("(^" + regC + "|[^" + regC + "]" + regC + ")(?<name>[a-zA-Z_][\\w_]*)", Pattern.MULTILINE);
         }
     }
 
@@ -64,7 +66,7 @@ public class SqlTranslator {
             String name = matcher.group("name");
             names.add(name);
             String value = prepare ? "?" : quoteFormatValueIfNecessary(argx.get(name));
-            noneStrSql = noneStrSql.replaceFirst(c + name, value);
+            noneStrSql = noneStrSql.replaceFirst(regC + name, value);
         }
         // finally, set placeholder into none-string-part sql
         for (Map.Entry<String, String> e : placeholderMapper.entrySet()) {
@@ -206,12 +208,16 @@ public class SqlTranslator {
      *
      * @param tableName 表名
      * @param data      数据
-     * @param where     where条件
+     * @param where     条件
+     * @param fields    需要包含的字段集合
      * @return 更新语句
-     * @throws IllegalArgumentException 如果where条件为空或者没有生成需要更新的字段
      */
-    public String generateUpdate(String tableName, Map<String, ?> data, final String where) {
+    public String generateUpdate(String tableName, Map<String, ?> data, final String where, List<String> fields) {
         if (data.isEmpty()) {
+            throw new IllegalArgumentException("empty field set, generate update sql error.");
+        }
+        Set<String> keys = filterKeys(data, fields);
+        if (keys.isEmpty()) {
             throw new IllegalArgumentException("empty field set, generate update sql error.");
         }
         if (where.trim().equals("")) {
@@ -221,10 +227,10 @@ public class SqlTranslator {
         List<String> cndFields = sqlAndFields.getItem2();
         String w = sqlAndFields.getItem1();
         StringJoiner sb = new StringJoiner(",\n\t");
-        for (Map.Entry<String, ?> e : data.entrySet()) {
-            String key = e.getKey();
+        for (String key : keys) {
+            Object v = data.get(key);
             if (!key.startsWith("${") && !key.endsWith("}")) {
-                String value = quoteFormatValueIfNecessary(e.getValue());
+                String value = quoteFormatValueIfNecessary(v);
                 if (!cndFields.contains(key)) {
                     sb.add(key + " = " + value);
                 } else {
@@ -242,6 +248,44 @@ public class SqlTranslator {
     }
 
     /**
+     * 构建一个更新语句
+     *
+     * @param tableName 表名
+     * @param data      数据
+     * @param where     where条件
+     * @return 更新语句
+     * @throws IllegalArgumentException 如果where条件为空或者没有生成需要更新的字段
+     */
+    public String generateUpdate(String tableName, Map<String, ?> data, final String where) {
+        return generateUpdate(tableName, data, where, Collections.emptyList());
+    }
+
+    /**
+     * 构建一个预编译的更新语句
+     *
+     * @param tableName 表名
+     * @param data      数据
+     * @param fields    需要包含的字段集合
+     * @return 更新语句
+     */
+    public String generatePreparedUpdate(String tableName, Map<String, ?> data, List<String> fields) {
+        if (data.isEmpty()) {
+            throw new IllegalArgumentException("empty field set, generate update sql error.");
+        }
+        Set<String> keys = filterKeys(data, fields);
+        if (keys.isEmpty()) {
+            throw new IllegalArgumentException("empty field set, generate update sql error.");
+        }
+        StringJoiner sb = new StringJoiner(",\n\t");
+        for (String key : keys) {
+            if (!key.startsWith("${") && !key.endsWith("}")) {
+                sb.add(key + " = " + c + key);
+            }
+        }
+        return "update " + tableName + " \nset " + sb;
+    }
+
+    /**
      * 构建一个预编译的更新语句
      *
      * @param tableName 表名
@@ -250,17 +294,7 @@ public class SqlTranslator {
      * @throws IllegalArgumentException 如果参数为空
      */
     public String generatePreparedUpdate(String tableName, Map<String, ?> data) {
-        if (data.isEmpty()) {
-            throw new IllegalArgumentException("empty field set, generate update sql error.");
-        }
-        Set<String> keys = data.keySet();
-        StringJoiner sb = new StringJoiner(",\n\t");
-        for (String key : keys) {
-            if (!key.startsWith("${") && !key.endsWith("}")) {
-                sb.add(key + " = " + c + key);
-            }
-        }
-        return "update " + tableName + " \nset " + sb;
+        return generatePreparedUpdate(tableName, data, Collections.emptyList());
     }
 
     /**

@@ -61,10 +61,10 @@ public interface Baki {
      *
      * @param tableName 表名
      * @param data      数据
-     * @param immobile  是否插入数据全部键值（若有表不存在的字段，将抛出异常）
+     * @param uncheck   是否不检查要插入的数据
      * @return 受影响的行数
      */
-    int insert(String tableName, Collection<? extends Map<String, ?>> data, boolean immobile);
+    int insert(String tableName, Collection<? extends Map<String, ?>> data, boolean uncheck);
 
     /**
      * 批量插入<br>
@@ -88,10 +88,10 @@ public interface Baki {
      *
      * @param tableName 表名
      * @param data      数据
-     * @param immobile  是否插入数据全部键值（若有表不存在的字段，将抛出异常）
+     * @param uncheck   是否不检查要插入的数据
      * @return 受影响的行数
      */
-    int insert(String tableName, Map<String, ?> data, boolean immobile);
+    int insert(String tableName, Map<String, ?> data, boolean uncheck);
 
     /**
      * 插入<br>
@@ -116,10 +116,10 @@ public interface Baki {
      *
      * @param tableName 表名
      * @param data      数据
-     * @param immobile  是否严格插入
+     * @param uncheck   是否不检查要插入的数据
      * @return 受影响的行数
      */
-    int fastInsert(String tableName, Collection<? extends Map<String, ?>> data, boolean immobile);
+    int fastInsert(String tableName, Collection<? extends Map<String, ?>> data, boolean uncheck);
 
     /**
      * 快速批量插入<br>
@@ -170,6 +170,22 @@ public interface Baki {
     int update(String tableName, Collection<? extends Map<String, ?>> data, String where);
 
     /**
+     * 批量更新<br>
+     * 忽略null值更新接口不提供单独方法，不如变通下参考：<br>
+     * {@link Args#removeIfAbsent()},<br>
+     * {@link Args#removeIfAbsentExclude(String...)},<br>
+     * {@link Args#removeIf(BiPredicate)}<br>
+     * 具体逻辑可参考实现
+     *
+     * @param tableName 表名
+     * @param data      数据
+     * @param uncheck   是否不检查要插入的数据
+     * @param where     条件，支持参数占位符e.g. {@code id = :id}
+     * @return 受影响的行数
+     */
+    int update(String tableName, Collection<? extends Map<String, ?>> data, boolean uncheck, String where);
+
+    /**
      * 更新<br>
      * 忽略null值更新接口不提供单独方法，不如变通下参考：<br>
      * {@link Args#removeIfAbsent()},<br>
@@ -185,6 +201,22 @@ public interface Baki {
     int update(String tableName, Map<String, ?> data, String where);
 
     /**
+     * 更新<br>
+     * 忽略null值更新接口不提供单独方法，不如变通下参考：<br>
+     * {@link Args#removeIfAbsent()},<br>
+     * {@link Args#removeIfAbsentExclude(String...)},<br>
+     * {@link Args#removeIf(BiPredicate)}<br>
+     * 具体逻辑可参考实现
+     *
+     * @param tableName 表名
+     * @param data      数据
+     * @param uncheck   是否不检查要插入的数据
+     * @param where     条件，支持参数占位符e.g. {@code id = :id}
+     * @return 受影响的行数
+     */
+    int update(String tableName, Map<String, ?> data, boolean uncheck, String where);
+
+    /**
      * 快速批量更新<br>
      * 忽略null值更新接口不提供单独方法，不如变通下参考：<br>
      * {@link Args#removeIfAbsent()},<br>
@@ -198,6 +230,22 @@ public interface Baki {
      * @return 受影响的行数
      */
     int fastUpdate(String tableName, Collection<? extends Map<String, ?>> args, String where);
+
+    /**
+     * 快速批量更新<br>
+     * 忽略null值更新接口不提供单独方法，不如变通下参考：<br>
+     * {@link Args#removeIfAbsent()},<br>
+     * {@link Args#removeIfAbsentExclude(String...)},<br>
+     * {@link Args#removeIf(BiPredicate)}<br>
+     * 具体逻辑可参考实现
+     *
+     * @param tableName 表名
+     * @param args      参数
+     * @param uncheck   是否不检查要插入的数据
+     * @param where     条件，支持参数占位符e.g. {@code id = :id}
+     * @return 受影响的行数
+     */
+    int fastUpdate(String tableName, Collection<? extends Map<String, ?>> args, boolean uncheck, String where);
 
     /**
      * 流式查询

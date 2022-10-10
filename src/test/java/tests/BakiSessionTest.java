@@ -34,7 +34,7 @@ public class BakiSessionTest {
         XQLFileManager sqlFileManager = new XQLFileManager(Args.of("nest", "pgsql/nest.sql"));
         sqlFileManager.setConstants(Args.of("db", "test"));
         baki.setXqlFileManager(sqlFileManager);
-        baki.setNamedParamPrefix(':');
+        baki.setNamedParamPrefix('?');
     }
 
     @Test

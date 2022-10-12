@@ -311,9 +311,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     protected int update(String tableName, Collection<? extends Map<String, ?>> data, boolean uncheck, String where) {
         if (data.size() > 0) {
-            if (where.startsWith("&")) {
-                where = getSql(where, Collections.emptyMap());
-            }
+            where = getSql(where, Collections.emptyMap());
             Iterator<? extends Map<String, ?>> iterator = data.iterator();
             List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);
             String sql = null;
@@ -368,9 +366,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     protected int fastUpdate(String tableName, Collection<? extends Map<String, ?>> args, boolean uncheck, String where) {
         if (args.size() > 0) {
-            if (where.startsWith("&")) {
-                where = getSql(where, Collections.emptyMap());
-            }
+            where = getSql(where, Collections.emptyMap());
             String[] sqls = new String[args.size()];
             Iterator<? extends Map<String, ?>> iterator = args.iterator();
             List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);

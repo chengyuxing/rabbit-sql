@@ -18,7 +18,7 @@ import java.util.Map;
 public class PGPageHelper extends PageHelper {
 
     public int limit() {
-        return pageSize;
+        return Math.min(recordCount, pageSize);
     }
 
     public int offset() {

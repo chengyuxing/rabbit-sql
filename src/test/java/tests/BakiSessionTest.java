@@ -65,6 +65,7 @@ public class BakiSessionTest {
         PagedResource<DataRow> resource = baki.query("select * from test.region where id < ?id")
                 .arg("id", 8)
                 .<DataRow>pageable(1, 7)
+                .count(5)
                 .collect(d -> d);
         System.out.println(resource);
 

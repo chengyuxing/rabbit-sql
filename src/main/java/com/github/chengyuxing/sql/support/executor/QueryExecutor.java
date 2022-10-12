@@ -10,10 +10,18 @@ import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+/**
+ * 查询执行器
+ */
 public abstract class QueryExecutor {
     protected final String sql;
     protected Map<String, Object> args = new HashMap<>();
 
+    /**
+     * 构造函数
+     *
+     * @param sql sql或sql名
+     */
     protected QueryExecutor(String sql) {
         this.sql = sql;
     }

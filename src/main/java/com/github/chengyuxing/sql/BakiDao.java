@@ -310,27 +310,33 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @throws UncheckedSqlException sql执行过程中出现错误
      */
     protected int update(String tableName, Collection<? extends Map<String, ?>> data, boolean uncheck, String where) {
-        Iterator<? extends Map<String, ?>> iterator = data.iterator();
-        List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);
-        String sql = null;
-        int i = 0;
-        while (iterator.hasNext()) {
-            // 完整的参数字典
-            Map<String, ?> item = iterator.next();
-            Map<String, ?> updateData = new HashMap<>(item);
-            // 将where条件中的参数排除，因为where中的参数作为条件，而不是需要更新的值
-            Pair<String, List<String>> cnd = sqlTranslator.generateSql(where, updateData, true);
-            for (String key : cnd.getItem2()) {
-                updateData.remove(key);
+        if (data.size() > 0) {
+            if (where.startsWith("&")) {
+                where = getSql(where, Collections.emptyMap());
             }
-            if (sql == null) {
-                String update = sqlTranslator.generatePreparedUpdate(tableName, updateData, tableFields);
-                String w = StringUtil.startsWithIgnoreCase(where.trim(), "where") ? where : "\nwhere " + where;
-                sql = update + w;
+            Iterator<? extends Map<String, ?>> iterator = data.iterator();
+            List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);
+            String sql = null;
+            int i = 0;
+            while (iterator.hasNext()) {
+                // 完整的参数字典
+                Map<String, ?> item = iterator.next();
+                Map<String, ?> updateData = new HashMap<>(item);
+                // 将where条件中的参数排除，因为where中的参数作为条件，而不是需要更新的值
+                Pair<String, List<String>> cnd = sqlTranslator.generateSql(where, updateData, true);
+                for (String key : cnd.getItem2()) {
+                    updateData.remove(key);
+                }
+                if (sql == null) {
+                    String update = sqlTranslator.generatePreparedUpdate(tableName, updateData, tableFields);
+                    String w = StringUtil.startsWithIgnoreCase(where.trim(), "where") ? where : "\nwhere " + where;
+                    sql = update + w;
+                }
+                i += executeNonQuery(sql, item);
             }
-            i += executeNonQuery(sql, item);
+            return i;
         }
-        return i;
+        return -1;
     }
 
     /**
@@ -362,6 +368,9 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     protected int fastUpdate(String tableName, Collection<? extends Map<String, ?>> args, boolean uncheck, String where) {
         if (args.size() > 0) {
+            if (where.startsWith("&")) {
+                where = getSql(where, Collections.emptyMap());
+            }
             String[] sqls = new String[args.size()];
             Iterator<? extends Map<String, ?>> iterator = args.iterator();
             List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);

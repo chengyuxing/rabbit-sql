@@ -591,13 +591,20 @@ public class BakiDao extends JdbcSupport implements Baki {
     protected String getSql(String sql, Map<String, ?> args) {
         boolean hasArgs = args != null && !args.isEmpty();
         String trimEndedSql = SqlUtil.trimEnd(sql);
+        // 如果是sql名则从文件取sql
         if (sql.startsWith("&")) {
             if (xqlFileManager != null) {
                 // 经过XQLFileManager获取的sql，已经去除了段落注释和行注释
+                // 内部的自定义常量也替换完成，后续都没必要再来一次
                 trimEndedSql = xqlFileManager.get(sql.substring(1), args, strictDynamicSqlArg);
+                return trimEndedSql;
             } else {
                 throw new NullPointerException("can not find property 'xqlFileManager' or XQLFileManager object init failed!");
             }
+        }
+        // 如果是sql字符串，没有字符串模版占位符，也没必要再去查找
+        if (!trimEndedSql.contains("${")) {
+            return trimEndedSql;
         }
         if (xqlFileManager != null) {
             Map<String, String> constants = xqlFileManager.getConstants();

@@ -22,7 +22,7 @@ public abstract class InsertExecutor {
 
     /**
      * 启用安全插入<br>
-     * 执行表字段查询并根据表字段筛选数据中存在的字段
+     * 执行表字段查询并根据表字段筛选数据中不存在的字段
      *
      * @return 插入构建器
      */

@@ -12,7 +12,10 @@ import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.impl.MysqlPageHelper;
 import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
+import com.github.chengyuxing.sql.support.executor.InsertExecutor;
 import com.github.chengyuxing.sql.support.JdbcSupport;
+import com.github.chengyuxing.sql.support.executor.QueryExecutor;
+import com.github.chengyuxing.sql.support.executor.UpdateExecutor;
 import com.github.chengyuxing.sql.transaction.Tx;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.utils.JdbcUtil;
@@ -149,7 +152,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * {@inheritDoc}
+     * 插入
      *
      * @param tableName 表名
      * @param data      数据
@@ -160,10 +163,8 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @return 受影响的行数
      * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
      * @see #fastInsert(String, Collection, boolean)
-     * @see #fastInsert(String, Collection)
      */
-    @Override
-    public int insert(String tableName, Collection<? extends Map<String, ?>> data, boolean uncheck) {
+    protected int insert(String tableName, Collection<? extends Map<String, ?>> data, boolean uncheck) {
         Iterator<? extends Map<String, ?>> iterator = data.iterator();
         List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);
         String sql = null;
@@ -179,58 +180,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * {@inheritDoc}
-     * 根据数据生成insert语句，不论表是否存在相应的字段
-     *
-     * @param tableName 表名
-     * @param data      数据
-     * @return 受影响的行数
-     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
-     * @see #fastInsert(String, Collection, boolean)
-     * @see #fastInsert(String, Collection)
-     */
-    @Override
-    public int insert(String tableName, Collection<? extends Map<String, ?>> data) {
-        return insert(tableName, data, true);
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @param tableName 表名
-     * @param data      数据
-     * @param uncheck   <ul>
-     *                  <li>true: 根据数据原封不动完全插入，如果有不存在的字段则抛出异常</li>
-     *                  <li>false: 根据数据库表字段名排除数据中不存在的key，安全的插入</li>
-     *                  </ul>
-     * @return 受影响的行数
-     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
-     * @see #fastInsert(String, Collection, boolean)
-     * @see #fastInsert(String, Collection)
-     */
-    @Override
-    public int insert(String tableName, Map<String, ?> data, boolean uncheck) {
-        return insert(tableName, Collections.singletonList(data), uncheck);
-    }
-
-    /**
-     * {@inheritDoc}
-     * 根据数据生成insert语句，不论表是否存在相应的字段
-     *
-     * @param tableName 表名
-     * @param data      数据
-     * @return 受影响的行数
-     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
-     * @see #fastInsert(String, Collection, boolean)
-     * @see #fastInsert(String, Collection)
-     */
-    @Override
-    public int insert(String tableName, Map<String, ?> data) {
-        return insert(tableName, Collections.singletonList(data));
-    }
-
-    /**
-     * {@inheritDoc}（非预编译SQL）<br>
+     * 插入（非预编译SQL）<br>
      * 注：不支持插入二进制对象
      *
      * @param tableName 表名
@@ -242,8 +192,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @return 受影响的行数
      * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
      */
-    @Override
-    public int fastInsert(String tableName, Collection<? extends Map<String, ?>> data, boolean uncheck) {
+    protected int fastInsert(String tableName, Collection<? extends Map<String, ?>> data, boolean uncheck) {
         if (data.size() > 0) {
             Iterator<? extends Map<String, ?>> iterator = data.iterator();
             String[] sqls = new String[data.size()];
@@ -258,21 +207,6 @@ public class BakiDao extends JdbcSupport implements Baki {
             return count;
         }
         return -1;
-    }
-
-    /**
-     * {@inheritDoc}（非预编译SQL）<br>
-     * 注：不支持插入二进制对象<br>
-     * 根据数据生成insert语句，不论表是否存在相应的字段
-     *
-     * @param tableName 表名
-     * @param data      数据
-     * @return 受影响的行数
-     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
-     */
-    @Override
-    public int fastInsert(String tableName, Collection<? extends Map<String, ?>> data) {
-        return fastInsert(tableName, data, true);
     }
 
     /**
@@ -303,36 +237,55 @@ public class BakiDao extends JdbcSupport implements Baki {
         return delete(tableName, where, Collections.emptyMap());
     }
 
-    /**
-     * {@inheritDoc}<br>
-     * 根据数据生成update语句，不论表是否存在相应的字段<br>
-     * e.g. {@code update(<table>, <List>, "id = :id")}<br>
-     * 关于此方法的说明举例：
-     * <blockquote>
-     * 根据第一条数据生成预编译SQL
-     * <pre>
-     *  参数： {id:14, name:'cyx', address:'kunming'},{...}...
-     *  条件："id = :id"
-     *  生成：update{@code <table>} set name = :name, address = :address
-     *       where id = :id
-     *  </pre>
-     * 解释：where中至少指定一个传名参数，数据中必须包含where条件中的所有传名参数
-     * </blockquote>
-     *
-     * @param tableName 表名
-     * @param data      数据：需要更新的数据和条件参数
-     * @param where     条件：条件中需要有传名参数作为更新的条件依据
-     * @return 受影响的行数
-     * @throws UncheckedSqlException sql执行过程中出现错误
-     * @see Baki#fastUpdate(String, Collection, String)
-     */
     @Override
-    public int update(String tableName, Collection<? extends Map<String, ?>> data, String where) {
-        return update(tableName, data, true, where);
+    public QueryExecutor query(String sql) {
+        return new QueryExecutor(sql) {
+            @Override
+            public Stream<DataRow> stream() {
+                return executeQueryStream(sql, args);
+            }
+
+            @Override
+            public List<Map<String, Object>> maps() {
+                try (Stream<DataRow> s = stream()) {
+                    return s.collect(Collectors.toList());
+                }
+            }
+
+            @Override
+            public List<DataRow> rows() {
+                try (Stream<DataRow> s = stream()) {
+                    return s.collect(Collectors.toList());
+                }
+            }
+
+            @Override
+            public <T> IPageable<T> pageable(int page, int size) {
+                IPageable<T> iPageable = new SimplePageable<>(sql, page, size);
+                return iPageable.args(args);
+            }
+
+            @Override
+            public DataRow findFirstRow() {
+                return findFirst().orElseGet(DataRow::new);
+            }
+
+            @Override
+            public Optional<DataRow> findFirst() {
+                try (Stream<DataRow> s = stream()) {
+                    return s.findFirst();
+                }
+            }
+
+            @Override
+            public boolean exists() {
+                return findFirst().isPresent();
+            }
+        };
     }
 
     /**
-     * {@inheritDoc}<br>
+     * 更新<br>
      * e.g. {@code update(<table>, <List>, "id = :id")}<br>
      * 关于此方法的说明举例：
      * <blockquote>
@@ -355,10 +308,8 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param where     条件：条件中需要有传名参数作为更新的条件依据
      * @return 受影响的行数
      * @throws UncheckedSqlException sql执行过程中出现错误
-     * @see Baki#fastUpdate(String, Collection, String)
      */
-    @Override
-    public int update(String tableName, Collection<? extends Map<String, ?>> data, boolean uncheck, String where) {
+    protected int update(String tableName, Collection<? extends Map<String, ?>> data, boolean uncheck, String where) {
         Iterator<? extends Map<String, ?>> iterator = data.iterator();
         List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);
         String sql = null;
@@ -383,96 +334,8 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * {@inheritDoc}<br>
-     * 根据数据生成update语句，不论表是否存在相应的字段<br>
-     * e.g. {@code update(<table>, <Map>, "id = :id")}<br>
-     * 关于此方法的说明举例：
-     * <blockquote>
-     * <pre>
-     *  参数： {id:14, name:'cyx', address:'kunming'}
-     *  条件："id = :id"
-     *  生成：update{@code <table>} set name = :name, address = :address
-     *       where id = :id
-     *  </pre>
-     * 解释：where中至少指定一个传名参数，数据中必须包含where条件中的所有传名参数
-     * </blockquote>
-     *
-     * @param tableName 表名
-     * @param data      数据：需要更新的数据和条件参数
-     * @param where     条件：条件中需要有传名参数作为更新的条件依据
-     * @return 受影响的行数
-     * @throws UncheckedSqlException sql执行过程中出现错误
-     * @see Baki#fastUpdate(String, Collection, String)
-     */
-    @Override
-    public int update(String tableName, Map<String, ?> data, String where) {
-        return update(tableName, Collections.singletonList(data), where);
-    }
-
-    /**
-     * {@inheritDoc}<br>
-     * e.g. {@code update(<table>, <Map>, "id = :id")}<br>
-     * 关于此方法的说明举例：
-     * <blockquote>
-     * <pre>
-     *  参数： {id:14, name:'cyx', address:'kunming'}
-     *  条件："id = :id"
-     *  生成：update{@code <table>} set name = :name, address = :address
-     *       where id = :id
-     *  </pre>
-     * 解释：where中至少指定一个传名参数，数据中必须包含where条件中的所有传名参数
-     * </blockquote>
-     *
-     * @param tableName 表名
-     * @param data      数据：需要更新的数据和条件参数
-     * @param uncheck   <ul>
-     *                  <li>true: 根据数据原封不动进行更新，如果有不存在的字段则抛出异常</li>
-     *                  <li>false: 根据数据库表字段名排除数据中不存在的key，安全的更新</li>
-     *                  </ul>
-     * @param where     条件：条件中需要有传名参数作为更新的条件依据
-     * @return 受影响的行数
-     * @throws UncheckedSqlException sql执行过程中出现错误
-     * @see Baki#fastUpdate(String, Collection, String)
-     */
-    @Override
-    public int update(String tableName, Map<String, ?> data, boolean uncheck, String where) {
-        return update(tableName, Collections.singletonList(data), uncheck, where);
-    }
-
-    /**
-     * {@inheritDoc}（非预编译SQL）<br>
-     * 根据数据生成update语句，不论表是否存在相应的字段<br>
-     * 注：不支持插入二进制对象<br>
-     * 如果需要插入文件请使用：{@link Baki#update(String, Map, String)}（预编译SQL）<br>
-     * e.g. {@code fastUpdate(<table>, <List<Map>>, "id = :id")}
-     * 关于此方法的说明举例：
-     * <blockquote>
-     * <pre>
-     *  参数： [{id:14, name:'cyx', address:'kunming'},...]
-     *  条件："id = :id"
-     *  生成：update{@code <table>} set name = 'cyx', address = 'kunming'
-     *       where id = 14, update...
-     *  </pre>
-     * 解释：where中至少指定一个传名参数，数据中必须包含where条件中的所有传名参数
-     * </blockquote>
-     *
-     * @param tableName 表名
-     * @param args      参数：需要更新的数据和条件参数
-     * @param where     条件：条件中需要有传名参数作为更新的条件依据
-     * @return 受影响的行数
-     * @throws UncheckedSqlException         执行批量操作时发生错误
-     * @throws UnsupportedOperationException 数据库或驱动版本不支持批量操作
-     * @throws IllegalArgumentException      数据条数少于一条
-     */
-    @Override
-    public int fastUpdate(String tableName, Collection<? extends Map<String, ?>> args, String where) {
-        return fastUpdate(tableName, args, true, where);
-    }
-
-    /**
-     * {@inheritDoc}（非预编译SQL）<br>
-     * 注：不支持插入二进制对象<br>
-     * 如果需要插入文件请使用：{@link Baki#update(String, Map, String)}（预编译SQL）<br>
+     * 更新（非预编译SQL）<br>
+     * 注：不支持更新二进制对象<br>
      * e.g. {@code fastUpdate(<table>, <List<Map>>, "id = :id")}
      * 关于此方法的说明举例：
      * <blockquote>
@@ -497,8 +360,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @throws UnsupportedOperationException 数据库或驱动版本不支持批量操作
      * @throws IllegalArgumentException      数据条数少于一条
      */
-    @Override
-    public int fastUpdate(String tableName, Collection<? extends Map<String, ?>> args, boolean uncheck, String where) {
+    protected int fastUpdate(String tableName, Collection<? extends Map<String, ?>> args, boolean uncheck, String where) {
         if (args.size() > 0) {
             String[] sqls = new String[args.size()];
             Iterator<? extends Map<String, ?>> iterator = args.iterator();
@@ -515,53 +377,40 @@ public class BakiDao extends JdbcSupport implements Baki {
         return -1;
     }
 
-    /**
-     * {@inheritDoc}(一个流对象占用一个连接对象，需要手动关闭流或使用try-with-resource包裹)
-     *
-     * @param sql 查询sql
-     * @return 收集为流的结果集
-     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
-     */
     @Override
-    public Stream<DataRow> query(String sql) {
-        return query(sql, new DataRow(0));
+    public UpdateExecutor update(String tableName, String where) {
+        return new UpdateExecutor(tableName, where) {
+            @Override
+            public int save(Map<String, ?> data) {
+                return save(Collections.singletonList(data));
+            }
+
+            @Override
+            public int save(Collection<? extends Map<String, ?>> data) {
+                if (fast) {
+                    return fastUpdate(tableName, data, !safe, where);
+                }
+                return update(tableName, data, !safe, where);
+            }
+        };
     }
 
-    /**
-     * {@inheritDoc}(一个流对象占用一个连接对象，需要手动关闭流或使用try-with-resource包裹)
-     *
-     * @param sql  查询sql
-     * @param args 参数
-     * @return 收集为流的结果集
-     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
-     */
     @Override
-    public Stream<DataRow> query(String sql, Map<String, ?> args) {
-        return executeQueryStream(sql, args);
-    }
+    public InsertExecutor insert(String tableName) {
+        return new InsertExecutor(tableName) {
+            @Override
+            public int save(Map<String, ?> data) {
+                return save(Collections.singletonList(data));
+            }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @param recordQuery 查询SQL或自定义分页查询的SQL<br>
-     *                    可能默认的构建分页SQL无法满足所有情况，例如PostgreSQL中:
-     *                    <pre>with a as (select ... limit 0 offset 5)<br>select * from a;</pre>
-     *                    关于自定义分页SQL配置如下:
-     *                    <blockquote>
-     *                    <ul>
-     *                    <li>禁用自动分页构建：{@link IPageable#disableDefaultPageSql(String...)}，因为如上例子，否则会在SQL结尾加{@code limit ... offset ...}</li>
-     *                    <li>自定义count查询语句：{@link IPageable#count(String)}</li>
-     *                    <li>如有必要自定义个性化参数名：{@link IPageable#rewriteDefaultPageArgs(Function)}</li>
-     *                    </ul>
-     *                    </blockquote>
-     * @param page        当前页
-     * @param size        分页大小
-     * @param <T>         类型参数
-     * @return 分页构建器
-     */
-    @Override
-    public <T> IPageable<T> query(String recordQuery, int page, int size) {
-        return new SimplePageable<>(recordQuery, page, size);
+            @Override
+            public int save(Collection<? extends Map<String, ?>> data) {
+                if (fast) {
+                    return fastInsert(tableName, data, !safe);
+                }
+                return insert(tableName, data, !safe);
+            }
+        };
     }
 
     /**
@@ -590,13 +439,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 if (cq == null) {
                     cq = sqlTranslator.generateCountQuery(query);
                 }
-                count = fetch(cq, args).map(cn -> {
-                    Object num = cn.getFirst();
-                    if (num instanceof Integer) {
-                        return (Integer) num;
-                    }
-                    return Integer.parseInt(num.toString());
-                }).orElse(0);
+                count = execute(cq, args).<DataRow>getFirstAs().getInt(0);
             }
             PageHelper pageHelper = customPageHelper;
             if (pageHelper == null) {
@@ -605,63 +448,11 @@ public class BakiDao extends JdbcSupport implements Baki {
             pageHelper.init(page, size, count);
             args.putAll(rewriteArgsFunc == null ? pageHelper.pagedArgs() : rewriteArgsFunc.apply(pageHelper.pagedArgs()));
             String executeQuery = disablePageSql ? query : pageHelper.pagedSql(query);
-            try (Stream<DataRow> s = query(executeQuery, args)) {
+            try (Stream<DataRow> s = executeQueryStream(executeQuery, args)) {
                 List<T> list = s.map(mapper).collect(Collectors.toList());
                 return PagedResource.of(pageHelper, list);
             }
         }
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @param sql 查询sql
-     * @return 空或一条
-     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
-     */
-    @Override
-    public Optional<DataRow> fetch(String sql) {
-        return fetch(sql, new DataRow(0));
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @param sql  查询sql
-     * @param args 参数
-     * @return 空或一条
-     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
-     */
-    @Override
-    public Optional<DataRow> fetch(String sql, Map<String, ?> args) {
-        try (Stream<DataRow> s = query(sql, args)) {
-            return s.findFirst();
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @param sql sql
-     * @return 是否存在
-     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
-     */
-    @Override
-    public boolean exists(String sql) {
-        return fetch(sql).isPresent();
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @param sql  sql
-     * @param args 参数
-     * @return 是否存在
-     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
-     */
-    @Override
-    public boolean exists(String sql, Map<String, ?> args) {
-        return fetch(sql, args).isPresent();
     }
 
     /**

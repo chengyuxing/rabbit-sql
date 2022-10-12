@@ -69,7 +69,9 @@ public class MyTest {
         while (true) {
             if (i == 1) {
                 try {
-                    Map<String, Object> res = baki.fetchMap("select * from test.region where id > :id", Args.of("id", 10));
+                    Map<String, Object> res = baki.query("select * from test.region where id > :id")
+                            .args(Args.of("id", 10))
+                            .findFirstRow();
                     System.out.println(res);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -131,7 +133,7 @@ public class MyTest {
 
     @Test
     public void tree() throws Exception {
-        List<Map<String, Object>> list = baki.queryMaps("select id,name,pid from test.region where pid != 1000");
+        List<Map<String, Object>> list = baki.query("select id,name,pid from test.region where pid != 1000").maps();
         Map<String, Object> tree = new HashMap<>();
         tree.put("id", 0);
         tree.put("pid", -1);
@@ -157,7 +159,8 @@ public class MyTest {
 
     @Test
     public void toEntity() throws Exception {
-        baki.fetch("select * from test.tb")
+        baki.query("select * from test.tb")
+                .findFirst()
                 .ifPresent(row -> {
                     Tb tb = row.toEntity(Tb.class);
                     System.out.println(tb);
@@ -169,6 +172,7 @@ public class MyTest {
     @Test
     public void testFieldCase() throws Exception {
         baki.query("select 1 A, 2 \"B\", current_date DT, now() \"NoW\"")
+                .stream()
                 .forEach(System.out::println);
     }
 
@@ -180,7 +184,7 @@ public class MyTest {
                 .add("tm", "23时55分13秒")
                 .add("strs", Arrays.asList("1", "2", "3", "4"))
                 .add("bak", "ccc");
-        baki.insert("test.tb", args, false);
+        baki.insert("test.tb").safe().save(args);
     }
 
     @Test
@@ -189,12 +193,12 @@ public class MyTest {
         Me me = new Me();
         me.setAge(25);
         me.setName("entity");
-        baki.insert("test.tb", Args.of("jsb", me));
+        baki.insert("test.tb").save(Args.of("jsb", me));
     }
 
     @Test
     public void insertFile() throws FileNotFoundException {
-        baki.insert("test.tb", Args.of("blob", new FileInputStream("/Users/chengyuxing/Downloads/Bob.app.zip")));
+        baki.insert("test.tb").save(Args.of("blob", new FileInputStream("/Users/chengyuxing/Downloads/Bob.app.zip")));
     }
 
     @Test
@@ -213,7 +217,8 @@ public class MyTest {
 
     @Test
     public void defaultPager() throws Exception {
-        PagedResource<DataRow> pagedResource = baki.<DataRow>query("select * from test.region", 1, 5)
+        PagedResource<DataRow> pagedResource = baki.query("select * from test.region")
+                .<DataRow>pageable(1, 5)
                 .count(10)
                 .collect(d -> d);
         System.out.println(pagedResource);
@@ -224,14 +229,15 @@ public class MyTest {
         List<Map<String, Object>> list = new ArrayList<>();
         list.add(Args.create("id", 23, "name", "昆明西山万达广场"));
         list.add(Args.create("id", 24, "name", "南亚风情园"));
-        int i = baki.update("test.region", list, "id = :id");
+        int i = baki.update("test.region", "id = :id").save(list);
         System.out.println(i);
     }
 
     @Test
     public void query() throws Exception {
-        try (Stream<DataRow> s = baki.query("select ${fields} from test.region where id = :id",
-                Args.create("fields", Arrays.asList("name", "pid"), "id", 11))) {
+        try (Stream<DataRow> s = baki.query("select ${fields} from test.region where id = :id")
+                .args(Args.create("fields", Arrays.asList("name", "pid"), "id", 11))
+                .stream()) {
             s.forEach(System.out::println);
         } catch (Exception e) {
             e.printStackTrace();
@@ -240,7 +246,8 @@ public class MyTest {
 
     @Test
     public void pagerTest() throws Exception {
-        PagedResource<DataRow> res = baki.<DataRow>query("&data.custom_paged", 1, 7)
+        PagedResource<DataRow> res = baki.query("&data.custom_paged")
+                .<DataRow>pageable(1, 7)
                 .count("select count(*) from test.region where id > :id")
                 .args(Args.create("id", 8))
                 .disableDefaultPageSql()
@@ -256,9 +263,9 @@ public class MyTest {
 
     @Test
     public void dynamicSqlTest() throws Exception {
-        try (Stream<DataRow> s = baki.query("&pgsql.data.logical", Args.create()
-                .add("age", 91)
-                .add("name", "小"))) {
+        try (Stream<DataRow> s = baki.query("&pgsql.data.logical")
+                .args(Args.create().add("age", 91).add("name", "小"))
+                .stream()) {
             s.forEach(System.out::println);
         }
     }
@@ -288,7 +295,8 @@ public class MyTest {
 
     @Test
     public void array() throws Exception {
-        baki.fetch("select array [12,13,11,4,5,6.7]:: varchar[], '{\"a\":\"chengyuxing\"}'::jsonb")
+        baki.query("select array [12,13,11,4,5,6.7]:: varchar[], '{\"a\":\"chengyuxing\"}'::jsonb")
+                .findFirst()
                 .ifPresent(r -> {
                     System.out.println(r);
                     System.out.println(r.getFirst());
@@ -317,7 +325,8 @@ public class MyTest {
 //        );
 //        baki.fastInsert(DataFrame.ofRows("test.history", rows));
         try {
-            DataRow row = baki.fetch("select * from test.history where id = alskdjc.sksj")
+            DataRow row = baki.query("select * from test.history where id = alskdjc.sksj")
+                    .findFirst()
                     .orElse(DataRow.empty());
             System.out.println(row);
         } catch (Exception e) {
@@ -338,13 +347,13 @@ public class MyTest {
         map.put("productplace", "bbb");
         map.put("price", 1000);
 
-        int i = baki.insert("test.fruit", map);
+        int i = baki.insert("test.fruit").save(map);
         System.out.println(i);
     }
 
     @Test
     public void pageTest() throws Exception {
-        long c = baki.query("select * from test.region where id = 100").count();
+        long c = baki.query("select * from test.region where id = 100").stream().count();
         System.out.println(c);
     }
 
@@ -361,7 +370,7 @@ public class MyTest {
     @Test
     public void TestMultiDs() throws SQLException {
         baki.query("select * from test.user where id --用户ID\n" +
-                " = 3;").forEach(System.out::println);
+                " = 3;").rows().forEach(System.out::println);
 //        xDao2.query("select * from user;", DataRow::toMap, -1).forEach(System.out::println);
     }
 
@@ -369,7 +378,7 @@ public class MyTest {
     @Test
     public void testX() throws Exception {
         Tx.begin();
-        try (Stream<DataRow> s = baki.query("select now()")) {
+        try (Stream<DataRow> s = baki.query("select now()").stream()) {
             s.forEach(System.out::println);
         }
         while (true) {
@@ -379,17 +388,17 @@ public class MyTest {
 
     @Test
     public void testSqlFile() throws InterruptedException {
-        try (Stream<DataRow> s = baki.query("select * from current_date,now()",
-                Args.create().add("id", 4))) {
+        try (Stream<DataRow> s = baki.query("select * from current_date,now()")
+                .args(Args.create().add("id", 4)).stream()) {
             s.map(DataRow::toMap)
                     .forEach(System.out::println);
         }
         try (Stream<DataRow> s = baki.query("select * from test.message --用户ID\n" +
-                ";")) {
+                ";").stream()) {
             s.forEach(System.out::println);
         }
 
-        System.out.println(baki.fetchMap("select * from current_date,now()"));
+        System.out.println(baki.query("select * from current_date,now()"));
 
         TimeUnit.MINUTES.sleep(5);
     }
@@ -456,9 +465,10 @@ public class MyTest {
     @Test
     public void queryInTransaction() throws Exception {
         Tx.using(() -> {
-            baki.fetch("select current_timestamp, version()")
+            baki.query("select current_timestamp, version()")
+                    .findFirst()
                     .ifPresent(System.out::println);
-            baki.insert("test.history", DataRow.fromPair("userid", UUID.randomUUID(), "words", "transactional").toMap());
+            baki.insert("test.history").save(DataRow.fromPair("userid", UUID.randomUUID(), "words", "transactional").toMap());
         });
     }
 

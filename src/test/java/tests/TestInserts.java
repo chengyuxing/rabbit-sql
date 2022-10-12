@@ -12,7 +12,6 @@ import org.junit.Test;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class TestInserts {
     static Baki baki;
@@ -38,23 +37,13 @@ public class TestInserts {
     }
 
     @Test
-    public void normal() throws Exception {
-        baki.insert("test.message", rows.stream().map(DataRow::toMap).collect(Collectors.toList()));
-    }
-
-    @Test
-    public void batch() throws Exception {
-        baki.fastInsert("test.message", rows.stream().map(DataRow::toMap).collect(Collectors.toList()));
-    }
-
-    @Test
     public void updateFast() throws Exception {
         List<Map<String, Object>> list = Arrays.asList(
                 Args.<Object>of("words", "it's my time!").add("id", 2),
                 Args.<Object>of("words", "it's my time!!!").add("id", 4),
                 Args.<Object>of("words", "Hello don't touch me'''").add("dt", LocalDateTime.now()).add("id", 5)
         );
-        int i = baki.fastUpdate("test.message", list, "id = :id");
+        int i = baki.update("test.message", "id = :id").save(list);
         System.out.println(i);
     }
 

@@ -1,7 +1,6 @@
 package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.DataRow;
-import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.datasource.DataSourceUtil;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
@@ -12,8 +11,8 @@ import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.impl.MysqlPageHelper;
 import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
-import com.github.chengyuxing.sql.support.executor.InsertExecutor;
 import com.github.chengyuxing.sql.support.JdbcSupport;
+import com.github.chengyuxing.sql.support.executor.InsertExecutor;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
 import com.github.chengyuxing.sql.support.executor.UpdateExecutor;
 import com.github.chengyuxing.sql.transaction.Tx;
@@ -167,13 +166,10 @@ public class BakiDao extends JdbcSupport implements Baki {
     protected int insert(String tableName, Collection<? extends Map<String, ?>> data, boolean uncheck) {
         Iterator<? extends Map<String, ?>> iterator = data.iterator();
         List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);
-        String sql = null;
         int i = 0;
         while (iterator.hasNext()) {
             Map<String, ?> item = iterator.next();
-            if (sql == null) {
-                sql = sqlTranslator.generatePreparedInsert(tableName, item, tableFields);
-            }
+            String sql = sqlTranslator.generatePreparedInsert(tableName, item, tableFields);
             i += executeNonQuery(sql, item);
         }
         return i;
@@ -314,22 +310,20 @@ public class BakiDao extends JdbcSupport implements Baki {
             where = getSql(where, Collections.emptyMap());
             Iterator<? extends Map<String, ?>> iterator = data.iterator();
             List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);
-            String sql = null;
+            // 获取where条件中的参数名
+            List<String> whereFields = sqlTranslator.generateSql(where, Collections.emptyMap(), true).getItem2();
             int i = 0;
             while (iterator.hasNext()) {
                 // 完整的参数字典
                 Map<String, ?> item = iterator.next();
                 Map<String, ?> updateData = new HashMap<>(item);
                 // 将where条件中的参数排除，因为where中的参数作为条件，而不是需要更新的值
-                Pair<String, List<String>> cnd = sqlTranslator.generateSql(where, updateData, true);
-                for (String key : cnd.getItem2()) {
+                for (String key : whereFields) {
                     updateData.remove(key);
                 }
-                if (sql == null) {
-                    String update = sqlTranslator.generatePreparedUpdate(tableName, updateData, tableFields);
-                    String w = StringUtil.startsWithIgnoreCase(where.trim(), "where") ? where : "\nwhere " + where;
-                    sql = update + w;
-                }
+                String update = sqlTranslator.generatePreparedUpdate(tableName, updateData, tableFields);
+                String w = StringUtil.startsWithIgnoreCase(where.trim(), "where") ? where : "\nwhere " + where;
+                String sql = update + w;
                 i += executeNonQuery(sql, item);
             }
             return i;

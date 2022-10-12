@@ -66,7 +66,7 @@ public class SqlTranslator {
             String name = matcher.group("name");
             names.add(name);
             String value = prepare ? "?" : quoteFormatValueIfNecessary(argx.get(name));
-            noneStrSql = noneStrSql.replaceFirst(regC + name, value);
+            noneStrSql = noneStrSql.replace(regC + name, value);
         }
         // finally, set placeholder into none-string-part sql
         for (Map.Entry<String, String> e : placeholderMapper.entrySet()) {

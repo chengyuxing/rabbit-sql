@@ -301,7 +301,7 @@ public class JdbcUtil {
             pType = pmd.getParameterType(index);
         } catch (SQLException e) {
             // 如果数据库不支持此特性，记录错误，给出提示，并继续完成操作，而不是直接打断
-            log.error("maybe jdbc driver not support the check parameter type, set 'checkParameterType' false to disabled the check: ", e);
+            log.warn("maybe jdbc driver not support the check parameter type, set 'checkParameterType' false to disabled the check: ", e);
             log.warn("auto switch normal mode to set value...");
             setStatementValue(statement, index, value);
             return;
@@ -312,6 +312,7 @@ public class JdbcUtil {
             // if postgresql, insert as json(b) type
             // if column is json type
             if (pTypeName.equals("json") || pTypeName.equals("jsonb")) {
+                log.warn("you try to set a value into json(b) type field, auto wrap for json(b) type!");
                 if (value instanceof String) {
                     statement.setObject(index, createPgObject(pTypeName, value.toString()));
                 } else {
@@ -319,12 +320,14 @@ public class JdbcUtil {
                 }
             } else if (pClass.equals("java.lang.String") && !(value instanceof String)) {
                 if (value instanceof Map || value instanceof Collection) {
+                    log.warn("you try to set a Map or Collection data into database string type field, auto convert to json string!");
                     statement.setObject(index, obj2Json(value));
                     // maybe Date, LocalDateTime, UUID, BigDecimal, Integer...
                 } else if (value.getClass().getTypeName().startsWith("java.")) {
                     statement.setObject(index, value.toString());
                 } else {
                     // maybe is java bean
+                    log.warn("you try to set an unknow class instance(maybe your java bean) data into string type field, auto convert to json string!");
                     statement.setObject(index, obj2Json(value));
                 }
                 // if is postgresql array
@@ -363,6 +366,12 @@ public class JdbcUtil {
             statement.setObject(index, new Time(((LocalTime) value).atDate(LocalDate.now()).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
         } else if (value instanceof Instant) {
             statement.setObject(index, new Timestamp(((Instant) value).toEpochMilli()));
+        } else if (value instanceof Map || value instanceof Collection) {
+            log.warn("you try to set a Map or Collection data, auto convert to json string!");
+            statement.setObject(index, obj2Json(value));
+        } else if (!value.getClass().getTypeName().startsWith("java.")) {
+            log.warn("you try to set an unknow class instance(maybe your java bean) data, auto convert to json string!");
+            statement.setObject(index, obj2Json(value));
         } else if (value instanceof InputStream) {
             statement.setBinaryStream(index, (InputStream) value);
         } else if (value instanceof File) {

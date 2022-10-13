@@ -39,9 +39,9 @@ public class BakiSessionTest {
     }
 
     @Test
-    public void testinsert() throws Exception{
+    public void testinsert() throws Exception {
         baki.insert("test.tb")
-                .save(Args.of("ts", LocalDateTime.now()));
+                .save(Args.of("str", Args.of("a", "b")));
     }
 
     @Test

@@ -136,7 +136,7 @@ public class SqlTranslator {
     }
 
     /**
-     * 过滤筛选掉不满足条件的字段
+     * 忽略大小写过滤筛选掉不满足条件的字段
      *
      * @param row    数据行
      * @param fields 需要包含的字段集合

@@ -1,29 +1,30 @@
 package tests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.common.DateTimes;
+import com.github.chengyuxing.common.ImmutableList;
+import com.github.chengyuxing.common.tuple.Pair;
+import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.BakiDao;
+import com.github.chengyuxing.sql.PagedResource;
 import com.github.chengyuxing.sql.XQLFileManager;
+import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
+import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.utils.SqlTranslator;
+import com.github.chengyuxing.sql.utils.SqlUtil;
 import com.zaxxer.hikari.HikariDataSource;
 import func.BeanUtil;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.nutz.json.Json;
-import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.common.DataRow;
-import com.github.chengyuxing.common.ImmutableList;
-import com.github.chengyuxing.common.DateTimes;
-import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
-import com.github.chengyuxing.sql.PagedResource;
-import com.github.chengyuxing.sql.Args;
-import com.github.chengyuxing.sql.types.Param;
-import com.github.chengyuxing.sql.utils.SqlUtil;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
-import java.time.*;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -296,5 +297,16 @@ public class Tests {
         System.out.println(new SqlTranslator('?').generateNamedParamInsert("t.user", args, Arrays.asList("id", "name", "asx")));
         System.out.println(new SqlTranslator('?').generateInsert("t.user", args, Collections.emptyList()));
 
+    }
+
+    @Test
+    public void testFilter() throws Exception{
+        Map<String, Object> map = new HashMap<>();
+        map.put("a", 1);
+        map.put("B", 1);
+        map.put("C", 1);
+        map.put("D", 1);
+
+        System.out.println(new SqlTranslator(':').filterKeys(map,Arrays.asList("a","b","c")));
     }
 }

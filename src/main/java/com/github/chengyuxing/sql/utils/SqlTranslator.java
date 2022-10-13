@@ -146,9 +146,10 @@ public class SqlTranslator {
         if (fields == null || fields.isEmpty()) {
             return row.keySet();
         }
+        String[] fieldArr = fields.toArray(new String[0]);
         Set<String> set = new HashSet<>();
         for (String k : row.keySet()) {
-            if (fields.contains(k)) {
+            if (StringUtil.containsAnyIgnoreCase(k, fieldArr)) {
                 set.add(k);
             }
         }

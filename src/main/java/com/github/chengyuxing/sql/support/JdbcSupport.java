@@ -287,7 +287,7 @@ public abstract class JdbcSupport {
     }
 
     /**
-     * 批量执行一句非查询语句(insert，update，delete)<br>
+     * <p>批量执行非查询语句 (insert，update，delete)</p>
      * e.g.
      * <blockquote>
      * <pre>insert into table (a,b,c) values (:v1,:v2,:v3)</pre>
@@ -295,17 +295,25 @@ public abstract class JdbcSupport {
      * </blockquote>
      *
      * @param sql  sql
-     * @param args 数据 --每行数据类型和参数个数都必须相同
-     * @return 总的受影响的行数
-     * @throws UncheckedSqlException sql执行过程中出现错误
+     * @param args 一组数据
+     * @return 受影响的行数
      */
-    public int executeNonQuery(final String sql, Map<String, ?> args) {
-        Pair<String, List<String>> preparedSqlAndArgNames = compileSql(sql, args);
+    public int executeNonQuery(final String sql, Collection<? extends Map<String, ?>> args) {
+        if (args.isEmpty()) {
+            return 0;
+        }
+        Map<String, ?> first = args.iterator().next();
+        Pair<String, List<String>> preparedSqlAndArgNames = compileSql(sql, first);
         final List<String> argNames = preparedSqlAndArgNames.getItem2();
         final String preparedSql = preparedSqlAndArgNames.getItem1();
         return execute(preparedSql, sc -> {
-            JdbcUtil.setSqlTypedArgs(sc, checkParameterType(), args, argNames);
-            return sc.executeUpdate();
+            Iterator<? extends Map<String, ?>> iterator = args.iterator();
+            int i = 0;
+            while (iterator.hasNext()) {
+                JdbcUtil.setSqlTypedArgs(sc, checkParameterType(), iterator.next(), argNames);
+                i += sc.executeUpdate();
+            }
+            return i;
         });
     }
 

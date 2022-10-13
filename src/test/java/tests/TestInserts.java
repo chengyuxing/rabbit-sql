@@ -43,7 +43,7 @@ public class TestInserts {
                 Args.<Object>of("words", "it's my time!!!").add("id", 4),
                 Args.<Object>of("words", "Hello don't touch me'''").add("dt", LocalDateTime.now()).add("id", 5)
         );
-        int i = baki.update("test.message", "id = :id").save(list);
+        int i = baki.update("test.message", "id = :id").fast().save(list);
         System.out.println(i);
     }
 
@@ -55,7 +55,7 @@ public class TestInserts {
                 .add("dt", LocalDateTime.now());
 
 //        System.out.println(new SqlTranslator(':').generateUpdate("test.message", args, "id = :id"));
-        System.out.println(new SqlTranslator(':').generateUpdate("test.message", args, "id = :id", Arrays.asList()));
+        System.out.println(new SqlTranslator(':').generateUpdate("test.message", args, Arrays.asList()));
         System.out.println(new SqlTranslator(':').generatePreparedUpdate("test.message", args, Arrays.asList("name")));
     }
 

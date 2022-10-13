@@ -7,7 +7,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.github.chengyuxing.common.utils.StringUtil.startsWithIgnoreCase;
 import static com.github.chengyuxing.sql.utils.SqlUtil.quoteFormatValueIfNecessary;
 import static com.github.chengyuxing.sql.utils.SqlUtil.replaceSqlSubstr;
 
@@ -16,7 +15,6 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.replaceSqlSubstr;
  */
 public class SqlTranslator {
     private final String c;
-    private final String regC;
     /**
      * 匹配命名参数
      */
@@ -32,11 +30,11 @@ public class SqlTranslator {
             throw new IllegalArgumentException("prefix char cannot be empty.");
         }
         String cs = String.valueOf(namedParameterPrefix);
-        this.regC = cs.replace(cs, "\\" + cs);
         if (cs.equals(":")) {
             this.c = ":";
         } else {
             this.c = cs;
+            String regC = cs.replace(cs, "\\" + cs);
             PARAM_PATTERN = Pattern.compile("(^" + regC + "|[^" + regC + "]" + regC + ")(?<name>[a-zA-Z_][\\w_]*)", Pattern.MULTILINE);
         }
     }
@@ -66,7 +64,7 @@ public class SqlTranslator {
             String name = matcher.group("name");
             names.add(name);
             String value = prepare ? "?" : quoteFormatValueIfNecessary(argx.get(name));
-            noneStrSql = noneStrSql.replace(regC + name, value);
+            noneStrSql = noneStrSql.replace(c + name, value);
         }
         // finally, set placeholder into none-string-part sql
         for (Map.Entry<String, String> e : placeholderMapper.entrySet()) {
@@ -208,43 +206,11 @@ public class SqlTranslator {
      *
      * @param tableName 表名
      * @param data      数据
-     * @param where     条件
      * @param fields    需要包含的字段集合
      * @return 更新语句
      */
-    public String generateUpdate(String tableName, Map<String, ?> data, final String where, List<String> fields) {
-        if (data.isEmpty()) {
-            throw new IllegalArgumentException("empty field set, generate update sql error.");
-        }
-        Set<String> keys = filterKeys(data, fields);
-        if (keys.isEmpty()) {
-            throw new IllegalArgumentException("empty field set, generate update sql error.");
-        }
-        if (where.trim().equals("")) {
-            throw new IllegalArgumentException("where condition must not be empty.");
-        }
-        Pair<String, List<String>> sqlAndFields = generateSql(where, data, false);
-        List<String> cndFields = sqlAndFields.getItem2();
-        String w = sqlAndFields.getItem1();
-        StringJoiner sb = new StringJoiner(",\n\t");
-        for (String key : keys) {
-            Object v = data.get(key);
-            if (!key.startsWith("${") && !key.endsWith("}")) {
-                String value = quoteFormatValueIfNecessary(v);
-                if (!cndFields.contains(key)) {
-                    sb.add(key + " = " + value);
-                } else {
-                    // 此处是条件中所包含的参数，放在where中，不在更新语句中
-                    w = w.replace(c + key, value);
-                }
-            }
-        }
-        String updateFields = sb.toString();
-        if (!updateFields.equals("")) {
-            w = startsWithIgnoreCase(w.trim(), "where") ? w : "where " + w;
-            return "update " + tableName + " \nset " + sb + "\n" + w;
-        }
-        throw new IllegalArgumentException("generate error, there are no fields.");
+    public String generateUpdate(String tableName, Map<String, ?> data, List<String> fields) {
+        return generateUpdate(tableName, data, fields, false);
     }
 
     /**
@@ -252,12 +218,11 @@ public class SqlTranslator {
      *
      * @param tableName 表名
      * @param data      数据
-     * @param where     where条件
      * @return 更新语句
      * @throws IllegalArgumentException 如果where条件为空或者没有生成需要更新的字段
      */
-    public String generateUpdate(String tableName, Map<String, ?> data, final String where) {
-        return generateUpdate(tableName, data, where, Collections.emptyList());
+    public String generateUpdate(String tableName, Map<String, ?> data) {
+        return generateUpdate(tableName, data, Collections.emptyList());
     }
 
     /**
@@ -269,20 +234,7 @@ public class SqlTranslator {
      * @return 更新语句
      */
     public String generatePreparedUpdate(String tableName, Map<String, ?> data, List<String> fields) {
-        if (data.isEmpty()) {
-            throw new IllegalArgumentException("empty field set, generate update sql error.");
-        }
-        Set<String> keys = filterKeys(data, fields);
-        if (keys.isEmpty()) {
-            throw new IllegalArgumentException("empty field set, generate update sql error.");
-        }
-        StringJoiner sb = new StringJoiner(",\n\t");
-        for (String key : keys) {
-            if (!key.startsWith("${") && !key.endsWith("}")) {
-                sb.add(key + " = " + c + key);
-            }
-        }
-        return "update " + tableName + " \nset " + sb;
+        return generateUpdate(tableName, data, fields, true);
     }
 
     /**
@@ -295,6 +247,24 @@ public class SqlTranslator {
      */
     public String generatePreparedUpdate(String tableName, Map<String, ?> data) {
         return generatePreparedUpdate(tableName, data, Collections.emptyList());
+    }
+
+    public String generateUpdate(String tableName, Map<String, ?> data, List<String> fields, boolean prepared) {
+        if (data.isEmpty()) {
+            throw new IllegalArgumentException("empty field set, generate update sql error.");
+        }
+        Set<String> keys = filterKeys(data, fields);
+        if (keys.isEmpty()) {
+            throw new IllegalArgumentException("empty field set, generate update sql error.");
+        }
+        StringJoiner sb = new StringJoiner(",\n\t");
+        for (String key : keys) {
+            if (!key.startsWith("${") && !key.endsWith("}")) {
+                String v = prepared ? c + key : quoteFormatValueIfNecessary(data.get(key));
+                sb.add(key + " = " + v);
+            }
+        }
+        return "update " + tableName + " \nset " + sb;
     }
 
     /**

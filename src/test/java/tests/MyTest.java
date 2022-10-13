@@ -25,6 +25,7 @@ import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.sql.*;
 import java.util.*;
+import java.util.Date;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
@@ -185,6 +186,10 @@ public class MyTest {
                 .add("strs", Arrays.asList("1", "2", "3", "4"))
                 .add("bak", "ccc");
         baki.insert("test.tb").safe().save(args);
+        baki.insert("test.tb")
+                .fast()
+                .safe()
+                .save(Args.create("ts", "2022-12-23 11:22:23", "tm", new Date(), "aaa", "bbb"));
     }
 
     @Test

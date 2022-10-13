@@ -53,14 +53,6 @@ public class BakiSessionTest {
     }
 
     @Test
-    public void insert() throws Exception {
-        int i = baki.insert("${db}.region")
-                .safe()
-                .save(Args.of("name", "南亚风情第一城").add("oldName", "南亚风情园").add("abc", "123"));
-        System.out.println(i);
-    }
-
-    @Test
     public void testQuery() throws Exception {
         PagedResource<DataRow> resource = baki.query("select * from test.region where id < ?id")
                 .arg("id", 8)

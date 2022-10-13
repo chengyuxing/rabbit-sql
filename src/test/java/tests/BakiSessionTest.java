@@ -39,6 +39,12 @@ public class BakiSessionTest {
     }
 
     @Test
+    public void testinsert() throws Exception{
+        baki.insert("test.tb")
+                .save(Args.of("ts", LocalDateTime.now()));
+    }
+
+    @Test
     public void testA() throws Exception {
         baki.query("select now(), array ['a','b','c']").findFirst()
                 .ifPresent(System.out::println);

@@ -300,7 +300,11 @@ public class JdbcUtil {
             pTypeName = pmd.getParameterTypeName(index);
             pType = pmd.getParameterType(index);
         } catch (SQLException e) {
-            throw new SQLException("maybe jdbc driver not support the check parameter type, set 'checkParameterType' false to disabled the check: ", e);
+            // 如果数据库不支持此特性，记录错误，给出提示，并继续完成操作，而不是直接打断
+            log.error("maybe jdbc driver not support the check parameter type, set 'checkParameterType' false to disabled the check: ", e);
+            log.warn("auto switch normal mode to set value...");
+            setStatementValue(statement, index, value);
+            return;
         }
         if (null == value) {
             statement.setNull(index, pType);

@@ -126,7 +126,7 @@ public class Tests {
 
     @Test
     public void sqlPlaceHolder() throws Exception {
-        String query = "select * from test where id = ?i and id = ?id and idCard = '5301111' or name = ?name ${cnd}";
+        String query = "select * from test where id = ?id and id = ?id and idCard = '5301111' or name = ?name ${cnd}";
         Pair<String, List<String>> sql = new SqlTranslator('?').generateSql(query, Args.of("cnd", "and date <= '${date}'")
                 .add("date", "2020-12-23 ${time}")
                 .add("time", "11:23:44"), true);
@@ -178,7 +178,7 @@ public class Tests {
 
 //        String sql = SqlUtil.generateInsert("test.user", paramMap, Ignore.BLANK, Arrays.asList("c", "d", "a"));
 
-        String upd = new SqlTranslator(':').generatePreparedUpdate("test.user", paramMap);
+        String upd = new SqlTranslator(':').generateNamedParamUpdate("test.user", paramMap);
         System.out.println(upd);
     }
 
@@ -293,7 +293,7 @@ public class Tests {
                 "words", "it's my time!",
                 "dt", LocalDateTime.now());
 
-        System.out.println(new SqlTranslator('?').generatePreparedInsert("t.user", args, Arrays.asList("id", "name", "asx")));
+        System.out.println(new SqlTranslator('?').generateNamedParamInsert("t.user", args, Arrays.asList("id", "name", "asx")));
         System.out.println(new SqlTranslator('?').generateInsert("t.user", args, Collections.emptyList()));
 
     }

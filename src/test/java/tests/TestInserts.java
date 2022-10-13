@@ -56,7 +56,7 @@ public class TestInserts {
 
 //        System.out.println(new SqlTranslator(':').generateUpdate("test.message", args, "id = :id"));
         System.out.println(new SqlTranslator(':').generateUpdate("test.message", args, Arrays.asList()));
-        System.out.println(new SqlTranslator(':').generatePreparedUpdate("test.message", args, Arrays.asList("name")));
+        System.out.println(new SqlTranslator(':').generateNamedParamUpdate("test.message", args, Arrays.asList("name")));
     }
 
     @Test

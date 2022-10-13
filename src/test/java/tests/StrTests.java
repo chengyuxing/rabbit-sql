@@ -71,7 +71,7 @@ public class StrTests {
         for (String key : cnd.getItem2()) {
             updateData.remove(key);
         }
-        String update = new SqlTranslator(':').generatePreparedUpdate(tableName, updateData);
+        String update = new SqlTranslator(':').generateNamedParamUpdate(tableName, updateData);
         String w = StringUtil.startsWithIgnoreCase(where.trim(), "where") ? where : "\nwhere " + where;
         System.out.println(update + w);
         System.out.println(data);

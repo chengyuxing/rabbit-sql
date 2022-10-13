@@ -11,7 +11,7 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.quoteFormatValueIfNecessa
 import static com.github.chengyuxing.sql.utils.SqlUtil.replaceSqlSubstr;
 
 /**
- * sql翻译帮助
+ * sql构建工具帮助类
  */
 public class SqlTranslator {
     private final String c;
@@ -74,9 +74,9 @@ public class SqlTranslator {
     }
 
     /**
-     * 获取处理参数占位符预编译的SQL
+     * 解析传名参数sql处理为预编译的sql
      *
-     * @param sql  带参数占位符的SQL
+     * @param sql  带参数占位符的sql
      * @param args 参数
      * @return 预编译SQL和顺序的参数名集合
      */
@@ -179,15 +179,15 @@ public class SqlTranslator {
     }
 
     /**
-     * 构建一个预编译的插入语句
+     * 构建一个传名参数占位符的插入语句
      *
      * @param tableName 表名
      * @param row       数据
      * @param fields    需要包含的字段集合
-     * @return 插入语句
+     * @return 传名参数占位符的插入语句
      * @throws IllegalArgumentException 如果参数为空
      */
-    public String generatePreparedInsert(final String tableName, final Map<String, ?> row, List<String> fields) {
+    public String generateNamedParamInsert(final String tableName, final Map<String, ?> row, List<String> fields) {
         Set<String> keys = filterKeys(row, fields);
         if (keys.isEmpty()) {
             throw new IllegalArgumentException("empty field set, generate insert sql error.");
@@ -202,7 +202,7 @@ public class SqlTranslator {
     }
 
     /**
-     * 构建一个更新语句
+     * 构建一个普通更新语句
      *
      * @param tableName 表名
      * @param data      数据
@@ -214,7 +214,7 @@ public class SqlTranslator {
     }
 
     /**
-     * 构建一个更新语句
+     * 构建一个普通更新语句
      *
      * @param tableName 表名
      * @param data      数据
@@ -226,30 +226,39 @@ public class SqlTranslator {
     }
 
     /**
-     * 构建一个预编译的更新语句
+     * 构建一个传名参数占位符的更新语句
      *
      * @param tableName 表名
      * @param data      数据
      * @param fields    需要包含的字段集合
-     * @return 更新语句
+     * @return 传名参数占位符的更新语句
      */
-    public String generatePreparedUpdate(String tableName, Map<String, ?> data, List<String> fields) {
+    public String generateNamedParamUpdate(String tableName, Map<String, ?> data, List<String> fields) {
         return generateUpdate(tableName, data, fields, true);
     }
 
     /**
-     * 构建一个预编译的更新语句
+     * 构建一个传名参数的更新语句
      *
      * @param tableName 表名
      * @param data      数据
-     * @return 更新语句
+     * @return 传名参数的更新语句
      * @throws IllegalArgumentException 如果参数为空
      */
-    public String generatePreparedUpdate(String tableName, Map<String, ?> data) {
-        return generatePreparedUpdate(tableName, data, Collections.emptyList());
+    public String generateNamedParamUpdate(String tableName, Map<String, ?> data) {
+        return generateNamedParamUpdate(tableName, data, Collections.emptyList());
     }
 
-    public String generateUpdate(String tableName, Map<String, ?> data, List<String> fields, boolean prepared) {
+    /**
+     * 构建一个更新语句
+     *
+     * @param tableName    表名
+     * @param data         数据
+     * @param fields       需要包含的字段集合
+     * @param isNamedParam 是否传名参数占位符
+     * @return 传名参数占位符的sql或普通sql
+     */
+    public String generateUpdate(String tableName, Map<String, ?> data, List<String> fields, boolean isNamedParam) {
         if (data.isEmpty()) {
             throw new IllegalArgumentException("empty field set, generate update sql error.");
         }
@@ -260,7 +269,7 @@ public class SqlTranslator {
         StringJoiner sb = new StringJoiner(",\n\t");
         for (String key : keys) {
             if (!key.startsWith("${") && !key.endsWith("}")) {
-                String v = prepared ? c + key : quoteFormatValueIfNecessary(data.get(key));
+                String v = isNamedParam ? c + key : quoteFormatValueIfNecessary(data.get(key));
                 sb.add(key + " = " + v);
             }
         }

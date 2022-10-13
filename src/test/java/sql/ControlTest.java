@@ -116,7 +116,7 @@ public class ControlTest {
         System.out.println(sql.length());
         Args<Object> args = Args.<Object>of("ids", Arrays.asList("I'm Ok!", "b", "c"))
                 .add("fields", "id, name, age")
-                .add("id", 10)
+                .add("id", Math.random())
                 .add("ids", Arrays.asList("a", "b", "c"))
                 .add("date", "2020-12-23 ${:time}")
                 .add("time", "11:23:44")
@@ -124,8 +124,14 @@ public class ControlTest {
 
 //        mergeMap(args);
 
-        System.out.println(new SqlTranslator(':').resolveSqlStrTemplate(sql, args));
-        System.out.println(new SqlTranslator(':').generateSql(sql, args, true));
+//        System.out.println(new SqlTranslator(':').resolveSqlStrTemplate(sql, args));
+        String[] sqls = new String[1000];
+        for (int i = 0; i < 1000; i++) {
+            String sqlx = new SqlTranslator(':').generateSql(sql, args, false).getItem1();
+            sqls[i] = sqlx;
+        }
+        System.out.println(sqls.length);
+//        System.out.println(new SqlTranslator(':').generateSql(sql, args, true));
     }
 
     public static void mergeMap(Map<String, Object> args) {

@@ -169,7 +169,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         }
         Map<String, ?> first = data.iterator().next();
         List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);
-        String sql = sqlTranslator.generatePreparedInsert(tableName, first, tableFields);
+        String sql = sqlTranslator.generateNamedParamInsert(tableName, first, tableFields);
         return executeNonQuery(sql, data);
     }
 
@@ -311,11 +311,11 @@ public class BakiDao extends JdbcSupport implements Baki {
         Map<String, ?> first = new HashMap<>(data.iterator().next());
         List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);
         // 获取where条件中的参数名
-        List<String> whereFields = sqlTranslator.generateSql(where, Collections.emptyMap(), true).getItem2();
+        List<String> whereFields = sqlTranslator.getPreparedSql(where, Collections.emptyMap()).getItem2();
         for (String key : whereFields) {
             first.remove(key);
         }
-        String update = sqlTranslator.generatePreparedUpdate(tableName, first, tableFields);
+        String update = sqlTranslator.generateNamedParamUpdate(tableName, first, tableFields);
         String sql = update + "\nwhere " + where;
         return executeNonQuery(sql, data);
     }
@@ -352,22 +352,23 @@ public class BakiDao extends JdbcSupport implements Baki {
             return 0;
         }
         String[] sqls = new String[data.size()];
+        Map<String, Object> first = new HashMap<>(data.iterator().next());
         List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);
         // 获取where条件中的参数名
         List<String> whereFields = sqlTranslator.generateSql(where, Collections.emptyMap(), true).getItem2();
+        // 将where条件中的参数排除，因为where中的参数作为条件，而不是需要更新的值
+        for (String key : whereFields) {
+            first.remove(key);
+        }
+        // 以第一条记录构建出确定的传名参数的预编译sql，后续再处理为非预编译sql
+        String update = sqlTranslator.generateNamedParamUpdate(tableName, first, tableFields);
+        String fullUpdatePrepared = update + "\nwhere " + where;
         Iterator<? extends Map<String, ?>> iterator = data.iterator();
         for (int i = 0; iterator.hasNext(); i++) {
             // 完整的参数字典
             Map<String, ?> item = iterator.next();
-            Map<String, ?> updateData = new HashMap<>(item);
-            // 将where条件中的参数排除，因为where中的参数作为条件，而不是需要更新的值
-            String w = where;
-            for (String key : whereFields) {
-                w = w.replace(namedParamPrefix + key, SqlUtil.quoteFormatValueIfNecessary(item.get(key)));
-                updateData.remove(key);
-            }
-            String update = sqlTranslator.generateUpdate(tableName, updateData, tableFields);
-            sqls[i] = update + "\nwhere " + w;
+            String updateNonPrepared = sqlTranslator.generateSql(fullUpdatePrepared, item, false).getItem1();
+            sqls[i] = updateNonPrepared;
         }
         log.debug("preview sql: {}\nmore...", SqlUtil.highlightSql(sqls[0]));
         int count = Arrays.stream(batchExecute(sqls)).sum();

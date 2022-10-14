@@ -1,19 +1,17 @@
 package com.github.chengyuxing.sql;
 
+import com.github.chengyuxing.common.MapExtends;
 import com.github.chengyuxing.sql.types.Param;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Map;
-import java.util.function.BiPredicate;
 
 /**
  * sql参数构建工具类
  *
  * @param <V> 类型参数
  */
-public class Args<V> extends HashMap<String, V> {
+public class Args<V> extends HashMap<String, V> implements MapExtends<V> {
     public Args() {
     }
 
@@ -99,61 +97,6 @@ public class Args<V> extends HashMap<String, V> {
      */
     public Args<V> add(String key, V value) {
         put(key, value);
-        return this;
-    }
-
-    /**
-     * 移除值为null的所有元素
-     *
-     * @return 不存在null值的当前对象
-     */
-    public Args<V> removeIfAbsent() {
-        Iterator<Entry<String, V>> iterator = entrySet().iterator();
-        //为了内部一点性能就不使用函数接口了
-        //noinspection Java8CollectionRemoveIf
-        while (iterator.hasNext()) {
-            if (iterator.next().getValue() == null) {
-                iterator.remove();
-            }
-        }
-        return this;
-    }
-
-    /**
-     * 移除值为null且不包含在指定keys中的所有元素
-     *
-     * @param keys 需忽略的键名集合
-     * @return 移除匹配元素后的当前对象
-     */
-    public Args<V> removeIfAbsentExclude(String... keys) {
-        Iterator<Entry<String, V>> iterator = entrySet().iterator();
-        //为了内部一点性能就不使用函数接口了
-        //noinspection Java8CollectionRemoveIf
-        while (iterator.hasNext()) {
-            Entry<String, V> e = iterator.next();
-            if (e.getValue() == null && !Arrays.asList(keys).contains(e.getKey())) {
-                iterator.remove();
-            }
-        }
-        return this;
-    }
-
-    /**
-     * 根据条件移除元素
-     *
-     * @param predicate 条件
-     * @return 移除匹配元素后的当前对象
-     */
-    public Args<V> removeIf(BiPredicate<String, V> predicate) {
-        Iterator<Map.Entry<String, V>> iterator = entrySet().iterator();
-        //为了内部一点性能就不使用函数接口了
-        //noinspection Java8CollectionRemoveIf
-        while (iterator.hasNext()) {
-            Map.Entry<String, V> next = iterator.next();
-            if (predicate.test(next.getKey(), next.getValue())) {
-                iterator.remove();
-            }
-        }
         return this;
     }
 }

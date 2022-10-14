@@ -103,7 +103,6 @@ public class SqlTranslator {
      * @param deep 子字符串嵌套最大深度
      * @return 替换模版占位符后的字符串
      */
-    @SuppressWarnings("unchecked")
     public String resolveSqlStrTemplateRec(final String str, final Map<String, ?> args, int deep) {
         if (args == null || args.isEmpty()) {
             return str;

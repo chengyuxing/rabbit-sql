@@ -126,4 +126,9 @@ public class SqlTests {
             }
         }
     }
+
+    @Test
+    public void testz() throws Exception{
+        System.out.println(SqlUtil.quoteFormatValueIfNecessary(new Object[]{"a","'v","D"}));
+    }
 }

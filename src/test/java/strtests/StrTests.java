@@ -49,8 +49,8 @@ public class StrTests {
         Args<Object> args = Args.<Object>of("a", 1)
                 .add("name", null)
                 .add("b", "2")
-                .add("c", null)
-                .removeIfAbsentExclude("name");
+                .add("c", null);
+                args.removeIfAbsentExclude("name");
         System.out.println(args);
     }
 

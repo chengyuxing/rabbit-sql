@@ -89,52 +89,6 @@ public class JdbcUtil {
     }
 
     /**
-     * 判断是否支持存储过程和函数
-     *
-     * @param connection 连接对象
-     * @return 是否支持
-     */
-    public static boolean supportStoredProcedure(Connection connection) {
-        try {
-            DatabaseMetaData dbmd = connection.getMetaData();
-            if (dbmd != null) {
-                if (dbmd.supportsStoredProcedures()) {
-                    log.debug("JDBC driver supports stored procedure");
-                    return true;
-                } else {
-                    log.debug("JDBC driver does not support stored procedure");
-                }
-            }
-        } catch (SQLException throwables) {
-            log.error("JDBC driver 'supportsStoredProcedures' method threw exception", throwables);
-        }
-        return false;
-    }
-
-    /**
-     * 判断是否支持命名参数
-     *
-     * @param connection 连接对象
-     * @return 是否支持
-     */
-    public static boolean supportsNamedParameters(Connection connection) {
-        try {
-            DatabaseMetaData dbmd = connection.getMetaData();
-            if (dbmd != null) {
-                if (dbmd.supportsNamedParameters()) {
-                    log.debug("JDBC driver supports stored procedure");
-                    return true;
-                } else {
-                    log.debug("JDBC driver does not support stored procedure");
-                }
-            }
-        } catch (SQLException throwables) {
-            log.error("JDBC driver 'supportsStoredProcedures' method threw exception", throwables);
-        }
-        return false;
-    }
-
-    /**
      * 判断是非支持批量执行修改操作
      *
      * @param con 连接对象

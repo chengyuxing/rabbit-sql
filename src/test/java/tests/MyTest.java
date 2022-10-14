@@ -9,7 +9,6 @@ import com.github.chengyuxing.sql.support.IOutParam;
 import com.github.chengyuxing.sql.transaction.Tx;
 import com.github.chengyuxing.sql.types.OUTParamType;
 import com.github.chengyuxing.sql.types.Param;
-import com.github.chengyuxing.sql.utils.JdbcUtil;
 import com.zaxxer.hikari.HikariDataSource;
 import func.FCondition;
 import func.FFilter;
@@ -24,8 +23,8 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
 import java.sql.*;
-import java.util.*;
 import java.util.Date;
+import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
@@ -145,11 +144,6 @@ public class MyTest {
         mergeTreeInverse(list, trees);
         System.out.println(ReflectUtil.obj2Json(trees));
         System.out.println(list.size());
-    }
-
-    @Test
-    public void selectTest() throws Exception {
-        System.out.println(JdbcUtil.supportStoredProcedure(dataSource.getConnection()));
     }
 
     @Test
@@ -291,11 +285,6 @@ public class MyTest {
                 "\n" +
                 "$$;");
         System.out.println(row);
-    }
-
-    @Test
-    public void jdbcTest() throws Exception {
-        System.out.println(JdbcUtil.supportsNamedParameters(dataSource.getConnection()));
     }
 
     @Test

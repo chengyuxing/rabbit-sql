@@ -574,7 +574,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * 如果使用取地址符"&amp;sql文件名.sql名"则获取sql文件中已缓存的sql
+     * 如果使用取地址符"&amp;sql文件别名.sql名"则获取sql文件中已缓存的sql
      *
      * @param sql  sql或sql名
      * @param args 参数

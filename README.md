@@ -45,6 +45,8 @@
 
 - `:name` (jdbc标准的传名参数写法，参数将被预编译安全处理，参数名为：`name`)
 
+  > 最终编译为`?`，也就是标准的预编译sql。
+
 - `${[:]name}` (通用的字符串模版占位符，不进行预编译，用于动态sql的拼接)
 
   字符串模版参数名两种格式：
@@ -429,7 +431,11 @@ t.name = 'jack' and t.name = 'lisa';
   
   ![](img/p2.png)
 
-## Example
+
+
+## 快速上手
+
+这仅仅就是一个普通的基本CRUD操作接口，至于其他方面，**完全取决于个人的编程习惯**，写的是否优美，是否合理、清晰、整洁，此库都无从约束，和此库关系不大。
 
 ### 初始化
 
@@ -441,23 +447,29 @@ BakiDao baki=new BakiDao(dataSource);
 baki.setXqlFileManager(manager);
 ```
 
-### 流查询
+### 查询
+
+查询一般使用baki提供的`query`方法，`query` 返回一个**查询执行器**，提供了一些常用的结果返回类型，例如：`stream`，`list` 等。
+
+#### 流查询
 
 ```java
-try(Stream<DataRow> fruits=baki.query("select * from fruit")){
+try(Stream<DataRow> fruits=baki.query("select * from fruit").stream()){
         fruits.limit(10).forEach(System.out::println);
         }
 ```
 
-### 分页查询
+#### 分页查询
 
 ```java
-PagedResource<DataRow> res=baki.<DataRow>query("&pgsql.data.select_user", 1, 10)
-        .args(Args.create("id", 35))
-        .collect(d -> d);
+PagedResource<DataRow> resource = baki.query("select * from test.region where id < :id")
+                .arg("id", 8)
+                .<DataRow>pageable(1, 7)
+                .count(5)
+                .collect(d -> d);
 ```
 
-### 自定义分页查询
+#### 自定义分页查询
 
 `/pgsql/data.sql`
 
@@ -468,12 +480,33 @@ where id > :id limit :limit offset :offset;
 ```
 
 ```java
-PagedResource<DataRow> res = baki.<DataRow>query("&pgsql.data.custom_paged", 1, 7)
+PagedResource<DataRow> res = baki.query("&pgsql.data.custom_paged")
+  							.<DataRow>pageable(1, 7)
                 .count("select count(*) from <table> where id > :id")
                 .args(Args.create("id", 8))
                 .disableDefaultPageSql() //禁用默认生成的分页sql
                 .collect(d -> d);
 ```
+
+### 更新&插入
+
+更新一般使用baki提供的`update`方法，`update` 返回一个**更新/插入执行器**，具体说下几个细节：
+
+- **safe**属性：在插入数据之前先获取要插入表的所有字段，并将要插入数据中的不存在的表字段的数据过滤，最终生成的update语句只包含表中存在的字段；
+
+  > 需要注意，如果100%确定自己要插入的数据无误，可以不调用次属性，以提高性能；
+
+- **fast**属性：底层调用的是jdbc的批量执行，不是预编译sql，所以其中一个需要注意的地方就是**不能插入二进制文件**。
+
+  > 一般情况不推荐使用，除非真的需要一次性插入上千条数据批量操作。
+
+- update方法第二个参数`where`，如果不包含参数占位符，那么条件都是固定的，所有数据都将根据一个固定的条件执行更新，如果是包含参数占位符，例如： `id = :id`，那么需要更新的数据中必须包含 `id` 参数值，每条数据将动态的根据此id进行更新。
+
+  例如数据为：`{name: 'cyx', 'age': 29, id: 13}`，条件：`id = :id`，update方法最终会自动识别出where中的参数，并构建合理的sql语句：
+
+  ```sql
+  update <table> set name = :name, age = :age where id = :id;
+  ```
 
 ### 事务
 
@@ -481,9 +514,9 @@ PagedResource<DataRow> res = baki.<DataRow>query("&pgsql.data.custom_paged", 1, 
 
 ```java
 Tx.using(()->{
-  baki.update(...);
+  baki.update(...)...;
   baki.delete(...);
-  baki.insert(...);
+  baki.insert(...)...;
   ......
 });
 ```

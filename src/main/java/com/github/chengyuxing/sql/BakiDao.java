@@ -565,8 +565,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     private List<String> getTableFields(String tableName) {
         String sql = getSql("select * from " + tableName + " where 1 = 2", Collections.emptyMap());
         return execute(sql, sc -> {
-            sc.executeQuery();
-            ResultSet fieldsResultSet = sc.getResultSet();
+            ResultSet fieldsResultSet = sc.executeQuery();
             List<String> fields = Arrays.asList(JdbcUtil.createNames(fieldsResultSet, ""));
             JdbcUtil.closeResultSet(fieldsResultSet);
             log.debug("all fields of table: {} {}", tableName, fields);

@@ -39,7 +39,7 @@
 </dependency>
 ```
 
-具体使用方法和配置可以查看[文档](https://github.com/chengyuxing/rabbit-sql-spring-boot-starter)。
+具体使用方法和配置可以查看[文档](https://github.com/chengyuxing/rabbit-sql-spring-boot-starter/tree/2.x)。
 
 ## [快速上手](#快速上手实例)
 

@@ -438,7 +438,13 @@ public class BakiDao extends JdbcSupport implements Baki {
                 if (cq == null) {
                     cq = sqlTranslator.generateCountQuery(query);
                 }
-                count = execute(cq, args).<DataRow>getFirstAs().getInt(0);
+                DataRow cnRow = execute(cq, args).getFirstAs();
+                Object cn = cnRow.getFirst();
+                if (cn instanceof Integer) {
+                    count = (Integer) cn;
+                } else {
+                    count = Integer.parseInt(cn.toString());
+                }
             }
             PageHelper pageHelper = customPageHelper;
             if (pageHelper == null) {

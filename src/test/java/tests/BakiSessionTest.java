@@ -63,21 +63,21 @@ public class BakiSessionTest {
         PagedResource<DataRow> resource = baki.query("select * from test.region where id < ?id")
                 .arg("id", 8)
                 .<DataRow>pageable(1, 7)
-                .count(5)
+//                .count(5)
                 .collect(d -> d);
         System.out.println(resource);
 
-        try (Stream<DataRow> s = baki.query("select * from test.region where id < ?id")
-                .arg("id", 10)
-                .arg("name", "cyx")
-                .stream()) {
-            s.forEach(System.out::println);
-        }
-
-        baki.query("select * from test.region where id = ?id")
-                .arg("id", 10)
-                .findFirst()
-                .ifPresent(System.out::println);
+//        try (Stream<DataRow> s = baki.query("select * from test.region where id < ?id")
+//                .arg("id", 10)
+//                .arg("name", "cyx")
+//                .stream()) {
+//            s.forEach(System.out::println);
+//        }
+//
+//        baki.query("select * from test.region where id = ?id")
+//                .arg("id", 10)
+//                .findFirst()
+//                .ifPresent(System.out::println);
 
         System.out.println(baki.query("select 1 from test.region where id = 109").exists());
     }

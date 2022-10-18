@@ -1,6 +1,7 @@
 package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.common.utils.CollectionUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.datasource.DataSourceUtil;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
@@ -313,7 +314,9 @@ public class BakiDao extends JdbcSupport implements Baki {
         // 获取where条件中的参数名
         List<String> whereFields = sqlTranslator.getPreparedSql(where, Collections.emptyMap()).getItem2();
         for (String key : whereFields) {
-            first.remove(key);
+            // 如果where条件中参数名是小写，而第一行数据中是大写，则也需要删除那个数据，来保证生成正确的set更新数据块
+            if (CollectionUtil.containsKeyIgnoreCase(first, key))
+                first.remove(key);
         }
         String update = sqlTranslator.generateNamedParamUpdate(tableName, first, tableFields);
         String sql = update + "\nwhere " + where;
@@ -358,7 +361,8 @@ public class BakiDao extends JdbcSupport implements Baki {
         List<String> whereFields = sqlTranslator.generateSql(where, Collections.emptyMap(), true).getItem2();
         // 将where条件中的参数排除，因为where中的参数作为条件，而不是需要更新的值
         for (String key : whereFields) {
-            first.remove(key);
+            if (CollectionUtil.containsKeyIgnoreCase(first, key))
+                first.remove(key);
         }
         // 以第一条记录构建出确定的传名参数的预编译sql，后续再处理为非预编译sql
         String update = sqlTranslator.generateNamedParamUpdate(tableName, first, tableFields);

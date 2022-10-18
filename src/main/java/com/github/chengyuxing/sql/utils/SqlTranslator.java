@@ -1,13 +1,16 @@
 package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.common.utils.CollectionUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.github.chengyuxing.common.utils.CollectionUtil.*;
+import static com.github.chengyuxing.common.utils.StringUtil.replaceIgnoreCase;
 import static com.github.chengyuxing.sql.utils.SqlUtil.quoteFormatValueIfNecessary;
 import static com.github.chengyuxing.sql.utils.SqlUtil.replaceSqlSubstr;
 
@@ -15,6 +18,7 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.replaceSqlSubstr;
  * sql构建工具帮助类
  */
 public class SqlTranslator {
+    private static final Logger log = LoggerFactory.getLogger(SqlTranslator.class);
     private final String c;
     /**
      * 匹配命名参数
@@ -61,11 +65,30 @@ public class SqlTranslator {
         Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
         Matcher matcher = PARAM_PATTERN.matcher(noneStrSql);
         List<String> names = new ArrayList<>();
-        while (matcher.find()) {
-            String name = matcher.group("name");
-            names.add(name);
-            String value = prepare ? "?" : quoteFormatValueIfNecessary(argx.get(name));
-            noneStrSql = noneStrSql.replace(c + name, value);
+        if (prepare) {
+            while (matcher.find()) {
+                String name = matcher.group("name");
+                names.add(name);
+                if (argx.containsKey(name)) {
+                    noneStrSql = noneStrSql.replace(c + name, "?");
+                } else if (containsKeyIgnoreCase(argx, name)) {
+                    log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your sql's named parameter and args.", name, argx, name);
+                    noneStrSql = replaceIgnoreCase(noneStrSql, c + name, "?");
+                }
+            }
+        } else {
+            while (matcher.find()) {
+                String name = matcher.group("name");
+                names.add(name);
+                if (argx.containsKey(name)) {
+                    String value = quoteFormatValueIfNecessary(argx.get(name));
+                    noneStrSql = noneStrSql.replace(c + name, value);
+                } else if (containsKeyIgnoreCase(argx, name)) {
+                    log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your sql's named parameter and args.", name, args, name);
+                    String value = quoteFormatValueIfNecessary(getValueIgnoreCase(argx, name));
+                    noneStrSql = replaceIgnoreCase(noneStrSql, c + name, value);
+                }
+            }
         }
         // finally, set placeholder into none-string-part sql
         for (Map.Entry<String, String> e : placeholderMapper.entrySet()) {
@@ -115,7 +138,7 @@ public class SqlTranslator {
         for (Map.Entry<String, ?> e : args.entrySet()) {
             String tempKey = "${" + e.getKey() + "}";
             String tempArrKey = "${" + c + e.getKey() + "}";
-            if (StringUtil.containsAny(sql, tempKey, tempArrKey)) {
+            if (StringUtil.containsAnyIgnoreCase(sql, tempKey, tempArrKey)) {
                 String trueKey = tempKey;
                 Object value = e.getValue();
                 String subSql = "";
@@ -126,7 +149,7 @@ public class SqlTranslator {
                     }
                     subSql = SqlUtil.deconstructArrayIfNecessary(value, quote).trim();
                 }
-                sql = sql.replace(trueKey, subSql);
+                sql = replaceIgnoreCase(sql, trueKey, subSql);
             }
         }
         if (sql.contains("${") && sql.contains("}")) {
@@ -150,7 +173,7 @@ public class SqlTranslator {
         Set<String> set = new HashSet<>();
         for (String k : row.keySet()) {
             if (StringUtil.containsAnyIgnoreCase(k, fieldArr)) {
-                if (!CollectionUtil.containsIgnoreCase(set, k)) {
+                if (!containsIgnoreCase(set, k)) {
                     set.add(k);
                 }
             }
@@ -175,8 +198,14 @@ public class SqlTranslator {
         StringJoiner f = new StringJoiner(", ");
         StringJoiner v = new StringJoiner(", ");
         for (String key : keys) {
-            f.add(key);
-            v.add(quoteFormatValueIfNecessary(row.get(key)));
+            if (row.containsKey(key)) {
+                f.add(key);
+                v.add(quoteFormatValueIfNecessary(row.get(key)));
+            } else if (containsKeyIgnoreCase(row, key)) {
+                log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your sql's named parameter and args.", key, row, key);
+                f.add(key);
+                v.add(quoteFormatValueIfNecessary(getValueIgnoreCase(row, key)));
+            }
         }
         return "insert into " + tableName + "(" + f + ") \nvalues (" + v + ")";
     }
@@ -198,8 +227,10 @@ public class SqlTranslator {
         StringJoiner f = new StringJoiner(", ");
         StringJoiner h = new StringJoiner(", ");
         for (String key : keys) {
-            f.add(key);
-            h.add(c + key);
+            if (row.containsKey(key) || containsKeyIgnoreCase(row, key)) {
+                f.add(key);
+                h.add(c + key);
+            }
         }
         return "insert into " + tableName + "(" + f + ") \nvalues (" + h + ")";
     }
@@ -270,10 +301,26 @@ public class SqlTranslator {
             throw new IllegalArgumentException("empty field set, generate update sql error.");
         }
         StringJoiner sb = new StringJoiner(",\n\t");
-        for (String key : keys) {
-            if (!key.startsWith("${") && !key.endsWith("}")) {
-                String v = isNamedParam ? c + key : quoteFormatValueIfNecessary(data.get(key));
-                sb.add(key + " = " + v);
+        if (isNamedParam) {
+            for (String key : keys) {
+                if (!key.startsWith("${") && !key.endsWith("}")) {
+                    if (data.containsKey(key) || containsKeyIgnoreCase(data, key)) {
+                        sb.add(key + " = " + c + key);
+                    }
+                }
+            }
+        } else {
+            for (String key : keys) {
+                if (!key.startsWith("${") && !key.endsWith("}")) {
+                    if (data.containsKey(key)) {
+                        String v = quoteFormatValueIfNecessary(data.get(key));
+                        sb.add(key + " = " + v);
+                    } else if (containsKeyIgnoreCase(data, key)) {
+                        log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your sql's named parameter and args.", key, data, key);
+                        String v = quoteFormatValueIfNecessary(getValueIgnoreCase(data, key));
+                        sb.add(key + " = " + v);
+                    }
+                }
             }
         }
         return "update " + tableName + " \nset " + sb;

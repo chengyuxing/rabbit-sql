@@ -3,6 +3,7 @@ package com.github.chengyuxing.sql.support;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.UncheckedCloseable;
 import com.github.chengyuxing.common.tuple.Pair;
+import com.github.chengyuxing.common.utils.CollectionUtil;
 import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.types.ParamMode;
@@ -348,10 +349,18 @@ public abstract class JdbcSupport {
             if (!args.isEmpty()) {
                 JdbcUtil.setStoreArgs(statement, args, argNames);
                 for (String name : argNames) {
-                    ParamMode mode = args.get(name).getParamMode();
-                    if (mode == ParamMode.OUT || mode == ParamMode.IN_OUT) {
-                        outNames.add(name);
+                    if (args.containsKey(name)) {
+                        ParamMode mode = args.get(name).getParamMode();
+                        if (mode == ParamMode.OUT || mode == ParamMode.IN_OUT) {
+                            outNames.add(name);
+                        }
+                    } else if (CollectionUtil.containsKeyIgnoreCase(args, name)) {
+                        @SuppressWarnings("ConstantConditions") ParamMode mode = CollectionUtil.getValueIgnoreCase(args, name).getParamMode();
+                        if (mode == ParamMode.OUT || mode == ParamMode.IN_OUT) {
+                            outNames.add(name);
+                        }
                     }
+
                 }
             }
             statement.execute();
@@ -360,19 +369,39 @@ public abstract class JdbcSupport {
                 Object[] values = new Object[outNames.size()];
                 int resultIndex = 0;
                 for (int i = 0; i < argNames.size(); i++) {
-                    if (args.get(argNames.get(i)).getParamMode() == ParamMode.OUT || args.get(argNames.get(i)).getParamMode() == ParamMode.IN_OUT) {
-                        Object result = statement.getObject(i + 1);
-                        if (null == result) {
-                            values[resultIndex] = null;
-                        } else if (result instanceof ResultSet) {
-                            List<DataRow> rows = JdbcUtil.createDataRows((ResultSet) result, executeSql, -1);
-                            values[resultIndex] = rows;
-                            log.debug("boxing a result with type: cursor, convert to ArrayList<DataRow>, get result by name:{}!", outNames.get(resultIndex));
-                        } else {
-                            values[resultIndex] = result;
-                            log.debug("boxing a result, get result by name:{}!", outNames.get(resultIndex));
+                    String name = argNames.get(i);
+                    if (args.containsKey(name)) {
+                        if (args.get(name).getParamMode() == ParamMode.OUT || args.get(name).getParamMode() == ParamMode.IN_OUT) {
+                            Object result = statement.getObject(i + 1);
+                            if (null == result) {
+                                values[resultIndex] = null;
+                            } else if (result instanceof ResultSet) {
+                                List<DataRow> rows = JdbcUtil.createDataRows((ResultSet) result, executeSql, -1);
+                                values[resultIndex] = rows;
+                                log.debug("boxing a result with type: cursor, convert to ArrayList<DataRow>, get result by name:{}!", outNames.get(resultIndex));
+                            } else {
+                                values[resultIndex] = result;
+                                log.debug("boxing a result, get result by name:{}!", outNames.get(resultIndex));
+                            }
+                            resultIndex++;
                         }
-                        resultIndex++;
+                    } else if (CollectionUtil.containsKeyIgnoreCase(args, name)) {
+                        log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your procedure's named parameter and args.", name, args, name);
+                        @SuppressWarnings("ConstantConditions") ParamMode mode = CollectionUtil.getValueIgnoreCase(args, name).getParamMode();
+                        if (mode == ParamMode.OUT || mode == ParamMode.IN_OUT) {
+                            Object result = statement.getObject(i + 1);
+                            if (null == result) {
+                                values[resultIndex] = null;
+                            } else if (result instanceof ResultSet) {
+                                List<DataRow> rows = JdbcUtil.createDataRows((ResultSet) result, executeSql, -1);
+                                values[resultIndex] = rows;
+                                log.debug("boxing a result with type: cursor, convert to ArrayList<DataRow>, get result by name:{}!", outNames.get(resultIndex));
+                            } else {
+                                values[resultIndex] = result;
+                                log.debug("boxing a result, get result by name:{}!", outNames.get(resultIndex));
+                            }
+                            resultIndex++;
+                        }
                     }
                 }
                 return DataRow.of(outNames.toArray(new String[0]), values);

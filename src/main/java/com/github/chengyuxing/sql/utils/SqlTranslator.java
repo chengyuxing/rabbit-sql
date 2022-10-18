@@ -1,6 +1,7 @@
 package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.tuple.Pair;
+import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 
 import java.util.*;
@@ -149,7 +150,9 @@ public class SqlTranslator {
         Set<String> set = new HashSet<>();
         for (String k : row.keySet()) {
             if (StringUtil.containsAnyIgnoreCase(k, fieldArr)) {
-                set.add(k);
+                if (!ObjectUtil.containsIgnoreCase(set, k)) {
+                    set.add(k);
+                }
             }
         }
         return set;

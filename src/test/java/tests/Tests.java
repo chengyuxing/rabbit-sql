@@ -300,13 +300,26 @@ public class Tests {
     }
 
     @Test
-    public void testFilter() throws Exception{
+    public void testInserGenerate() {
+        SqlTranslator sqlTranslator = new SqlTranslator(':');
+        String[] allFields = new String[]{"a", "b", "c", "d", "e", "f"};
+        Args<Object> args = Args.create("A", 1, "B", 2, "C", 3, "D", 4);
+        System.out.println(sqlTranslator.generateNamedParamInsert("user", args, Arrays.asList(allFields)));
+    }
+
+    @Test
+    public void testFilter() throws Exception {
         Map<String, Object> map = new HashMap<>();
         map.put("a", 1);
+        map.put("A", 1);
         map.put("B", 1);
         map.put("C", 1);
         map.put("D", 1);
 
-        System.out.println(new SqlTranslator(':').filterKeys(map,Arrays.asList("a","b","c")));
+        SqlTranslator sqlTranslator = new SqlTranslator(':');
+
+        System.out.println(sqlTranslator.filterKeys(map, Arrays.asList("a", "b", "c")));
+        System.out.println(sqlTranslator.generateNamedParamInsert("test.t", map, Arrays.asList("a", "b", "c")));
+
     }
 }

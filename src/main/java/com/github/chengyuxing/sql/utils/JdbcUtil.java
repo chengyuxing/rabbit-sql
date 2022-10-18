@@ -359,7 +359,7 @@ public class JdbcUtil {
                     if (args.containsKey(name)) {
                         setSpecialStatementValue(statement, index, args.get(name));
                     } else if (containsKeyIgnoreCase(args, name)) {
-                        log.warn("cannot find name: {} in args: {}, get value by name: {} ignore case, maybe you should check your sql's named parameter and args.", name, args, name);
+                        log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your sql's named parameter and args.", name, args, name);
                         setSpecialStatementValue(statement, index, getValueIgnoreCase(args, name));
                     }
                 }
@@ -384,7 +384,7 @@ public class JdbcUtil {
             if (args.containsKey(name)) {
                 setStatementValue(statement, index, args.get(name));
             } else if (containsKeyIgnoreCase(args, name)) {
-                log.warn("cannot find name: {} in args: {}, get value by name: {} ignore case, maybe you should check your sql's named parameter and args.", name, args, name);
+                log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your sql's named parameter and args.", name, args, name);
                 setStatementValue(statement, index, getValueIgnoreCase(args, name));
             }
         }
@@ -409,7 +409,7 @@ public class JdbcUtil {
                 if (args.containsKey(name)) {
                     param = args.get(name);
                 } else if (containsKeyIgnoreCase(args, name)) {
-                    log.warn("cannot find name: {} in args: {}, get value by name: {} ignore case, maybe you should check your sql's named parameter and args.", name, args, name);
+                    log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your sql's named parameter and args.", name, args, name);
                     param = getValueIgnoreCase(args, name);
                 }
                 if (param != null) {
@@ -426,7 +426,7 @@ public class JdbcUtil {
                 if (args.containsKey(name)) {
                     param = args.get(name);
                 } else if (containsKeyIgnoreCase(args, name)) {
-                    log.warn("cannot find name: {} in args: {}, get value by name: {} ignore case, maybe you should check your sql's named parameter and args.", name, args, name);
+                    log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your sql's named parameter and args.", name, args, name);
                     param = getValueIgnoreCase(args, name);
                 }
                 if (param != null) {

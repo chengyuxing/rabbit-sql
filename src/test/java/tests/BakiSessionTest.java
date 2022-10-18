@@ -61,7 +61,7 @@ public class BakiSessionTest {
     @Test
     public void testQuery() throws Exception {
         PagedResource<DataRow> resource = baki.query("select * from test.region where id < ?id")
-                .arg("id", 8)
+                .arg("ID", 8)
                 .<DataRow>pageable(1, 7)
 //                .count(5)
                 .collect(d -> d);

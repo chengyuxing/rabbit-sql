@@ -1,6 +1,7 @@
 package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.tuple.Pair;
+import com.github.chengyuxing.common.utils.CollectionUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -20,10 +21,13 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.replaceSqlSubstr;
 public class SqlTranslator {
     private static final Logger log = LoggerFactory.getLogger(SqlTranslator.class);
     private final String c;
+    private static final char SPECIAL_CHAR = '\u0c32';
     /**
      * 匹配命名参数
      */
     Pattern PARAM_PATTERN = Pattern.compile("(^:|[^:]:)(?<name>[a-zA-Z_][\\w_]*)", Pattern.MULTILINE);
+
+    static final Pattern STR_TEMP_PATTERN = Pattern.compile("\\$\\{\\s*(?<key>:?[\\w\\d._-]+)\\s*}");
 
     /**
      * sql翻译帮助实例
@@ -109,53 +113,38 @@ public class SqlTranslator {
     }
 
     /**
-     * 解析字符串模版，子字符串嵌套深度最大为8层
+     * 解析字符串模版
      *
      * @param str  带有字符串模版占位符的字符串
      * @param args 参数
      * @return 替换模版占位符后的字符串
      */
     public String resolveSqlStrTemplate(final String str, final Map<String, ?> args) {
-        return resolveSqlStrTemplateRec(str, args, 8);
-    }
-
-    /**
-     * 解析字符串模版
-     *
-     * @param str  带有字符串模版占位符的字符串
-     * @param args 参数
-     * @param deep 子字符串嵌套最大深度
-     * @return 替换模版占位符后的字符串
-     */
-    public String resolveSqlStrTemplateRec(final String str, final Map<String, ?> args, int deep) {
         if (args == null || args.isEmpty()) {
             return str;
         }
-        String sql = str;
-        if (!sql.contains("${") || deep == 0) {
-            return str;
-        }
-        for (Map.Entry<String, ?> e : args.entrySet()) {
-            String tempKey = "${" + e.getKey() + "}";
-            String tempArrKey = "${" + c + e.getKey() + "}";
-            if (StringUtil.containsAnyIgnoreCase(sql, tempKey, tempArrKey)) {
-                String trueKey = tempKey;
-                Object value = e.getValue();
-                String subSql = "";
-                if (value != null) {
-                    boolean quote = sql.contains(tempArrKey);
-                    if (quote) {
-                        trueKey = tempArrKey;
-                    }
-                    subSql = SqlUtil.deconstructArrayIfNecessary(value, quote).trim();
-                }
-                sql = replaceIgnoreCase(sql, trueKey, subSql);
+        String copyStr = str;
+        Matcher m = STR_TEMP_PATTERN.matcher(copyStr);
+        if (m.find()) {
+            // full str template key e.g. ${ :myKey  }
+            String tempKey = m.group(0);
+            // real key e.g. :myKey
+            String key = m.group("key");
+            boolean quote = key.startsWith(c);
+            if (quote) {
+                key = key.substring(1);
             }
+            if (!CollectionUtil.containsKeyIgnoreCase(args, key)) {
+                copyStr = copyStr.replace(tempKey, SPECIAL_CHAR + tempKey.substring(1));
+            }
+            String subStr = SqlUtil.deconstructArrayIfNecessary(CollectionUtil.getValueIgnoreCase(args, key), quote);
+            copyStr = replaceIgnoreCase(copyStr, tempKey, subStr);
+            return resolveSqlStrTemplate(copyStr, args);
         }
-        if (sql.contains("${") && sql.contains("}")) {
-            return resolveSqlStrTemplateRec(sql, args, --deep);
+        if (copyStr.lastIndexOf(SPECIAL_CHAR) != -1) {
+            copyStr = copyStr.replace(SPECIAL_CHAR, '$');
         }
-        return sql;
+        return copyStr;
     }
 
     /**

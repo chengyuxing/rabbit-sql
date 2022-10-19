@@ -112,7 +112,7 @@ public class ControlTest {
 
     @Test
     public void sqlPart() throws Exception {
-        String sql = "select ${fields} from test.user where ${cnd}";
+        String sql = "select ${ fields } from test.user where ${cnd}";
         System.out.println(sql.length());
         Args<Object> args = Args.<Object>of("ids", Arrays.asList("I'm Ok!", "b", "c"))
                 .add("fields", "id, name, age")
@@ -120,18 +120,30 @@ public class ControlTest {
                 .add("ids", Arrays.asList("a", "b", "c"))
                 .add("date", "2020-12-23 ${:time}")
                 .add("time", "11:23:44")
-                .add("cnd", "id in (${:ids},${fields}) and id = :id or ${date} '${'");
+                .add("cnd", "id in (${:ids},${fields}) and id = :id or ${date} '${mn}' and ${");
 
 //        mergeMap(args);
 
 //        System.out.println(new SqlTranslator(':').resolveSqlStrTemplate(sql, args));
-        String[] sqls = new String[1000];
-        for (int i = 0; i < 1000; i++) {
-            String sqlx = new SqlTranslator(':').generateSql(sql, args, false).getItem1();
-            sqls[i] = sqlx;
-        }
-        System.out.println(sqls.length);
-//        System.out.println(new SqlTranslator(':').generateSql(sql, args, true));
+//        String[] sqls = new String[1000];
+//        for (int i = 0; i < 1000; i++) {
+//            String sqlx = new SqlTranslator(':').generateSql(sql, args, false).getItem1();
+//            sqls[i] = sqlx;
+//        }
+//        System.out.println(sqls.length);
+        SqlTranslator sqlTranslator = new SqlTranslator(':');
+        System.out.println(sqlTranslator.resolveSqlStrTemplate(sql, args));
+
+        System.out.println("-----");
+        String first = sqlTranslator.resolveSqlStrTemplate(sql, args);
+        System.out.println(first);
+//        String second = sqlTranslator.resolveSqlStrTemplateRec2(first, args);
+//        System.out.println(second);
+//        String third = sqlTranslator.resolveSqlStrTemplateRec2(second, args);
+//        System.out.println(third);
+//        String fourth = sqlTranslator.resolveSqlStrTemplateRec2(third, args);
+//        System.out.println(fourth);
+
     }
 
     public static void mergeMap(Map<String, Object> args) {
@@ -203,6 +215,6 @@ public class ControlTest {
         System.out.println(newMap);
         System.out.println(data);
         Integer a = 100000;
-        System.out.println((int)a);
+        System.out.println((int) a);
     }
 }

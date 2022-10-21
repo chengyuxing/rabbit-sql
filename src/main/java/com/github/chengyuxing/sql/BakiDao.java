@@ -610,10 +610,10 @@ public class BakiDao extends JdbcSupport implements Baki {
             if (!constants.isEmpty()) {
                 for (String key : constants.keySet()) {
                     String constantName = "${" + key + "}";
-                    if (StringUtil.containsIgnoreCase(trimEndedSql, constantName)) {
+                    if (trimEndedSql.contains(constantName)) {
                         // use args first, if not exists then constants.
-                        if (!hasArgs || !CollectionUtil.containsKeyIgnoreCase(args, constantName)) {
-                            trimEndedSql = StringUtil.replaceIgnoreCase(trimEndedSql, constantName, constants.get(key));
+                        if (!hasArgs || !args.containsKey(constantName)) {
+                            trimEndedSql = trimEndedSql.replace(constantName, constants.get(key));
                         }
                     }
                 }

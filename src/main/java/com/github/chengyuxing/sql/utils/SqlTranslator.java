@@ -1,11 +1,12 @@
 package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.common.utils.CollectionUtil;
+import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -27,7 +28,7 @@ public class SqlTranslator {
      */
     Pattern PARAM_PATTERN = Pattern.compile("(^:|[^:]:)(?<name>[a-zA-Z_][\\w_]*)", Pattern.MULTILINE);
 
-    static final Pattern STR_TEMP_PATTERN = Pattern.compile("\\$\\{\\s*(?<key>:?[\\w\\d._-]+)\\s*}");
+    Pattern STR_TEMP_PATTERN = Pattern.compile("\\$\\{\\s*(?<key>:?[\\w\\d._-]+)\\s*}");
 
     /**
      * sql翻译帮助实例
@@ -45,6 +46,7 @@ public class SqlTranslator {
             this.c = cs;
             String regC = cs.replace(cs, "\\" + cs);
             PARAM_PATTERN = Pattern.compile("(^" + regC + "|[^" + regC + "]" + regC + ")(?<name>[a-zA-Z_][\\w_]*)", Pattern.MULTILINE);
+            STR_TEMP_PATTERN = Pattern.compile("\\$\\{\\s*(?<key>" + regC + "?[\\w\\d._-]+)\\s*}");
         }
     }
 
@@ -62,7 +64,7 @@ public class SqlTranslator {
             argx = new HashMap<>(args);
         }
         // resolve the sql string template first
-        String fullSql = resolveSqlStrTemplate(sql, argx);
+        String fullSql = formatSql(sql, argx);
         // exclude substr next
         Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSqlSubstr(fullSql);
         String noneStrSql = noneStrSqlAndHolder.getItem1();
@@ -113,13 +115,19 @@ public class SqlTranslator {
     }
 
     /**
-     * 解析字符串模版
+     * 格式化sql字符串模版<br>
+     * e.g.
+     * <blockquote>
+     * <pre>字符串：select ${ fields } from test.user where ${  cnd} and id in (${:idArr}) or id = ${:idArr.1}</pre>
+     * <pre>参数：{fields: "id, name", cnd: "name = 'cyx'", idArr: ["a", "b", "c"]}</pre>
+     * <pre>结果：select id, name from test.user where name = 'cyx' and id in ("a", "b", "c") or id = "b"</pre>
+     * </blockquote>
      *
      * @param str  带有字符串模版占位符的字符串
      * @param args 参数
      * @return 替换模版占位符后的字符串
      */
-    public String resolveSqlStrTemplate(final String str, final Map<String, ?> args) {
+    public String formatSql(final String str, final Map<String, ?> args) {
         if (args == null || args.isEmpty()) {
             return str;
         }
@@ -134,12 +142,28 @@ public class SqlTranslator {
             if (quote) {
                 key = key.substring(1);
             }
-            if (!CollectionUtil.containsKeyIgnoreCase(args, key)) {
+            // e.g. user.cats.1
+            // 字符串中有键路径，但参数中没有此路径键，才默认是键路径表达式，否分，默认args有名为此路径的键
+            boolean isKeyPath = key.contains(".") && !args.containsKey(key);
+            String tk = key;
+            if (isKeyPath) {
+                tk = key.substring(0, key.indexOf("."));
+            }
+            if (!args.containsKey(tk)) {
                 copyStr = copyStr.replace(tempKey, SPECIAL_CHAR + tempKey.substring(1));
             }
-            String subStr = SqlUtil.deconstructArrayIfNecessary(CollectionUtil.getValueIgnoreCase(args, key), quote);
-            copyStr = replaceIgnoreCase(copyStr, tempKey, subStr);
-            return resolveSqlStrTemplate(copyStr, args);
+            try {
+                String subStr;
+                if (isKeyPath) {
+                    subStr = SqlUtil.deconstructArrayIfNecessary(ObjectUtil.getDeepNestValue(args, "/" + key.replace(".", "/")), quote);
+                } else {
+                    subStr = SqlUtil.deconstructArrayIfNecessary(args.get(key), quote);
+                }
+                copyStr = copyStr.replace(tempKey, subStr);
+                return formatSql(copyStr, args);
+            } catch (InvocationTargetException | IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
         }
         if (copyStr.lastIndexOf(SPECIAL_CHAR) != -1) {
             copyStr = copyStr.replace(SPECIAL_CHAR, '$');

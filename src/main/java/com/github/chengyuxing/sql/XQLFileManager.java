@@ -289,11 +289,10 @@ public class XQLFileManager {
     protected void doMergeSqlPart(final String partName, Map<String, String> sqlResource) {
         for (Map.Entry<String, String> e : sqlResource.entrySet()) {
             String sql = e.getValue();
-            if (sql.contains(partName)) {
-                String sqlPart = sqlResource.get(partName);
-                sql = StringUtil.format(sql, partName, sqlPart);
-                e.setValue(sql);
-            }
+            String sqlPart = sqlResource.get(partName);
+            String key = partName.substring(2, partName.length() - 1);
+            sql = StringUtil.format(sql, key, sqlPart);
+            e.setValue(sql);
         }
     }
 
@@ -305,18 +304,14 @@ public class XQLFileManager {
     protected void mergeSqlPartIfNecessary(Map<String, String> sqlResource) {
         for (String key : sqlResource.keySet()) {
             if (key.startsWith("${")) {
-                doMergeSqlPart(key.substring(2, key.length() - 1), sqlResource);
+                doMergeSqlPart(key, sqlResource);
             }
         }
         if (constants != null && !constants.isEmpty()) {
             for (Map.Entry<String, String> sqlE : sqlResource.entrySet()) {
                 String sql = sqlE.getValue();
                 for (Map.Entry<String, String> constE : constants.entrySet()) {
-                    if (sql.contains(constE.getKey())) {
-                        sql = StringUtil.format(sql, constE.getKey(), constE.getValue());
-                    } else {
-                        break;
-                    }
+                    sql = StringUtil.format(sql, constE.getKey(), constE.getValue());
                 }
                 sqlE.setValue(sql);
             }

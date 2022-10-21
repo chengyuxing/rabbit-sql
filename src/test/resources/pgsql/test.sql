@@ -1,5 +1,5 @@
 /*[me]*/
-select ${fields}, '${fields}', '${db}'
+select ${  fields  }, '${fields}', '${  db}'
 from ${db}.pg_aggregate
 where
     -- #choose

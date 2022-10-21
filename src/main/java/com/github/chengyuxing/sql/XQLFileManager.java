@@ -11,12 +11,12 @@ import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.exceptions.DuplicateException;
 import com.github.chengyuxing.sql.exceptions.DynamicSQLException;
+import com.github.chengyuxing.sql.utils.SqlTranslator;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -154,6 +154,8 @@ public class XQLFileManager {
     private String charset = "UTF-8";
     private String delimiter = ";";
     private char namedParamPrefix = ':';
+    // ----------------optional properties------------------
+    private SqlTranslator sqlTranslator = new SqlTranslator(namedParamPrefix);
 
     /**
      * Sql文件解析器实例
@@ -289,7 +291,7 @@ public class XQLFileManager {
             String sql = e.getValue();
             if (sql.contains(partName)) {
                 String sqlPart = sqlResource.get(partName);
-                sql = sql.replace(partName, sqlPart);
+                sql = StringUtil.format(sql, partName, sqlPart);
                 e.setValue(sql);
             }
         }
@@ -303,16 +305,15 @@ public class XQLFileManager {
     protected void mergeSqlPartIfNecessary(Map<String, String> sqlResource) {
         for (String key : sqlResource.keySet()) {
             if (key.startsWith("${")) {
-                doMergeSqlPart(key, sqlResource);
+                doMergeSqlPart(key.substring(2, key.length() - 1), sqlResource);
             }
         }
         if (constants != null && !constants.isEmpty()) {
             for (Map.Entry<String, String> sqlE : sqlResource.entrySet()) {
                 String sql = sqlE.getValue();
                 for (Map.Entry<String, String> constE : constants.entrySet()) {
-                    String constantName = "${" + constE.getKey() + "}";
-                    if (sql.contains(constantName)) {
-                        sql = sql.replace(constantName, constE.getValue());
+                    if (sql.contains(constE.getKey())) {
+                        sql = StringUtil.format(sql, constE.getKey(), constE.getValue());
                     } else {
                         break;
                     }
@@ -558,9 +559,9 @@ public class XQLFileManager {
                 if (name == null) {
                     throw new DynamicSQLException("switch syntax error of expression '" + trimOuterLine + "', cannot find var.");
                 }
-                Object value = args.get(name);
+                Object value = ObjectUtil.getValueWild(args, name);
                 if (pipes != null && !pipes.trim().equals("")) {
-                    value = FastExpression.of("-ignore-").pipedValue(value, pipes);
+                    value = FastExpression.of("empty").pipedValue(value, pipes);
                 }
                 while (++i < j) {
                     String line = lines[i];
@@ -620,9 +621,9 @@ public class XQLFileManager {
                     while (++i < j && !startsWithIgnoreCase(formatAnonExpIf(lines[i]), END)) {
                         loopPart.add(lines[i]);
                     }
-                    Object loopObj = args.get(listName);
+                    Object loopObj = ObjectUtil.getValueWild(args, listName);
                     if (pipes != null && !pipes.trim().equals("")) {
-                        loopObj = FastExpression.of("-ignore-").pipedValue(loopObj, pipes);
+                        loopObj = FastExpression.of("empty").pipedValue(loopObj, pipes);
                     }
                     Object[] loopArr;
                     if (loopObj instanceof Object[]) {
@@ -637,37 +638,23 @@ public class XQLFileManager {
                     StringJoiner forSql = new StringJoiner(delimiter == null ? ", " : delimiter.replace("\\n", "\n").replace("\\t", "\t"));
                     // 用于查找for定义变量的正则表达式
                     /// 需要验证下正则表达式 例如：user.address.street，超过2级
-                    Pattern itemP = Pattern.compile("\\$\\{:?(?<tmp>(" + itemName + ")(.\\w+)*|" + idxName + ")}");
+                    Pattern filterP = Pattern.compile("\\$\\{\\s*(?<tmp>(" + itemName + ")(.\\w+)*|" + idxName + ")\\s*}");
                     for (int x = 0; x < loopArr.length; x++) {
+                        Map<String, Object> filterArgs = new HashMap<>();
+                        filterArgs.put(itemName, loopArr[x]);
+                        filterArgs.put(idxName, x);
                         // 如果定义了过滤器，首先对数据进行筛选操作，不满足条件的直接过滤
                         if (filter != null) {
                             // 查找过滤器中的引用变量
-                            Matcher vx = itemP.matcher(filter);
-                            Map<String, Object> filterArgs = new HashMap<>();
+                            Matcher vx = filterP.matcher(filter);
+                            Map<String, Object> filterTemps = new HashMap<>();
                             String expStr = filter;
                             while (vx.find()) {
                                 String tmp = vx.group("tmp");
-                                // 如果变量占位符和索引名一样，表明使用索引，则添加索引到参数中
-                                if (tmp.equals(idxName)) {
-                                    filterArgs.put(idxName, x);
-                                } else {
-                                    Object value = loopArr[x];
-                                    // 如果是对象类型参数，使用路径表示法取得参数值
-                                    if (tmp.startsWith(itemName + ".")) {
-                                        String valuePath = tmp.substring(itemName.length());
-                                        String jPath = valuePath.replace(".", "/");
-                                        try {
-                                            value = ObjectUtil.getDeepNestValue(value, jPath);
-                                        } catch (NoSuchFieldException | InvocationTargetException |
-                                                 NoSuchMethodException | IllegalAccessException e) {
-                                            throw new RuntimeException("get value error :", e);
-                                        }
-                                    }
-                                    filterArgs.put(tmp, value);
-                                }
-                                // 将filter子句转为支持表达式解析的子句格式
-                                expStr = expStr.replace("${" + tmp + "}", ":" + tmp);
+                                filterTemps.put(tmp, ":" + tmp);
                             }
+                            // 将filter子句转为支持表达式解析的子句格式
+                            expStr = StringUtil.format(expStr, filterTemps);
                             FastExpression expression = FastExpression.of(expStr);
                             expression.setCustomPipes(pipeInstances);
                             expression.setCheckArgsKey(checkArgsKey);
@@ -676,35 +663,7 @@ public class XQLFileManager {
                             }
                         }
                         // 准备循环迭代生产满足条件的sql片段
-                        String sqlPart = loopPart.toString().trim();
-                        // 查找需迭代sql片段中的引用变量
-                        Matcher mx = itemP.matcher(sqlPart);
-                        while (mx.find()) {
-                            String tmp = mx.group("tmp");
-                            if (tmp.equals(idxName)) {
-                                // 索引为数字类型，所以直接就替换了，不需要安全处理参数
-                                sqlPart = sqlPart.replace("${" + idxName + "}", x + "");
-                            } else {
-                                Object value = loopArr[x];
-                                if (tmp.startsWith(itemName + ".")) {
-                                    String valuePath = tmp.substring(itemName.length());
-                                    String jPath = valuePath.replace(".", "/");
-                                    try {
-                                        value = ObjectUtil.getDeepNestValue(value, jPath);
-                                    } catch (NoSuchFieldException | InvocationTargetException |
-                                             NoSuchMethodException |
-                                             IllegalAccessException e) {
-                                        throw new RuntimeException("get value error :", e);
-                                    }
-                                }
-                                // 此处为了统一，还是支持字符串模版占位符的两种处理格式
-                                if (sqlPart.contains("${" + tmp + "}")) {
-                                    sqlPart = sqlPart.replace("${" + tmp + "}", value.toString());
-                                } else if (sqlPart.contains("${" + namedParamPrefix + tmp + "}")) {
-                                    sqlPart = sqlPart.replace("${" + namedParamPrefix + tmp + "}", SqlUtil.deconstructArrayIfNecessary(value, true));
-                                }
-                            }
-                        }
+                        String sqlPart = sqlTranslator.formatSql(loopPart.toString().trim(), filterArgs);
                         forSql.add(sqlPart);
                     }
                     output.add(forSql.toString());
@@ -1120,5 +1079,6 @@ public class XQLFileManager {
      */
     public void setNamedParamPrefix(char namedParamPrefix) {
         this.namedParamPrefix = namedParamPrefix;
+        this.sqlTranslator = new SqlTranslator(namedParamPrefix);
     }
 }

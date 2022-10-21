@@ -408,9 +408,6 @@ public class JdbcUtil {
                 Param param = null;
                 if (args.containsKey(name)) {
                     param = args.get(name);
-                } else if (containsKeyIgnoreCase(args, name)) {
-                    log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your sql's named parameter and args.", name, args, name);
-                    param = getValueIgnoreCase(args, name);
                 }
                 if (param != null) {
                     if (param.getParamMode() == ParamMode.OUT || param.getParamMode() == ParamMode.IN_OUT) {
@@ -425,9 +422,6 @@ public class JdbcUtil {
                 Param param = null;
                 if (args.containsKey(name)) {
                     param = args.get(name);
-                } else if (containsKeyIgnoreCase(args, name)) {
-                    log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your sql's named parameter and args.", name, args, name);
-                    param = getValueIgnoreCase(args, name);
                 }
                 if (param != null) {
                     if (param.getParamMode() == ParamMode.IN || param.getParamMode() == ParamMode.IN_OUT) {

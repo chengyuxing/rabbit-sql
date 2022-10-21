@@ -289,7 +289,7 @@ public class XQLFileManager {
             String sql = e.getValue();
             if (sql.contains(partName)) {
                 String sqlPart = sqlResource.get(partName);
-                sql = StringUtil.replaceIgnoreCase(sql, partName, sqlPart);
+                sql = sql.replace(partName, sqlPart);
                 e.setValue(sql);
             }
         }
@@ -311,8 +311,8 @@ public class XQLFileManager {
                 String sql = sqlE.getValue();
                 for (Map.Entry<String, String> constE : constants.entrySet()) {
                     String constantName = "${" + constE.getKey() + "}";
-                    if (StringUtil.containsIgnoreCase(sql, constantName)) {
-                        sql = StringUtil.replaceIgnoreCase(sql, constantName, constE.getValue());
+                    if (sql.contains(constantName)) {
+                        sql = sql.replace(constantName, constE.getValue());
                     } else {
                         break;
                     }
@@ -699,9 +699,9 @@ public class XQLFileManager {
                                 }
                                 // 此处为了统一，还是支持字符串模版占位符的两种处理格式
                                 if (sqlPart.contains("${" + tmp + "}")) {
-                                    sqlPart = StringUtil.replaceIgnoreCase(sqlPart, "${" + tmp + "}", value.toString());
+                                    sqlPart = sqlPart.replace("${" + tmp + "}", value.toString());
                                 } else if (sqlPart.contains("${" + namedParamPrefix + tmp + "}")) {
-                                    sqlPart = StringUtil.replaceIgnoreCase(sqlPart, "${" + namedParamPrefix + tmp + "}", SqlUtil.deconstructArrayIfNecessary(value, true));
+                                    sqlPart = sqlPart.replace("${" + namedParamPrefix + tmp + "}", SqlUtil.deconstructArrayIfNecessary(value, true));
                                 }
                             }
                         }

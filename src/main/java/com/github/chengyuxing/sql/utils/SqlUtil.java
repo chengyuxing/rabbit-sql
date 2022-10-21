@@ -66,6 +66,7 @@ public class SqlUtil {
                 clazz == Float.class ||
                 clazz == Byte.class ||
                 clazz == Boolean.class ||
+                clazz == Character.class ||
                 clazz.isPrimitive()) {
             return obj.toString();
         }

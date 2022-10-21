@@ -124,7 +124,7 @@ public class ControlTest {
 
 //        mergeMap(args);
 
-//        System.out.println(new SqlTranslator(':').resolveSqlStrTemplate(sql, args));
+//        System.out.println(new SqlTranslator(':').formatSql(sql, args));
 //        String[] sqls = new String[1000];
 //        for (int i = 0; i < 1000; i++) {
 //            String sqlx = new SqlTranslator(':').generateSql(sql, args, false).getItem1();
@@ -132,10 +132,10 @@ public class ControlTest {
 //        }
 //        System.out.println(sqls.length);
         SqlTranslator sqlTranslator = new SqlTranslator(':');
-        System.out.println(sqlTranslator.resolveSqlStrTemplate(sql, args));
+        System.out.println(sqlTranslator.formatSql(sql, args));
 
         System.out.println("-----");
-        String first = sqlTranslator.resolveSqlStrTemplate(sql, args);
+        String first = sqlTranslator.formatSql(sql, args);
         System.out.println(first);
 //        String second = sqlTranslator.resolveSqlStrTemplateRec2(first, args);
 //        System.out.println(second);

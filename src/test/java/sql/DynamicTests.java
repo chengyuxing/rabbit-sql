@@ -29,7 +29,10 @@ public class DynamicTests {
 
     @Test
     public void test() throws Exception {
-        List<Map<String, Object>> users = Arrays.asList(Args.of("name", "cyx"), Args.of("name", "jack"), Args.of("name", "lisa"));
+        List<Map<String, Object>> users = Arrays.asList(
+                Args.create("name", "cyx", "age", 21),
+                Args.create("name", "jack", "age", 81),
+                Args.create("name", "lisa", "age", 55));
         List<String> names = Arrays.asList("jackson", "mike", "book", "Bob");
         Args<Object> args = Args.create("users", users, "names", names, "id", 10);
         System.out.println(sqlFileManager.get("for.q", args));
@@ -38,11 +41,11 @@ public class DynamicTests {
 
     @Test
     public void test3() throws Exception {
-        System.out.println(sqlFileManager.get("for.pipe",Args.create("idCard","5301111993")));
+        System.out.println(sqlFileManager.get("for.pipe", Args.create("idCard", "5301111993")));
     }
 
     @Test
-    public void test4() throws Exception{
+    public void test4() throws Exception {
         System.out.println(sqlFileManager.get("for.switch", Args.of("name", "cyx")));
     }
 

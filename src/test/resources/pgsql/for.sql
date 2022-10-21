@@ -2,8 +2,8 @@
 select *
 from test.user
 where name in (
-    -- #for user of :users filter ${user.name} <> blank && ${user.name} !~ 'j'
-    ${:user.name}
+    -- #for user,idx of :users filter ${ user } <> blank && ${ user.name } !~ 'j'
+    ${ :user.name } = ${user.age} > ${idx}
     -- #end
     );
 

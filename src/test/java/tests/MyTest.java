@@ -457,6 +457,14 @@ public class MyTest {
     }
 
     @Test
+    public void testCall3() throws Exception {
+       DataRow row = baki.call("{:res = call test.mvn_dependency_query(:keywords)}",
+                        Args.of("res", Param.OUT(OUTParamType.OTHER))
+                                .add("keywords", Param.IN("chengyuxing")));
+        System.out.println(row);
+    }
+
+    @Test
     public void queryInTransaction() throws Exception {
         Tx.using(() -> {
             baki.query("select current_timestamp, version()")

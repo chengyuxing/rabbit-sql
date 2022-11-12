@@ -364,7 +364,6 @@ public abstract class JdbcSupport {
                 }
             }
             statement.execute();
-            System.out.println(statement.getObject(1));
             printSqlConsole(statement);
             if (outNames.size() > 0) {
                 Object[] values = new Object[outNames.size()];

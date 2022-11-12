@@ -28,7 +28,7 @@ public class SqlTranslator {
      */
     Pattern PARAM_PATTERN = Pattern.compile("(^:|[^:]:)(?<name>[a-zA-Z_][\\w_]*)", Pattern.MULTILINE);
 
-    Pattern STR_TEMP_PATTERN = Pattern.compile("\\$\\{\\s*(?<key>:?[\\w\\d._-]+)\\s*}");
+    Pattern STR_TEMP_PATTERN = Pattern.compile("\\$\\{\\s*(?<key>:?[\\w._-]+)\\s*}");
 
     /**
      * sql翻译帮助实例
@@ -46,7 +46,7 @@ public class SqlTranslator {
             this.c = cs;
             String regC = cs.replace(cs, "\\" + cs);
             PARAM_PATTERN = Pattern.compile("(^" + regC + "|[^" + regC + "]" + regC + ")(?<name>[a-zA-Z_][\\w_]*)", Pattern.MULTILINE);
-            STR_TEMP_PATTERN = Pattern.compile("\\$\\{\\s*(?<key>" + regC + "?[\\w\\d._-]+)\\s*}");
+            STR_TEMP_PATTERN = Pattern.compile("\\$\\{\\s*(?<key>" + regC + "?[\\w._-]+)\\s*}");
         }
     }
 
@@ -75,12 +75,7 @@ public class SqlTranslator {
             while (matcher.find()) {
                 String name = matcher.group("name");
                 names.add(name);
-                if (argx.containsKey(name)) {
-                    noneStrSql = noneStrSql.replace(c + name, "?");
-                } else if (containsKeyIgnoreCase(argx, name)) {
-                    log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your sql's named parameter and args.", name, argx, name);
-                    noneStrSql = replaceIgnoreCase(noneStrSql, c + name, "?");
-                }
+                noneStrSql = noneStrSql.replace(c + name, "?");
             }
         } else {
             while (matcher.find()) {

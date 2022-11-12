@@ -337,7 +337,7 @@ public abstract class JdbcSupport {
      * @throws UncheckedSqlException 存储过程或函数执行过程中出现错误
      */
     public DataRow executeCallStatement(final String procedure, Map<String, Param> args) {
-        Pair<String, List<String>> preparedSqlAndArgNames = compileSql(procedure, Collections.emptyMap());
+        Pair<String, List<String>> preparedSqlAndArgNames = compileSql(procedure, args);
         final String executeSql = preparedSqlAndArgNames.getItem1();
         final List<String> argNames = preparedSqlAndArgNames.getItem2();
 
@@ -364,6 +364,7 @@ public abstract class JdbcSupport {
                 }
             }
             statement.execute();
+            System.out.println(statement.getObject(1));
             printSqlConsole(statement);
             if (outNames.size() > 0) {
                 Object[] values = new Object[outNames.size()];

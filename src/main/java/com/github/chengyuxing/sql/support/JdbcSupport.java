@@ -360,7 +360,6 @@ public abstract class JdbcSupport {
                             outNames.add(name);
                         }
                     }
-
                 }
             }
             statement.execute();

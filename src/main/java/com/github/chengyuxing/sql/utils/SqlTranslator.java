@@ -43,8 +43,9 @@ public class SqlTranslator {
         if (cs.equals(":")) {
             this.c = ":";
         } else {
-            this.c = cs;
-            String regC = cs.replace(cs, "\\" + cs);
+            this.c = cs.replace(cs, "\\" + cs);
+            ;
+            String regC = c;
             PARAM_PATTERN = Pattern.compile("(^" + regC + "|[^" + regC + "]" + regC + ")(?<name>[a-zA-Z_][\\w_]*)", Pattern.MULTILINE);
             STR_TEMP_PATTERN = Pattern.compile("\\$\\{\\s*(?<key>" + regC + "?[\\w._-]+)\\s*}");
         }
@@ -75,7 +76,7 @@ public class SqlTranslator {
             while (matcher.find()) {
                 String name = matcher.group("name");
                 names.add(name);
-                noneStrSql = noneStrSql.replace(c + name, "?");
+                noneStrSql = noneStrSql.replaceFirst(c + name, "?");
             }
         } else {
             while (matcher.find()) {
@@ -83,7 +84,7 @@ public class SqlTranslator {
                 names.add(name);
                 if (argx.containsKey(name)) {
                     String value = quoteFormatValueIfNecessary(argx.get(name));
-                    noneStrSql = noneStrSql.replace(c + name, value);
+                    noneStrSql = noneStrSql.replaceFirst(c + name, value);
                 } else if (containsKeyIgnoreCase(argx, name)) {
                     log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your sql's named parameter and args.", name, args, name);
                     String value = quoteFormatValueIfNecessary(getValueIgnoreCase(argx, name));

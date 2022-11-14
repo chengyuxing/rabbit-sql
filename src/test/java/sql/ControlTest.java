@@ -23,6 +23,14 @@ public class ControlTest {
     }
 
     @Test
+    public void testxsz() throws Exception{
+        String sql = "insert into user (x, xm ,xb) values (?x, ?xm, ?xb)";
+        System.out.println(sql.length());
+        SqlTranslator sqlTranslator = new SqlTranslator('?');
+        System.out.println(sqlTranslator.getPreparedSql(sql, Args.create()));
+    }
+
+    @Test
     public void sqlResolve() throws Exception {
         String sql = "select *\n" +
                 "from test.student t\n" +

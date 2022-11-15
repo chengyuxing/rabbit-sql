@@ -1,6 +1,7 @@
 package sql;
 
 import com.github.chengyuxing.common.script.impl.CExpression;
+import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.XQLFileManager;
 import com.github.chengyuxing.sql.utils.SqlTranslator;
@@ -9,6 +10,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.github.chengyuxing.common.utils.StringUtil.searchIndexUntilNotBlank;
@@ -23,11 +25,31 @@ public class ControlTest {
     }
 
     @Test
-    public void testxsz() throws Exception{
-        String sql = "insert into user (x, xm ,xb) values (?x, ?xm, ?xb)";
+    public void testxsz() throws Exception {
+        String sql = "insert into user (x, xm ,xb) values (:xx,:x, :xm, :xb)";
         System.out.println(sql.length());
-        SqlTranslator sqlTranslator = new SqlTranslator('?');
-        System.out.println(sqlTranslator.getPreparedSql(sql, Args.create()));
+        SqlTranslator sqlTranslator = new SqlTranslator(':');
+        System.out.println(sqlTranslator.generateSql(sql, Args.create(), true));
+    }
+
+    @Test
+    public void testss() throws Exception {
+        String sql = "insert into user (x, xm ,xb) values (:x, :xb, :xm, :x)";
+
+        Pattern PARAM_PATTERN = Pattern.compile("(^:|[^:]:)(?<name>[a-zA-Z_][\\w_]*)", Pattern.MULTILINE);
+        Matcher m = PARAM_PATTERN.matcher(sql);
+        while (m.find()) {
+//            System.out.println(m.group("name"));
+            sql = StringUtil.replaceFirstIgnoreCase(sql, ":" + m.group("name"), "?");
+        }
+
+        System.out.println(sql);
+
+
+//        System.out.println(StringUtil.replaceIgnoreCase(sql,":X","@"));
+//        System.out.println(StringUtil.replaceIgnoreCaseFirst(sql,":X","@"));
+
+//        System.out.println(StringUtil.replaceIgnoreCase(sql, "?x", "?"));
     }
 
     @Test

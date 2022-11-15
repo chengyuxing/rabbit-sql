@@ -12,7 +12,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.github.chengyuxing.common.utils.CollectionUtil.*;
-import static com.github.chengyuxing.common.utils.StringUtil.replaceIgnoreCase;
 import static com.github.chengyuxing.sql.utils.SqlUtil.quoteFormatValueIfNecessary;
 import static com.github.chengyuxing.sql.utils.SqlUtil.replaceSqlSubstr;
 
@@ -43,16 +42,15 @@ public class SqlTranslator {
         if (cs.equals(":")) {
             this.c = ":";
         } else {
-            this.c = cs.replace(cs, "\\" + cs);
-            ;
-            String regC = c;
+            this.c = cs;
+            String regC = cs.replace(cs, "\\" + cs);
             PARAM_PATTERN = Pattern.compile("(^" + regC + "|[^" + regC + "]" + regC + ")(?<name>[a-zA-Z_][\\w_]*)", Pattern.MULTILINE);
             STR_TEMP_PATTERN = Pattern.compile("\\$\\{\\s*(?<key>" + regC + "?[\\w._-]+)\\s*}");
         }
     }
 
     /**
-     * 构建带有传名参数的sql
+     * 构建一条可执行的sql
      *
      * @param sql     sql字符串
      * @param args    参数
@@ -76,7 +74,7 @@ public class SqlTranslator {
             while (matcher.find()) {
                 String name = matcher.group("name");
                 names.add(name);
-                noneStrSql = noneStrSql.replaceFirst(c + name, "?");
+                noneStrSql = StringUtil.replaceFirst(noneStrSql, c + name, "?");
             }
         } else {
             while (matcher.find()) {
@@ -84,11 +82,11 @@ public class SqlTranslator {
                 names.add(name);
                 if (argx.containsKey(name)) {
                     String value = quoteFormatValueIfNecessary(argx.get(name));
-                    noneStrSql = noneStrSql.replaceFirst(c + name, value);
+                    noneStrSql = StringUtil.replaceFirst(noneStrSql, c + name, value);
                 } else if (containsKeyIgnoreCase(argx, name)) {
                     log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your sql's named parameter and args.", name, args, name);
                     String value = quoteFormatValueIfNecessary(getValueIgnoreCase(argx, name));
-                    noneStrSql = replaceIgnoreCase(noneStrSql, c + name, value);
+                    noneStrSql = StringUtil.replaceFirstIgnoreCase(noneStrSql, c + name, value);
                 }
             }
         }

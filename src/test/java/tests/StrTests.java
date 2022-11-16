@@ -24,6 +24,7 @@ public class StrTests {
         xqlFileManager.init();
         xqlFileManager.look();
     }
+
     @Test
     public void keys() throws Exception {
         String sql = "with t(a, b) as (select * from (values (array [ 1,2,'3,4,5'], /*array [[6',7,8,9'],*/[10,11,12,13] ])) arr)\n" +

@@ -179,7 +179,7 @@ public class SqlTranslator {
         String[] fieldArr = fields.toArray(new String[0]);
         Set<String> set = new HashSet<>();
         for (String k : row.keySet()) {
-            if (StringUtil.containsAnyIgnoreCase(k, fieldArr)) {
+            if (StringUtil.equalsAnyIgnoreCase(k, fieldArr)) {
                 if (!containsIgnoreCase(set, k)) {
                     set.add(k);
                 }

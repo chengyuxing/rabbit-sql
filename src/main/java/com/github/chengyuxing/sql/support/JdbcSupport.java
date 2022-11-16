@@ -300,14 +300,14 @@ public abstract class JdbcSupport {
      * @return 受影响的行数
      */
     public int executeNonQuery(final String sql, Collection<? extends Map<String, ?>> args) {
-        if (args.isEmpty()) {
-            return 0;
-        }
         Map<String, ?> first = args.iterator().next();
         Pair<String, List<String>> preparedSqlAndArgNames = compileSql(sql, first);
         final List<String> argNames = preparedSqlAndArgNames.getItem2();
         final String preparedSql = preparedSqlAndArgNames.getItem1();
         return execute(preparedSql, sc -> {
+            if (args.isEmpty()) {
+                return sc.executeUpdate();
+            }
             Iterator<? extends Map<String, ?>> iterator = args.iterator();
             int i = 0;
             while (iterator.hasNext()) {

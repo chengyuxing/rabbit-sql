@@ -225,14 +225,14 @@ public class XQLFileManager {
                     Matcher m_part = PART_PATTERN.matcher(trimLine);
                     if (m_name.matches()) {
                         // 匹配到名字，那就说明上一段sql已扫描拼接完整，处理一下
-                        checkNoneDelimiterSqlBlock(singleResource, blockName);
+                        checkNoneDelimiterSqlBlock(singleResource, name, blockName);
                         blockName = m_name.group("name");
                         if (singleResource.containsKey(blockName)) {
                             throw new DuplicateException("same sql fragment name: " + blockName);
                         }
                         singleResource.put(blockName, "");
                     } else if (m_part.matches()) {
-                        checkNoneDelimiterSqlBlock(singleResource, blockName);
+                        checkNoneDelimiterSqlBlock(singleResource, name, blockName);
                         blockName = "${" + m_part.group("part") + "}";
                         if (singleResource.containsKey(blockName)) {
                             throw new DuplicateException("same sql template name: " + blockName);
@@ -246,7 +246,7 @@ public class XQLFileManager {
                                 if (delimiter != null && !delimiter.trim().equals("") && trimLine.endsWith(delimiter)) {
                                     String naSql = removeAnnotationBlock(prepareLine);
                                     singleResource.put(blockName, naSql.substring(0, naSql.lastIndexOf(delimiter)).trim());
-                                    log.debug("scan to get sql({}) [{}]：{}", delimiter, blockName, SqlUtil.buildPrintSql(singleResource.get(blockName), highlightSql));
+                                    log.debug("scan to get sql({}) [{}.{}]：{}", delimiter, name, blockName, SqlUtil.buildPrintSql(singleResource.get(blockName), highlightSql));
                                     blockName = "";
                                 } else {
                                     singleResource.put(blockName, prepareLine.concat(NEW_LINE));
@@ -260,7 +260,7 @@ public class XQLFileManager {
             if (!blockName.equals("")) {
                 String lastSql = singleResource.get(blockName).trim();
                 singleResource.put(blockName, removeAnnotationBlock(lastSql));
-                log.debug("scan to get sql [{}]：{}", blockName, SqlUtil.buildPrintSql(lastSql, highlightSql));
+                log.debug("scan to get sql({}) [{}.{}]：{}", delimiter, name, blockName, SqlUtil.buildPrintSql(lastSql, highlightSql));
             }
         }
         mergeSqlPartIfNecessary(singleResource);
@@ -273,11 +273,11 @@ public class XQLFileManager {
      * @param singleResource sql文件资源
      * @param blockName      sql块命名
      */
-    private void checkNoneDelimiterSqlBlock(Map<String, String> singleResource, String blockName) {
+    private void checkNoneDelimiterSqlBlock(Map<String, String> singleResource, String alias, String blockName) {
         if ((delimiter == null || delimiter.trim().equals("")) && singleResource.containsKey(blockName)) {
             String naSql = SqlUtil.trimEnd(removeAnnotationBlock(singleResource.get(blockName)));
             singleResource.put(blockName, naSql);
-            log.debug("scan to get sql() [{}]：{}", blockName, SqlUtil.buildPrintSql(naSql, highlightSql));
+            log.debug("scan to get sql() [{}.{}]：{}", alias, blockName, SqlUtil.buildPrintSql(naSql, highlightSql));
         }
     }
 
@@ -1093,6 +1093,8 @@ public class XQLFileManager {
 
     /**
      * 设置debug模式下终端标准输出sql语法是否高亮
+     *
+     * @param highlightSql 是否高亮
      */
     public void setHighlightSql(boolean highlightSql) {
         this.highlightSql = highlightSql;

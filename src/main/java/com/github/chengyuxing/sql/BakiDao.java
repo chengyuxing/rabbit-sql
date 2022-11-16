@@ -641,7 +641,7 @@ public class BakiDao extends JdbcSupport implements Baki {
 
     @Override
     protected boolean highlightSql() {
-        return false;
+        return highlightSql;
     }
 
     @Override
@@ -763,6 +763,8 @@ public class BakiDao extends JdbcSupport implements Baki {
 
     /**
      * 设置debug模式下终端标准输出sql语法是否高亮
+     *
+     * @param highlightSql 是否高亮
      */
     public void setHighlightSql(boolean highlightSql) {
         this.highlightSql = highlightSql;

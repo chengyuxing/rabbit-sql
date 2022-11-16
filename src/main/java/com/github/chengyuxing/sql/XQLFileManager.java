@@ -154,6 +154,7 @@ public class XQLFileManager {
     private String charset = "UTF-8";
     private String delimiter = ";";
     private char namedParamPrefix = ':';
+    private boolean highlightSql = false;
     // ----------------optional properties------------------
     private SqlTranslator sqlTranslator = new SqlTranslator(namedParamPrefix);
 
@@ -245,7 +246,7 @@ public class XQLFileManager {
                                 if (delimiter != null && !delimiter.trim().equals("") && trimLine.endsWith(delimiter)) {
                                     String naSql = removeAnnotationBlock(prepareLine);
                                     singleResource.put(blockName, naSql.substring(0, naSql.lastIndexOf(delimiter)).trim());
-                                    log.debug("scan to get sql({}) [{}]：{}", delimiter, blockName, SqlUtil.highlightSql(singleResource.get(blockName)));
+                                    log.debug("scan to get sql({}) [{}]：{}", delimiter, blockName, SqlUtil.buildPrintSql(singleResource.get(blockName), highlightSql));
                                     blockName = "";
                                 } else {
                                     singleResource.put(blockName, prepareLine.concat(NEW_LINE));
@@ -259,7 +260,7 @@ public class XQLFileManager {
             if (!blockName.equals("")) {
                 String lastSql = singleResource.get(blockName).trim();
                 singleResource.put(blockName, removeAnnotationBlock(lastSql));
-                log.debug("scan to get sql [{}]：{}", blockName, SqlUtil.highlightSql(lastSql));
+                log.debug("scan to get sql [{}]：{}", blockName, SqlUtil.buildPrintSql(lastSql, highlightSql));
             }
         }
         mergeSqlPartIfNecessary(singleResource);
@@ -276,7 +277,7 @@ public class XQLFileManager {
         if ((delimiter == null || delimiter.trim().equals("")) && singleResource.containsKey(blockName)) {
             String naSql = SqlUtil.trimEnd(removeAnnotationBlock(singleResource.get(blockName)));
             singleResource.put(blockName, naSql);
-            log.debug("scan to get sql() [{}]：{}", blockName, SqlUtil.highlightSql(naSql));
+            log.debug("scan to get sql() [{}]：{}", blockName, SqlUtil.buildPrintSql(naSql, highlightSql));
         }
     }
 
@@ -743,7 +744,11 @@ public class XQLFileManager {
             if (n.startsWith("${")) {
                 color = Color.GREEN;
             }
-            System.out.println(Printer.colorful(k + "." + n, color) + " -> " + SqlUtil.highlightSql(o));
+            String prefix = k + "." + n;
+            if (highlightSql) {
+                prefix = Printer.colorful(prefix, color);
+            }
+            System.out.println(prefix + " -> " + SqlUtil.buildPrintSql(o, highlightSql));
         }));
     }
 
@@ -1075,5 +1080,21 @@ public class XQLFileManager {
     public void setNamedParamPrefix(char namedParamPrefix) {
         this.namedParamPrefix = namedParamPrefix;
         this.sqlTranslator = new SqlTranslator(namedParamPrefix);
+    }
+
+    /**
+     * debug模式下终端标准输出sql语法是否高亮
+     *
+     * @return 是否高亮
+     */
+    public boolean isHighlightSql() {
+        return highlightSql;
+    }
+
+    /**
+     * 设置debug模式下终端标准输出sql语法是否高亮
+     */
+    public void setHighlightSql(boolean highlightSql) {
+        this.highlightSql = highlightSql;
     }
 }

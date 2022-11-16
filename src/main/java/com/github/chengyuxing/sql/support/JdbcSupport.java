@@ -104,6 +104,13 @@ public abstract class JdbcSupport {
     protected abstract boolean debugFullSql();
 
     /**
+     * debug模式下终端标准输出sql语法是否高亮
+     *
+     * @return 是否高亮
+     */
+    protected abstract boolean highlightSql();
+
+    /**
      * 执行一句预编译的sql
      *
      * @param sql      sql
@@ -439,11 +446,11 @@ public abstract class JdbcSupport {
         String sourceSql = getSql(sql, args);
         Pair<String, List<String>> preparedSqlAndArgNames = sqlTranslator().getPreparedSql(sourceSql, args);
         if (log.isDebugEnabled()) {
-            log.debug("SQL:{}", SqlUtil.highlightSql(sourceSql));
+            log.debug("SQL:{}", SqlUtil.buildPrintSql(sourceSql, highlightSql()));
             log.debug("Args:{}", args);
             if (debugFullSql()) {
                 String fullSql = sqlTranslator().generateSql(sourceSql, args, false).getItem1();
-                log.debug("Full SQL: {}", SqlUtil.highlightSql(fullSql));
+                log.debug("Full SQL: {}", SqlUtil.buildPrintSql(fullSql, highlightSql()));
             }
         }
         return preparedSqlAndArgNames;

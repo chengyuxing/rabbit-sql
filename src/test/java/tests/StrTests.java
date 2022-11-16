@@ -20,6 +20,7 @@ public class StrTests {
         XQLFileManager xqlFileManager = new XQLFileManager();
         xqlFileManager.add("x","pgsql/multi.xql");
         xqlFileManager.setDelimiter(null);
+        xqlFileManager.setHighlightSql(true);
         xqlFileManager.init();
         xqlFileManager.look();
     }

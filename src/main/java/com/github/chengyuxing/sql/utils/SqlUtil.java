@@ -351,4 +351,18 @@ public class SqlUtil {
             return sql;
         }
     }
+
+    /**
+     * 创建适用于打印sql的字符串
+     *
+     * @param sql         sql字符串
+     * @param isHighlight 是否语法高亮
+     * @return 普通sql或语法高亮的sql
+     */
+    public static String buildPrintSql(String sql, boolean isHighlight) {
+        if (isHighlight) {
+            return highlightSql(sql);
+        }
+        return sql;
+    }
 }

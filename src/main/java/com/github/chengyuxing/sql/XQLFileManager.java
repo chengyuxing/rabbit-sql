@@ -853,7 +853,11 @@ public class XQLFileManager {
         if (args == null || args.isEmpty()) {
             return sql;
         }
-        return repairSyntaxError(dynamicCalc(sql, args, checkArgsKey));
+        try {
+            return repairSyntaxError(dynamicCalc(sql, args, checkArgsKey));
+        } catch (Exception e) {
+            throw new DynamicSQLException("an error occurred when getting dynamic sql: " + sql, e);
+        }
     }
 
     /**

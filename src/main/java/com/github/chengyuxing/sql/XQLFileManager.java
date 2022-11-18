@@ -846,6 +846,7 @@ public class XQLFileManager {
      * @param checkArgsKey 检查参数中是否必须存在表达式中需要计算的key
      * @return 解析后的sql
      * @throws NoSuchElementException 如果没有找到相应名字的sql片段
+     * @throws DynamicSQLException    动态sql表达式解析异常
      * @see #dynamicCalc(String, Map, boolean)
      */
     public String get(String name, Map<String, ?> args, boolean checkArgsKey) {
@@ -867,6 +868,7 @@ public class XQLFileManager {
      * @param args 动态sql逻辑表达式参数字典
      * @return 解析后的sql
      * @throws NoSuchElementException 如果没有找到相应名字的sql片段
+     * @throws DynamicSQLException    动态sql表达式解析异常
      * @see #dynamicCalc(String, Map, boolean)
      */
     public String get(String name, Map<String, ?> args) {

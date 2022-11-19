@@ -885,7 +885,7 @@ public class XQLFileManager {
     }
 
     /**
-     * 获取是否启用文件自动检查更新
+     * 是否启用文件自动检查更新
      *
      * @return 文件检查更新状态
      */

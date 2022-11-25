@@ -351,7 +351,7 @@ public class XQLFileManager {
                         }
                     }
                 } else {
-                    throw new FileNotFoundException("sql file of name'" + fileE.getKey() + "' not found!");
+                    throw new FileNotFoundException("sql file '" + fileE.getValue() + "' of name '" + fileE.getKey() + "' not found!");
                 }
             }
             return msg;

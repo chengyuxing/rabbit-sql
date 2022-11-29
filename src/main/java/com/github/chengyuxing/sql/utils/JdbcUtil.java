@@ -175,7 +175,11 @@ public class JdbcUtil {
     public static DataRow createDataRow(String[] names, ResultSet resultSet) throws SQLException {
         DataRow row = new DataRow(names.length);
         for (int i = 0; i < names.length; i++) {
-            row.put(names[i], JdbcUtil.getResultValue(resultSet, i + 1));
+            String name = names[i];
+            if (name.equals("?column?")) {
+                name = "column" + i;
+            }
+            row.put(name, JdbcUtil.getResultValue(resultSet, i + 1));
         }
         return row;
     }

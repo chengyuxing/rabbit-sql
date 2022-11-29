@@ -51,6 +51,12 @@ public class BakiSessionTest {
     }
 
     @Test
+    public void testCols() throws Exception{
+        baki.query("select 1,2 as num,3,4,5").findFirst()
+                .ifPresent(System.out::println);
+    }
+
+    @Test
     public void upd() throws Exception {
         int i = baki.update("${db}.region", "name = ?oldName")
                 .safe()

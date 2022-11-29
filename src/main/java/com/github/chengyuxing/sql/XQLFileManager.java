@@ -343,6 +343,8 @@ public class XQLFileManager {
                                 resolveSqlContent(fileE.getKey(), cr);
                                 LAST_MODIFIED.put(fileName, lastModified);
                                 msg.add("reload modified sql file: " + fileName);
+                            } else {
+                                msg.add("sql file: " + fileName + " already loaded.");
                             }
                         } else {
                             resolveSqlContent(fileE.getKey(), cr);

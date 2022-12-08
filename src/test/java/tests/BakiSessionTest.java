@@ -51,7 +51,7 @@ public class BakiSessionTest {
     }
 
     @Test
-    public void testCols() throws Exception{
+    public void testCols() throws Exception {
         baki.query("select 1,2 as num,3,4,5").findFirst()
                 .ifPresent(System.out::println);
     }
@@ -233,12 +233,9 @@ public class BakiSessionTest {
     @Test
     public void batchExe() throws Exception {
         int[] res = baki.batchExecute(
-                "create table test.t_a(id int)",
-                "create table test.t_b(id int)",
-                "create table test.t_c(id int)",
-                "create table test.t_d(id int)",
-                "create table test.t_e(id int)",
-                "create table test.t_f(id int)"
+                "insert into test.big (name, address, age) values ('cyx', '昆明', 28)",
+                "insert into test.big (name, address, age) values ('cyx', now(), 'abc')",
+                "insert into test.big (name, address, age) values ('cyx', '昆明', 28)"
         );
         System.out.println(Arrays.toString(res));
     }

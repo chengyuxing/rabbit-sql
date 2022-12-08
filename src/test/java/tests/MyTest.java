@@ -358,7 +358,6 @@ public class MyTest {
         String procedure = "{call test.fun_query(:c::refcursor)}";
 
         Connection connection = dataSource.getConnection();
-
     }
 
     @Test
@@ -440,6 +439,16 @@ public class MyTest {
     }
 
     @Test
+    public void testCallFunc() throws Exception {
+        int res = baki.call("{:res = call test.slow_query(:a,:b)}",
+                        Args.of("res", Param.OUT(OUTParamType.INTEGER))
+                                .add("a", Param.IN(13))
+                                .add("b", Param.IN(192)))
+                .getFirstAs();
+        System.out.println(res);
+    }
+
+    @Test
     public void testCall() throws Exception {
         Tx.using(() -> baki.call("{:res = call test.fun_query()}",
                         Args.of("res", Param.OUT(OUTParamType.REF_CURSOR)))
@@ -458,9 +467,9 @@ public class MyTest {
 
     @Test
     public void testCall3() throws Exception {
-       DataRow row = baki.call("{:res = call test.mvn_dependency_query(:keywords)}",
-                        Args.of("res", Param.OUT(OUTParamType.OTHER))
-                                .add("keywords", Param.IN("chengyuxing")));
+        DataRow row = baki.call("{:res = call test.mvn_dependency_query(:keywords)}",
+                Args.of("res", Param.OUT(OUTParamType.OTHER))
+                        .add("keywords", Param.IN("chengyuxing")));
         System.out.println(row);
     }
 

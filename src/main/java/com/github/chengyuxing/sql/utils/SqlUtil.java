@@ -137,7 +137,12 @@ public class SqlUtil {
      * @return 去除分号后的sql
      */
     public static String trimEnd(String sql) {
-        return sql.replaceAll("([\\s;]*)$", "");
+        String tSql = sql.replaceAll("([\\s;]*)$", "");
+        // oracle procedure syntax end with ';' is required.
+        if (StringUtil.startsWithIgnoreCase(tSql, "begin") && StringUtil.endsWithIgnoreCase(tSql, "end")) {
+            tSql += ";";
+        }
+        return tSql;
     }
 
 

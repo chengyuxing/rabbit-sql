@@ -110,11 +110,11 @@ public final class Tx {
             begin(definition);
             result = supplier.get();
             commit();
+            return result;
         } catch (Exception e) {
             rollback();
             throw new TransactionException("transaction will rollback cause:", e);
         }
-        return result;
     }
 
     /**

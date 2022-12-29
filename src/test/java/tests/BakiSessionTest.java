@@ -15,6 +15,7 @@ import java.net.URISyntaxException;
 import java.sql.*;
 import java.time.*;
 import java.util.Arrays;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 
@@ -238,6 +239,29 @@ public class BakiSessionTest {
                 "insert into test.big (name, address, age) values ('cyx', '昆明', 28)"
         );
         System.out.println(Arrays.toString(res));
+    }
+
+    @Test
+    public void testInsert() throws Exception {
+        String pkid = UUID.randomUUID().toString();
+        baki.insert("test.temp").save(Args.create("pkid", pkid, "RPKID", pkid, "name", "cyx"));
+    }
+
+    @Test
+    public void testNestQuery() throws Exception {
+//        Tx.using(()->{
+        try (Stream<DataRow> s = baki.query("select * from test.big limit 10").stream()) {
+            try (Stream<DataRow> s1 = baki.query("select * from test.big limit 5").stream()) {
+                try (Stream<DataRow> s2 = baki.query("select * from test.big limit 3").stream()) {
+                    s.forEach(d -> System.out.println("s --> " + d));
+                    s2.forEach(d -> System.out.println("s2 --> " + d));
+                    while (true) {
+
+                    }
+                }
+            }
+        }
+//        });
     }
 
     @Test

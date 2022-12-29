@@ -5,7 +5,7 @@
 - maven dependency (jdk1.8)
 
 ## 此版本已不再更新
-请使用最新版本V6，详情可查看分之[rabbit-sql-6](https://github.com/chengyuxing/rabbit-sql/tree/rabbit-sql-6)
+请使用最新版本V7，详情可查看分之[rabbit-sql-7](https://github.com/chengyuxing/rabbit-sql/tree/rabbit-sql-7)
 
 ```xml
 <dependency>

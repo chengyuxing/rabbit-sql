@@ -10,6 +10,8 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Date;
 import java.sql.*;
 import java.time.*;
@@ -334,11 +336,17 @@ public class JdbcUtil {
             statement.setObject(index, obj2Json(value));
         } else if (value instanceof InputStream) {
             statement.setBinaryStream(index, (InputStream) value);
+        } else if (value instanceof Path) {
+            try {
+                statement.setBinaryStream(index, Files.newInputStream((Path) value));
+            } catch (IOException e) {
+                throw new SQLException("set binary value failed: ", e);
+            }
         } else if (value instanceof File) {
             try {
                 statement.setBinaryStream(index, new FileInputStream((File) value));
             } catch (FileNotFoundException e) {
-                throw new SQLException("set value failed:", e);
+                throw new SQLException("set binary value failed: ", e);
             }
         } else {
             statement.setObject(index, value);

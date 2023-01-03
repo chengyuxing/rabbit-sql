@@ -9,11 +9,17 @@ import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
 
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class StrTests {
+
+    @Test
+    public void testDtFmt() throws Exception{
+        System.out.println(SqlUtil.quoteFormatValueIfNecessary(LocalTime.now()));
+    }
 
     @Test
     public void test1() throws Exception{

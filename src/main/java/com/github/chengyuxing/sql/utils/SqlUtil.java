@@ -68,19 +68,27 @@ public class SqlUtil {
                 clazz == Boolean.class ||
                 clazz == Character.class ||
                 clazz.isPrimitive()) {
-            return obj.toString();
+            String v = obj.toString();
+            if (v.equals("'")) {
+                return safeQuote(v);
+            }
+            return v;
         }
-        if (clazz == Date.class) {
-            return quote(DateTimes.of(((Date) obj).toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()).toString("yyyy-MM-dd HH:mm:ss"));
+        if (Date.class.isAssignableFrom(clazz)) {
+            String dtStr = DateTimes.of(((Date) obj).toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()).toString("yyyy-MM-dd HH:mm:ss");
+            return "to_timestamp(" + quote(dtStr) + "," + quote("yyyy-mm-dd hh24:mi:ss") + ")";
         }
         if (clazz == LocalDateTime.class) {
-            return quote(DateTimes.of((LocalDateTime) obj).toString("yyyy-MM-dd HH:mm:ss"));
+            String dtStr = DateTimes.of((LocalDateTime) obj).toString("yyyy-MM-dd HH:mm:ss");
+            return "to_timestamp(" + quote(dtStr) + "," + quote("yyyy-mm-dd hh24:mi:ss") + ")";
         }
         if (clazz == LocalDate.class) {
-            return quote(DateTimes.of((LocalDate) obj).toString("yyyy-MM-dd"));
+            String dtStr = DateTimes.of((LocalDate) obj).toString("yyyy-MM-dd");
+            return "to_date(" + quote(dtStr) + "," + quote("yyyy-mm-dd") + ")";
         }
         if (clazz == LocalTime.class) {
-            return quote(DateTimes.of((LocalTime) obj).toString("HH:mm:ss"));
+            String dtStr = DateTimes.of(((LocalTime) obj).atDate(LocalDate.now()).atZone(ZoneId.systemDefault()).toInstant()).toString("yyyy-MM-dd HH:mm:ss");
+            return "to_timestamp(" + quote(dtStr) + "," + quote("yyyy-mm-dd hh24:mi:ss") + ")";
         }
         if (clazz == byte[].class) {
             return quote("blob:" + StringUtil.getSize((byte[]) obj));
@@ -91,7 +99,7 @@ public class SqlUtil {
             for (int i = 0; i < res.length; i++) {
                 Object o = objArr[i];
                 if (o != null)
-                    res[i] = o.toString();
+                    res[i] = safeQuote(o.toString());
             }
             return quote("{" + String.join(",", res) + "}");
         }

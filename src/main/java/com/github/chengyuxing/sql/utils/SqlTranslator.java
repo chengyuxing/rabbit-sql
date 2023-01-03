@@ -310,23 +310,19 @@ public class SqlTranslator {
         StringJoiner sb = new StringJoiner(",\n\t");
         if (isNamedParam) {
             for (String key : keys) {
-                if (!key.startsWith("${") && !key.endsWith("}")) {
-                    if (data.containsKey(key) || containsKeyIgnoreCase(data, key)) {
-                        sb.add(key + " = " + c + key);
-                    }
+                if (data.containsKey(key) || containsKeyIgnoreCase(data, key)) {
+                    sb.add(key + " = " + c + key);
                 }
             }
         } else {
             for (String key : keys) {
-                if (!key.startsWith("${") && !key.endsWith("}")) {
-                    if (data.containsKey(key)) {
-                        String v = quoteFormatValueIfNecessary(data.get(key));
-                        sb.add(key + " = " + v);
-                    } else if (containsKeyIgnoreCase(data, key)) {
-                        log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your sql's named parameter and args.", key, data, key);
-                        String v = quoteFormatValueIfNecessary(getValueIgnoreCase(data, key));
-                        sb.add(key + " = " + v);
-                    }
+                if (data.containsKey(key)) {
+                    String v = quoteFormatValueIfNecessary(data.get(key));
+                    sb.add(key + " = " + v);
+                } else if (containsKeyIgnoreCase(data, key)) {
+                    log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your sql's named parameter and args.", key, data, key);
+                    String v = quoteFormatValueIfNecessary(getValueIgnoreCase(data, key));
+                    sb.add(key + " = " + v);
                 }
             }
         }
@@ -340,7 +336,9 @@ public class SqlTranslator {
      * @return 条数查询sql
      */
     public String generateCountQuery(final String recordQuery) {
-        // for 0 errors, simple count query currently.
+        if (StringUtil.startsWithIgnoreCase(recordQuery.trim(), "with")) {
+
+        }
         return "select count(*) from (" + recordQuery + ") r_data";
     }
 }

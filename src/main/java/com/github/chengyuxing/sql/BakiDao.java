@@ -482,7 +482,6 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param args 参数 （占位符名字，参数对象）
      * @return DataRow
      * @throws UncheckedSqlException 存储过程或函数执行过程中出现错误
-     * @see #executeCallStatement(String, Map)
      */
     @Override
     public DataRow call(String name, Map<String, Param> args) {

@@ -2,6 +2,7 @@ package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.DateTimes;
+import com.github.chengyuxing.common.utils.CollectionUtil;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.types.ParamMode;
 import org.slf4j.Logger;
@@ -416,13 +417,12 @@ public class JdbcUtil {
             for (int i = 0; i < names.size(); i++) {
                 int index = i + 1;
                 String name = names.get(i);
-                Param param = null;
-                if (args.containsKey(name)) {
-                    param = args.get(name);
-                }
-                if (param != null) {
-                    if (param.getParamMode() == ParamMode.OUT || param.getParamMode() == ParamMode.IN_OUT) {
-                        statement.registerOutParameter(index, param.getType().getTypeNumber());
+                if (args.containsKey(name) || containsKeyIgnoreCase(args, name)) {
+                    Param param = args.containsKey(name) ? args.get(name) : CollectionUtil.getValueIgnoreCase(args, name);
+                    if (param != null) {
+                        if (param.getParamMode() == ParamMode.OUT || param.getParamMode() == ParamMode.IN_OUT) {
+                            statement.registerOutParameter(index, param.getType().getTypeNumber());
+                        }
                     }
                 }
             }
@@ -430,13 +430,12 @@ public class JdbcUtil {
             for (int i = 0; i < names.size(); i++) {
                 int index = i + 1;
                 String name = names.get(i);
-                Param param = null;
-                if (args.containsKey(name)) {
-                    param = args.get(name);
-                }
-                if (param != null) {
-                    if (param.getParamMode() == ParamMode.IN || param.getParamMode() == ParamMode.IN_OUT) {
-                        setStatementValue(statement, index, param.getValue());
+                if (args.containsKey(name) || containsKeyIgnoreCase(args, name)) {
+                    Param param = args.containsKey(name) ? args.get(name) : CollectionUtil.getValueIgnoreCase(args, name);
+                    if (param != null) {
+                        if (param.getParamMode() == ParamMode.IN || param.getParamMode() == ParamMode.IN_OUT) {
+                            setStatementValue(statement, index, param.getValue());
+                        }
                     }
                 }
             }

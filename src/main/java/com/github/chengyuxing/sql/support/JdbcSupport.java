@@ -21,7 +21,7 @@ import java.util.stream.StreamSupport;
 
 /**
  * <h2>jdbc基本操作支持</h2>
- * 提供基本的通用接口，支持流查询，ddl，dml语句的执行，支持执行传名参数sql<br>
+ * 提供基本的通用接口，支持流查询、批量更新、ddl、dml、存储过程、函数、过程语句的执行，支持执行传名参数sql<br>
  * 例如：
  * <blockquote>
  * <pre>select * from ... where name = :name or id in (${:idList}) ${cnd};</pre>
@@ -310,13 +310,8 @@ public abstract class JdbcSupport extends SqlSupport {
             if (!args.isEmpty()) {
                 JdbcUtil.setStoreArgs(statement, args, argNames);
                 for (String name : argNames) {
-                    if (args.containsKey(name)) {
-                        ParamMode mode = args.get(name).getParamMode();
-                        if (mode == ParamMode.OUT || mode == ParamMode.IN_OUT) {
-                            outNames.add(name);
-                        }
-                    } else if (CollectionUtil.containsKeyIgnoreCase(args, name)) {
-                        @SuppressWarnings("ConstantConditions") ParamMode mode = CollectionUtil.getValueIgnoreCase(args, name).getParamMode();
+                    if (args.containsKey(name) || CollectionUtil.containsKeyIgnoreCase(args, name)) {
+                        @SuppressWarnings("DataFlowIssue") ParamMode mode = args.containsKey(name) ? args.get(name).getParamMode() : CollectionUtil.getValueIgnoreCase(args, name).getParamMode();
                         if (mode == ParamMode.OUT || mode == ParamMode.IN_OUT) {
                             outNames.add(name);
                         }
@@ -330,40 +325,20 @@ public abstract class JdbcSupport extends SqlSupport {
                 int resultIndex = 0;
                 for (int i = 0; i < argNames.size(); i++) {
                     String name = argNames.get(i);
-                    if (args.containsKey(name)) {
-                        if (args.get(name).getParamMode() == ParamMode.OUT || args.get(name).getParamMode() == ParamMode.IN_OUT) {
-                            Object result = statement.getObject(i + 1);
-                            if (null == result) {
-                                values[resultIndex] = null;
-                            } else if (result instanceof ResultSet) {
-                                List<DataRow> rows = JdbcUtil.createDataRows((ResultSet) result, executeSql, -1);
-                                JdbcUtil.closeResultSet((ResultSet) result);
-                                values[resultIndex] = rows;
-                                log.debug("boxing a result with type: cursor, convert to ArrayList<DataRow>, get result by name:{}!", outNames.get(resultIndex));
-                            } else {
-                                values[resultIndex] = result;
-                                log.debug("boxing a result, get result by name:{}!", outNames.get(resultIndex));
-                            }
-                            resultIndex++;
+                    if (outNames.contains(name)) {
+                        Object result = statement.getObject(i + 1);
+                        if (null == result) {
+                            values[resultIndex] = null;
+                        } else if (result instanceof ResultSet) {
+                            List<DataRow> rows = JdbcUtil.createDataRows((ResultSet) result, executeSql, -1);
+                            JdbcUtil.closeResultSet((ResultSet) result);
+                            values[resultIndex] = rows;
+                            log.debug("boxing a result with type: cursor, convert to ArrayList<DataRow>, get result by name:{}!", outNames.get(resultIndex));
+                        } else {
+                            values[resultIndex] = result;
+                            log.debug("boxing a result, get result by name:{}!", outNames.get(resultIndex));
                         }
-                    } else if (CollectionUtil.containsKeyIgnoreCase(args, name)) {
-                        log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your procedure's named parameter and args.", name, args, name);
-                        @SuppressWarnings("ConstantConditions") ParamMode mode = CollectionUtil.getValueIgnoreCase(args, name).getParamMode();
-                        if (mode == ParamMode.OUT || mode == ParamMode.IN_OUT) {
-                            Object result = statement.getObject(i + 1);
-                            if (null == result) {
-                                values[resultIndex] = null;
-                            } else if (result instanceof ResultSet) {
-                                List<DataRow> rows = JdbcUtil.createDataRows((ResultSet) result, executeSql, -1);
-                                JdbcUtil.closeResultSet((ResultSet) result);
-                                values[resultIndex] = rows;
-                                log.debug("boxing a result with type: cursor, convert to ArrayList<DataRow>, get result by name:{}!", outNames.get(resultIndex));
-                            } else {
-                                values[resultIndex] = result;
-                                log.debug("boxing a result, get result by name:{}!", outNames.get(resultIndex));
-                            }
-                            resultIndex++;
-                        }
+                        resultIndex++;
                     }
                 }
                 return DataRow.of(outNames.toArray(new String[0]), values);
@@ -390,7 +365,7 @@ public abstract class JdbcSupport extends SqlSupport {
 
     /**
      * 打印sql内部执行中的日志打印<br>
-     * e.g. postgresql
+     * 例如 postgresql：
      * <blockquote>
      * raise notice 'my console.';
      * </blockquote>

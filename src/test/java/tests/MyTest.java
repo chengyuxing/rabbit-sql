@@ -441,7 +441,7 @@ public class MyTest {
     @Test
     public void testCallFunc() throws Exception {
         int res = baki.call("{:res = call test.slow_query(:a,:b)}",
-                        Args.of("res", Param.OUT(OUTParamType.INTEGER))
+                        Args.of("RES", Param.OUT(OUTParamType.INTEGER))
                                 .add("a", Param.IN(13))
                                 .add("b", Param.IN(192)))
                 .getFirstAs();

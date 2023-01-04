@@ -726,7 +726,7 @@ public class XQLFileManager {
      * @param s 注释行
      * @return 前缀满足动态sql表达式的字符串或者首尾去除空白字符的字符串
      */
-    private String formatAnonExpIf(String s) {
+    protected String formatAnonExpIf(String s) {
         String trimS = s.trim();
         if (trimS.startsWith("--")) {
             String expAnon = trimS.substring(2).trim();

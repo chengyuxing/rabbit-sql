@@ -32,7 +32,7 @@ public class SqlTranslator {
     /**
      * sql翻译帮助实例
      *
-     * @param namedParameterPrefix 命名参数前缀符号，默认为 ':' 冒号
+     * @param namedParameterPrefix 命名参数前缀符号
      */
     public SqlTranslator(char namedParameterPrefix) {
         if (namedParameterPrefix == ' ') {

@@ -211,7 +211,6 @@ public class JdbcUtil {
             list.add(createDataRow(names, resultSet));
             size--;
         }
-        closeResultSet(resultSet);
         return list;
     }
 

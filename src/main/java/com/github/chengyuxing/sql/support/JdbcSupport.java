@@ -8,8 +8,6 @@ import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.types.ParamMode;
 import com.github.chengyuxing.sql.utils.JdbcUtil;
-import com.github.chengyuxing.sql.utils.SqlTranslator;
-import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -23,31 +21,15 @@ import java.util.stream.StreamSupport;
 
 /**
  * <h2>jdbc基本操作支持</h2>
- * <p>:name (jdbc标准的传名参数写法，参数将被预编译安全处理)</p>
- * <p>${...} (通用的字符串模版占位符，不进行预编译，用于动态sql的拼接)</p>
- * 字符串模版参数名两种格式：
+ * 提供基本的通用接口，支持流查询，ddl，dml语句的执行，支持执行传名参数sql<br>
+ * 例如：
  * <blockquote>
- *     <ul>
- *         <li>${part} 如果类型是装箱类型数组(String[], Integer[]...)或集合(Set, List...)，则先展开（逗号分割），再进行sql片段的替换；</li>
- *         <li>${:part} 名字前多了前缀符号(:)，如果类型是装箱类型数组(String[], Integer[]...)或集合(Set, List...)，则先展开（逗号分隔），并做一定的字符串安全处理，再进行sql片段的替换。</li>
- *     </ul>
- * </blockquote>
- * <p>小提示：PostgreSQL中，带有问号的操作符(?,?|,?&amp;,@?)可以使用双问号(??,??|,??&amp;,@??)解决预编译sql参数未设定的报错，或者直接使用函数</p>
- * 执行的SQL字符串例如：
- * <blockquote>
- * <pre>
- *       select t.id || 'number' || 'name:cyx','{"name": "user"}'::jsonb
- *       from test.user t
- *       where id = :id::integer --后缀类型转换
- *       and id {@code >} :idc
- *       and name = text :username --前缀类型转换
- *       and '["a","b","c"]'::jsonb{@code ??&} array ['a', 'b'] ${cnd};
- *     </pre>
+ * <pre>select * from ... where name = :name or id in (${:idList}) ${cnd};</pre>
  * </blockquote>
  *
- * @see SqlTranslator
+ * @see SqlSupport
  */
-public abstract class JdbcSupport {
+public abstract class JdbcSupport extends SqlSupport {
     private final static Logger log = LoggerFactory.getLogger(JdbcSupport.class);
 
     /**
@@ -74,41 +56,11 @@ public abstract class JdbcSupport {
     protected abstract void releaseConnection(Connection connection, DataSource dataSource);
 
     /**
-     * 提供一个抽象方法供实现类对单前要执行的sql做一些准备操作
-     *
-     * @param sql  sql
-     * @param args 参数
-     * @return 处理后的sql
-     */
-    protected abstract String getSql(String sql, Map<String, ?> args);
-
-    /**
-     * sql翻译帮助
-     *
-     * @return sql翻译帮助实例
-     */
-    protected abstract SqlTranslator sqlTranslator();
-
-    /**
      * 是否检查预编译sql对应的参数类型
      *
      * @return 是否检查
      */
     protected abstract boolean checkParameterType();
-
-    /**
-     * debug模式输出完整的sql，否则仅输出原始sql
-     *
-     * @return 是否输出已执行sql
-     */
-    protected abstract boolean debugFullSql();
-
-    /**
-     * debug模式下终端标准输出sql语法是否高亮
-     *
-     * @return 是否高亮
-     */
-    protected abstract boolean highlightSql();
 
     /**
      * 执行一句预编译的sql
@@ -166,7 +118,9 @@ public abstract class JdbcSupport {
             printSqlConsole(sc);
             DataRow result;
             if (isQuery) {
-                List<DataRow> rows = JdbcUtil.createDataRows(sc.getResultSet(), preparedSql, -1);
+                ResultSet resultSet = sc.getResultSet();
+                List<DataRow> rows = JdbcUtil.createDataRows(resultSet, preparedSql, -1);
+                JdbcUtil.closeResultSet(resultSet);
                 if (rows.size() == 1) {
                     result = DataRow.fromPair("result", rows.get(0), "type", "QUERY statement");
                 } else {
@@ -383,6 +337,7 @@ public abstract class JdbcSupport {
                                 values[resultIndex] = null;
                             } else if (result instanceof ResultSet) {
                                 List<DataRow> rows = JdbcUtil.createDataRows((ResultSet) result, executeSql, -1);
+                                JdbcUtil.closeResultSet((ResultSet) result);
                                 values[resultIndex] = rows;
                                 log.debug("boxing a result with type: cursor, convert to ArrayList<DataRow>, get result by name:{}!", outNames.get(resultIndex));
                             } else {
@@ -400,6 +355,7 @@ public abstract class JdbcSupport {
                                 values[resultIndex] = null;
                             } else if (result instanceof ResultSet) {
                                 List<DataRow> rows = JdbcUtil.createDataRows((ResultSet) result, executeSql, -1);
+                                JdbcUtil.closeResultSet((ResultSet) result);
                                 values[resultIndex] = rows;
                                 log.debug("boxing a result with type: cursor, convert to ArrayList<DataRow>, get result by name:{}!", outNames.get(resultIndex));
                             } else {
@@ -430,30 +386,6 @@ public abstract class JdbcSupport {
             }
             releaseConnection(connection, getDataSource());
         }
-    }
-
-    /**
-     * 将自定义的传名参数sql解析为数据库可执行的预编译sql
-     *
-     * @param sql  sql
-     * @param args 参数名
-     * @return 预编译sql和参数名
-     */
-    private Pair<String, List<String>> compileSql(String sql, Map<String, ?> args) {
-        if (args == null) {
-            args = Collections.emptyMap();
-        }
-        String sourceSql = getSql(sql, args);
-        Pair<String, List<String>> preparedSqlAndArgNames = sqlTranslator().getPreparedSql(sourceSql, args);
-        if (log.isDebugEnabled()) {
-            log.debug("SQL:{}", SqlUtil.buildPrintSql(sourceSql, highlightSql()));
-            log.debug("Args:{}", args);
-            if (debugFullSql()) {
-                String fullSql = sqlTranslator().generateSql(sourceSql, args, false).getItem1();
-                log.debug("Full SQL: {}", SqlUtil.buildPrintSql(fullSql, highlightSql()));
-            }
-        }
-        return preparedSqlAndArgNames;
     }
 
     /**

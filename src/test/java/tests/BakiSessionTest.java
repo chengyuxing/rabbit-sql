@@ -58,6 +58,13 @@ public class BakiSessionTest {
     }
 
     @Test
+    public void testAx() throws Exception{
+        baki.query("select * from test.big limit 5").stream()
+                .limit(2)
+                .forEach(System.out::println);
+    }
+
+    @Test
     public void upd() throws Exception {
         int i = baki.update("${db}.region", "name = ?oldName")
                 .safe()

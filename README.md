@@ -218,8 +218,6 @@ select id, name, address, email, enable from ... where id in ('I''m Ok!', 'book'
 
 ## 动态SQL
 
-### 注释标记
-
 动态sql的工作依赖于[XQLFileManager](#XQLFileManager)，通过解析特殊的注释标记，在不破坏sql文件标准的前提下进行动态编译，一条动态sql如下：
 
 ```sql
@@ -239,7 +237,9 @@ where
 ;
 ```
 
-> 注释标记都必须成对出现，都具有开闭标签。
+### 注释标记
+
+注释标记都必须成对出现，都具有开闭标签。
 
 #### if标签
 

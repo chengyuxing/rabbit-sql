@@ -60,6 +60,14 @@ baki.query("select … where id = :id").arg("id", "1")
 baki.query("&my.users")
 ```
 
+```mermaid
+flowchart LR;
+A["#quot;select ...#quot;"] --> Baki["query(#quot;#quot;)"];
+B[&my.users] --> X[XQLFileManager];
+X --> Baki;
+click X href "#XQLFileManager" "go to defenition"
+```
+
 > 除了可以传入一个sql语句以外，还支持以 `&` 符号开头的格式，这代表获取并执行[sql文件管理器](#XQLFileManager)中的一条sql。
 
 #### 示例
@@ -291,6 +299,26 @@ where
 item[,idx] of :list [|pipe1| ... ] [delimiter ','] [filter ${item.name}[|pipe1|... ] <> blank]
 ```
 
+完整的for表达式由3部分组成：
+
+迭代主体：
+
+```sql
+item[,idx] of :list [|pipe1| ... ]
+```
+
+迭代部分连接符 （可选）：
+
+```sql
+delimiter ','
+```
+
+过滤器（可选）：
+
+```sql
+filter ${item.name}[|pipe1|... ] <> blank
+```
+
 - `item`表示迭代对象的当前值，`idx`表示当前索引，可以随意命名，但不能一样；
 
 - 如果没有指定`delimiter`分割符，则默认迭代的sql使用逗号 `,` 连接；
@@ -345,6 +373,13 @@ item[,idx] of :list [|pipe1| ... ] [delimiter ','] [filter ${item.name}[|pipe1|.
 #### 管道
 
 管道顾名思义，可以链式使用 `:id | upper | is_id_card | ...` 例如：
+
+```mermaid
+flowchart LR;
+A[abc] --upper--> B[ABC];
+B --is_id_card--> C[false];
+C --pipeN--> D[...]
+```
 
 ```sql
 -- 传入的name参数经过名为length的管道输出长度和3进行大小比较

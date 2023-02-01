@@ -222,8 +222,7 @@ select id, name, address, email, enable from ... where id in ('I''m Ok!', 'book'
 
 ```sql
 /*[q2]*/
-select *
-from test.user t
+select * from test.user t
 where
 --#if :names <> blank
 	-- #for name,idx of :names delimiter ' and ' filter ${idx} > 0 && ${name} ~ 'o'
@@ -297,6 +296,8 @@ where
 
 **for表达式**语法说明：
 
+关键字：`of` `delimiter` `filter`
+
 ```sql
 item[,idx] of :list [|pipe1| ... ] [delimiter ','] [filter ${item.name}[|pipe1|... ] <> blank]
 ```
@@ -353,14 +354,14 @@ filter ${item.name}[|pipe1|... ] <> blank
 
 | 运算符 | 说明           |
 | ------ | -------------- |
-| <      | 大于           |
-| >      | 小于           |
+| <      | 小于           |
+| >      | 大于           |
 | >=     | 大于等于       |
 | <=     | 小于等于       |
 | ==, =  | 等于           |
 | !=, <> | 不等于         |
-| ~      | 正则表查找包含 |
-| !~     | 正则查找不包含 |
+| ~      | 正则包含       |
+| !~     | 正则不包含     |
 | @      | 正则匹配       |
 | !@     | 正则不匹配     |
 
@@ -412,7 +413,7 @@ C --pipeN--> D[...]
 
 ### XQLFileManager
 
-SQL文件管理器，对普通sql文件的标准进行了**扩展**，不破坏标准的前提下通过特殊格式化的注释进行了扩展支持脚本进行逻辑判断，得以支持[动态sql](#动态SQL)，所以是更加强大的SQL文件解析器。
+SQL文件管理器，对普通sql文件的标准进行了**扩展**，不破坏标准的前提下通过特殊格式化的注释进行了扩展支持脚本进行逻辑判断，得以支持[动态sql](#动态SQL)，所以也是更加强大的SQL文件解析器。
 
 文件结尾以 `.sql` 或 `.xql` 结尾，文件中可以包含任意符合标准的注释，格式参考 ```data.xql.template```；
 

@@ -42,6 +42,19 @@ public class StrTests {
     }
 
     @Test
+    public void testLineAnno() throws Exception {
+        String lineSql1 = "'hello' --world be 'happy' 'annotation'";
+        String lineSql2 = "--hello world be 'happy' 'annotation'";
+        String lineSql3 = "hello --world be 'happy' --'annotation'";
+        Args<Object> args = Args.<Object>of("a", 1)
+                .add("name", null)
+                .add("b", "2")
+                .add("c", null);
+                args.removeIfAbsentExclude("name");
+        System.out.println(args);
+    }
+
+    @Test
     public void dt() throws Exception {
         WatchDog watchDog = new WatchDog();
         watchDog.addListener("tick", () -> {

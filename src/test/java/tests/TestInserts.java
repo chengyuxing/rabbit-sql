@@ -4,7 +4,7 @@ import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.Baki;
 import com.github.chengyuxing.sql.BakiDao;
-import com.github.chengyuxing.sql.utils.SqlUtil;
+import com.github.chengyuxing.sql.utils.SqlTranslator;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -12,7 +12,6 @@ import org.junit.Test;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class TestInserts {
     static Baki baki;
@@ -38,23 +37,13 @@ public class TestInserts {
     }
 
     @Test
-    public void normal() throws Exception {
-        baki.insert("test.message", rows.stream().map(DataRow::toMap).collect(Collectors.toList()));
-    }
-
-    @Test
-    public void batch() throws Exception {
-        baki.fastInsert("test.message", rows.stream().map(DataRow::toMap).collect(Collectors.toList()));
-    }
-
-    @Test
     public void updateFast() throws Exception {
         List<Map<String, Object>> list = Arrays.asList(
                 Args.<Object>of("words", "it's my time!").add("id", 2),
                 Args.<Object>of("words", "it's my time!!!").add("id", 4),
                 Args.<Object>of("words", "Hello don't touch me'''").add("dt", LocalDateTime.now()).add("id", 5)
         );
-        int i = baki.fastUpdate("test.message", list, "id = :id");
+        int i = baki.update("test.message", "id = :id").fast().save(list);
         System.out.println(i);
     }
 
@@ -65,7 +54,9 @@ public class TestInserts {
                 .add("words", "that's my book, don't touch!")
                 .add("dt", LocalDateTime.now());
 
-        System.out.println(SqlUtil.generateUpdate("test.message", args, "id = :id"));
+//        System.out.println(new SqlTranslator(':').generateUpdate("test.message", args, "id = :id"));
+        System.out.println(new SqlTranslator(':').generateUpdate("test.message", args, Arrays.asList()));
+        System.out.println(new SqlTranslator(':').generateNamedParamUpdate("test.message", args, Arrays.asList("name")));
     }
 
     @Test

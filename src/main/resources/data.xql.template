@@ -1,0 +1,110 @@
+/**
+* -------X(S)QL文件内容格式说明-------
+* 文件格式为标准的sql文件格式进行了一点扩展;
+* :name (jdbc标准的传名参数写法，参数将被预编译安全处理，参数名为：name)
+* ${} (通用的字符串模版占位符，不进行预编译，用于动态sql的拼接)
+* 字符串模版参数名两种格式：
+* ${part} 如果类型是装箱类型数组(String[], Integer[]...)或集合(Set, List...)，则先展开（逗号分割），再进行sql片段的替换；
+* ${:part} 名字前多了前缀符号(:)，如果类型是装箱类型数组(String[], Integer[]...)或集合(Set, List...)，则先展开（逗号分隔），并做一定的字符串安全处理，再进行sql片段的替换。
+* 字符串模版中还可以使用传名参数
+* 小提示：PostgreSQL中，带有问号的操作符(?,?|,?&,@?)可以使用双问号(??,??|,??&,@??)解决预编译sql参数未设定的报错()，或者直接使用函数
+**/
+
+/*[query]*/
+select *
+from test."user" t --用户表
+    ${part1};
+
+/*第一部分*/
+/*{part1}*/
+where id = :id
+${order};
+
+/*{order}*/
+order by id;
+
+/**
+* 动态sql，根据条件表达式逻辑来确定最终的sql
+* 支持流程控制：
+* if...fi
+* choose when...break... end
+* switch case...break end
+* for...end
+**/
+
+/* [ get_user ] */
+select *
+from test.region t
+where t.enable = true
+--#if :a <> blank
+  and t.a = :a
+  --#if :a1 <> blank && :a1 = 90
+  and t.a1 = :a1
+  --#fi
+  --#if :a2 <> blank
+  and t.a2 = :a2
+      --#choose
+          --#when :xx <> blank
+          and t.xx = :xx
+          --#break
+          --#when :yy <> blank
+          and t.yy = :yy
+          --#break
+          --#default
+          and t.zz = :zz
+          --#break
+      --#end
+  --#fi
+--#fi
+--#switch :name
+  --#case blank
+  and t.name = 'blank'
+  --#break
+  --#case 'chengyuxing'
+  and t.name = 'chengyuxing'
+  --#break
+  --#default
+  and t.name = 'unset'
+  --#break
+--#end
+--#if :b <> blank
+  and t.b = :b
+--#fi
+  and x = :x
+;
+
+/*[q2]*/
+select *
+from test.user t
+where
+--#if :names <> blank
+-- #for name,idx of :names delimiter ' and ' filter ${idx} > 0 && ${name} ~ 'o'
+t.name = ${:name.id}
+-- #end
+--#fi
+;
+
+/*[pipe]*/
+select *
+from test.user t
+where
+--#if :idCard | is_id_card == true
+t.id = :idCard
+--#fi
+;
+
+/*[good_query]*/
+/*一段稍微复杂的sql也可以被正确的解析*/
+select t.id || 'number' || 'name:cyx',
+       '{
+         "name": "user"
+       }'::jsonb as json
+from test.user t
+where id = :id::integer
+  and id > :idc
+  and name = text :username
+  and '[
+  "a",
+  "b",
+  "c"
+]'::jsonb ??& array ['a', 'b'];

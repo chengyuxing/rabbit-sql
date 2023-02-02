@@ -1,5 +1,6 @@
 package com.github.chengyuxing.sql.utils;
 
+import com.github.chengyuxing.common.DateTimes;
 import com.github.chengyuxing.common.console.Color;
 import com.github.chengyuxing.common.console.Printer;
 import com.github.chengyuxing.common.tuple.Pair;
@@ -7,151 +8,19 @@ import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.Keywords;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.github.chengyuxing.common.utils.StringUtil.startsWithIgnoreCase;
-
 /**
  * SQL工具类
  */
 public class SqlUtil {
-    /**
-     * 匹配命名参数
-     */
-    public static final Pattern ARG_PATTERN = Pattern.compile("(^:|[^:]:)(?<name>[a-zA-Z_][\\w_]*)", Pattern.MULTILINE);
-    /**
-     * 匹配字符串单引号里面的内容
-     */
     public static final Pattern SUB_STR_PATTERN = Pattern.compile("'[^']*'", Pattern.MULTILINE);
-
-    /**
-     * 过滤筛选掉不满足条件的字段
-     *
-     * @param row    数据行
-     * @param fields 需要包含的字段集合
-     * @return 满足条件的字段
-     */
-    @SuppressWarnings("Java8CollectionRemoveIf")
-    public static Set<String> filterKeys(final Map<String, ?> row, List<String> fields) {
-        Set<String> keys = row.keySet();
-        if (fields != null && !fields.isEmpty()) {
-            Iterator<String> keyIterator = keys.iterator();
-            while (keyIterator.hasNext()) {
-                if (!fields.contains(keyIterator.next())) {
-                    keyIterator.remove();
-                }
-            }
-        }
-        return keys;
-    }
-
-    /**
-     * 构建一个普通插入语句
-     *
-     * @param tableName 表名
-     * @param row       数据
-     * @param fields    需要包含的字段集合
-     * @return 插入语句
-     * @throws IllegalArgumentException 如果参数为空
-     */
-    public static String generateInsert(final String tableName, final Map<String, ?> row, List<String> fields) {
-        Set<String> keys = filterKeys(row, fields);
-        if (keys.isEmpty()) {
-            throw new IllegalArgumentException("empty field set, generate insert sql error.");
-        }
-        StringJoiner f = new StringJoiner(", ");
-        StringJoiner v = new StringJoiner(", ");
-        for (String key : keys) {
-            f.add(key);
-            v.add(quoteFormatValueIfNecessary(row.get(key)));
-        }
-        return "insert into " + tableName + "(" + f + ") \nvalues (" + v + ")";
-    }
-
-    /**
-     * 构建一个预编译的插入语句
-     *
-     * @param tableName 表名
-     * @param row       数据
-     * @param fields    需要包含的字段集合
-     * @return 插入语句
-     * @throws IllegalArgumentException 如果参数为空
-     */
-    public static String generatePreparedInsert(final String tableName, final Map<String, ?> row, List<String> fields) {
-        Set<String> keys = filterKeys(row, fields);
-        if (keys.isEmpty()) {
-            throw new IllegalArgumentException("empty field set, generate insert sql error.");
-        }
-        StringJoiner f = new StringJoiner(", ");
-        StringJoiner h = new StringJoiner(", ");
-        for (String key : keys) {
-            f.add(key);
-            h.add(":" + key);
-        }
-        return "insert into " + tableName + "(" + f + ") \nvalues (" + h + ")";
-    }
-
-    /**
-     * 构建一个更新语句
-     *
-     * @param tableName 表名
-     * @param data      数据
-     * @param where     where条件
-     * @return 更新语句
-     * @throws IllegalArgumentException 如果where条件为空或者没有生成需要更新的字段
-     */
-    public static String generateUpdate(String tableName, Map<String, ?> data, final String where) {
-        if (data.isEmpty()) {
-            throw new IllegalArgumentException("empty field set, generate update sql error.");
-        }
-        if (where.trim().equals("")) {
-            throw new IllegalArgumentException("where condition must not be empty.");
-        }
-        Pair<String, List<String>> sqlAndFields = generateSql(where, data, false);
-        List<String> cndFields = sqlAndFields.getItem2();
-        String w = sqlAndFields.getItem1();
-        StringJoiner sb = new StringJoiner(",\n\t");
-        for (String key : data.keySet()) {
-            if (!key.startsWith("${") && !key.endsWith("}")) {
-                String value = quoteFormatValueIfNecessary(data.get(key));
-                if (!cndFields.contains(key)) {
-                    sb.add(key + " = " + value);
-                } else {
-                    // 此处是条件中所包含的参数，放在where中，不在更新语句中
-                    w = w.replace(":" + key, value);
-                }
-            }
-        }
-        String updateFields = sb.toString();
-        if (!updateFields.equals("")) {
-            w = startsWithIgnoreCase(w.trim(), "where") ? w : "where " + w;
-            return "update " + tableName + " \nset " + sb + "\n" + w;
-        }
-        throw new IllegalArgumentException("generate error, there are no fields.");
-    }
-
-    /**
-     * 构建一个预编译的更新语句
-     *
-     * @param tableName 表名
-     * @param data      数据
-     * @return 更新语句
-     * @throws IllegalArgumentException 如果参数为空
-     */
-    public static String generatePreparedUpdate(String tableName, Map<String, ?> data) {
-        if (data.isEmpty()) {
-            throw new IllegalArgumentException("empty field set, generate update sql error.");
-        }
-        Set<String> keys = data.keySet();
-        StringJoiner sb = new StringJoiner(",\n\t");
-        for (String key : keys) {
-            sb.add(key + " = :" + key);
-        }
-        return "update " + tableName + " \nset " + sb;
-    }
 
     /**
      * 使用单引号包裹
@@ -197,11 +66,42 @@ public class SqlUtil {
                 clazz == Float.class ||
                 clazz == Byte.class ||
                 clazz == Boolean.class ||
+                clazz == Character.class ||
                 clazz.isPrimitive()) {
-            return obj.toString();
+            String v = obj.toString();
+            if (v.equals("'")) {
+                return safeQuote(v);
+            }
+            return v;
         }
-        if (clazz == Date.class) {
-            return quote(((Date) obj).toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime().toString());
+        if (Date.class.isAssignableFrom(clazz)) {
+            String dtStr = DateTimes.of(((Date) obj).toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()).toString("yyyy-MM-dd HH:mm:ss");
+            return "to_timestamp(" + quote(dtStr) + "," + quote("yyyy-mm-dd hh24:mi:ss") + ")";
+        }
+        if (clazz == LocalDateTime.class) {
+            String dtStr = DateTimes.of((LocalDateTime) obj).toString("yyyy-MM-dd HH:mm:ss");
+            return "to_timestamp(" + quote(dtStr) + "," + quote("yyyy-mm-dd hh24:mi:ss") + ")";
+        }
+        if (clazz == LocalDate.class) {
+            String dtStr = DateTimes.of((LocalDate) obj).toString("yyyy-MM-dd");
+            return "to_date(" + quote(dtStr) + "," + quote("yyyy-mm-dd") + ")";
+        }
+        if (clazz == LocalTime.class) {
+            String dtStr = DateTimes.of(((LocalTime) obj).atDate(LocalDate.now()).atZone(ZoneId.systemDefault()).toInstant()).toString("yyyy-MM-dd HH:mm:ss");
+            return "to_timestamp(" + quote(dtStr) + "," + quote("yyyy-mm-dd hh24:mi:ss") + ")";
+        }
+        if (clazz == byte[].class) {
+            return quote("blob:" + StringUtil.getSize((byte[]) obj));
+        }
+        if (Object[].class.isAssignableFrom(clazz)) {
+            Object[] objArr = (Object[]) obj;
+            String[] res = new String[objArr.length];
+            for (int i = 0; i < res.length; i++) {
+                Object o = objArr[i];
+                if (o != null)
+                    res[i] = safeQuote(o.toString());
+            }
+            return quote("{" + String.join(",", res) + "}");
         }
         // I think you wanna save json string
         if (Map.class.isAssignableFrom(clazz) ||
@@ -239,131 +139,29 @@ public class SqlUtil {
     }
 
     /**
-     * 获取处理参数占位符预编译的SQL
-     *
-     * @param sql  带参数占位符的SQL
-     * @param args 参数
-     * @return 预编译SQL和参数名的集合
-     */
-    public static Pair<String, List<String>> getPreparedSql(final String sql, Map<String, ?> args) {
-        return generateSql(sql, args, true);
-    }
-
-    /**
-     * 构建带有传名参数的sql
-     *
-     * @param sql     sql字符串
-     * @param args    参数
-     * @param prepare 是否生成预编译sql
-     * @return 预编译sql或普通sql
-     */
-    public static Pair<String, List<String>> generateSql(final String sql, Map<String, ?> args, boolean prepare) {
-        // exclude substr first
-        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSqlSubstr(sql);
-        // resolve the sql string template next
-        String noneStrSql = resolveSqlStrTemplate(noneStrSqlAndHolder.getItem1(), args, false);
-        Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
-        // maybe args contains substr.
-        int x, y;
-        while ((x = noneStrSql.indexOf("'")) >= 0 && (y = noneStrSql.lastIndexOf("'")) >= 0 && x != y) {
-            Pair<String, Map<String, String>> againNoneStrSqlAndHolder = replaceSqlSubstr(noneStrSql);
-            noneStrSql = resolveSqlStrTemplate(againNoneStrSqlAndHolder.getItem1(), args, false);
-            placeholderMapper.putAll(againNoneStrSqlAndHolder.getItem2());
-        }
-        // safe to replace arg by name placeholder
-        Matcher matcher = ARG_PATTERN.matcher(noneStrSql);
-        List<String> names = new ArrayList<>();
-        while (matcher.find()) {
-            String name = matcher.group("name");
-            names.add(name);
-            String value = prepare ? "?" : quoteFormatValueIfNecessary(args.get(name));
-            noneStrSql = noneStrSql.replaceFirst(":" + name, value);
-        }
-        // finally, set placeholder into none-string-part sql
-        for (String key : placeholderMapper.keySet()) {
-            noneStrSql = noneStrSql.replace(key, placeholderMapper.get(key));
-        }
-        return Pair.of(noneStrSql, names);
-    }
-
-    /**
      * 排除sql字符串尾部的非sql语句部分的其他字符
      *
      * @param sql sql字符串
      * @return 去除分号后的sql
      */
     public static String trimEnd(String sql) {
-        return sql.replaceAll("([\\s;]*)$", "");
+        String tSql = sql.replaceAll("([\\s;]*)$", "");
+        // oracle procedure syntax end with ';' is required.
+        if (StringUtil.startsWithIgnoreCase(tSql, "begin") && StringUtil.endsWithIgnoreCase(tSql, "end")) {
+            tSql += ";";
+        }
+        return tSql;
     }
 
+
     /**
-     * 解析字符串模版
+     * 去除行注释，可能需要配合方法 {@link #replaceSqlSubstr(String)} 方法进行字符串安全处理
      *
-     * @param str          带有字符串模版占位符的字符串
-     * @param args         参数
-     * @param exceptSubstr 是否排除子字符串 --如果子字符串中包含字符串模版占位符，true：不解析，false：解析
-     * @return 替换模版占位符后的字符串
+     * @param line 行
+     * @return 去除行注释的字符串
      */
-    @SuppressWarnings("unchecked")
-    public static String resolveSqlStrTemplate(final String str, final Map<String, ?> args, boolean exceptSubstr) {
-        if (args == null || args.isEmpty()) {
-            return str;
-        }
-        String noneStrSql = str;
-        Map<String, String> substrMapper = null;
-        if (exceptSubstr) {
-            Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSqlSubstr(str);
-            noneStrSql = noneStrSqlAndHolder.getItem1();
-            substrMapper = noneStrSqlAndHolder.getItem2();
-        }
-        if (!noneStrSql.contains("${")) {
-            return str;
-        }
-        for (String key : args.keySet()) {
-            if (key.startsWith("${") && key.endsWith("}")) {
-                String trueKey = key;
-                Object value = args.get(key);
-                String subSql = "";
-                if (value != null) {
-                    Object[] values;
-                    if (value instanceof Object[]) {
-                        values = (Object[]) value;
-                    } else if (value instanceof Collection) {
-                        values = ((Collection<Object>) value).toArray();
-                    } else {
-                        values = new Object[]{value};
-                    }
-                    StringJoiner sb = new StringJoiner(", ");
-                    if (key.startsWith("${:")) {
-                        // expand and quote safe args
-                        trueKey = "${" + key.substring(3);
-                        for (Object v : values) {
-                            sb.add(quoteFormatValueIfNecessary(v));
-                        }
-                    } else {
-                        // just expand
-                        for (Object v : values) {
-                            if (v != null) {
-                                sb.add(v.toString());
-                            }
-                        }
-                    }
-                    subSql = "\n" + sb.toString().trim() + "\n";
-                }
-                int partIndex;
-                while ((partIndex = noneStrSql.indexOf(trueKey)) != -1) {
-                    int start = StringUtil.searchIndexUntilNotBlank(noneStrSql, partIndex, true);
-                    int end = StringUtil.searchIndexUntilNotBlank(noneStrSql, partIndex + trueKey.length() - 1, false);
-                    noneStrSql = noneStrSql.substring(0, start + 1) + subSql + noneStrSql.substring(end);
-                }
-            }
-        }
-        if (exceptSubstr) {
-            for (String key : substrMapper.keySet()) {
-                noneStrSql = noneStrSql.replace(key, substrMapper.get(key));
-            }
-        }
-        return noneStrSql;
+    public static String cleanLineAnnotation(String line) {
+        return line.substring(0, line.indexOf("--"));
     }
 
     /**
@@ -461,15 +259,39 @@ public class SqlUtil {
     }
 
     /**
-     * 通过查询sql大致的构建出查询条数的sql
+     * 解构数组类型的值为适配sql的字符串
      *
-     * @param recordQuery 查询sql
-     * @return 条数查询sql
+     * @param value 可能是数组的值
+     * @param quote 是否加引号
+     * @return 匹配sql的字符串
      */
-    public static String generateCountQuery(final String recordQuery) {
-        // for 0 errors, simple count query currently.
-        return "select count(*) from (" + recordQuery + ") r_data";
+    @SuppressWarnings("unchecked")
+    public static String deconstructArrayIfNecessary(Object value, boolean quote) {
+        Object[] values;
+        if (value instanceof Object[]) {
+            values = (Object[]) value;
+        } else if (value instanceof Collection) {
+            values = ((Collection<Object>) value).toArray();
+        } else {
+            values = new Object[]{value};
+        }
+        StringJoiner sb = new StringJoiner(", ");
+        if (quote) {
+            // expand and quote safe args
+            for (Object v : values) {
+                sb.add(quoteFormatValueIfNecessary(v));
+            }
+        } else {
+            // just expand
+            for (Object v : values) {
+                if (v != null) {
+                    sb.add(v.toString());
+                }
+            }
+        }
+        return sb.toString();
     }
+
 
     /**
      * 处理sql字符串高亮
@@ -488,7 +310,7 @@ public class SqlUtil {
                 String key = maybeKeywords.get(i);
                 if (!key.trim().equals("")) {
                     // keywords highlight
-                    if (StringUtil.matchesAnyIgnoreCase(key, Keywords.STANDARD) || StringUtil.matchesAnyIgnoreCase(key, Keywords.POSTGRESQL)) {
+                    if (StringUtil.equalsAnyIgnoreCase(key, Keywords.STANDARD) || StringUtil.equalsAnyIgnoreCase(key, Keywords.POSTGRESQL)) {
                         maybeKeywords.set(i, Printer.colorful(key, Color.DARK_PURPLE));
                         // functions highlight
                     } else if (StringUtil.containsAnyIgnoreCase(key, Keywords.FUNCTIONS)) {
@@ -541,5 +363,19 @@ public class SqlUtil {
             e.printStackTrace();
             return sql;
         }
+    }
+
+    /**
+     * 创建适用于打印sql的字符串
+     *
+     * @param sql         sql字符串
+     * @param isHighlight 是否语法高亮
+     * @return 普通sql或语法高亮的sql
+     */
+    public static String buildPrintSql(String sql, boolean isHighlight) {
+        if (isHighlight) {
+            return highlightSql(sql);
+        }
+        return sql;
     }
 }

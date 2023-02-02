@@ -21,7 +21,7 @@ public class ErrorTests {
 
         for (int i = 0; i < 5; i++) {
             new Thread(() -> {
-                try (Stream<DataRow> s = baki.query("select * from test.tb where blob is not null")) {
+                try (Stream<DataRow> s = baki.query("select * from test.tb where blob is not null").stream()) {
                     s.map(DataRow::toMap).collect(Collectors.toSet());
                 } catch (Exception e) {
                     System.out.println("-------------" + e.getMessage());

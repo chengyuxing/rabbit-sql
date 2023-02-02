@@ -14,7 +14,7 @@ public final class PagedResource<T> {
     private PageHelper pager;
     private List<T> data;
 
-    private PagedResource(PageHelper pager, List<T> data) {
+    public PagedResource(PageHelper pager, List<T> data) {
         this.pager = pager;
         this.data = data;
     }

@@ -2,8 +2,7 @@ package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.DateTimes;
-import com.github.chengyuxing.sql.exceptions.IORuntimeException;
-import com.github.chengyuxing.sql.exceptions.SqlRuntimeException;
+import com.github.chengyuxing.common.utils.CollectionUtil;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.types.ParamMode;
 import org.slf4j.Logger;
@@ -12,11 +11,15 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.sql.Date;
 import java.sql.*;
 import java.time.*;
 import java.util.*;
 
+import static com.github.chengyuxing.common.utils.CollectionUtil.containsKeyIgnoreCase;
+import static com.github.chengyuxing.common.utils.CollectionUtil.getValueIgnoreCase;
 import static com.github.chengyuxing.common.utils.ReflectUtil.obj2Json;
 
 /**
@@ -49,12 +52,9 @@ public class JdbcUtil {
             Clob clob = (Clob) obj;
             obj = clob.getSubString(1, (int) clob.length());
         } else if ("org.postgresql.jdbc.PgArray".equals(className)) {
-            try {
-                Method method = obj.getClass().getDeclaredMethod("getArray");
-                obj = method.invoke(obj);
-            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException e) {
-                throw new RuntimeException("invoke PgArray.getArray() with wrong:{}", e);
-            }
+            obj = resultSet.getArray(index).getArray();
+        } else if ("org.postgresql.util.PGobject".equals(className)) {
+            obj = resultSet.getString(index);
         } else if ("oracle.sql.TIMESTAMP".equals(className) || "oracle.sql.TIMESTAMPTZ".equals(className)) {
             obj = resultSet.getTimestamp(index);
         } else if (className != null && className.startsWith("oracle.sql.DATE")) {
@@ -87,56 +87,10 @@ public class JdbcUtil {
                 //noinspection ResultOfMethodCallIgnored
                 ins.read(bytes);
             } catch (IOException e) {
-                throw new IORuntimeException("read blob catch an error:", e);
+                throw new UncheckedIOException("read blob catch an error:", e);
             }
         }
         return bytes;
-    }
-
-    /**
-     * 判断是否支持存储过程和函数
-     *
-     * @param connection 连接对象
-     * @return 是否支持
-     */
-    public static boolean supportStoredProcedure(Connection connection) {
-        try {
-            DatabaseMetaData dbmd = connection.getMetaData();
-            if (dbmd != null) {
-                if (dbmd.supportsStoredProcedures()) {
-                    log.debug("JDBC driver supports stored procedure");
-                    return true;
-                } else {
-                    log.debug("JDBC driver does not support stored procedure");
-                }
-            }
-        } catch (SQLException throwables) {
-            log.error("JDBC driver 'supportsStoredProcedures' method threw exception", throwables);
-        }
-        return false;
-    }
-
-    /**
-     * 判断是否支持命名参数
-     *
-     * @param connection 连接对象
-     * @return 是否支持
-     */
-    public static boolean supportsNamedParameters(Connection connection) {
-        try {
-            DatabaseMetaData dbmd = connection.getMetaData();
-            if (dbmd != null) {
-                if (dbmd.supportsNamedParameters()) {
-                    log.debug("JDBC driver supports stored procedure");
-                    return true;
-                } else {
-                    log.debug("JDBC driver does not support stored procedure");
-                }
-            }
-        } catch (SQLException throwables) {
-            log.error("JDBC driver 'supportsStoredProcedures' method threw exception", throwables);
-        }
-        return false;
     }
 
     /**
@@ -166,16 +120,13 @@ public class JdbcUtil {
      * 关闭结果集
      *
      * @param resultSet 结果集
+     * @throws SQLException sqlEx
      */
-    public static void closeResultSet(ResultSet resultSet) {
-        try {
-            if (resultSet != null) {
-                if (!resultSet.isClosed()) {
-                    resultSet.close();
-                }
+    public static void closeResultSet(ResultSet resultSet) throws SQLException {
+        if (resultSet != null) {
+            if (!resultSet.isClosed()) {
+                resultSet.close();
             }
-        } catch (SQLException e) {
-            throw new SqlRuntimeException("close result error:", e);
         }
     }
 
@@ -183,16 +134,13 @@ public class JdbcUtil {
      * 关闭connection声明对象
      *
      * @param statement 声明对象
+     * @throws SQLException sqlEx
      */
-    public static void closeStatement(Statement statement) {
-        try {
-            if (statement != null) {
-                if (!statement.isClosed()) {
-                    statement.close();
-                }
+    public static void closeStatement(Statement statement) throws SQLException {
+        if (statement != null) {
+            if (!statement.isClosed()) {
+                statement.close();
             }
-        } catch (SQLException e) {
-            throw new SqlRuntimeException("close statement error:", e);
         }
     }
 
@@ -200,7 +148,7 @@ public class JdbcUtil {
      * 创建数据行表头
      *
      * @param resultSet   结果集
-     * @param executedSql 将要执行的原生sql
+     * @param executedSql 将要执行的原生sql，用于识别双引号包含的字段不进行转小写操作
      * @return 一组表头
      * @throws SQLException 数据库异常
      */
@@ -228,11 +176,15 @@ public class JdbcUtil {
      * @throws SQLException sqlEx
      */
     public static DataRow createDataRow(String[] names, ResultSet resultSet) throws SQLException {
-        Object[] values = new Object[names.length];
+        DataRow row = new DataRow(names.length);
         for (int i = 0; i < names.length; i++) {
-            values[i] = JdbcUtil.getResultValue(resultSet, i + 1);
+            String name = names[i];
+            if (name.equals("?column?")) {
+                name = "column" + i;
+            }
+            row.put(name, JdbcUtil.getResultValue(resultSet, i + 1));
         }
-        return DataRow.of(names, values);
+        return row;
     }
 
     /**
@@ -260,7 +212,6 @@ public class JdbcUtil {
             list.add(createDataRow(names, resultSet));
             size--;
         }
-        closeResultSet(resultSet);
         return list;
     }
 
@@ -286,7 +237,8 @@ public class JdbcUtil {
             pgObjSetType.invoke(pgObj, type);
             pgObjSetValue.invoke(pgObj, value);
             return pgObj;
-        } catch (IllegalAccessException | NoSuchMethodException | ClassNotFoundException | InvocationTargetException | InstantiationException e) {
+        } catch (IllegalAccessException | NoSuchMethodException | ClassNotFoundException | InvocationTargetException |
+                 InstantiationException e) {
             throw new RuntimeException("create postgresql object type error:", e);
         }
     }
@@ -300,28 +252,44 @@ public class JdbcUtil {
      * @throws SQLException sqlExp
      */
     public static void setSpecialStatementValue(PreparedStatement statement, int index, Object value) throws SQLException {
-        ParameterMetaData pmd = statement.getParameterMetaData();
-        String pClass = pmd.getParameterClassName(index);
-        String pType = pmd.getParameterTypeName(index);
+        ParameterMetaData pmd;
+        String pClass;
+        String pTypeName;
+        int pType;
+        try {
+            pmd = statement.getParameterMetaData();
+            pClass = pmd.getParameterClassName(index);
+            pTypeName = pmd.getParameterTypeName(index);
+            pType = pmd.getParameterType(index);
+        } catch (SQLException e) {
+            // 如果数据库不支持此特性，记录错误，给出提示，并继续完成操作，而不是直接打断
+            log.warn("maybe jdbc driver not support the check parameter type, set 'checkParameterType' false to disabled the check: ", e);
+            log.warn("auto switch normal mode to set value...");
+            setStatementValue(statement, index, value);
+            return;
+        }
         if (null == value) {
-            statement.setNull(index, pmd.getParameterType(index));
+            statement.setNull(index, pType);
         } else {
             // if postgresql, insert as json(b) type
             // if column is json type
-            if (pType.equals("json") || pType.equals("jsonb")) {
+            if (pTypeName.equals("json") || pTypeName.equals("jsonb")) {
+                log.warn("you try to set a value into json(b) type field, auto wrap for json(b) type!");
                 if (value instanceof String) {
-                    statement.setObject(index, createPgObject(pType, value.toString()));
+                    statement.setObject(index, createPgObject(pTypeName, value.toString()));
                 } else {
-                    statement.setObject(index, createPgObject(pType, obj2Json(value)));
+                    statement.setObject(index, createPgObject(pTypeName, obj2Json(value)));
                 }
             } else if (pClass.equals("java.lang.String") && !(value instanceof String)) {
                 if (value instanceof Map || value instanceof Collection) {
+                    log.warn("you try to set a Map or Collection data into database string type field, auto convert to json string!");
                     statement.setObject(index, obj2Json(value));
                     // maybe Date, LocalDateTime, UUID, BigDecimal, Integer...
                 } else if (value.getClass().getTypeName().startsWith("java.")) {
                     statement.setObject(index, value.toString());
                 } else {
                     // maybe is java bean
+                    log.warn("you try to set an unknow class instance(maybe your java bean) data into string type field, auto convert to json string!");
                     statement.setObject(index, obj2Json(value));
                 }
                 // if is postgresql array
@@ -360,13 +328,25 @@ public class JdbcUtil {
             statement.setObject(index, new Time(((LocalTime) value).atDate(LocalDate.now()).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
         } else if (value instanceof Instant) {
             statement.setObject(index, new Timestamp(((Instant) value).toEpochMilli()));
+        } else if (value instanceof Map || value instanceof Collection) {
+            log.warn("you try to set a Map or Collection data, auto convert to json string!");
+            statement.setObject(index, obj2Json(value));
+        } else if (!value.getClass().getTypeName().startsWith("java.")) {
+            log.warn("you try to set an unknow class instance(maybe your java bean) data, auto convert to json string!");
+            statement.setObject(index, obj2Json(value));
         } else if (value instanceof InputStream) {
             statement.setBinaryStream(index, (InputStream) value);
+        } else if (value instanceof Path) {
+            try {
+                statement.setBinaryStream(index, Files.newInputStream((Path) value));
+            } catch (IOException e) {
+                throw new SQLException("set binary value failed: ", e);
+            }
         } else if (value instanceof File) {
             try {
                 statement.setBinaryStream(index, new FileInputStream((File) value));
             } catch (FileNotFoundException e) {
-                throw new SqlRuntimeException("set value failed:", e);
+                throw new SQLException("set binary value failed: ", e);
             }
         } else {
             statement.setObject(index, value);
@@ -385,18 +365,15 @@ public class JdbcUtil {
     public static void setSqlTypedArgs(PreparedStatement statement, boolean checkParameterType, Map<String, ?> args, List<String> names) throws SQLException {
         if (args != null && !args.isEmpty()) {
             if (checkParameterType) {
-                try {
-                    for (int i = 0; i < names.size(); i++) {
-                        int index = i + 1;
-                        String name = names.get(i);
-                        if (args.containsKey(name)) {
-                            setSpecialStatementValue(statement, index, args.get(name));
-                        } else if (args.containsKey(":" + name)) {
-                            setSpecialStatementValue(statement, index, args.get(":" + name));
-                        }
+                for (int i = 0; i < names.size(); i++) {
+                    int index = i + 1;
+                    String name = names.get(i);
+                    if (args.containsKey(name)) {
+                        setSpecialStatementValue(statement, index, args.get(name));
+                    } else if (containsKeyIgnoreCase(args, name)) {
+                        log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your sql's named parameter and args.", name, args, name);
+                        setSpecialStatementValue(statement, index, getValueIgnoreCase(args, name));
                     }
-                } catch (SQLException e) {
-                    throw new SqlRuntimeException("maybe jdbc driver not support the check parameter type, set 'checkParameterType' false to disabled the check.");
                 }
             } else {
                 setSqlPoolArgs(statement, args, names);
@@ -418,8 +395,9 @@ public class JdbcUtil {
             String name = names.get(i);
             if (args.containsKey(name)) {
                 setStatementValue(statement, index, args.get(name));
-            } else if (args.containsKey(":" + name)) {
-                setStatementValue(statement, index, args.get(":" + name));
+            } else if (containsKeyIgnoreCase(args, name)) {
+                log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your sql's named parameter and args.", name, args, name);
+                setStatementValue(statement, index, getValueIgnoreCase(args, name));
             }
         }
     }
@@ -434,35 +412,30 @@ public class JdbcUtil {
      */
     public static void setStoreArgs(CallableStatement statement, Map<String, Param> args, List<String> names) throws SQLException {
         if (args != null && !args.isEmpty()) {
+            // adapt postgresql
             // out and inout param first
             for (int i = 0; i < names.size(); i++) {
                 int index = i + 1;
                 String name = names.get(i);
-                Param param = null;
-                if (args.containsKey(name)) {
-                    param = args.get(name);
-                } else if (args.containsKey(":" + name)) {
-                    param = args.get(":" + name);
-                }
-                if (param != null) {
-                    if (param.getParamMode() == ParamMode.OUT || param.getParamMode() == ParamMode.IN_OUT) {
-                        statement.registerOutParameter(index, param.getType().getTypeNumber());
+                if (args.containsKey(name) || containsKeyIgnoreCase(args, name)) {
+                    Param param = args.containsKey(name) ? args.get(name) : CollectionUtil.getValueIgnoreCase(args, name);
+                    if (param != null) {
+                        if (param.getParamMode() == ParamMode.OUT || param.getParamMode() == ParamMode.IN_OUT) {
+                            statement.registerOutParameter(index, param.getType().getTypeNumber());
+                        }
                     }
                 }
             }
-            // in param first
+            // in param next
             for (int i = 0; i < names.size(); i++) {
                 int index = i + 1;
                 String name = names.get(i);
-                Param param = null;
-                if (args.containsKey(name)) {
-                    param = args.get(name);
-                } else if (args.containsKey(":" + name)) {
-                    param = args.get(":" + name);
-                }
-                if (param != null) {
-                    if (param.getParamMode() == ParamMode.IN || param.getParamMode() == ParamMode.IN_OUT) {
-                        setStatementValue(statement, index, param.getValue());
+                if (args.containsKey(name) || containsKeyIgnoreCase(args, name)) {
+                    Param param = args.containsKey(name) ? args.get(name) : CollectionUtil.getValueIgnoreCase(args, name);
+                    if (param != null) {
+                        if (param.getParamMode() == ParamMode.IN || param.getParamMode() == ParamMode.IN_OUT) {
+                            setStatementValue(statement, index, param.getValue());
+                        }
                     }
                 }
             }

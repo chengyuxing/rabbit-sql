@@ -1,9 +1,11 @@
 package tests;
 
 import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.BakiDao;
-import com.github.chengyuxing.sql.SQLFileManager;
+import com.github.chengyuxing.sql.PagedResource;
+import com.github.chengyuxing.sql.XQLFileManager;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -13,6 +15,7 @@ import java.net.URISyntaxException;
 import java.sql.*;
 import java.time.*;
 import java.util.Arrays;
+import java.util.UUID;
 import java.util.stream.Stream;
 
 
@@ -30,24 +33,84 @@ public class BakiSessionTest {
         dataSource.setDriverClassName("org.postgresql.Driver");
         baki = BakiDao.of(dataSource);
         baki.setCheckParameterType(false);
-        SQLFileManager sqlFileManager = new SQLFileManager("pgsql/nest.sql");
+        XQLFileManager sqlFileManager = new XQLFileManager(Args.of("nest", "pgsql/nest.sql"));
         sqlFileManager.setConstants(Args.of("db", "test"));
-        baki.setSqlFileManager(sqlFileManager);
+        baki.setXqlFileManager(sqlFileManager);
+        baki.setNamedParamPrefix('?');
+    }
+
+    @Test
+    public void testinsert() throws Exception {
+        baki.insert("test.tb")
+                .save(Args.of("str", Args.of("a", "b")));
+    }
+
+    @Test
+    public void testA() throws Exception {
+        baki.query("select now(), array ['a','b','c']").findFirst()
+                .ifPresent(System.out::println);
+    }
+
+    @Test
+    public void testCols() throws Exception {
+        baki.query("select 1,2 as num,3,4,5").findFirst()
+                .ifPresent(System.out::println);
+    }
+
+    @Test
+    public void testAx() throws Exception{
+        baki.query("select * from test.big limit 5").stream()
+                .limit(2)
+                .forEach(System.out::println);
     }
 
     @Test
     public void upd() throws Exception {
-        int i = baki.update("${db}.region",
-                Args.of("name", "南亚风情第一城").add("oldName", "南亚风情园"),
-                "name = :oldName");
+        int i = baki.update("${db}.region", "name = ?oldName")
+                .safe()
+                .save(Args.of("name", "南亚风情第一城").add("oldName", "南亚风情园").add("abc", "123"));
         System.out.println(i);
     }
 
     @Test
+    public void testQuery() throws Exception {
+        PagedResource<DataRow> resource = baki.query("select * from test.region where id < ?id")
+                .arg("ID", 8)
+                .<DataRow>pageable(1, 7)
+//                .count(5)
+                .collect(d -> d);
+        System.out.println(resource);
+
+//        try (Stream<DataRow> s = baki.query("select * from test.region where id < ?id")
+//                .arg("id", 10)
+//                .arg("name", "cyx")
+//                .stream()) {
+//            s.forEach(System.out::println);
+//        }
+//
+//        baki.query("select * from test.region where id = ?id")
+//                .arg("id", 10)
+//                .findFirst()
+//                .ifPresent(System.out::println);
+
+        System.out.println(baki.query("select 1 from test.region where id = 109").exists());
+    }
+
+    @Test
     public void engine() throws Exception {
-        baki.query("select * from ${db}.history where length(words) < :num or words ~ :regex",
-                        Args.<Object>of(":num", 5).add("regex", "^tran"))
+        baki.query("select * from ${db}.history where length(words) < ?num or words ~ ?regex")
+                .args(Args.<Object>of("num", 5).add("regex", "^tran"))
+                .maps()
                 .forEach(System.out::println);
+    }
+
+    @Test
+    public void testX() throws Exception {
+        baki.query("select '{\"a\":\"cyx\"}'::jsonb as x").findFirst().ifPresent(d -> {
+            Object v = d.get("x");
+            System.out.println(d.getType(0));
+            System.out.println(ReflectUtil.obj2Json(d.get("x")));
+        });
     }
 
     @Test
@@ -67,16 +130,19 @@ public class BakiSessionTest {
         System.out.println(metaData.getDatabaseProductVersion());
         System.out.println(metaData.getDriverName());
         System.out.println(metaData.getDatabaseProductName());
+        System.out.println(metaData.getConnection().getCatalog());
     }
 
     @Test
     public void dst() throws Exception {
-        System.out.println(dataSource.getConnectionTimeout());
+        DataRow res = baki.execute("create table test.tx(a int)");
+//        DataRow res = baki.execute("drop table test.tx");
+        System.out.println(res);
     }
 
     @Test
     public void streamTest() throws Exception {
-        try (Stream<DataRow> fruits = orclLight.query("select * from fruit")) {
+        try (Stream<DataRow> fruits = orclLight.query("select * from fruit").stream()) {
             fruits.limit(10).forEach(System.out::println);
         }
 //        for(int i =0;i<20;i++){
@@ -86,7 +152,7 @@ public class BakiSessionTest {
 
     @Test
     public void testStream2() throws Exception {
-        orclLight.query("select * from fruit").limit(10)
+        orclLight.query("select * from fruit").stream().limit(10)
                 .forEach(System.out::println);
 
         for (int i = 0; i < 20; i++) {
@@ -104,18 +170,18 @@ public class BakiSessionTest {
 
     @Test
     public void oracleBlobTest() throws Exception {
-        baki.query("select * from nutzbook.files")
+        baki.query("select * from nutzbook.files").stream()
                 .forEach(r -> {
-                    String a = r.getString(0);
+                    String a = r.getFirstAs();
                 });
     }
 
     @Test
     public void fileTest() throws Exception {
-        baki.query("select * from test.files")
+        baki.query("select * from test.files").stream()
                 .forEach(r -> {
                     System.out.println(r);
-                    byte[] bytes = r.get("file");
+                    byte[] bytes = r.getAs("file");
                     System.out.println(bytes.length);
 //                    baki.update("test.files", Args.builder()
 //                                    .putIn("name", "cyx's file")
@@ -140,7 +206,7 @@ public class BakiSessionTest {
                         "        \"aliquip\",\n" +
                         "        \"qui\"\n" +
                         "      ]\n" +
-                        "    }'::jsonb")
+                        "    }'::jsonb").stream()
                 .forEach(r -> {
                     Object res = r.get(0);
                     System.out.println(r);
@@ -155,37 +221,60 @@ public class BakiSessionTest {
                         "           \"age\": 26,\n" +
                         "           \"address\": \"昆明市\"\n" +
                         "         }'::json) t(a)")
+                .stream()
                 .forEach(System.out::println);
 
-        baki.fetch("select array [4,5] || array [1,2,3]").ifPresent(System.out::println);
+        baki.query("select array [4,5] || array [1,2,3]").findFirst().ifPresent(System.out::println);
     }
 
     @Test
     public void jsonTests() throws Exception {
-        baki.fetch("select '{\n" +
+        baki.query("select '{\n" +
                         "  \"a\": 1,\n" +
                         "  \"b\": 2,\n" +
                         "  \"c\": 3\n" +
                         "}'::jsonb ??| array ['d', 's'];")
+                .findFirst()
                 .ifPresent(System.out::println);
     }
 
     @Test
     public void batchExe() throws Exception {
         int[] res = baki.batchExecute(
-                "create table test.t_a(id int)",
-                "create table test.t_b(id int)",
-                "create table test.t_c(id int)",
-                "create table test.t_d(id int)",
-                "create table test.t_e(id int)",
-                "create table test.t_f(id int)"
+                "insert into test.big (name, address, age) values ('cyx', '昆明', 28)",
+                "insert into test.big (name, address, age) values ('cyx', now(), 'abc')",
+                "insert into test.big (name, address, age) values ('cyx', '昆明', 28)"
         );
         System.out.println(Arrays.toString(res));
     }
 
     @Test
+    public void testInsert() throws Exception {
+        String pkid = UUID.randomUUID().toString();
+        baki.insert("test.temp").save(Args.create("pkid", pkid, "RPKID", pkid, "name", "cyx"));
+    }
+
+    @Test
+    public void testNestQuery() throws Exception {
+//        Tx.using(()->{
+        try (Stream<DataRow> s = baki.query("select * from test.big limit 10").stream()) {
+            try (Stream<DataRow> s1 = baki.query("select * from test.big limit 5").stream()) {
+                try (Stream<DataRow> s2 = baki.query("select * from test.big limit 3").stream()) {
+                    s.forEach(d -> System.out.println("s --> " + d));
+                    s2.forEach(d -> System.out.println("s2 --> " + d));
+                    while (true) {
+
+                    }
+                }
+            }
+        }
+//        });
+    }
+
+    @Test
     public void boolTest() throws Exception {
-        baki.fetch("select 'a',true,current_timestamp,current_date,current_time")
+        baki.query("select 'a',true,current_timestamp,current_date,current_time")
+                .findFirst()
                 .ifPresent(System.out::println);
     }
 
@@ -205,6 +294,7 @@ public class BakiSessionTest {
     public void caseU() throws Exception {
         baki.query("select words, userid, DEL as \"DeL\"\n" +
                         "from test.history")
+                .stream()
                 .forEach(System.out::println);
     }
 

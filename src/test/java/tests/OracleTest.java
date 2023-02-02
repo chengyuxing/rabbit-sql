@@ -19,8 +19,9 @@ public class OracleTest {
     }
 
     @Test
-    public void sss() throws Exception{
-        baki.fetch("select 1 A, 2 \"B\", sysdate DT, sys_guid() \"GuID\" from dual")
-        .ifPresent(System.out::println);
+    public void sss() throws Exception {
+        baki.query("select 1 A, 2 \"B\", sysdate DT, sys_guid() \"GuID\" from dual")
+                .findFirst()
+                .ifPresent(System.out::println);
     }
 }

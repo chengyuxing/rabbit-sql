@@ -1,15 +1,24 @@
 package com.github.chengyuxing.sql;
 
+import com.github.chengyuxing.common.MapExtends;
 import com.github.chengyuxing.sql.types.Param;
 
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * sql参数构建工具类
  *
  * @param <V> 类型参数
  */
-public class Args<V> extends HashMap<String, V> {
+public class Args<V> extends HashMap<String, V> implements MapExtends<V> {
+    public Args() {
+    }
+
+    public Args(Map<? extends String, ? extends V> m) {
+        super(m);
+    }
+
     /**
      * 创建一个空的参数集合
      *
@@ -27,13 +36,27 @@ public class Args<V> extends HashMap<String, V> {
      * @return Args对象
      */
     public static Args<Object> create(Object... pairOfArgs) {
-        if (pairOfArgs.length == 0 || pairOfArgs.length % 2 != 0) {
+        if (pairOfArgs.length == 0 || (pairOfArgs.length & 1) != 0) {
             throw new IllegalArgumentException("key value are not a pair.");
         }
         int length = pairOfArgs.length >> 1;
         Args<Object> args = create();
         for (int i = 0; i < length; i++) {
             args.put(pairOfArgs[i << 1].toString(), pairOfArgs[(i << 1) + 1]);
+        }
+        return args;
+    }
+
+    /**
+     * 从一个Map创建一个Args对象
+     *
+     * @param m map
+     * @return Args
+     */
+    public static Args<Object> of(Map<?, ?> m) {
+        Args<Object> args = new Args<>();
+        for (Entry<?, ?> e : m.entrySet()) {
+            args.put(e.getKey().toString(), e.getValue());
         }
         return args;
     }

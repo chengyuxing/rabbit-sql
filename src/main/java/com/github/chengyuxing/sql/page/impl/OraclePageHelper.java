@@ -6,7 +6,7 @@ import com.github.chengyuxing.sql.page.PageHelper;
 import java.util.Map;
 
 /**
- * <h2>Oracle分页工具</h2>
+ * <p>Oracle分页工具</p>
  * 默认的分页参数名占位符 {@code :start, :end}<br>
  * e.g.
  * <blockquote>

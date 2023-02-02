@@ -1,10 +1,10 @@
 package tests;
 
+import com.github.chengyuxing.sql.Args;
+import com.github.chengyuxing.sql.BakiDao;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import com.github.chengyuxing.sql.Args;
-import com.github.chengyuxing.sql.BakiDao;
 
 import java.io.File;
 import java.io.IOException;
@@ -38,7 +38,9 @@ public class SqliteTest {
 
     @Test
     public void query() {
-        baki.query("select * from user where age > :age", Args.create().add("age", 25))
+        baki.query("select * from user where age > :age")
+                .args(Args.create().add("age", 25))
+                .stream()
                 .forEach(System.out::println);
     }
 }

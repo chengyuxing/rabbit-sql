@@ -6,7 +6,7 @@ import com.github.chengyuxing.sql.page.PageHelper;
 import java.util.Map;
 
 /**
- * <h2>Mysql分页工具</h2>
+ * <p>Mysql分页工具</p>
  * 默认的分页参数名占位符 {@code :limit, :size}<br>
  * e.g.
  * <blockquote>

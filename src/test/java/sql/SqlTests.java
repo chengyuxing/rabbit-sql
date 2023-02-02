@@ -4,6 +4,10 @@ import com.github.chengyuxing.common.script.impl.FastExpression;
 import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.utils.SqlUtil;
+import func.QueryBuilder;
+import func.ops.Choose;
+import func.ops.If;
+import func.ops.Switch;
 import org.junit.Test;
 
 import java.lang.reflect.InvocationTargetException;
@@ -128,7 +132,33 @@ public class SqlTests {
     }
 
     @Test
-    public void testz() throws Exception{
-        System.out.println(SqlUtil.quoteFormatValueIfNecessary(new Object[]{"a","'v","D"}));
+    public void testz() throws Exception {
+        System.out.println(SqlUtil.quoteFormatValueIfNecessary(new Object[]{"a", "'v", "D"}));
+    }
+
+    @Test
+    public void testSqlD() throws Exception {
+        QueryBuilder q = new QueryBuilder("test.user")
+                .where()
+                .if_(":id <> 0", "id = :id")
+                .if_(":name <> blank", If.of(":name <> 'cyx'", "name = 'cyx'"))
+                .choose(
+                        Choose.when(":id > 1", "id = 11"),
+                        Choose.when(":id < 1", "id = 3"),
+                        Choose.default_("id = 33")
+                ).switch_("age",
+                        Switch.case_("10", "age = 10"),
+                        Switch.default_("age = :age")
+                ).build();
+
+        System.out.println(q);
+    }
+
+    @Test
+    public void testIf() throws Exception {
+        If ifBlock = new If(":id <> blank",
+                new If(":id = 100", "username = :username")
+        );
+        System.out.println(ifBlock);
     }
 }

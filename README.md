@@ -218,14 +218,11 @@ select id, name, address, email, enable from ... where id in ('I''m Ok!', 'book'
 
 ## 动态SQL
 
-### 注释标记
-
 动态sql的工作依赖于[XQLFileManager](#XQLFileManager)，通过解析特殊的注释标记，在不破坏sql文件标准的前提下进行动态编译，一条动态sql如下：
 
 ```sql
 /*[q2]*/
-select *
-from test.user t
+select * from test.user t
 where
 --#if :names <> blank
 	-- #for name,idx of :names delimiter ' and ' filter ${idx} > 0 && ${name} ~ 'o'
@@ -239,7 +236,9 @@ where
 ;
 ```
 
-> 注释标记都必须成对出现，都具有开闭标签。
+### 注释标记
+
+注释标记都必须成对出现，都具有开闭标签。
 
 #### if标签
 
@@ -297,6 +296,8 @@ where
 
 **for表达式**语法说明：
 
+关键字：`of` `delimiter` `filter`
+
 ```sql
 item[,idx] of :list [|pipe1| ... ] [delimiter ','] [filter ${item.name}[|pipe1|... ] <> blank]
 ```
@@ -353,14 +354,14 @@ filter ${item.name}[|pipe1|... ] <> blank
 
 | 运算符 | 说明           |
 | ------ | -------------- |
-| <      | 大于           |
-| >      | 小于           |
+| <      | 小于           |
+| >      | 大于           |
 | >=     | 大于等于       |
 | <=     | 小于等于       |
 | ==, =  | 等于           |
 | !=, <> | 不等于         |
-| ~      | 正则表查找包含 |
-| !~     | 正则查找不包含 |
+| ~      | 正则包含       |
+| !~     | 正则不包含     |
 | @      | 正则匹配       |
 | !@     | 正则不匹配     |
 
@@ -406,13 +407,13 @@ C --pipeN--> D[...]
   ... where id = ?id
   ```
 
-  > :warning: 命名参数语法和动态sql表达式没任何关系，[表达式](#表达式脚本)依然是参数值键名依然以 `:` 号开头。
+  > :warning: 命名参数语法和动态sql表达式没任何关系，[表达式](#表达式脚本)参数值键名依然以 `:` 号开头。
 
 - [分页查询](#分页查询)如果没有受支持的数据库，则可以通过属性 `pageHelpers` 添加自定义的数据库分页帮助类；
 
 ### XQLFileManager
 
-SQL文件管理器，对普通sql文件的标准进行了**扩展**，不破坏标准的前提下通过特殊格式化的注释进行了扩展支持脚本进行逻辑判断，得以支持[动态sql](#动态SQL)，所以是更加强大的SQL文件解析器。
+SQL文件管理器，对普通sql文件的标准进行了**扩展**，不破坏标准的前提下通过特殊格式化的注释进行了扩展支持脚本进行逻辑判断，得以支持[动态sql](#动态SQL)，所以也是更加强大的SQL文件解析器。
 
 文件结尾以 `.sql` 或 `.xql` 结尾，文件中可以包含任意符合标准的注释，格式参考 ```data.xql.template```；
 

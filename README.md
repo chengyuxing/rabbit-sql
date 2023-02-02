@@ -38,7 +38,7 @@
 - 兼容spring jdbc事务；
 - 兼容mybatis、spring-data-jpa等同时进行事务处理；
 
-具体使用方法和配置可以参考[文档](https://github.com/chengyuxing/rabbit-sql-spring-boot-starter/tree/2.x)。
+具体使用方法和配置可以参考[文档](https://github.com/chengyuxing/rabbit-sql-spring-boot-starter)。
 
 ## 快速上手
 

@@ -9,6 +9,7 @@ import com.github.chengyuxing.sql.exceptions.DuplicateException;
 import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 import com.github.chengyuxing.sql.page.IPageable;
 import com.github.chengyuxing.sql.page.PageHelper;
+import com.github.chengyuxing.sql.page.impl.Db2PageHelper;
 import com.github.chengyuxing.sql.page.impl.MysqlPageHelper;
 import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
@@ -549,7 +550,15 @@ public class BakiDao extends JdbcSupport implements Baki {
                 case "sqlite":
                     return new PGPageHelper();
                 case "mysql":
+                case "mariadb":
                     return new MysqlPageHelper();
+                case "z/os":
+                case "sqlds":
+                case "iseries":
+                case "db2 for unix/windows":
+                case "cloudscape":
+                case "informix":
+                    return new Db2PageHelper();
                 default:
                     throw new UnsupportedOperationException("pager of \"" + dbName + "\" default not implement currently, see method 'pageHelpers' or 'registerPageHelper'.");
             }

@@ -46,6 +46,15 @@ public class BakiSessionTest {
     }
 
     @Test
+    public void testWithInsert() throws Exception{
+        baki.query("with res as (" +
+                        "insert into test.temp (rpkid, name) values ('123', '456') returning pkid" +
+                        ")\n" +
+                "select * from res;").findFirst()
+                .ifPresent(System.out::println);
+    }
+
+    @Test
     public void testA() throws Exception {
         baki.query("select now(), array ['a','b','c']").findFirst()
                 .ifPresent(System.out::println);

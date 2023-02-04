@@ -419,7 +419,7 @@ SQL文件管理器，对普通sql文件的标准进行了**扩展**，不破坏�
 
 文件结尾以 `.sql` 或 `.xql` 结尾，文件中可以包含任意符合标准的注释，格式参考 ```data.xql.template```；
 
-每个被XQLFileManager管理的sql文件都必须遵循 **“k-v”** 结构，例如`my.sql`：
+每个被XQLFileManager管理的sql文件都必须遵循 **"k-v"** 结构，例如`my.sql`：
 
 ```sql
 /*[query]*/
@@ -438,7 +438,7 @@ order by id;
 
 - 对象名格式为 `/*[name]*/` ，sql文件中可以嵌套sql片段，使用 `${片段名}` 指定;
 
-- 片段名格式化 `/*{name}*/` ，sql片段中可以嵌套sql片段，支持片段复用，使用 `${片段名}` 指定，如上例子在解析完成后名为 `query` 的sql变为：
+- 片段名格式为 `/*{name}*/` ，sql片段中可以嵌套sql片段，支持片段复用，使用 `${片段名}` 指定，如上例子在解析完成后名为 `query` 的sql变为：
 
   ```sql
   select * from test."user" t where id = :id order by id;
@@ -456,11 +456,11 @@ order by id;
 
 - **delimiter**
 
-  sql文件 **k-v** 结构分隔符，**默认是单个分号（;）**遵循标准sql文件多段sql分隔符，但是有一种情况，如果sql文件内有plsql：**create function...** 或 **create procedure...**等， 内部会包含多段sql多个分号，为防止解析异常，单独设置自定义的分隔符:
+  sql文件 **"k-v"** 结构分隔符，**默认是单个分号（;）**遵循标准sql文件多段sql分隔符，但是有一种情况，如果sql文件内有plsql：**create function...** 或 **create procedure...**等， 内部会包含多段sql多个分号，为防止解析异常，单独设置自定义的分隔符:
 
-  - 例如（`;;`）双分号，也是标准sql所支持的, **并且支持仅扫描已命名的sql**；
-  - 也可以设置为`null`或`空白`，那么整个SQL文件多段SQL都应按照此方式分隔。
+  - 例如（ `;;` ）双分号，也是标准sql所支持的, **并且支持仅扫描已命名的sql**；
+  - 也可以设置为 `null` 或 `""` ，那么整个SQL文件多段SQL都应按照此方式分隔。
 
 - **checkModified**
 
-  如果为 `true`，则开启sql文件修改监听器，默认30秒检测一次，如果修改过则重新加载，生产环境建议设置为`false`。
+  如果为 `true`，则开启sql文件修改监听器，默认30秒检测一次，如果修改过则重新加载，生产环境建议设置为 `false` 。

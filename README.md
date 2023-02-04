@@ -213,7 +213,7 @@ Args.<Object>of("id","uuid")
 最终生成的sql：
 
 ```sql
-select id, name, address, email, enable from ... where id in ('I''m Ok!', 'book', 'warning') or id = 'uuid';
+select id, name, address, email, enable from ... where id in ('I''m Ok!', 'book', 'warning') or id = ?;
 ```
 
 ## 动态SQL

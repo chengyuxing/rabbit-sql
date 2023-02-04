@@ -52,7 +52,7 @@ BakiDao baki=new BakiDao(dataSource);
 
 ### 查询
 
-查询一般使用[baki](#BakiDao)提供的`query`方法，`query` 返回一个**查询执行器**，提供了一些常用的结果返回类型，例如：`Stream`，`Optional` 等。
+查询一般使用[baki](#BakiDao)提供的 `query` 方法，`query` 返回一个**查询执行器**，提供了一些常用的结果返回类型，例如：`Stream`，`Optional` 等。
 
 ```java
 baki.query("select … where id = :id").arg("id", "1")

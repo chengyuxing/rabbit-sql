@@ -16,7 +16,7 @@
 - [执行存储过程/函数](#调用存储过程函数)；
 - 简单的[事务](#事务)；
 - [预编译sql](#预编译SQL)；
-- 代码与sql文件分离（[SQL文件解析器](#XQLFileManager)）；
+- [代码与sql分离](#XQLFileManager)）；
 - [sql片段复用](#XQLFileManager)；
 - [动态sql](#动态SQL)；
 - 支持spring-boot框架。

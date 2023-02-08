@@ -1,27 +1,29 @@
 # rabbit-sql
 
-你不喜欢写xml，不喜欢xml和接口强绑定？
+Language: English | [简体中文](README.chs.md)
 
-你不喜欢工具帮你生成实体和大量的接口文件？
+You don't like sql in xml, don't like xml binding to interfaces?
 
-你不喜欢在代码中拼接[动态sql](#动态SQL)？
+You don't like tools auto generate too many entities and interfaces file?
 
-## 前言
+You don't like writing [dynamic sql](Dynamic-sql) in java code?
 
-这仅仅只是一个小巧的工具，对**JDBC**进行了一个薄封装，提供一些基本操作，以追求简单稳定高效为目标（查询接口以手写sql为主），此库基本功能如下：
+## Introducing
 
-- 基本[接口](#BakiDao)增删改查；
-- 简单[分页查询](#分页查询)；
-- [流查询](#流查询)（java8的**Stream**）；
-- [执行存储过程/函数](#调用存储过程函数)；
-- 简单的[事务](#事务)；
-- [预编译sql](#预编译SQL)；
-- [代码与sql分离](#XQLFileManager)；
-- [sql片段复用](#XQLFileManager)；
-- [动态sql](#动态SQL)；
-- 支持spring-boot框架。
+It's just a small lib, wrapper of **jdbc**, support some basic operation. simple, stable and efficient as the goal(query operation accept sql statement mainly), some features following:
 
-## maven dependency (jdk1.8)
+- Basic operation for insert, delete, update, query;
+- simple [pageable query](#Paging);
+- [stream query](#Stream-query)(java8 **Stream**);
+- [execute procedure/function](#Procedure);
+- simple [transaction](#Transaction);
+- [prepare sql](#Prepare-SQL);
+- [sql in file](#XQLFileManager);
+- [sql fragment reuse](#XQLFileManager);
+- [dynamic sql](#Dynamic-SQL);
+- support **spring-boot** framework.
+
+## Maven dependency (jdk1.8)
 
 ```xml
 <dependency>
@@ -31,18 +33,18 @@
 </dependency>
 ```
 
-## Spring-Boot(2.7+)支持
+## Spring-Boot(2.7+) support
 
-- 支持rabbit-sql自动装配；
-- 支持application.yml配置项自动完成提示；
-- 兼容spring jdbc事务；
-- 兼容mybatis、spring-data-jpa等同时进行事务处理；
+- support rabbit-sql autoconfigure；
+- support `application.yml` auto complete；
+- compatible with spring jdbc transaction；
+- compatible mybatis、spring-data-jpaand so on to use transaction together；
 
-具体使用方法和配置可以参考[文档](https://github.com/chengyuxing/rabbit-sql-spring-boot-starter)。
+Get some usage from [document](https://github.com/chengyuxing/rabbit-sql-spring-boot-starter).
 
-## 快速上手
+## Quick start
 
-### 初始化
+### Init
 
 ```java
 dataSource=new HikariDataSource();
@@ -50,9 +52,9 @@ dataSource=new HikariDataSource();
 BakiDao baki=new BakiDao(dataSource);
 ```
 
-### 查询
+### Query
 
-查询一般使用[baki](#BakiDao)提供的 `query` 方法，`query` 返回一个**查询执行器**，提供了一些常用的结果返回类型，例如：`Stream`，`Optional` 等。
+Use [baki](#BakiDao)'s  `query` operation，`query` returns a **query executor**，support some return type like：`Stream`，`Optional` and so on.
 
 ```java
 baki.query("select … where id = :id").arg("id", "1")
@@ -70,11 +72,11 @@ X --> Baki;
 click X href "#XQLFileManager" "go to defenition"
 ```
 
-> 除了可以传入一个sql语句以外，还支持以 `&` 符号开头的格式，这代表获取并执行[sql文件管理器](#XQLFileManager)中的一条sql。
+> Except accept sql statement, also support accept sql by name, name start with `&` to get sql from [sql file manager](#XQLFileManager).
 
-#### 示例
+#### Example
 
-##### 流查询
+##### Stream-query
 
 ```java
 try(Stream<DataRow> fruits=baki.query("select * from fruit").stream()){
@@ -82,13 +84,13 @@ try(Stream<DataRow> fruits=baki.query("select * from fruit").stream()){
         }
 ```
 
-> 只有当进行终端操作时才会真正的开始执行查询，推荐使用 **try-with-resource** 语句进行包裹，在查询完成后将自动释放连接对象。
+> Query will not truly execute until invoke **Stream terminal operation**(e.g `foreach()` ), use jdk7 **try-with-resource** to release connection when query complete.
 
-##### 分页查询
+##### Paging
 
-默认的分页查询将自动根据数据库生成**分页查询语句**和生成 **count** 查询语句。
+Default pageable query will auto generate **paging statement** and **count** statement by database.
 
-内置支持 oracle，mysql，postgresql，sqlite，mariadb，db2，其他可通过实现接口 `com.github.chengyuxing.sql.page.PageHelper` 并注册到[BakiDao](#BakiDao)进行支持。
+Built-in support oracle, mysql, postgresql, sqlite, mariadb, db2, or extends class `com.github.chengyuxing.sql.page.PageHelper` and register to [BakiDao](#BakiDao) get support.
 
 ```java
 PagedResource<DataRow> resource = baki.query("select ... where id < :id")
@@ -97,7 +99,7 @@ PagedResource<DataRow> resource = baki.query("select ... where id < :id")
                 .collect(d -> d);
 ```
 
-##### 自定义分页查询
+##### Custom paging
 
 `/pgsql/data.sql`
 
@@ -111,15 +113,15 @@ where id > :id limit :limit offset :offset;
 PagedResource<DataRow> res = baki.query("&data.custom_paged")
   		.<DataRow>pageable(1, 7)
                 .count("select count(*) ... where id > :id")
-                .disableDefaultPageSql() //禁用默认生成的分页sql
+                .disableDefaultPageSql()
                 .collect(d -> d);
 ```
 
-> `disableDefaultPageSql()` 意味着不对 custom_paged 这条sql进行分页构建。
+> `disableDefaultPageSql()` will not wrap sql to generate paging statement of name custom_paged.
 >
-> **count** 查询语句也需要用户主动传入。 
+> **count** statement is required now.
 
-##### 调用存储过程/函数
+##### Procedure
 
 ```java
 baki.call("{call test.fun_query(:c::refcursor)}",
@@ -129,41 +131,41 @@ baki.call("{call test.fun_query(:c::refcursor)}",
         .forEach(System.out::println);
 ```
 
-> 如果是**postgresql**数据库，返回值有游标需要使用[事务](#事务)进行包裹。
+> If **postgresql**, you must use transaction when returns cursor.
 
-### 更新&插入
+### Update & Insert
 
-这里主要着重讲一下更新操作，更新一般使用[baki](#BakiDao)提供的 `update` 方法，`update` 返回一个**更新执行器**，具体说下几个细节：
+I'm going to focus here on the update operation, use [baki](#BakiDao)'s  `update` operation, `update` returns a **update executor**，some details following:
 
-- **safe**属性：在更新数据之前先获取要插入表的所有字段，并将要更新数据中的不存在的表字段的数据过滤，最终生成的update语句只包含表中存在的字段；
+- **safe** property: get all table fields before execute update, and remove updated data fields which not exist in table fields;
 
-  > 需要注意，如果100%确定自己要插入的数据无误，可以不调用次属性，以提高性能；
+  > Notice, recommend do not use this property for improve performance if you 100% fully know the data you need will be updated.
   >
-  > 同样适用于**插入**操作。
+  > Same as **insert** operation.
 
-- **fast**属性：底层调用的是jdbc的批量执行，不是预编译sql，所以其中一个需要注意的地方就是**不能插入二进制文件**。
+- **fast** property: in fact, is invoke jdbc batch execute, it's not prepared sql, so not support blob file.
 
-  > 一般情况不推荐使用，除非真的需要一次性插入上千条数据批量操作。
+  > It's not  recommend unless you need to batch execute more than 1000 rows of data.
   >
-  > 同样适用于**插入**操作。
+  > Same as **insert** operation.
 
-`update` 方法第二个参数 `where`，如果不包含参数占位符，那么条件都是固定的，所有数据都将根据一个固定的条件执行更新，如果是包含参数占位符，例如： `id = :id` ，那么需要更新的数据中必须包含 `id` 参数值，每条数据将动态的根据此 `id` 进行更新。
+The 2nd arg `where` of `update` operation, condition is static if statement not contains named parameter, all data will be updated on static condition; if statement contains named parameter like: `id = :id` , all data will be updated dynamically by every id parameter value.
 
-##### 示例
+##### Example
 
-数据：`[{name: 'cyx', 'age': 29, id: 13}, ...]`；
+Data:`[{name: 'cyx', 'age': 29, id: 13}, ...]`;
 
-条件：`id = :id`；
+Condition: `id = :id`;
 
-`update` 方法最终会自动识别出 `where` 中的参数，并构建合理的sql语句：
+`update` operation can find arg which in condition and generate correct update statement:
 
 ```sql
 update ... set name = :name, age = :age where id = :id;
 ```
 
-### 事务
+### Transaction
 
-事务的使用请遵循线程的隔离性。
+Use of transactions follows thread isolation:
 
 ```java
 Tx.using(()->{
@@ -174,34 +176,34 @@ Tx.using(()->{
 });
 ```
 
-## SQL参数占位符
+## SQL parameter holder
 
-### 预编译SQL
+### Prepare-SQL
 
-支持预编译sql，预编译sql的语法使用**命名参数**，例如：
+Prepare sql support named parameter style, e.g: 
 
-`:name` (jdbc标准的命名参数写法，参数将被预编译安全处理，参数名为：`name` )
+`:name` (jdbc standard named parameter syntax, sql will be prepare saftly, parameter name is `name` )
 
-> 最终被编译为 `?`，极力推荐使用预编译sql，可以有效避免sql注入的风险。
+> Named parameter will be compile to `?`, Recommend to use prepare sql for avoid sql injection.
 
-### 字符串模版
+### String template
 
-`${[:]name}` (通用的字符串模版占位符，不进行预编译，可用于sql片段的复用)
+`${[:]name}` (string template holder, not prepare, use for sql fragment reuse)
 
-字符串模版有2种格式：
+2 styles：
 
-- `${part}` 如果类型是**装箱类型数组(String[], Integer[]...)**或**集合(Set, List...)**，则先展开（逗号分割），再进行sql片段的替换；
-- `${:part}` 名字前多了前缀符号( `:` )，如果类型是**装箱类型数组(String[], Integer[]...)**或**集合(Set, List...)**，则先展开（逗号分隔），并做一定的字符串安全处理，再进行sql片段的替换。
+- `${part}`: if value type is **boxed type array(String[], Integer[]...)** or **collection (Set, List...)**, just expand value and replace.
+- `${:part}`: name start with `:`, if value type is **boxed type array(String[], Integer[]...)** or **collection(Set, List...)**, expand value and safe quote, then replace.
 
-#### 示例
+#### Example
 
-sql：
+sql:
 
 ```sql
 select ${fields}, ${moreFields} from ... where word in (${:words}) or id = :id;
 ```
 
-参数：
+args:
 
 ```java
 Args.<Object>of("id","uuid")
@@ -210,15 +212,15 @@ Args.<Object>of("id","uuid")
   .add("words", Arrays.asList("I'm OK!", "book", "warning"));
 ```
 
-最终生成的sql：
+generate sql:
 
 ```sql
 select id, name, address, email, enable from ... where id in ('I''m Ok!', 'book', 'warning') or id = ?;
 ```
 
-## 动态SQL
+## Dynamic-SQL
 
-动态sql的工作依赖于[XQLFileManager](#XQLFileManager)，通过解析特殊的注释标记，在不破坏sql文件标准的前提下进行动态编译，一条动态sql如下：
+Dynamic SQL depends on [XQLFileManager](#XQLFileManager), based on resolve special annotation mark, dynamic compile without breaking sql file standards, a simple dynamic sql example following:
 
 ```sql
 /*[q2]*/
@@ -236,30 +238,32 @@ where
 ;
 ```
 
-### 注释标记
+### Annotation mark
 
-注释标记都必须成对出现，都具有开闭标签。
+Annotation mark must be pair and follows **open-close** tag:
 
-#### if标签
+#### if
 
-类似于Mybatis的 `if` 标签，支持嵌套 `if`，`choose`，`switch`，`for` ：
+Similar to Mybatis's  `if`  tag, support nest `if`，`choose`，`switch`，`for` :
 
 ```sql
---#if 表达式
-       --#if 表达式
+--#if expression
+       --#if expression
        ...
        --#fi
 --#fi
 ```
 
-#### switch标签
+#### switch
 
-效果类似于程序代码的 `switch` ，分支中还可以嵌套 `if` 语句:
+Similar to program language `switch`'s logic, support nest `if` tag:
 
 ```sql
---#switch :变量名
-       --#case 值
-       	...
+--#switch :name
+       --#case value
+       		--#if expression
+       			...
+       		--#fi
        --#break
        ...
        --#default
@@ -268,14 +272,16 @@ where
 --#end
 ```
 
-#### choose标签
+#### choose
 
-效果类似于mybatis的 `choose...when` 标签，分支中还可以嵌套 `if` 语句：
+Similar to Mybatis's `choose...when` tag, support nest `if` tag:
 
 ```sql
 --#choose
-       --#when 表达式
-       	...
+       --#when expression
+       		--#if expression
+       			...
+       		--#fi
        --#break
        ...
        --#default
@@ -284,98 +290,98 @@ where
 --#end
 ```
 
-#### for标签
+#### for
 
-内部不能嵌套其他任何标签，不进行解析，但可以嵌套在 `if` 表达式中，类似于程序的 `foreach` ，并进行了一些扩展：
+Can not nest any tag, but can nested in `if` tag, similar to program language `foreach`'s logic, and more features:
 
 ```sql
---#for 表达式
+--#for expression
 	...
 --#end
 ```
 
-**for表达式**语法说明：
+**For expression** syntax:
 
-关键字：`of` `delimiter` `filter`
+Keywords: `of` `delimiter` `filter`
 
 ```sql
 item[,idx] of :list [|pipe1| ... ] [delimiter ','] [filter ${item.name}[|pipe1|... ] <> blank]
 ```
 
-完整的for表达式由3部分组成：
+a complete for expression has 3 part:
 
-迭代主体：
+Iterator body:
 
 ```sql
 item[,idx] of :list [|pipe1| ... ]
 ```
 
-> `item` 表示迭代项，`idx` 表示迭代索引，可以随意命名，但不能一样；
+> `item` is current item，`idx` is current index(0 is first), support custom naming but different.
 
-迭代部分连接符 （可选）：
+Iterator body delimiter (optional):
 
 ```sql
 delimiter ','
 ```
-> 不指定默认使用 `, ` 号进行连接。
+> Default `, `.
 
-过滤器（可选）：
+Filter (optional): 
 
 ```sql
 filter ${item.name}[|pipe1|... ] <> blank
 ```
 
-> 如果指定 `filter` 过滤器，则对迭代对象进行筛选匹配值影响最终生成的sql；
-> `filter` 的表达式语法和标准的有些不同，因为**被比较值**来自于for循环，不能使用`:参数名`，所以只能使用`${for定义的参数名}`来表示。
+> Iterate to generate sql by matched item if `filter` configured;
+> `filter` expression is a little different from standard, because **compared value** is from for expression, so do not use named parameter , use `${}` instead.
 
-`[...]` 表示可选配置项，一个最简单的表达式例如：
+`[...]` means optional item, a simple expression e.g:
 
   ```sql
   for item of :list
   ```
 
-具体例子可以参考[如上](#动态SQL)。
+Get details follows [example](#Dynamic-SQL).
 
-### 表达式脚本
+### Expression-script
 
-左侧为参数键名，以 `:` 号开头；
+Left start with `:` is data's key.
 
-右侧为比较的值。
+Right is compared value.
 
- 一个简单的表达式语法如下：
+ A simple expression syntax following: 
 
 ```sql
 !(:id >= 0 || :name | length <= 3) && :age > 21
 ```
 
-#### 支持的运算符
+#### Supported operator
 
-| 运算符 | 说明           |
-| ------ | -------------- |
-| <      | 小于           |
-| >      | 大于           |
-| >=     | 大于等于       |
-| <=     | 小于等于       |
-| ==, =  | 等于           |
-| !=, <> | 不等于         |
-| ~      | 正则包含       |
-| !~     | 正则不包含     |
-| @      | 正则匹配       |
-| !@     | 正则不匹配     |
+| Operator | Means               |
+| -------- | ------------------- |
+| <        | less than           |
+| >        | great than          |
+| >=       | great than or equal |
+| <=       | less than or equal  |
+| ==, =    | equal               |
+| !=, <>   | not equal           |
+| ~        | regex find          |
+| !~       | regex not find      |
+| @        | regex match         |
+| !@       | regex not match     |
 
-- 支持的逻辑符：`||`, `&&`, `!`
+- Support logic symbol: `||`, `&&`, `!` ;
 
-- 支持嵌套括号：`(`, `)`
+- Support nest bracket: `(`, `)` ;
 
-- 支持数据类型：字符串（`""`、`''`），数字（12、3.14），布尔值（`true` , `false`）；
+- Support data type: string(`""`、`''`), number(12、3.14), boolean(`true` , `false`);
 
-- 内置常量：`null` , `blank`(`null`、空白字符、空数组、空集合)；
+- Built-in constants: `null` , `blank` (`null`, empty string、empty array、empty collection);
 
-> 如果操作符不能满足需求，则可以通过实现自定义管道来进行增强。
+> use custom **pipe** to implement more features.
 
-#### 管道
+#### Pipe
 
-管道顾名思义，可以链式使用 `:id | upper | is_id_card | ...` 例如：
+Syntax look like `:id | upper | is_id_card | ...` e.g: 
 
 ```mermaid
 flowchart LR;
@@ -385,47 +391,49 @@ C --pipeN--> D[...]
 ```
 
 ```sql
--- 传入的name参数经过名为length的管道输出长度和3进行大小比较
+-- get value by name through length pipe and compare with number 3
 :name|length <= 3
 ```
 
-通过实现接口 `com.github.chengyuxing.common.script.IPipe` 并添加到 [XQLFileManager](#XQLFileManager) 来使用管道。
+Implement  `com.github.chengyuxing.common.script.IPipe`  interface and add to [XQLFileManager](#XQLFileManager)  to use pipe.
 
-## 附录
+## Appendix
 
-源码各接口和属性几乎都有明确的注释文档，大多数情况下，可以通过下载源码，根据IDE智能提示来得知使用方法，这里就特别的说下其中需要注意的一些地方。
+A little important details you need to know.
 
 ### BakiDao
 
- 默认的Baki接口实现，提供了增删改查基本操作接口。
+Default implement of interface **Baki**, support some basic operation.
 
-- 如果配置了[XQLFileManager](#XQLFileManager)的情况下，可以实现sql文件与代码分离，支持[动态sql](#动态SQL)；
+- If [XQLFileManager](#XQLFileManager) configured ,  you can manage sql in file and support [dynamic sql](#Dynamic-SQL);
 
-- 预编译sql默认的命名参数前缀为 `:` 号，通过指定属性 `namedParamPrefix` 支持自定义，例如：
+- Default named parameter start with `:` , it can be customized by specific property `namedParamPrefix`, e.g:
 
   ```sql
   where id = ?id
   ```
 
-  > :warning: 命名参数语法和动态sql表达式没任何关系，[表达式](#表达式脚本)参数值键名依然以 `:` 号开头。
+  > :warning: Named parameter syntax has nothing to do with dynamic sql expression，[expression](#Expression-script)'s value of key also start with `:`.
 
-- [分页查询](#分页查询)如果没有受支持的数据库，则可以通过属性 `pageHelpers` 添加自定义的数据库分页帮助类；
+- if [pageable query](#paging) not support your database, add custom page helper to property `pageHelpers` get support.
 
 ### XQLFileManager
 
-SQL文件管理器，对普通sql文件的标准进行了**扩展**，不破坏标准的前提下通过特殊格式化的注释进行了扩展支持脚本进行逻辑判断，得以支持[动态sql](#动态SQL)，所以也是更加强大的SQL文件解析器。
+SQL file manager extends standard sql annotation implement more features, for support [dynamic sql](#Dynamic-SQL) and expression scripts logic judgment without breaking standard sql structure, also it's more powerful SQL file resolver.
 
-因为支持.sql文件，对各类sql开发工具都有语法高亮，智能提示和错误检测，专业的dba也能轻松参与项目直接编写sql文件与javaer配合。
+you can get sql syntax highlight, intelligent suggestions and error check when using sql develop tools cause support sql file with extension `.sql`, dba developer     work with java developer together so easy.
 
-文件结尾以 `.sql` 或 `.xql` 结尾，文件中可以包含任意符合标准的注释，格式参考 ```data.xql.template```；
+Supported file extension with `.sql` or `.xql`, you can write any standard sql annotation in file, format reference `data.xql.template`.
 
-每个被XQLFileManager管理的sql文件都必须遵循 **"k-v"** 结构，例如`my.sql`：
+Every managed sql file must follows **"k-v"** structure, e.g:
+
+`my.sql`
 
 ```sql
 /*[query]*/
 select * from test."user" t ${part1};
 
-/*第一部分*/
+/*part 1*/
 /*{part1}*/
 where id = :id
 ${order};
@@ -436,31 +444,31 @@ order by id;
 ...
 ```
 
-- 对象名格式为 `/*[name]*/` ，sql文件中可以嵌套sql片段，使用 `${片段名}` 指定;
+- Sql object name formatter is `/*[name]*/`, sql object supports nest sql fragment by using `${fragment name}` holder; 
 
-- 片段名格式为 `/*{name}*/` ，sql片段中可以嵌套sql片段，支持片段复用，使用 `${片段名}` 指定，如上例子在解析完成后名为 `query` 的sql变为：
+- Sql fragment name formatter is `/*{name}*/` , sql fragment supports nest sql fragment by using `${fragment name}` holder to reuse, as above example `my.sql`:
 
   ```sql
   select * from test."user" t where id = :id order by id;
   ```
 
-#### 配置项
+#### Options
 
 - **files**
 
-  添加sql文件后，可通过 `别名.sql名` 来获取sql，如上例子：`my.query`；
+  you can get sql statement  by `alias.your_sql_name` when sql file added, as above example: `my.sql`;
 
 - **pipeInstances/pipes**
 
-  自定义[管道](#管道)字典集合，**key**为管道名，**value**为管道类名，用于动态sql脚本的参数值，通过添加实现自定义的管道来增强[动态sql表达式](#表达式脚本)的功能；
+  Custom [pipe](#Pipe) dictionary, **key** is pipe name, **value** is pipe class, for dynamic sql expression's value, get more [dynamic sql expression](#Expression-script)'s features by implement custom pipe;
 
 - **delimiter**
 
-  sql文件 **"k-v"** 结构分隔符，**默认是单个分号（;）**遵循标准sql文件多段sql分隔符，但是有一种情况，如果sql文件内有plsql：**create function...** 或 **create procedure...**等， 内部会包含多段sql多个分号，为防止解析异常，单独设置自定义的分隔符:
+  sql file **"k-v"** structure delimiter **default `;`**, follows standard multi sql structure delimiter by `;`, but there is a condition, if you have plsql in file e.g: `create function...` or `create procedure...`, it will be multi sql statement in one sql object, you need specific custom delimiter for resolve correctly:
 
-  - 例如（ `;;` ）双分号，也是标准sql所支持的, **并且支持仅扫描已命名的sql**；
-  - 也可以设置为 `null` 或 `""` ，那么整个SQL文件多段SQL都应按照此方式分隔。
+  - e.g ( `;;`) double semicolon;
+  - `null` or `""` : every sql object must follows without delimiter.
 
 - **checkModified**
 
-  如果为 `true`，则开启sql文件修改监听器，默认30秒检测一次，如果修改过则重新加载，生产环境建议设置为 `false` 。
+  Listening sql file modifiable for reload with default period 30 seconds if `true`, recommend set `false` where in production environment.

@@ -6,7 +6,7 @@ You don't like sql in xml, don't like xml binding to interfaces?
 
 You don't like tools auto generate too many entities and interfaces file?
 
-You don't like writing [dynamic sql](Dynamic-sql) in java code?
+You don't like writing [dynamic sql](#Dynamic-sql) in java code?
 
 ## Introducing
 

@@ -3,6 +3,7 @@ package com.github.chengyuxing.sql;
 import com.github.chengyuxing.common.WatchDog;
 import com.github.chengyuxing.common.console.Color;
 import com.github.chengyuxing.common.console.Printer;
+import com.github.chengyuxing.common.io.ClassPathResource;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.script.Comparators;
 import com.github.chengyuxing.common.script.IPipe;
@@ -162,6 +163,16 @@ public class XQLFileManager {
      * Sql文件解析器实例
      */
     public XQLFileManager() {
+        ClassPathResource resource = new ClassPathResource("xql-files.properties");
+        if (resource.exists()) {
+            Properties properties = new Properties();
+            try {
+                properties.load(resource.getInputStream());
+                properties.forEach((k, v) -> files.put(k.toString(), v.toString()));
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
     }
 
     /**

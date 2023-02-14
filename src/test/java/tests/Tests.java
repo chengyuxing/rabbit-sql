@@ -322,4 +322,10 @@ public class Tests {
         System.out.println(sqlTranslator.generateNamedParamInsert("test.t", map, Arrays.asList("a", "b", "c")));
 
     }
+
+    @Test
+    public void test() {
+        XQLFileManager xqlFileManager = new XQLFileManager();
+        xqlFileManager.init();
+    }
 }

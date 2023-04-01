@@ -21,6 +21,7 @@ import java.io.*;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
@@ -147,6 +148,7 @@ public class XQLFileManager {
     private volatile boolean initialized;
     // ----------------optional properties------------------
     private Map<String, String> files = new HashMap<>();
+    private Set<String> fileNames = new HashSet<>();
     private Map<String, String> constants = new HashMap<>();
     private final Map<String, IPipe<?>> pipeInstances = new HashMap<>();
     private Map<String, String> pipes = new HashMap<>();
@@ -195,6 +197,17 @@ public class XQLFileManager {
     }
 
     /**
+     * 添加sql文件，别名默认为文件名（不包含后缀）
+     *
+     * @param fileName 文件路径全名
+     */
+    public void add(String fileName) {
+        String name = Paths.get(fileName).getFileName().toString();
+        String alias = name.substring(0, name.lastIndexOf("."));
+        add(alias, fileName);
+    }
+
+    /**
      * 设置命名的sql文件
      *
      * @param files 文件 [别名，文件名]
@@ -214,6 +227,24 @@ public class XQLFileManager {
      */
     public Map<String, String> getFiles() {
         return files;
+    }
+
+    /**
+     * 设置文件全路径名，默认别名为文件名（不包含后缀）
+     *
+     * @param fileNames 文件全路径名
+     */
+    public void setFileNames(Set<String> fileNames) {
+        this.fileNames = fileNames;
+    }
+
+    /**
+     * 获取未取别名的文件全路径名列表
+     *
+     * @return 文件全路径名列表
+     */
+    public Set<String> getFileNames() {
+        return this.fileNames;
     }
 
     /**
@@ -331,6 +362,16 @@ public class XQLFileManager {
     }
 
     /**
+     * 获取全部的sql文件
+     *
+     * @return 全部sql文件
+     */
+    public Map<String, String> allFiles() {
+        fileNames.forEach(this::add);
+        return files;
+    }
+
+    /**
      * 如果有检测到文件修改过，则重新加载已修改过的sql文件
      *
      * @return 已修改或新增的解析文件信息
@@ -341,7 +382,7 @@ public class XQLFileManager {
         try {
             loading = true;
             List<String> msg = new ArrayList<>();
-            for (Map.Entry<String, String> fileE : files.entrySet()) {
+            for (Map.Entry<String, String> fileE : allFiles().entrySet()) {
                 FileResource cr = new FileResource(fileE.getValue());
                 if (cr.exists()) {
                     String suffix = cr.getFilenameExtension();
@@ -441,7 +482,7 @@ public class XQLFileManager {
      * @throws NullPointerException     如果 {@code args} 为null
      * @see FastExpression
      */
-    protected String dynamicCalc(String sql, Map<String, ?> args, boolean checkArgsKey) {
+    public String dynamicCalc(String sql, Map<String, ?> args, boolean checkArgsKey) {
         String[] lines = sql.split(NEW_LINE);
         StringJoiner output = new StringJoiner(NEW_LINE);
         for (int i = 0, j = lines.length; i < j; i++) {

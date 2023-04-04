@@ -191,6 +191,7 @@ public class XQLFileManager implements AutoCloseable {
      *
      * @param alias    文件别名
      * @param fileName 文件全路径名
+     * @return 别名
      */
     public String add(String alias, String fileName) {
         files.put(alias, fileName);

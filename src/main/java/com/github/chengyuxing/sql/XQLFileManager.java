@@ -124,7 +124,7 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
  *
  * @see FastExpression
  */
-public class XQLFileManager {
+public class XQLFileManager implements AutoCloseable {
     private final static Logger log = LoggerFactory.getLogger(XQLFileManager.class);
     private final ReentrantLock lock = new ReentrantLock();
     private final Map<String, Map<String, String>> RESOURCE = new HashMap<>();
@@ -208,6 +208,21 @@ public class XQLFileManager {
     }
 
     /**
+     * 移除一个sql文件
+     *
+     * @param alias 文件别名
+     * @return 移除的sql文件名
+     */
+    public String remove(String alias) {
+        RESOURCE.remove(alias);
+        String fileFullName = files.remove(alias);
+        if (fileFullName != null) {
+            fileNames.remove(fileFullName);
+        }
+        return fileFullName;
+    }
+
+    /**
      * 设置命名的sql文件
      *
      * @param files 文件 [别名，文件名]
@@ -236,15 +251,7 @@ public class XQLFileManager {
      */
     public void setFileNames(Set<String> fileNames) {
         this.fileNames = fileNames;
-    }
-
-    /**
-     * 获取未取别名的文件全路径名列表
-     *
-     * @return 文件全路径名列表
-     */
-    public Set<String> getFileNames() {
-        return this.fileNames;
+        this.fileNames.forEach(this::add);
     }
 
     /**
@@ -362,16 +369,6 @@ public class XQLFileManager {
     }
 
     /**
-     * 获取全部的sql文件
-     *
-     * @return 全部sql文件
-     */
-    public Map<String, String> allFiles() {
-        fileNames.forEach(this::add);
-        return files;
-    }
-
-    /**
      * 如果有检测到文件修改过，则重新加载已修改过的sql文件
      *
      * @return 已修改或新增的解析文件信息
@@ -382,7 +379,7 @@ public class XQLFileManager {
         try {
             loading = true;
             List<String> msg = new ArrayList<>();
-            for (Map.Entry<String, String> fileE : allFiles().entrySet()) {
+            for (Map.Entry<String, String> fileE : files.entrySet()) {
                 FileResource cr = new FileResource(fileE.getValue());
                 if (cr.exists()) {
                     String suffix = cr.getFilenameExtension();
@@ -1155,5 +1152,19 @@ public class XQLFileManager {
      */
     public void setHighlightSql(boolean highlightSql) {
         this.highlightSql = highlightSql;
+    }
+
+    @Override
+    public void close() {
+        RESOURCE.clear();
+        fileNames.clear();
+        files.clear();
+        LAST_MODIFIED.clear();
+        pipes.clear();
+        pipeInstances.clear();
+        constants.clear();
+        if (watchDog != null) {
+            watchDog.shutdown();
+        }
     }
 }

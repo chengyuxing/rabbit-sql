@@ -281,14 +281,14 @@ public class XQLFileManager implements AutoCloseable {
                         checkNoneDelimiterSqlBlock(singleResource, name, blockName);
                         blockName = m_name.group("name");
                         if (singleResource.containsKey(blockName)) {
-                            throw new DuplicateException("same sql fragment name: " + blockName + " in " + resource.getPath());
+                            throw new DuplicateException("same sql fragment name: '" + blockName + "' in " + resource.getPath());
                         }
                         singleResource.put(blockName, "");
                     } else if (m_part.matches()) {
                         checkNoneDelimiterSqlBlock(singleResource, name, blockName);
                         blockName = "${" + m_part.group("part") + "}";
                         if (singleResource.containsKey(blockName)) {
-                            throw new DuplicateException("same sql template name: " + blockName + " in " + resource.getPath());
+                            throw new DuplicateException("same sql template name: '" + blockName + "' in " + resource.getPath());
                         }
                         singleResource.put(blockName, "");
                     } else {

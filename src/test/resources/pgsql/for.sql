@@ -13,7 +13,7 @@ from test.user t
 where
 --#if :names <> blank
 -- #for name,idx of :names delimiter ' and ' filter ${idx} > 0 && ${name} ~ 'o'
-t.name = ${:name}
+    t.name = ${:name}
 -- #end
 --#fi
 ;

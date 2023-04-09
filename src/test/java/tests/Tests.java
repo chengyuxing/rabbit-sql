@@ -5,10 +5,12 @@ import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.DateTimes;
 import com.github.chengyuxing.common.ImmutableList;
 import com.github.chengyuxing.common.tuple.Pair;
+import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.BakiDao;
 import com.github.chengyuxing.sql.PagedResource;
 import com.github.chengyuxing.sql.XQLFileManager;
+import com.github.chengyuxing.sql.exceptions.DuplicateException;
 import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.github.chengyuxing.sql.types.Param;
@@ -22,13 +24,18 @@ import org.nutz.json.Json;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URISyntaxException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.*;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class Tests {
 
@@ -326,6 +333,54 @@ public class Tests {
     @Test
     public void test() {
         XQLFileManager xqlFileManager = new XQLFileManager();
+        xqlFileManager.add("cyx", "pgsql/data.sql");
+        Set<String> names = new HashSet<>();
+        names.add("pgsql/dynamic.sql");
+        xqlFileManager.setFileNames(names);
         xqlFileManager.init();
+
+        String removed = xqlFileManager.remove("cyx");
+        System.out.println(removed);
+
+        System.out.println(ReflectUtil.obj2Json(xqlFileManager));
+    }
+
+    @Test
+    public void testf1() {
+        try {
+            XQLFileManager xqlFileManager = new XQLFileManager();
+            xqlFileManager.add("pgsql/multi.xql");
+            xqlFileManager.init();
+        } catch (DuplicateException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    @Test
+    public void test1() throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+        Object xql = ReflectUtil.getInstance(XQLFileManager.class);
+        Method m = xql.getClass().getDeclaredMethod("setFileNames", Set.class);
+        m.invoke(xql, Stream.of("a/v/d/bbb.xql", "111/222/ddd.xql").collect(Collectors.toSet()));
+        System.out.println(ReflectUtil.obj2Json(xql));
+    }
+
+    @Test
+    public void test11() {
+        System.out.println(Paths.get("/Users/chengyuxing/Downloads/flatlaf-demo-3.0.jar").toUri());
+    }
+
+    @Test
+    public void tesy3() {
+        Path path1 = Paths.get("/Users/chengyuxing/Downloads/flatlaf-demo-3.0.jar");
+        Path path2 = Paths.get("/Users/chengyuxing/Downloads/flatlaf-demo-3.0.jar");
+        Set<Path> paths = new HashSet<>();
+        paths.add(path1);
+        paths.add(path2);
+        System.out.println(paths);
+    }
+
+    @Test
+    public void test2() {
+        System.out.println(Paths.get("/addd/ccc/data.sql").getFileName().toString());
     }
 }

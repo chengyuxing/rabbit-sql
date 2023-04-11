@@ -339,7 +339,7 @@ public class Tests {
         xqlFileManager.setFileNames(names);
         xqlFileManager.init();
 
-        String removed = xqlFileManager.remove("cyx");
+        boolean removed = xqlFileManager.remove("cyx");
         System.out.println(removed);
 
         System.out.println(ReflectUtil.obj2Json(xqlFileManager));
@@ -349,7 +349,6 @@ public class Tests {
     public void testf1() {
         try {
             XQLFileManager xqlFileManager = new XQLFileManager();
-            xqlFileManager.add("pgsql/multi.xql");
             xqlFileManager.init();
         } catch (DuplicateException e) {
             System.out.println(e.getMessage());

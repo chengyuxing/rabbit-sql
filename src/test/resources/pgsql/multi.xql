@@ -2,7 +2,7 @@
 select now;
 current_date
 
-/*[a]*/
+/*[b]*/
 select 1,
     2,
     3,

@@ -5,6 +5,7 @@ import com.github.chengyuxing.common.console.Color;
 import com.github.chengyuxing.common.console.Printer;
 import com.github.chengyuxing.common.io.ClassPathResource;
 import com.github.chengyuxing.common.io.FileResource;
+import com.github.chengyuxing.common.io.TypedProperties;
 import com.github.chengyuxing.common.script.Comparators;
 import com.github.chengyuxing.common.script.IPipe;
 import com.github.chengyuxing.common.script.impl.FastExpression;
@@ -124,7 +125,7 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
  *
  * @see FastExpression
  */
-public class XQLFileManager {
+public class XQLFileManager implements AutoCloseable {
     private final static Logger log = LoggerFactory.getLogger(XQLFileManager.class);
     private final ReentrantLock lock = new ReentrantLock();
     private final Map<String, Map<String, String>> RESOURCE = new HashMap<>();
@@ -150,7 +151,7 @@ public class XQLFileManager {
     private Map<String, String> files = new HashMap<>();
     private Set<String> fileNames = new HashSet<>();
     private Map<String, String> constants = new HashMap<>();
-    private final Map<String, IPipe<?>> pipeInstances = new HashMap<>();
+    private Map<String, IPipe<?>> pipeInstances = new HashMap<>();
     private Map<String, String> pipes = new HashMap<>();
     private int checkPeriod = 30; //seconds
     private volatile boolean checkModified;
@@ -165,12 +166,53 @@ public class XQLFileManager {
      * Sql文件解析器实例
      */
     public XQLFileManager() {
-        ClassPathResource resource = new ClassPathResource("xql-files.properties");
+        initByProperties("xql-file-manager.properties");
+    }
+
+    /**
+     * Sql文件解析器实例
+     *
+     * @param propertiesLocation properties路径
+     */
+    public XQLFileManager(String propertiesLocation) {
+        initByProperties(propertiesLocation);
+    }
+
+    /**
+     * 根据properties文件初始化一个Sql文件解析器
+     *
+     * @param propertiesLocation properties路径
+     */
+    protected void initByProperties(String propertiesLocation) {
+        ClassPathResource resource = new ClassPathResource(propertiesLocation);
         if (resource.exists()) {
-            Properties properties = new Properties();
+            TypedProperties properties = new TypedProperties();
             try {
                 properties.load(resource.getInputStream());
-                properties.forEach((k, v) -> files.put(k.toString(), v.toString()));
+                Map<String, String> localFiles = new HashMap<>();
+                Map<String, String> localConstants = new HashMap<>();
+                Map<String, String> localPipes = new HashMap<>();
+                properties.forEach((k, s) -> {
+                    String p = k.toString();
+                    String v = s.toString();
+                    if (p.startsWith("files.")) {
+                        localFiles.put(p.substring(6), v);
+                    } else if (p.startsWith("constants.")) {
+                        localConstants.put(p.substring(10), v);
+                    } else if (p.startsWith("pipes.")) {
+                        localPipes.put(p.substring(6), v);
+                    }
+                });
+                setFiles(localFiles);
+                setConstants(localConstants);
+                setPipes(localPipes);
+                setFileNames(new HashSet<>(Arrays.asList(properties.getProperty("filenames", "").split(","))));
+                setDelimiter(properties.getProperty("delimiter", ";"));
+                setCharset(properties.getProperty("charset", "UTF-8"));
+                setNamedParamPrefix(properties.getProperty("namedParamPrefix", ":").charAt(0));
+                setHighlightSql(properties.getBool("highlightSql", false));
+                setCheckPeriod(properties.getInt("checkPeriod", 30));
+                setCheckModified(properties.getBool("checkModified", false));
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
@@ -178,7 +220,7 @@ public class XQLFileManager {
     }
 
     /**
-     * Sql文件解析器实例<br>
+     * Sql文件解析器实例
      *
      * @param files 文件：[别名，文件名]
      */
@@ -191,24 +233,18 @@ public class XQLFileManager {
      *
      * @param alias    文件别名
      * @param fileName 文件全路径名
-     * @return 别名
      */
-    public String add(String alias, String fileName) {
+    public void add(String alias, String fileName) {
         files.put(alias, fileName);
-        return alias;
     }
 
     /**
      * 添加sql文件，别名默认为文件名（不包含后缀）
      *
      * @param fileName 文件路径全名
-     * @return 别名
      */
-    public String add(String fileName) {
-        String name = Paths.get(fileName).getFileName().toString();
-        String alias = name.substring(0, name.lastIndexOf("."));
-        add(alias, fileName);
-        return alias;
+    public void add(String fileName) {
+        this.fileNames.add(fileName);
     }
 
     /**
@@ -217,13 +253,22 @@ public class XQLFileManager {
      * @param alias 文件别名
      * @return 移除的sql文件名
      */
-    public String remove(String alias) {
-        RESOURCE.remove(alias);
-        String fileFullName = files.remove(alias);
-        if (fileFullName != null) {
-            fileNames.remove(fileFullName);
+    public boolean remove(String alias) {
+        lock.lock();
+        try {
+            boolean removed = false;
+            RESOURCE.remove(alias);
+            String fileFullName = files.remove(alias);
+            if (fileFullName != null) {
+                removed = true;
+            }
+            if (fileNames.removeIf(fullName -> getFileNameWithoutExtension(fullName).equals(alias))) {
+                removed = true;
+            }
+            return removed;
+        } finally {
+            lock.unlock();
         }
-        return fileFullName;
     }
 
     /**
@@ -232,11 +277,7 @@ public class XQLFileManager {
      * @param files 文件 [别名，文件名]
      */
     public void setFiles(Map<String, String> files) {
-        if (!this.files.isEmpty()) {
-            this.files.putAll(files);
-        } else {
-            this.files = files;
-        }
+        this.files = files;
     }
 
     /**
@@ -255,7 +296,43 @@ public class XQLFileManager {
      */
     public void setFileNames(Set<String> fileNames) {
         this.fileNames = fileNames;
-        this.fileNames.forEach(this::add);
+    }
+
+    /**
+     * 统一集合所有命名sql和未命名sql文件
+     *
+     * @return 所有sql文件集合
+     */
+    public Map<String, String> allFiles() {
+        Map<String, String> all = new HashMap<>(files);
+        fileNames.forEach(fullName -> all.put(getFileNameWithoutExtension(fullName), fullName));
+        return all;
+    }
+
+    /**
+     * 清空所有资源（文件和sql资源）
+     */
+    public void clearResource() {
+        lock.lock();
+        try {
+            RESOURCE.clear();
+            fileNames.clear();
+            files.clear();
+            LAST_MODIFIED.clear();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
+     * 获取文件名不包含后缀
+     *
+     * @param fullFileName 文件全路径名
+     * @return 文件名
+     */
+    protected String getFileNameWithoutExtension(String fullFileName) {
+        String name = Paths.get(fullFileName).getFileName().toString();
+        return name.substring(0, name.lastIndexOf("."));
     }
 
     /**
@@ -383,7 +460,7 @@ public class XQLFileManager {
         try {
             loading = true;
             List<String> msg = new ArrayList<>();
-            for (Map.Entry<String, String> fileE : files.entrySet()) {
+            for (Map.Entry<String, String> fileE : allFiles().entrySet()) {
                 FileResource cr = new FileResource(fileE.getValue());
                 if (cr.exists()) {
                     String suffix = cr.getFilenameExtension();
@@ -1111,8 +1188,7 @@ public class XQLFileManager {
      * @see IPipe
      */
     public void setPipeInstances(Map<String, IPipe<?>> pipeInstances) {
-        this.pipeInstances.clear();
-        this.pipeInstances.putAll(pipeInstances);
+        this.pipeInstances = pipeInstances;
     }
 
     /**
@@ -1161,11 +1237,12 @@ public class XQLFileManager {
         this.highlightSql = highlightSql;
     }
 
-    public void clear() {
-        RESOURCE.clear();
-        fileNames.clear();
-        files.clear();
-        LAST_MODIFIED.clear();
+    /**
+     * 关闭sql文件管理器释放所有文件资源
+     */
+    @Override
+    public void close() {
+        clearResource();
         pipes.clear();
         pipeInstances.clear();
         constants.clear();

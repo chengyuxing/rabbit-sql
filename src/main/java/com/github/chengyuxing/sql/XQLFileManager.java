@@ -124,7 +124,7 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
  *
  * @see FastExpression
  */
-public class XQLFileManager implements AutoCloseable {
+public class XQLFileManager {
     private final static Logger log = LoggerFactory.getLogger(XQLFileManager.class);
     private final ReentrantLock lock = new ReentrantLock();
     private final Map<String, Map<String, String>> RESOURCE = new HashMap<>();
@@ -388,6 +388,9 @@ public class XQLFileManager implements AutoCloseable {
                 if (cr.exists()) {
                     String suffix = cr.getFilenameExtension();
                     if (suffix != null && (suffix.equals("sql") || suffix.equals("xql"))) {
+                        if (!RESOURCE.containsKey(fileE.getKey())) {
+                            RESOURCE.remove(fileE.getKey());
+                        }
                         String fileName = cr.getFileName();
                         if (LAST_MODIFIED.containsKey(fileName)) {
                             long timestamp = LAST_MODIFIED.get(fileName);
@@ -1158,8 +1161,7 @@ public class XQLFileManager implements AutoCloseable {
         this.highlightSql = highlightSql;
     }
 
-    @Override
-    public void close() {
+    public void clear() {
         RESOURCE.clear();
         fileNames.clear();
         files.clear();

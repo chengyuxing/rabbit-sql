@@ -128,12 +128,12 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
 public class XQLFileManager implements AutoCloseable {
     private final static Logger log = LoggerFactory.getLogger(XQLFileManager.class);
     private final ReentrantLock lock = new ReentrantLock();
-    private final Map<String, Map<String, String>> RESOURCE = new HashMap<>();
-    private final Map<String, Long> LAST_MODIFIED = new HashMap<>();
-    private static final Pattern NAME_PATTERN = Pattern.compile("/\\*\\s*\\[\\s*(?<name>\\S+)\\s*]\\s*\\*/");
-    private static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+)\\s*}\\s*\\*/");
-    private static final Pattern FOR_PATTERN = Pattern.compile("(?<item>\\w+)(\\s*,\\s*(?<index>\\w+))?\\s+of\\s+:(?<list>[\\w.]+)(?<pipes>(\\s*\\|\\s*[\\w.]+)*)?(\\s+delimiter\\s+'(?<delimiter>[^']*)')?(\\s+filter\\s+(?<filter>[\\S\\s]+))?");
-    private static final Pattern SWITCH_PATTERN = Pattern.compile(":(?<name>[\\w.]+)\\s*(?<pipes>(\\s*\\|\\s*\\w+)*)?");
+    private final Map<String, Map<String, String>> resources = new HashMap<>();
+    private final Map<String, Long> fileLastModifiedDates = new HashMap<>();
+    public static final Pattern NAME_PATTERN = Pattern.compile("/\\*\\s*\\[\\s*(?<name>\\S+)\\s*]\\s*\\*/");
+    public static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+)\\s*}\\s*\\*/");
+    public static final Pattern FOR_PATTERN = Pattern.compile("(?<item>\\w+)(\\s*,\\s*(?<index>\\w+))?\\s+of\\s+:(?<list>[\\w.]+)(?<pipes>(\\s*\\|\\s*[\\w.]+)*)?(\\s+delimiter\\s+'(?<delimiter>[^']*)')?(\\s+filter\\s+(?<filter>[\\S\\s]+))?");
+    public static final Pattern SWITCH_PATTERN = Pattern.compile(":(?<name>[\\w.]+)\\s*(?<pipes>(\\s*\\|\\s*\\w+)*)?");
     public static final String IF = "#if";
     public static final String FI = "#fi";
     public static final String CHOOSE = "#choose";
@@ -149,7 +149,7 @@ public class XQLFileManager implements AutoCloseable {
     private volatile boolean initialized;
     // ----------------optional properties------------------
     private Map<String, String> files = new HashMap<>();
-    private Set<String> fileNames = new HashSet<>();
+    private Set<String> filenames = new HashSet<>();
     private Map<String, String> constants = new HashMap<>();
     private Map<String, IPipe<?>> pipeInstances = new HashMap<>();
     private Map<String, String> pipes = new HashMap<>();
@@ -206,7 +206,7 @@ public class XQLFileManager implements AutoCloseable {
                 setFiles(localFiles);
                 setConstants(localConstants);
                 setPipes(localPipes);
-                setFileNames(new HashSet<>(Arrays.asList(properties.getProperty("filenames", "").split(","))));
+                setFilenames(new HashSet<>(Arrays.asList(properties.getProperty("filenames", "").split(","))));
                 setDelimiter(properties.getProperty("delimiter", ";"));
                 setCharset(properties.getProperty("charset", "UTF-8"));
                 setNamedParamPrefix(properties.getProperty("namedParamPrefix", ":").charAt(0));
@@ -244,11 +244,11 @@ public class XQLFileManager implements AutoCloseable {
      * @param fileName 文件路径全名
      */
     public void add(String fileName) {
-        this.fileNames.add(fileName);
+        this.filenames.add(fileName);
     }
 
     /**
-     * 移除一个sql文件
+     * 移除一个sql文件（sql资源也将被移除）
      *
      * @param alias 文件别名
      * @return 移除的sql文件名
@@ -257,12 +257,12 @@ public class XQLFileManager implements AutoCloseable {
         lock.lock();
         try {
             boolean removed = false;
-            RESOURCE.remove(alias);
+            resources.remove(alias);
             String fileFullName = files.remove(alias);
             if (fileFullName != null) {
                 removed = true;
             }
-            if (fileNames.removeIf(fullName -> getFileNameWithoutExtension(fullName).equals(alias))) {
+            if (filenames.removeIf(fullName -> getFileNameWithoutExtension(fullName).equals(alias))) {
                 removed = true;
             }
             return removed;
@@ -281,21 +281,12 @@ public class XQLFileManager implements AutoCloseable {
     }
 
     /**
-     * 获取所有sql映射文件
-     *
-     * @return 以配置的sql映射文件
-     */
-    public Map<String, String> getFiles() {
-        return files;
-    }
-
-    /**
      * 设置文件全路径名，默认别名为文件名（不包含后缀）
      *
-     * @param fileNames 文件全路径名
+     * @param filenames 文件全路径名
      */
-    public void setFileNames(Set<String> fileNames) {
-        this.fileNames = fileNames;
+    public void setFilenames(Set<String> filenames) {
+        this.filenames = filenames;
     }
 
     /**
@@ -305,20 +296,26 @@ public class XQLFileManager implements AutoCloseable {
      */
     public Map<String, String> allFiles() {
         Map<String, String> all = new HashMap<>(files);
-        fileNames.forEach(fullName -> all.put(getFileNameWithoutExtension(fullName), fullName));
+        filenames.forEach(fullName -> all.put(getFileNameWithoutExtension(fullName), fullName));
         return all;
     }
 
     /**
-     * 清空所有资源（文件和sql资源）
+     * 清空所有sql资源
      */
-    public void clearResource() {
+    public void clearSqlResources() {
+        resources.clear();
+    }
+
+    /**
+     * 清空所有文件
+     */
+    public void clearFiles() {
         lock.lock();
         try {
-            RESOURCE.clear();
-            fileNames.clear();
+            filenames.clear();
             files.clear();
-            LAST_MODIFIED.clear();
+            fileLastModifiedDates.clear();
         } finally {
             lock.unlock();
         }
@@ -394,7 +391,7 @@ public class XQLFileManager implements AutoCloseable {
             }
         }
         mergeSqlPartIfNecessary(singleResource);
-        RESOURCE.put(name, singleResource);
+        resources.put(name, singleResource);
     }
 
     /**
@@ -465,23 +462,20 @@ public class XQLFileManager implements AutoCloseable {
                 if (cr.exists()) {
                     String suffix = cr.getFilenameExtension();
                     if (suffix != null && (suffix.equals("sql") || suffix.equals("xql"))) {
-                        if (!RESOURCE.containsKey(fileE.getKey())) {
-                            RESOURCE.remove(fileE.getKey());
-                        }
                         String fileName = cr.getFileName();
-                        if (LAST_MODIFIED.containsKey(fileName)) {
-                            long timestamp = LAST_MODIFIED.get(fileName);
+                        if (fileLastModifiedDates.containsKey(fileName)) {
+                            long timestamp = fileLastModifiedDates.get(fileName);
                             long lastModified = cr.getLastModified();
                             if (timestamp != -1 && timestamp != 0 && timestamp != lastModified) {
                                 resolveSqlContent(fileE.getKey(), cr);
-                                LAST_MODIFIED.put(fileName, lastModified);
+                                fileLastModifiedDates.put(fileName, lastModified);
                                 msg.add("reload modified sql file: " + fileName);
                             } else {
                                 msg.add("sql file: " + fileName + " already loaded.");
                             }
                         } else {
                             resolveSqlContent(fileE.getKey(), cr);
-                            LAST_MODIFIED.put(fileName, cr.getLastModified());
+                            fileLastModifiedDates.put(fileName, cr.getLastModified());
                             msg.add("load new sql file: " + fileName);
                         }
                     }
@@ -874,7 +868,7 @@ public class XQLFileManager implements AutoCloseable {
      * 遍历查看已扫描的sql资源
      */
     public void look() {
-        RESOURCE.forEach((k, v) -> v.forEach((n, o) -> {
+        resources.forEach((k, v) -> v.forEach((n, o) -> {
             Color color = Color.PURPLE;
             if (n.startsWith("${")) {
                 color = Color.GREEN;
@@ -893,7 +887,7 @@ public class XQLFileManager implements AutoCloseable {
      * @param kvFunc 回调函数
      */
     public void foreach(BiConsumer<String, String> kvFunc) {
-        foreachEntry((k, r) -> r.forEach((n, o) -> kvFunc.accept(k + "." + n, o)));
+        foreachSqlEntry((k, r) -> r.forEach((n, o) -> kvFunc.accept(k + "." + n, o)));
     }
 
     /**
@@ -901,8 +895,8 @@ public class XQLFileManager implements AutoCloseable {
      *
      * @param krFunc 回调函数
      */
-    public void foreachEntry(BiConsumer<String, Map<String, String>> krFunc) {
-        RESOURCE.forEach(krFunc);
+    public void foreachSqlEntry(BiConsumer<String, Map<String, String>> krFunc) {
+        resources.forEach(krFunc);
     }
 
     /**
@@ -912,7 +906,7 @@ public class XQLFileManager implements AutoCloseable {
      */
     public Set<String> names() {
         Set<String> names = new HashSet<>();
-        foreachEntry((k, r) -> r.keySet().forEach(n -> names.add(k + "." + n)));
+        foreachSqlEntry((k, r) -> r.keySet().forEach(n -> names.add(k + "." + n)));
         return names;
     }
 
@@ -923,7 +917,7 @@ public class XQLFileManager implements AutoCloseable {
      */
     public int size() {
         int i = 0;
-        for (Map<String, String> e : RESOURCE.values()) {
+        for (Map<String, String> e : resources.values()) {
             i += e.size();
         }
         return i;
@@ -937,11 +931,11 @@ public class XQLFileManager implements AutoCloseable {
      */
     public boolean contains(String name) {
         String fileAlias = name.substring(0, name.indexOf("."));
-        if (!RESOURCE.containsKey(fileAlias)) {
+        if (!resources.containsKey(fileAlias)) {
             return false;
         }
         String sqlName = name.substring(name.indexOf(".") + 1);
-        return RESOURCE.get(fileAlias).containsKey(sqlName);
+        return resources.get(fileAlias).containsKey(sqlName);
     }
 
     /**
@@ -951,7 +945,7 @@ public class XQLFileManager implements AutoCloseable {
      * @return sql集
      */
     public Map<String, String> getSqlEntry(String name) {
-        return RESOURCE.get(name);
+        return resources.get(name);
     }
 
     /**
@@ -963,8 +957,8 @@ public class XQLFileManager implements AutoCloseable {
      */
     public String get(String name) {
         String fileAlias = name.substring(0, name.indexOf("."));
-        if (RESOURCE.containsKey(fileAlias)) {
-            Map<String, String> sqlsRow = RESOURCE.get(fileAlias);
+        if (resources.containsKey(fileAlias)) {
+            Map<String, String> sqlsRow = resources.get(fileAlias);
             String sqlName = name.substring(name.indexOf(".") + 1);
             if (sqlsRow.containsKey(sqlName)) {
                 return SqlUtil.trimEnd(sqlsRow.get(sqlName));
@@ -1242,7 +1236,8 @@ public class XQLFileManager implements AutoCloseable {
      */
     @Override
     public void close() {
-        clearResource();
+        clearSqlResources();
+        clearFiles();
         pipes.clear();
         pipeInstances.clear();
         constants.clear();

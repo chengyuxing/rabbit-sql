@@ -336,7 +336,7 @@ public class Tests {
         xqlFileManager.add("cyx", "pgsql/data.sql");
         Set<String> names = new HashSet<>();
         names.add("pgsql/dynamic.sql");
-        xqlFileManager.setFileNames(names);
+        xqlFileManager.setFilenames(names);
         xqlFileManager.init();
 
         boolean removed = xqlFileManager.remove("cyx");
@@ -358,7 +358,7 @@ public class Tests {
     @Test
     public void test1() throws InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
         Object xql = ReflectUtil.getInstance(XQLFileManager.class);
-        Method m = xql.getClass().getDeclaredMethod("setFileNames", Set.class);
+        Method m = xql.getClass().getDeclaredMethod("setFilenames", Set.class);
         m.invoke(xql, Stream.of("a/v/d/bbb.xql", "111/222/ddd.xql").collect(Collectors.toSet()));
         System.out.println(ReflectUtil.obj2Json(xql));
     }

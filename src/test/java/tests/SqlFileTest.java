@@ -35,7 +35,7 @@ public class SqlFileTest {
         System.out.println("-------");
         System.out.println("-------");
         System.out.println(sqlFileManager.get("data.logical", Args.<Object>of("name", "cyx").add("age", 101)));
-        sqlFileManager.foreachEntry((k, r) -> {
+        sqlFileManager.foreachSqlEntry((k, r) -> {
             System.out.println(k + "----->" + r);
         });
         System.out.println(sqlFileManager.size());

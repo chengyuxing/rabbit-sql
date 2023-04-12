@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -29,6 +30,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.github.chengyuxing.common.utils.StringUtil.*;
 import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
@@ -37,7 +40,7 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
  * <h2>支持扩展脚本解析动态SQL的文件管理器</h2>
  * 合理利用sql所支持的块注释（{@code /**}{@code /}）、行注释（{@code --}）、传名参数（{@code :name}）和字符串模版占位符（{@code ${template}}），对其进行了语法结构扩展，几乎没有对sql文件标准进行过改动，各种支持sql的IDE依然可以工作。<br>
  * 支持外部sql(本地文件系统)和classpath下的sql，
- * 本地sql文件以 {@code file:} 开头，默认读取<strong>classpath</strong>下的sql文件，识别的文件格式支持: {@code .xql.sql}，
+ * 本地sql文件以 {@code file:} (URI格式)开头，默认读取<strong>classpath</strong>下的sql文件，识别的文件格式支持: {@code .xql.sql}，
  * 默认情况下两种文件内容没区别，仅需内容遵循格式，{@code .xql}结尾用来表示此类型文件是 {@code XQLFileManager} 所支持的扩展的sql文件。
  * <blockquote>
  *     <ul>
@@ -193,20 +196,28 @@ public class XQLFileManager implements AutoCloseable {
                 Map<String, String> localConstants = new HashMap<>();
                 Map<String, String> localPipes = new HashMap<>();
                 properties.forEach((k, s) -> {
-                    String p = k.toString();
-                    String v = s.toString();
-                    if (p.startsWith("files.")) {
-                        localFiles.put(p.substring(6), v);
-                    } else if (p.startsWith("constants.")) {
-                        localConstants.put(p.substring(10), v);
-                    } else if (p.startsWith("pipes.")) {
-                        localPipes.put(p.substring(6), v);
+                    String p = k.toString().trim();
+                    String v = s.toString().trim();
+                    if (!p.equals("") && !v.equals("")) {
+                        if (p.startsWith("files.")) {
+                            localFiles.put(p.substring(6), v);
+                        } else if (p.startsWith("constants.")) {
+                            localConstants.put(p.substring(10), v);
+                        } else if (p.startsWith("pipes.")) {
+                            localPipes.put(p.substring(6), v);
+                        }
                     }
                 });
+
+                Set<String> localFilenames = Stream.of(properties.getProperty("filenames", "").split(","))
+                        .map(String::trim)
+                        .filter(name -> !name.equals(""))
+                        .collect(Collectors.toSet());
+
                 setFiles(localFiles);
                 setConstants(localConstants);
                 setPipes(localPipes);
-                setFilenames(new HashSet<>(Arrays.asList(properties.getProperty("filenames", "").split(","))));
+                setFilenames(localFilenames);
                 setDelimiter(properties.getProperty("delimiter", ";"));
                 setCharset(properties.getProperty("charset", "UTF-8"));
                 setNamedParamPrefix(properties.getProperty("namedParamPrefix", ":").charAt(0));
@@ -296,7 +307,13 @@ public class XQLFileManager implements AutoCloseable {
      */
     public Map<String, String> allFiles() {
         Map<String, String> all = new HashMap<>(files);
-        filenames.forEach(fullName -> all.put(getFileNameWithoutExtension(fullName), fullName));
+        filenames.forEach(fullName -> {
+            String defaultAlias = getFileNameWithoutExtension(fullName);
+            if (all.containsKey(defaultAlias)) {
+                throw new DuplicateException("auto generate sql alias error: '" + defaultAlias + "' already exists!");
+            }
+            all.put(defaultAlias, fullName);
+        });
         return all;
     }
 
@@ -328,7 +345,12 @@ public class XQLFileManager implements AutoCloseable {
      * @return 文件名
      */
     protected String getFileNameWithoutExtension(String fullFileName) {
-        String name = Paths.get(fullFileName).getFileName().toString();
+        String name;
+        if (fullFileName.startsWith("file:")) {
+            name = Paths.get(URI.create(fullFileName)).getFileName().toString();
+        } else {
+            name = Paths.get(fullFileName).getFileName().toString();
+        }
         return name.substring(0, name.lastIndexOf("."));
     }
 

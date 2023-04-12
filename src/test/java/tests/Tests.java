@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.DateTimes;
 import com.github.chengyuxing.common.ImmutableList;
+import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.sql.Args;
@@ -25,7 +26,11 @@ import org.nutz.json.Json;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
@@ -376,6 +381,15 @@ public class Tests {
         paths.add(path1);
         paths.add(path2);
         System.out.println(paths);
+    }
+
+    @Test
+    public void test111() throws IOException, URISyntaxException {
+        FileResource resource = new FileResource("file:/Users/chengyuxing/Downlaaaoads/flatlaf-demo-3.0.jar");
+        System.out.println(resource.exists());
+        URI uri = new URI("file:/Users/chengyuxing/Downloads/flatlaf-demo-3.0.jar");
+        System.out.println(Files.exists(Paths.get(uri)));
+        System.out.println(uri.toURL().getFile());
     }
 
     @Test

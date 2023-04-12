@@ -3,7 +3,6 @@ package com.github.chengyuxing.sql;
 import com.github.chengyuxing.common.WatchDog;
 import com.github.chengyuxing.common.console.Color;
 import com.github.chengyuxing.common.console.Printer;
-import com.github.chengyuxing.common.io.ClassPathResource;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.io.TypedProperties;
 import com.github.chengyuxing.common.script.Comparators;
@@ -30,8 +29,6 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.github.chengyuxing.common.utils.StringUtil.*;
 import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
@@ -187,7 +184,7 @@ public class XQLFileManager implements AutoCloseable {
      * @param propertiesLocation properties路径
      */
     protected void initByProperties(String propertiesLocation) {
-        ClassPathResource resource = new ClassPathResource(propertiesLocation);
+        FileResource resource = new FileResource(propertiesLocation);
         if (resource.exists()) {
             TypedProperties properties = new TypedProperties();
             try {
@@ -209,15 +206,10 @@ public class XQLFileManager implements AutoCloseable {
                     }
                 });
 
-                Set<String> localFilenames = Stream.of(properties.getProperty("filenames", "").split(","))
-                        .map(String::trim)
-                        .filter(name -> !name.equals(""))
-                        .collect(Collectors.toSet());
-
                 setFiles(localFiles);
                 setConstants(localConstants);
                 setPipes(localPipes);
-                setFilenames(localFilenames);
+                setFilenames(properties.getSet("filenames", new HashSet<>()));
                 setDelimiter(properties.getProperty("delimiter", ";"));
                 setCharset(properties.getProperty("charset", "UTF-8"));
                 setNamedParamPrefix(properties.getProperty("namedParamPrefix", ":").charAt(0));

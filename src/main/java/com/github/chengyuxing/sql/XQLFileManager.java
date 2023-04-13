@@ -1246,6 +1246,15 @@ public class XQLFileManager implements AutoCloseable {
     }
 
     /**
+     * 获取sql翻译解析器
+     *
+     * @return sql翻译解析器
+     */
+    public SqlTranslator getSqlTranslator() {
+        return sqlTranslator;
+    }
+
+    /**
      * 关闭sql文件管理器释放所有文件资源
      */
     @Override

@@ -354,9 +354,11 @@ public class Tests {
     public void testf1() {
         try {
             XQLFileManager xqlFileManager = new XQLFileManager();
+            xqlFileManager.add("abc", "pgsql/data.sql");
+            xqlFileManager.add("pgsql/data.sql");
             xqlFileManager.init();
         } catch (DuplicateException e) {
-            System.out.println(e.getMessage());
+            e.printStackTrace();
         }
     }
 

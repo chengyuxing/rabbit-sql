@@ -305,7 +305,7 @@ public class XQLFileManager implements AutoCloseable {
                 throw new DuplicateException("auto generate sql alias error: '" + defaultAlias + "' already exists!");
             }
             if (all.containsValue(fullName)) {
-                throw new DuplicateException("xql file '" + fullName + "' already configured , do not configure again!");
+                throw new DuplicateException("xql file '" + fullName + "' already configured, do not configure again!");
             }
             all.put(defaultAlias, fullName);
         });

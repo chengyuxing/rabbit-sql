@@ -42,6 +42,18 @@
 
 具体使用方法和配置可以参考[文档](https://github.com/chengyuxing/rabbit-sql-spring-boot-starter)。
 
+## IDEA插件支持
+
+插件商店搜索 [Rabbit sql](https://plugins.jetbrains.com/plugin/21403-rabbit-sql)。
+
+<div>
+  <script src="https://plugins.jetbrains.com/assets/scripts/mp-widget.js"></script>
+<script>
+  // Please, replace #yourelement with a real element id on your webpage
+  MarketplaceWidget.setupMarketplaceWidget('card', 21403, "#yourelement");
+</script>
+</div>
+
 ## 快速上手
 
 ### 初始化
@@ -446,11 +458,46 @@ order by id;
   select * from test."user" t where id = :id order by id;
   ```
 
+#### 构造函数
+
+- **new XQLFileManager()**
+
+  如果源路径 `.../src/main/resources/`下有文件 `xql-file-manager.properties` 则根据此文件进行配置项初始化，初始化默认可选配置项为：
+
+  ```properties
+  # Format: multi xql file split by ',' symbol and file name is alias default, e,g:
+  # filenames=data.xql,system.xql
+  filenames=
+  
+  # Format: multi xql file configure the custom alias, e.g:
+  # files.dt=data.sql
+  # files.sys=system.sql
+  
+  # Multi sql fragment delimiter symbol in xql file, ';' is the default also standard.
+  # Notice: if your sql fragment is ddl or procedure, maybe one fragment contains
+  # more ';' and it's not a delimiter, you have to change delimiter to another like ';;'.
+  delimiter=;
+  
+  # UTF-8 is the default.
+  charset=UTF-8
+  
+  constants=
+  pipes=
+  namedParamPrefix=:
+  highlightSql=false
+  checkPeriod=30
+  checkModified=false
+  ```
+
 #### 配置项
 
 - **files**
 
-  添加sql文件后，可通过 `别名.sql名` 来获取sql，如上例子：`my.query`；
+  sql文件字典集合，键为别名，值为sql文件名，可通过 `别名.sql名` 来获取sql，如上例子：`my.query`；
+
+- **filenames**
+
+  一组sql文件名，默认别名就是sql文件名，不包含后缀；
 
 - **pipeInstances/pipes**
 

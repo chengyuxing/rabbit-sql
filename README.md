@@ -42,6 +42,18 @@ It's just a small lib, wrapper of **jdbc**, support some basic operation. simple
 
 Get some usage from [document](https://github.com/chengyuxing/rabbit-sql-spring-boot-starter).
 
+## IDEA plugin support
+
+plugin market: [Rabbit sql](https://plugins.jetbrains.com/plugin/21403-rabbit-sql).
+
+<div>
+  <script src="https://plugins.jetbrains.com/assets/scripts/mp-widget.js"></script>
+<script>
+  // Please, replace #yourelement with a real element id on your webpage
+  MarketplaceWidget.setupMarketplaceWidget('card', 21403, "#yourelement");
+</script>
+</div>
+
 ## Quick start
 
 ### Init
@@ -452,11 +464,46 @@ order by id;
   select * from test."user" t where id = :id order by id;
   ```
 
+#### Constructor
+
+- **new XQLFileManager()**
+
+  If source root `.../src/main/resources` contains file what is named `xql-file-manager.properties` , optional properties will be init by this file, the default options in `sql-file-manager.properties` :
+
+  ```properties
+  # Format: multi xql file split by ',' symbol and file name is alias default, e,g:
+  # filenames=data.xql,system.xql
+  filenames=
+  
+  # Format: multi xql file configure the custom alias, e.g:
+  # files.dt=data.sql
+  # files.sys=system.sql
+  
+  # Multi sql fragment delimiter symbol in xql file, ';' is the default also standard.
+  # Notice: if your sql fragment is ddl or procedure, maybe one fragment contains
+  # more ';' and it's not a delimiter, you have to change delimiter to another like ';;'.
+  delimiter=;
+  
+  # UTF-8 is the default.
+  charset=UTF-8
+  
+  constants=
+  pipes=
+  namedParamPrefix=:
+  highlightSql=false
+  checkPeriod=30
+  checkModified=false
+  ```
+
 #### Options
 
 - **files**
 
-  you can get sql statement  by `alias.your_sql_name` when sql file added, as above example: `my.sql`;
+  Sql file mapping dictionary, key is alias, value is sql file name, you can get sql statement  by `alias.your_sql_name` when sql file added, as above example: `my.sql`;
+
+- **filenames**
+
+  sql file name list, default alias is file name, exclude suffix;
 
 - **pipeInstances/pipes**
 
@@ -464,7 +511,7 @@ order by id;
 
 - **delimiter**
 
-  sql file **"k-v"** structure delimiter **default `;`**, follows standard multi sql structure delimiter by `;`, but there is a condition, if you have plsql in file e.g: `create function...` or `create procedure...`, it will be multi sql statement in one sql object, you need specific custom delimiter for resolve correctly:
+  Sql file **"k-v"** structure delimiter **default `;`**, follows standard multi sql structure delimiter by `;`, but there is a condition, if you have plsql in file e.g: `create function...` or `create procedure...`, it will be multi sql statement in one sql object, you need specific custom delimiter for resolve correctly:
 
   - e.g ( `;;`) double semicolon;
   - `null` or `""` : every sql object must follows without delimiter.

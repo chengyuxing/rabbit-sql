@@ -2,6 +2,7 @@ package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.utils.CollectionUtil;
+import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.datasource.DataSourceUtil;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
@@ -26,6 +27,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -258,6 +260,13 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
 
             @Override
+            public <T> List<T> entities(Class<T> entityClass) {
+                try (Stream<DataRow> s = stream()) {
+                    return s.map(d -> d.toEntity(entityClass)).collect(Collectors.toList());
+                }
+            }
+
+            @Override
             public <T> IPageable<T> pageable(int page, int size) {
                 IPageable<T> iPageable = new SimplePageable<>(sql, page, size);
                 return iPageable.args(args);
@@ -266,6 +275,19 @@ public class BakiDao extends JdbcSupport implements Baki {
             @Override
             public DataRow findFirstRow() {
                 return findFirst().orElseGet(DataRow::new);
+            }
+
+            @Override
+            public <T> T findFirstEntity(Class<T> entityClass) {
+                return findFirst().map(d -> d.toEntity(entityClass))
+                        .orElseGet(() -> {
+                            try {
+                                return ReflectUtil.getInstance(entityClass);
+                            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
+                                     NoSuchMethodException e) {
+                                throw new RuntimeException(e);
+                            }
+                        });
             }
 
             @Override

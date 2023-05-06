@@ -76,6 +76,15 @@ public abstract class QueryExecutor {
     public abstract List<DataRow> rows();
 
     /**
+     * 查询为一组标准java bean实体
+     *
+     * @param entityClass 实体类
+     * @param <T>         实体类型
+     * @return 一组实体
+     */
+    public abstract <T> List<T> entities(Class<T> entityClass);
+
+    /**
      * 分页查询<br>
      * 可能默认的构建分页SQL无法满足所有情况，例如PostgreSQL中:
      * <pre>with a as (select ... limit 0 offset 5)<br>select * from a;</pre>
@@ -101,6 +110,15 @@ public abstract class QueryExecutor {
      * @return 一条记录
      */
     public abstract DataRow findFirstRow();
+
+    /**
+     * 查询一个实体
+     *
+     * @param entityClass 实体类
+     * @param <T>         实体类型
+     * @return 实体记录或空实体
+     */
+    public abstract <T> T findFirstEntity(Class<T> entityClass);
 
     /**
      * 查询一条记录

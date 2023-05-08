@@ -217,7 +217,7 @@ public class MyTest {
     @Test
     public void defaultPager() throws Exception {
         PagedResource<DataRow> pagedResource = baki.query("select * from test.region")
-                .<DataRow>pageable(1, 5)
+                .pageable(1, 5)
                 .count(10)
                 .collect(d -> d);
         System.out.println(pagedResource);

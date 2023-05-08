@@ -15,6 +15,8 @@ import java.net.URISyntaxException;
 import java.sql.*;
 import java.time.*;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -85,9 +87,9 @@ public class BakiSessionTest {
     public void testQuery() throws Exception {
         PagedResource<DataRow> resource = baki.query("select * from test.region where id < ?id")
                 .arg("ID", 8)
-                .<DataRow>pageable(1, 7)
+                .pageable(1, 7)
 //                .count(5)
-                .collect(d -> d);
+                .collect();
         System.out.println(resource);
 
 //        try (Stream<DataRow> s = baki.query("select * from test.region where id < ?id")

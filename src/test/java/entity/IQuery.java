@@ -35,5 +35,5 @@ public interface IQuery<T> {
 
     int count();
 
-    IPageable<T> pageable(int page, int size);
+    IPageable pageable(int page, int size);
 }

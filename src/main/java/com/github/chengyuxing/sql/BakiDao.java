@@ -267,8 +267,8 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
 
             @Override
-            public <T> IPageable<T> pageable(int page, int size) {
-                IPageable<T> iPageable = new SimplePageable<>(sql, page, size);
+            public IPageable pageable(int page, int size) {
+                IPageable iPageable = new SimplePageable(sql, page, size);
                 return iPageable.args(args);
             }
 
@@ -444,9 +444,8 @@ public class BakiDao extends JdbcSupport implements Baki {
     /**
      * 简单的分页构建器实现
      *
-     * @param <T> 结果类型参数
      */
-    class SimplePageable<T> extends IPageable<T> {
+    class SimplePageable extends IPageable {
 
         /**
          * 简单分页构建器构造函数
@@ -460,7 +459,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         }
 
         @Override
-        public PagedResource<T> collect(Function<DataRow, T> mapper) {
+        public <T> PagedResource<T> collect(Function<DataRow, T> mapper) {
             String query = getSql(recordQuery, args);
             if (count == null) {
                 String cq = countQuery;

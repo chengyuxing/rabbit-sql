@@ -99,10 +99,9 @@ public abstract class QueryExecutor {
      *
      * @param page 页码
      * @param size 每页大小
-     * @param <T>  结果类型参数
      * @return 分页构建器
      */
-    public abstract <T> IPageable<T> pageable(int page, int size);
+    public abstract IPageable pageable(int page, int size);
 
     /**
      * 查询一条记录

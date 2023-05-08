@@ -9,10 +9,8 @@ import java.util.function.Function;
 
 /**
  * 分页查询构建器通用接口
- *
- * @param <T> 结果类型参数
  */
-public abstract class IPageable<T> {
+public abstract class IPageable {
     protected Map<String, Object> args = new HashMap<>();
     protected final String recordQuery;
     protected String countQuery;
@@ -42,7 +40,7 @@ public abstract class IPageable<T> {
      * @param args 参数
      * @return 分页对象
      */
-    public IPageable<T> args(Map<String, Object> args) {
+    public IPageable args(Map<String, Object> args) {
         if (!this.args.isEmpty()) {
             this.args.putAll(args);
         } else
@@ -56,7 +54,7 @@ public abstract class IPageable<T> {
      * @param countQuery count查询语句
      * @return 分页对象
      */
-    public IPageable<T> count(String countQuery) {
+    public IPageable count(String countQuery) {
         this.countQuery = countQuery;
         return this;
     }
@@ -67,7 +65,7 @@ public abstract class IPageable<T> {
      * @param count 总数据条数
      * @return 分页对象
      */
-    public IPageable<T> count(Integer count) {
+    public IPageable count(Integer count) {
         this.count = count;
         return this;
     }
@@ -79,7 +77,7 @@ public abstract class IPageable<T> {
      * @param countQuery count查询语句或者 {@link #count(String)}
      * @return 当前原生的查询sql
      */
-    public IPageable<T> disableDefaultPageSql(String... countQuery) {
+    public IPageable disableDefaultPageSql(String... countQuery) {
         this.disablePageSql = true;
         if (countQuery.length > 0) {
             this.countQuery = countQuery[0];
@@ -93,7 +91,7 @@ public abstract class IPageable<T> {
      * @param func 分页参数重写函数
      * @return 自定义的分页参数
      */
-    public IPageable<T> rewriteDefaultPageArgs(Function<Map<String, Integer>, Map<String, Integer>> func) {
+    public IPageable rewriteDefaultPageArgs(Function<Map<String, Integer>, Map<String, Integer>> func) {
         this.rewriteArgsFunc = func;
         return this;
     }
@@ -106,7 +104,7 @@ public abstract class IPageable<T> {
      * @see #disableDefaultPageSql(String...)
      * @see #rewriteDefaultPageArgs(Function)
      */
-    public IPageable<T> pageHelper(PageHelper pageHelper) {
+    public IPageable pageHelper(PageHelper pageHelper) {
         this.customPageHelper = pageHelper;
         return this;
     }
@@ -117,5 +115,14 @@ public abstract class IPageable<T> {
      * @param mapper 行数据映射函数
      * @return 已分页的资源
      */
-    public abstract PagedResource<T> collect(Function<DataRow, T> mapper);
+    public abstract <T> PagedResource<T> collect(Function<DataRow, T> mapper);
+
+    /**
+     * 收集结果集操作
+     *
+     * @return 已分页的资源
+     */
+    public PagedResource<DataRow> collect() {
+        return collect(d -> d);
+    }
 }

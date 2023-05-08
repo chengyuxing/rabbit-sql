@@ -29,7 +29,7 @@ It's just a small lib, wrapper of **jdbc**, support some basic operation. simple
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.1.4</version>
+    <version>7.1.5</version>
 </dependency>
 ```
 

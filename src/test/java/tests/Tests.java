@@ -398,4 +398,14 @@ public class Tests {
     public void test2() {
         System.out.println(Paths.get("/addd/ccc/data.sql").getFileName().toString());
     }
+
+    @Test
+    public void test3() throws IOException {
+        XQLFileManager xqlFileManager = new XQLFileManager();
+        xqlFileManager.setHighlightSql(true);
+        xqlFileManager.add("cyx", "pgsql/data.sql");
+        xqlFileManager.init();
+//        Map<String, String> map = xqlFileManager.sqlFileStructured(new FileResource("pgsql/data.sql"));
+        System.out.println(xqlFileManager);
+    }
 }

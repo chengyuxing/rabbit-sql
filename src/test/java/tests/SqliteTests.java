@@ -6,6 +6,7 @@ import com.github.chengyuxing.sql.BakiDao;
 import com.github.chengyuxing.sql.PagedResource;
 import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.PageHelperProvider;
+import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -25,7 +26,7 @@ public class SqliteTests {
         dataSource.setDriverClassName("org.sqlite.JDBC");
         dataSource.setJdbcUrl("jdbc:sqlite:/Users/chengyuxing/Downloads/sqlite_data");
         BakiDao bakiDao = BakiDao.of(dataSource);
-        bakiDao.setPageHelperProvider(new PageHelperProvider() {
+        bakiDao.setGlobalPageHelperProvider(new PageHelperProvider() {
             @Override
             public PageHelper customPageHelper(DatabaseMetaData databaseMetaData, String dbName, char namedParamPrefix) {
                 if (dbName.equals("sqlite")) {
@@ -51,6 +52,7 @@ public class SqliteTests {
     public void test1() {
         PagedResource<DataRow> resource = baki.query("select 1 union select 2")
                 .pageable(1, 10)
+                .pageHelper((databaseMetaData, dbName, namedParamPrefix) -> new PGPageHelper())
                 .collect();
 
         System.out.println(resource);

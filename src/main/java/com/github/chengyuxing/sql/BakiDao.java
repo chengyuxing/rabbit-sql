@@ -67,7 +67,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     private DatabaseMetaData currentMetaData;
     private SqlTranslator sqlTranslator = new SqlTranslator(':');
     //---------optional properties------
-    private PageHelperProvider pageHelperProvider;
+    private PageHelperProvider globalPageHelperProvider;
     private XQLFileManager xqlFileManager;
     private char namedParamPrefix = ':';
     private boolean strictDynamicSqlArg = true;
@@ -443,12 +443,12 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * 设置自定义的分页帮助提供程序
+     * 设置全局自定义的分页帮助提供程序
      *
-     * @param pageHelperProvider 分页帮助提供程序
+     * @param globalPageHelperProvider 全局分页帮助提供程序
      */
-    public void setPageHelperProvider(PageHelperProvider pageHelperProvider) {
-        this.pageHelperProvider = pageHelperProvider;
+    public void setGlobalPageHelperProvider(PageHelperProvider globalPageHelperProvider) {
+        this.globalPageHelperProvider = globalPageHelperProvider;
     }
 
     /**
@@ -483,7 +483,23 @@ public class BakiDao extends JdbcSupport implements Baki {
                     count = Integer.parseInt(cn.toString());
                 }
             }
-            PageHelper pageHelper = defaultPager();
+
+            String dbName;
+            try {
+                dbName = metaData().getDatabaseProductName().toLowerCase();
+            } catch (SQLException e) {
+                throw new UncheckedSqlException("get database metadata error: ", e);
+            }
+
+            PageHelper pageHelper = null;
+
+            if (pageHelperProvider != null) {
+                pageHelper = pageHelperProvider.customPageHelper(metaData(), dbName, namedParamPrefix);
+            }
+
+            if (pageHelper == null) {
+                pageHelper = defaultPager();
+            }
             pageHelper.init(page, size, count);
             Map<String, Integer> pagedArgs = pageHelper.pagedArgs();
             if (pagedArgs == null) {
@@ -570,8 +586,8 @@ public class BakiDao extends JdbcSupport implements Baki {
     protected PageHelper defaultPager() {
         try {
             String dbName = metaData().getDatabaseProductName().toLowerCase();
-            if (pageHelperProvider != null) {
-                PageHelper pageHelper = pageHelperProvider.customPageHelper(metaData(), dbName, namedParamPrefix);
+            if (globalPageHelperProvider != null) {
+                PageHelper pageHelper = globalPageHelperProvider.customPageHelper(metaData(), dbName, namedParamPrefix);
                 if (pageHelper != null) {
                     return pageHelper;
                 }

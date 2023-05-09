@@ -91,7 +91,7 @@ public abstract class QueryExecutor {
      * 关于自定义分页SQL配置如下:
      * <blockquote>
      * <ul>
-     * <li>禁用自动分页构建：{@link IPageable#disableDefaultPageSql(String...)}，因为如上例子，否则会在SQL结尾加{@code limit ... offset ...}</li>
+     * <li>禁用自动分页构建：{@link IPageable#disableDefaultPageSql(String...)}，如果不禁用，如上例子会在SQL结尾加{@code limit ... offset ...}</li>
      * <li>自定义count查询语句：{@link IPageable#count(String)}</li>
      * <li>如有必要自定义个性化参数名：{@link IPageable#rewriteDefaultPageArgs(Function)}</li>
      * </ul>

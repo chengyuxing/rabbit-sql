@@ -19,7 +19,6 @@ public abstract class IPageable {
     protected Integer count;
     protected boolean disablePageSql;
     protected Function<Map<String, Integer>, Map<String, Integer>> rewriteArgsFunc;
-    protected PageHelper customPageHelper;
 
     /**
      * 分页构建器构造函数
@@ -93,19 +92,6 @@ public abstract class IPageable {
      */
     public IPageable rewriteDefaultPageArgs(Function<Map<String, Integer>, Map<String, Integer>> func) {
         this.rewriteArgsFunc = func;
-        return this;
-    }
-
-    /**
-     * 设置自定义的分页帮助工具类，非必要尽量不要使用此选项，硬编码缺少灵活性
-     *
-     * @param pageHelper 分页帮助类
-     * @return 分页构建器
-     * @see #disableDefaultPageSql(String...)
-     * @see #rewriteDefaultPageArgs(Function)
-     */
-    public IPageable pageHelper(PageHelper pageHelper) {
-        this.customPageHelper = pageHelper;
         return this;
     }
 

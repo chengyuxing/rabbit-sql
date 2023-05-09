@@ -10,6 +10,7 @@ import com.github.chengyuxing.sql.exceptions.DuplicateException;
 import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 import com.github.chengyuxing.sql.page.IPageable;
 import com.github.chengyuxing.sql.page.PageHelper;
+import com.github.chengyuxing.sql.page.PageHelperProvider;
 import com.github.chengyuxing.sql.page.impl.Db2PageHelper;
 import com.github.chengyuxing.sql.page.impl.MysqlPageHelper;
 import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
@@ -66,7 +67,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     private DatabaseMetaData currentMetaData;
     private SqlTranslator sqlTranslator = new SqlTranslator(':');
     //---------optional properties------
-    private Map<String, Class<? extends PageHelper>> pageHelpers = new HashMap<>();
+    private PageHelperProvider pageHelperProvider;
     private XQLFileManager xqlFileManager;
     private char namedParamPrefix = ':';
     private boolean strictDynamicSqlArg = true;
@@ -442,8 +443,16 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * 简单的分页构建器实现
+     * 设置自定义的分页帮助提供程序
      *
+     * @param pageHelperProvider 分页帮助提供程序
+     */
+    public void setPageHelperProvider(PageHelperProvider pageHelperProvider) {
+        this.pageHelperProvider = pageHelperProvider;
+    }
+
+    /**
+     * 简单的分页构建器实现
      */
     class SimplePageable extends IPageable {
 
@@ -474,12 +483,13 @@ public class BakiDao extends JdbcSupport implements Baki {
                     count = Integer.parseInt(cn.toString());
                 }
             }
-            PageHelper pageHelper = customPageHelper;
-            if (pageHelper == null) {
-                pageHelper = defaultPager();
-            }
+            PageHelper pageHelper = defaultPager();
             pageHelper.init(page, size, count);
-            args.putAll(rewriteArgsFunc == null ? pageHelper.pagedArgs() : rewriteArgsFunc.apply(pageHelper.pagedArgs()));
+            Map<String, Integer> pagedArgs = pageHelper.pagedArgs();
+            if (pagedArgs == null) {
+                pagedArgs = Collections.emptyMap();
+            }
+            args.putAll(rewriteArgsFunc == null ? pagedArgs : rewriteArgsFunc.apply(pagedArgs));
             String executeQuery = disablePageSql ? query : pageHelper.pagedSql(query);
             try (Stream<DataRow> s = executeQueryStream(executeQuery, args)) {
                 List<T> list = s.map(mapper).collect(Collectors.toList());
@@ -560,9 +570,11 @@ public class BakiDao extends JdbcSupport implements Baki {
     protected PageHelper defaultPager() {
         try {
             String dbName = metaData().getDatabaseProductName().toLowerCase();
-            if (!pageHelpers.isEmpty()) {
-                if (pageHelpers.containsKey(dbName))
-                    return pageHelpers.get(dbName).newInstance();
+            if (pageHelperProvider != null) {
+                PageHelper pageHelper = pageHelperProvider.customPageHelper(metaData(), dbName, namedParamPrefix);
+                if (pageHelper != null) {
+                    return pageHelper;
+                }
             }
             switch (dbName) {
                 case "oracle":
@@ -581,12 +593,10 @@ public class BakiDao extends JdbcSupport implements Baki {
                 case "informix":
                     return new Db2PageHelper();
                 default:
-                    throw new UnsupportedOperationException("pager of \"" + dbName + "\" default not implement currently, see method 'pageHelpers' or 'registerPageHelper'.");
+                    throw new UnsupportedOperationException("pager of \"" + dbName + "\" default not implement currently, see method 'setPageHelperProvider'.");
             }
         } catch (SQLException e) {
             throw new UncheckedSqlException("get database metadata error: ", e);
-        } catch (InstantiationException | IllegalAccessException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -696,44 +706,6 @@ public class BakiDao extends JdbcSupport implements Baki {
     @Override
     protected void releaseConnection(Connection connection, DataSource dataSource) {
         DataSourceUtil.releaseConnectionIfNecessary(connection, dataSource);
-    }
-
-    /**
-     * 设置自定义的分页帮助工具类实现
-     *
-     * @param pageHelpers 分页帮助类集合 [数据库名字: 分页帮助工具类类名]
-     * @see DatabaseMetaData#getDatabaseProductName()
-     */
-    @SuppressWarnings("unchecked")
-    public void configPageHelpers(Map<String, String> pageHelpers) {
-        Map<String, Class<? extends PageHelper>> map = new HashMap<>();
-        try {
-            for (Map.Entry<String, String> e : pageHelpers.entrySet()) {
-                map.put(e.getKey(), (Class<? extends PageHelper>) Class.forName(e.getValue()));
-            }
-            this.pageHelpers = map;
-        } catch (ClassNotFoundException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
-     * 设置自定义的分页帮助工具类实现
-     *
-     * @param pageHelpers 分页帮助类集合 [数据库名字: 分页帮助工具类]
-     */
-    public void setPageHelpers(Map<String, Class<? extends PageHelper>> pageHelpers) {
-        this.pageHelpers = pageHelpers;
-    }
-
-    /**
-     * 注册分页帮助工具类
-     *
-     * @param databaseName 数据库名字，来自于：{@link DatabaseMetaData#getDatabaseProductName()}
-     * @param pageHelper   分页帮助工具类
-     */
-    public void registerPageHelper(String databaseName, Class<? extends PageHelper> pageHelper) {
-        this.pageHelpers.put(databaseName.toLowerCase(), pageHelper);
     }
 
     /**

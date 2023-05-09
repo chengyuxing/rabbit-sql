@@ -113,6 +113,7 @@ public abstract class IPageable {
      * 收集结果集操作
      *
      * @param mapper 行数据映射函数
+     * @param <T>    数据类型
      * @return 已分页的资源
      */
     public abstract <T> PagedResource<T> collect(Function<DataRow, T> mapper);

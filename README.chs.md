@@ -94,13 +94,13 @@ try(Stream<DataRow> fruits=baki.query("select * from fruit").stream()){
 
 默认的分页查询将自动根据数据库生成**分页查询语句**和生成 **count** 查询语句。
 
-内置支持 oracle，mysql，postgresql，sqlite，mariadb，db2，其他可通过实现接口 `com.github.chengyuxing.sql.page.PageHelper` 并注册到[BakiDao](#BakiDao)进行支持。
+内置支持 oracle，mysql，postgresql，sqlite，mariadb，db2，其他可通过实现接口 `com.github.chengyuxing.sql.page.PageHelperProvider` 并添加到[BakiDao](#BakiDao)进行支持。
 
 ```java
 PagedResource<DataRow> resource = baki.query("select ... where id < :id")
                 .arg("id", 8)
-                .<DataRow>pageable(1, 7)
-                .collect(d -> d);
+                .pageable(1, 7)
+                .collect();
 ```
 
 ##### 自定义分页查询
@@ -115,10 +115,10 @@ where id > :id limit :limit offset :offset;
 
 ```java
 PagedResource<DataRow> res = baki.query("&data.custom_paged")
-  		.<DataRow>pageable(1, 7)
+  		          .pageable(1, 7)
                 .count("select count(*) ... where id > :id")
                 .disableDefaultPageSql() //禁用默认生成的分页sql
-                .collect(d -> d);
+                .collect();
 ```
 
 > `disableDefaultPageSql()` 意味着不对 custom_paged 这条sql进行分页构建。
@@ -415,7 +415,7 @@ C --pipeN--> D[...]
 
   > :warning: 命名参数语法和动态sql表达式没任何关系，[表达式](#表达式脚本)参数值键名依然以 `:` 号开头。
 
-- [分页查询](#分页查询)如果没有受支持的数据库，则可以通过属性 `pageHelpers` 添加自定义的数据库分页帮助类；
+- [分页查询](#分页查询)如果没有受支持的数据库，则可以通过属性 `globalPageHelperProvider` 实现自定义的数据库分页帮助提供程序；
 
 ### XQLFileManager
 

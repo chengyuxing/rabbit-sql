@@ -94,13 +94,13 @@ try(Stream<DataRow> fruits=baki.query("select * from fruit").stream()){
 
 Default pageable query will auto generate **paging statement** and **count** statement by database.
 
-Built-in support oracle, mysql, postgresql, sqlite, mariadb, db2, or extends class `com.github.chengyuxing.sql.page.PageHelper` and register to [BakiDao](#BakiDao) get support.
+Built-in support oracle, mysql, postgresql, sqlite, mariadb, db2, or extends class `com.github.chengyuxing.sql.page.PageHelperProvider` and set to [BakiDao](#BakiDao) get support.
 
 ```java
 PagedResource<DataRow> resource = baki.query("select ... where id < :id")
                 .arg("id", 8)
-                .<DataRow>pageable(1, 7)
-                .collect(d -> d);
+                .pageable(1, 7)
+                .collect();
 ```
 
 ##### Custom paging
@@ -115,10 +115,10 @@ where id > :id limit :limit offset :offset;
 
 ```java
 PagedResource<DataRow> res = baki.query("&data.custom_paged")
-  		.<DataRow>pageable(1, 7)
+  		          .pageable(1, 7)
                 .count("select count(*) ... where id > :id")
                 .disableDefaultPageSql()
-                .collect(d -> d);
+                .collect();
 ```
 
 > `disableDefaultPageSql()` will not wrap sql to generate paging statement of name custom_paged.
@@ -419,7 +419,7 @@ Default implement of interface **Baki**, support some basic operation.
 
   > :warning: Named parameter syntax has nothing to do with dynamic sql expression，[expression](#Expression-script)'s value of key also start with `:`.
 
-- if [pageable query](#paging) not support your database, add custom page helper to property `pageHelpers` get support.
+- if [pageable query](#paging) not support your database, implement custom page helper provider to property `globalPageHelperProvider` get support.
 
 ### XQLFileManager
 

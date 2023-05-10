@@ -20,7 +20,7 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.replaceSqlSubstr;
  */
 public class SqlTranslator {
     private static final Logger log = LoggerFactory.getLogger(SqlTranslator.class);
-    private final String c;
+    private final String namedParamPrefix;
     private static final char SPECIAL_CHAR = '\u0c32';
     /**
      * 匹配命名参数
@@ -32,21 +32,48 @@ public class SqlTranslator {
     /**
      * sql翻译帮助实例
      *
-     * @param namedParameterPrefix 命名参数前缀符号
+     * @param _namedParamPrefix 命名参数前缀符号
      */
-    public SqlTranslator(char namedParameterPrefix) {
-        if (namedParameterPrefix == ' ') {
+    public SqlTranslator(char _namedParamPrefix) {
+        if (_namedParamPrefix == ' ') {
             throw new IllegalArgumentException("prefix char cannot be empty.");
         }
-        String cs = String.valueOf(namedParameterPrefix);
+        String cs = String.valueOf(_namedParamPrefix);
         if (cs.equals(":")) {
-            this.c = ":";
+            this.namedParamPrefix = ":";
         } else {
-            this.c = cs;
+            this.namedParamPrefix = cs;
             String regC = cs.replace(cs, "\\" + cs);
             PARAM_PATTERN = Pattern.compile("(^" + regC + "|[^" + regC + "]" + regC + ")(?<name>[a-zA-Z_][\\w_]*)", Pattern.MULTILINE);
             STR_TEMP_PATTERN = Pattern.compile("\\$\\{\\s*(?<key>" + regC + "?[\\w._-]+)\\s*}");
         }
+    }
+
+    /**
+     * 获取命名参数解析正则表达式
+     *
+     * @return 命名参数解析正则表达式
+     */
+    public Pattern getPARAM_PATTERN() {
+        return PARAM_PATTERN;
+    }
+
+    /**
+     * 获取字符串模版参数解析正则表达式
+     *
+     * @return 字符串模版参数解析正则表达式
+     */
+    public Pattern getSTR_TEMP_PATTERN() {
+        return STR_TEMP_PATTERN;
+    }
+
+    /**
+     * 获取命名参数前缀符号
+     *
+     * @return 命名参数前缀符号
+     */
+    public String getNamedParamPrefix() {
+        return namedParamPrefix;
     }
 
     /**
@@ -74,7 +101,7 @@ public class SqlTranslator {
             while (matcher.find()) {
                 String name = matcher.group("name");
                 names.add(name);
-                noneStrSql = StringUtil.replaceFirst(noneStrSql, c + name, "?");
+                noneStrSql = StringUtil.replaceFirst(noneStrSql, namedParamPrefix + name, "?");
             }
         } else {
             while (matcher.find()) {
@@ -82,11 +109,11 @@ public class SqlTranslator {
                 names.add(name);
                 if (argx.containsKey(name)) {
                     String value = quoteFormatValueIfNecessary(argx.get(name));
-                    noneStrSql = StringUtil.replaceFirst(noneStrSql, c + name, value);
+                    noneStrSql = StringUtil.replaceFirst(noneStrSql, namedParamPrefix + name, value);
                 } else if (containsKeyIgnoreCase(argx, name)) {
                     log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your sql's named parameter and args.", name, args, name);
                     String value = quoteFormatValueIfNecessary(getValueIgnoreCase(argx, name));
-                    noneStrSql = StringUtil.replaceFirstIgnoreCase(noneStrSql, c + name, value);
+                    noneStrSql = StringUtil.replaceFirstIgnoreCase(noneStrSql, namedParamPrefix + name, value);
                 }
             }
         }
@@ -132,7 +159,7 @@ public class SqlTranslator {
             String tempKey = m.group(0);
             // real key e.g. :myKey
             String key = m.group("key");
-            boolean quote = key.startsWith(c);
+            boolean quote = key.startsWith(namedParamPrefix);
             if (quote) {
                 key = key.substring(1);
             }
@@ -236,7 +263,7 @@ public class SqlTranslator {
         for (String key : keys) {
             if (row.containsKey(key) || containsKeyIgnoreCase(row, key)) {
                 f.add(key);
-                h.add(c + key);
+                h.add(namedParamPrefix + key);
             }
         }
         return "insert into " + tableName + "(" + f + ") \nvalues (" + h + ")";
@@ -311,7 +338,7 @@ public class SqlTranslator {
         if (isNamedParam) {
             for (String key : keys) {
                 if (data.containsKey(key) || containsKeyIgnoreCase(data, key)) {
-                    sb.add(key + " = " + c + key);
+                    sb.add(key + " = " + namedParamPrefix + key);
                 }
             }
         } else {

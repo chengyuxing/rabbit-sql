@@ -126,7 +126,7 @@ public abstract class QueryExecutor {
      * <p>注意和 {@link  QueryExecutor#stream() stream().findFirst()} 的本质区别在于：</p>
      * <blockquote>
      *     <ul>
-     *         <li>{@link  QueryExecutor#stream() stream().findFirst()} ：执行原始sql，返回第一条（如果表数据量大，即使内部仅迭代一次，但数据库无法优化sql，性能会下降）；</li>
+     *         <li>{@link  QueryExecutor#stream() stream().findFirst()} ：执行原始sql，返回第1条记录（如果表数据量大且查询没做合理的条件限制，即使内部仅迭代一次，性能也会下降）；</li>
      *         <li>{@code findFirst()} ：对sql进行分页处理，真实进行分页查询1条记录；</li>
      *     </ul>
      * </blockquote>

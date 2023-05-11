@@ -13,6 +13,7 @@ import org.junit.Test;
 
 import java.sql.DatabaseMetaData;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 public class SqliteTests {
@@ -26,25 +27,25 @@ public class SqliteTests {
         dataSource.setDriverClassName("org.sqlite.JDBC");
         dataSource.setJdbcUrl("jdbc:sqlite:/Users/chengyuxing/Downloads/sqlite_data");
         BakiDao bakiDao = BakiDao.of(dataSource);
-        bakiDao.setGlobalPageHelperProvider(new PageHelperProvider() {
-            @Override
-            public PageHelper customPageHelper(DatabaseMetaData databaseMetaData, String dbName, char namedParamPrefix) {
-                if (dbName.equals("sqlite")) {
-                    return new PageHelper() {
-                        @Override
-                        public String pagedSql(String sql) {
-                            return sql + " limit 10 offset 0";
-                        }
-
-                        @Override
-                        public Map<String, Integer> pagedArgs() {
-                            return null;
-                        }
-                    };
-                }
-                return null;
-            }
-        });
+//        bakiDao.setGlobalPageHelperProvider(new PageHelperProvider() {
+//            @Override
+//            public PageHelper customPageHelper(DatabaseMetaData databaseMetaData, String dbName, char namedParamPrefix) {
+//                if (dbName.equals("sqlite")) {
+//                    return new PageHelper() {
+//                        @Override
+//                        public String pagedSql(String sql) {
+//                            return sql + " limit 10 offset 0";
+//                        }
+//
+//                        @Override
+//                        public Map<String, Integer> pagedArgs() {
+//                            return null;
+//                        }
+//                    };
+//                }
+//                return null;
+//            }
+//        });
         baki = bakiDao;
     }
 
@@ -56,5 +57,12 @@ public class SqliteTests {
                 .collect();
 
         System.out.println(resource);
+    }
+
+    @Test
+    public void test2() {
+        baki.query("select 1 union select 2")
+                .findFirst()
+                .ifPresent(System.out::println);
     }
 }

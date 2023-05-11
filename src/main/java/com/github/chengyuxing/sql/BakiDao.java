@@ -280,20 +280,18 @@ public class BakiDao extends JdbcSupport implements Baki {
 
             @Override
             public <T> T findFirstEntity(Class<T> entityClass) {
-                return findFirst().map(d -> d.toEntity(entityClass))
-                        .orElseGet(() -> {
-                            try {
-                                return ReflectUtil.getInstance(entityClass);
-                            } catch (InstantiationException | IllegalAccessException | InvocationTargetException |
-                                     NoSuchMethodException e) {
-                                throw new RuntimeException(e);
-                            }
-                        });
+                return findFirst().map(d -> d.toEntity(entityClass)).orElse(null);
             }
 
             @Override
             public Optional<DataRow> findFirst() {
-                try (Stream<DataRow> s = stream()) {
+                PageHelper pageHelper = defaultPager();
+                pageHelper.init(1, 1, 1);
+                Map<String, Integer> pagedArgs = pageHelper.pagedArgs();
+                if (pagedArgs != null) {
+                    args.putAll(pagedArgs);
+                }
+                try (Stream<DataRow> s = executeQueryStream(pageHelper.pagedSql(sql), args)) {
                     return s.findFirst();
                 }
             }
@@ -503,7 +501,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             pageHelper.init(page, size, count);
             Map<String, Integer> pagedArgs = pageHelper.pagedArgs();
             if (pagedArgs == null) {
-                pagedArgs = Collections.emptyMap();
+                pagedArgs = new HashMap<>();
             }
             args.putAll(rewriteArgsFunc == null ? pagedArgs : rewriteArgsFunc.apply(pagedArgs));
             String executeQuery = disablePageSql ? query : pageHelper.pagedSql(query);

@@ -104,23 +104,37 @@ public abstract class QueryExecutor {
     public abstract IPageable pageable(int page, int size);
 
     /**
-     * 查询一条记录
+     * 分页查询一条记录
      *
-     * @return 一条记录
+     * @return 一条记录或空行
+     * @see #findFirst()
      */
     public abstract DataRow findFirstRow();
 
     /**
-     * 查询一个实体
+     * 分页查询一个实体
      *
      * @param entityClass 实体类
      * @param <T>         实体类型
-     * @return 实体记录或空实体
+     * @return 一个实体对象或null
+     * @see #findFirst()
      */
     public abstract <T> T findFirstEntity(Class<T> entityClass);
 
     /**
-     * 查询一条记录
+     * 分页查询一条记录
+     * <p>注意和 {@linkplain  QueryExecutor#stream() stream().findFirst()} 的本质区别在于：</p>
+     * <blockquote>
+     *     <ul>
+     *         <li>{@linkplain  QueryExecutor#stream() stream().findFirst()} ：执行原始sql，返回第一条；</li>
+     *         <li>{@code findFirst()} ：对sql进行分页处理，真实进行分页查询1条记录；</li>
+     *     </ul>
+     * </blockquote>
+     * 例如 Postgresql：
+     * <blockquote>
+     * <pre>source: select * from users</pre>
+     * <pre>target: select * from users limit 1 offset 0</pre>
+     * </blockquote>
      *
      * @return 可为空的一条记录
      */

@@ -71,17 +71,15 @@ public abstract class IPageable {
     }
 
     /**
-     * 禁用默认生成（{@link PageHelper#pagedSql(String)}）的分页sql，将不进行内部的分页sql构建，意味着需要自己实现个性化的分页sql，
-     * 必须指定count查询语句：{@link #count(String)}
+     * 禁用默认生成（{@link PageHelper#pagedSql(String)}）的分页sql，将不进行内部的分页sql构建，
+     * 意味着需要自己实现个性化的分页sql，且必须指定count查询语句
      *
      * @param countQuery count查询语句或者 {@link #count(String)}
      * @return 当前原生的查询sql
      */
-    public IPageable disableDefaultPageSql(String... countQuery) {
+    public IPageable disableDefaultPageSql(String countQuery) {
         this.disablePageSql = true;
-        if (countQuery.length > 0) {
-            this.countQuery = countQuery[0];
-        }
+        this.countQuery = countQuery;
         return this;
     }
 
@@ -101,7 +99,7 @@ public abstract class IPageable {
      *
      * @param pageHelperProvider 分页帮助提供程序
      * @return 分页构建器
-     * @see #disableDefaultPageSql(String...)
+     * @see #disableDefaultPageSql(String)
      * @see #rewriteDefaultPageArgs(Function)
      */
     public IPageable pageHelper(PageHelperProvider pageHelperProvider) {

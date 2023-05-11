@@ -58,6 +58,7 @@ public abstract class QueryExecutor {
      * 一个流对象占用一个连接对象，需要手动关闭流或使用try-with-resource包裹
      *
      * @return 收集为流的结果集
+     * @see com.github.chengyuxing.sql.support.JdbcSupport#executeQueryStream(String, Map) executeQueryStream(String, Map)
      */
     public abstract Stream<DataRow> stream();
 
@@ -91,7 +92,7 @@ public abstract class QueryExecutor {
      * 关于自定义分页SQL配置如下:
      * <blockquote>
      * <ul>
-     * <li>禁用自动分页构建：{@link IPageable#disableDefaultPageSql(String...) disableDefaultPageSql(String...)}，如果不禁用，如上例子会在SQL结尾加{@code limit ... offset ...}</li>
+     * <li>禁用自动分页构建：{@link IPageable#disableDefaultPageSql(String) disableDefaultPageSql(String)}，如果不禁用，如上例子会在SQL结尾加{@code limit ... offset ...}</li>
      * <li>自定义count查询语句：{@link IPageable#count(String) count(String)}</li>
      * <li>如有必要自定义个性化参数名：{@link IPageable#rewriteDefaultPageArgs(Function) rewriteDefaultPageArgs(Function)}</li>
      * </ul>

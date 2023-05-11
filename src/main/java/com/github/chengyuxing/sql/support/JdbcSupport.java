@@ -139,14 +139,14 @@ public abstract class JdbcSupport extends SqlSupport {
      * 使用完请务必关闭流，否则将一直占用连接对象直到连接池耗尽。<br>
      * 使用{@code try-with-resource}进行包裹：
      * <blockquote>
-     * <pre>try ({@link Stream}&lt;{@link DataRow}&gt; stream = queryStream(...)) {
+     * <pre>try ({@link Stream}&lt;{@link DataRow}&gt; stream = executeQueryStream(...)) {
      *       stream.limit(10).forEach(System.out::println);
      *         }</pre>
      * </blockquote>
      * 或者使用完手动关闭流：
      * <blockquote>
      * <pre>
-     *     {@link Stream}&lt;{@link DataRow}&gt; stream = queryStream(...);
+     *     {@link Stream}&lt;{@link DataRow}&gt; stream = executeQueryStream(...);
      *     ...
      *     stream.close();
      *     </pre>

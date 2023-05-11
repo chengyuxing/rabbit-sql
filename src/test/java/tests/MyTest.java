@@ -246,9 +246,8 @@ public class MyTest {
     public void pagerTest() throws Exception {
         PagedResource<DataRow> res = baki.query("&data.custom_paged")
                 .<DataRow>pageable(1, 7)
-                .count("select count(*) from test.region where id > :id")
                 .args(Args.create("id", 8))
-                .disableDefaultPageSql()
+                .disableDefaultPageSql("select count(*) from test.region where id > :id")
 //                .pageHelper(new MysqlPageHelper(){
 //                    @Override
 //                    public String pagedSql(String sql) {

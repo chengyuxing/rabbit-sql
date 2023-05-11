@@ -25,11 +25,13 @@
 
 ## Maven dependency (jdk1.8)
 
+Maven 中央仓库
+
 ```xml
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.1.9</version>
+    <version>7.1.10</version>
 </dependency>
 ```
 

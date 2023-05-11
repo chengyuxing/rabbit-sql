@@ -311,7 +311,7 @@ public abstract class JdbcSupport extends SqlSupport {
                 JdbcUtil.setStoreArgs(statement, args, argNames);
                 for (String name : argNames) {
                     if (args.containsKey(name) || CollectionUtil.containsKeyIgnoreCase(args, name)) {
-                        @SuppressWarnings("DataFlowIssue") ParamMode mode = args.containsKey(name) ? args.get(name).getParamMode() : CollectionUtil.getValueIgnoreCase(args, name).getParamMode();
+                        ParamMode mode = args.containsKey(name) ? args.get(name).getParamMode() : CollectionUtil.getValueIgnoreCase(args, name).getParamMode();
                         if (mode == ParamMode.OUT || mode == ParamMode.IN_OUT) {
                             outNames.add(name);
                         }

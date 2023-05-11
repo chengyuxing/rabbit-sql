@@ -291,7 +291,8 @@ public class BakiDao extends JdbcSupport implements Baki {
                 if (pagedArgs != null) {
                     args.putAll(pagedArgs);
                 }
-                try (Stream<DataRow> s = executeQueryStream(pageHelper.pagedSql(sql), args)) {
+                String query = getSql(sql, args);
+                try (Stream<DataRow> s = executeQueryStream(pageHelper.pagedSql(query), args)) {
                     return s.findFirst();
                 }
             }

@@ -40,7 +40,7 @@ import java.util.stream.Stream;
 
 /**
  * <h2>数据库DAO对象实现</h2>
- * <p>如果配置了{@link XQLFileManager },则接口所有方法都可以通过取地址符号来获取sql文件内的sql</p>
+ * <p>如果配置了{@link XQLFileManager }，则接口所有方法都可以通过取地址符号来获取sql文件内的sql</p>
  * 取SQL通过 {@code &}符号前缀+sql键名：
  * <blockquote>
  * e.g. 配置类型:

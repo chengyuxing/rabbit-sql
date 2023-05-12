@@ -9,6 +9,7 @@ import com.github.chengyuxing.common.script.Comparators;
 import com.github.chengyuxing.common.script.IPipe;
 import com.github.chengyuxing.common.script.impl.FastExpression;
 import com.github.chengyuxing.common.utils.ObjectUtil;
+import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.exceptions.DuplicateException;
 import com.github.chengyuxing.sql.exceptions.DynamicSQLException;
@@ -18,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
@@ -397,7 +399,7 @@ public class XQLFileManager implements AutoCloseable {
                         singleResource.put(blockName, "");
                     } else {
                         // exclude single line annotation except expression keywords
-                        if (!trimLine.startsWith("--") || (StringUtil.startsWithsIgnoreCase(formatAnonExpIf(trimLine), IF, FI, CHOOSE, WHEN, SWITCH, FOR, CASE, DEFAULT, BREAK, END))) {
+                        if (!trimLine.startsWith("--") || (StringUtil.startsWithsIgnoreCase(trimExp(trimLine), IF, FI, CHOOSE, WHEN, SWITCH, FOR, CASE, DEFAULT, BREAK, END))) {
                             if (!blockName.equals("")) {
                                 String prepareLine = singleResource.get(blockName) + line;
                                 if (delimiter != null && !delimiter.trim().equals("") && trimLine.endsWith(delimiter)) {
@@ -531,9 +533,10 @@ public class XQLFileManager implements AutoCloseable {
         if (!pipes.isEmpty()) {
             try {
                 for (Map.Entry<String, String> entry : pipes.entrySet()) {
-                    pipeInstances.put(entry.getKey(), (IPipe<?>) Class.forName(entry.getValue()).newInstance());
+                    pipeInstances.put(entry.getKey(), (IPipe<?>) ReflectUtil.getInstance(Class.forName(entry.getValue())));
                 }
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
+                     InvocationTargetException | NoSuchMethodException e) {
                 throw new RuntimeException("init pipe error: ", e);
             }
         }
@@ -592,7 +595,7 @@ public class XQLFileManager implements AutoCloseable {
         StringJoiner output = new StringJoiner(NEW_LINE);
         for (int i = 0, j = lines.length; i < j; i++) {
             String outerLine = lines[i];
-            String trimOuterLine = formatAnonExpIf(outerLine);
+            String trimOuterLine = trimExp(outerLine);
             int count = 0;
             // 处理if表达式块
             if (startsWithIgnoreCase(trimOuterLine, IF)) {
@@ -601,7 +604,7 @@ public class XQLFileManager implements AutoCloseable {
                 // 内循环推进游标，用来判断嵌套if表达式块
                 while (++i < j) {
                     String line = lines[i];
-                    String trimLine = formatAnonExpIf(line);
+                    String trimLine = trimExp(line);
                     if (startsWithIgnoreCase(trimLine, IF)) {
                         innerSb.add(line);
                         count++;
@@ -652,7 +655,7 @@ public class XQLFileManager implements AutoCloseable {
             } else if (startsWithIgnoreCase(trimOuterLine, CHOOSE)) {
                 while (++i < j) {
                     String line = lines[i];
-                    String trimLine = formatAnonExpIf(line);
+                    String trimLine = trimExp(line);
                     if (startsWithsIgnoreCase(trimLine, WHEN, DEFAULT)) {
                         boolean res = false;
                         if (startsWithIgnoreCase(trimLine, WHEN)) {
@@ -666,8 +669,8 @@ public class XQLFileManager implements AutoCloseable {
                         if (res || startsWithIgnoreCase(trimLine, DEFAULT)) {
                             StringJoiner innerSb = new StringJoiner(NEW_LINE);
                             // 移动游标直到此分支的break之前都是符合判断结果的sql保留下来
-                            while (++i < j && !startsWithIgnoreCase(formatAnonExpIf(lines[i]), BREAK)) {
-                                if (startsWithsIgnoreCase(formatAnonExpIf(lines[i]), WHEN, DEFAULT)) {
+                            while (++i < j && !startsWithIgnoreCase(trimExp(lines[i]), BREAK)) {
+                                if (startsWithsIgnoreCase(trimExp(lines[i]), WHEN, DEFAULT)) {
                                     throw new DynamicSQLException("missing '--#break' tag of expression '" + trimLine + "'");
                                 }
                                 innerSb.add(lines[i]);
@@ -682,15 +685,15 @@ public class XQLFileManager implements AutoCloseable {
                             // 到此处说明已经将满足条件的分支的sql保留下来
                             // 在接下来的分支都直接略过，移动游标直到end结束标签，就跳出整个choose块
                             //noinspection StatementWithEmptyBody
-                            while (++i < j && !startsWithIgnoreCase(formatAnonExpIf(lines[i]), END)) ;
+                            while (++i < j && !startsWithIgnoreCase(trimExp(lines[i]), END)) ;
                             if (i == j) {
                                 throw new DynamicSQLException("missing '--#end' close tag of choose expression block.");
                             }
                             break;
                         } else {
                             // 如果此分支when语句表达式不满足条件，就移动游标到当前分支break结束，进入下一个when分支
-                            while (++i < j && !startsWithIgnoreCase(formatAnonExpIf(lines[i]), BREAK)) {
-                                if (startsWithsIgnoreCase(formatAnonExpIf(lines[i]), WHEN, DEFAULT)) {
+                            while (++i < j && !startsWithIgnoreCase(trimExp(lines[i]), BREAK)) {
+                                if (startsWithsIgnoreCase(trimExp(lines[i]), WHEN, DEFAULT)) {
                                     throw new DynamicSQLException("missing '--#break' tag of expression '" + trimLine + "'");
                                 }
                             }
@@ -720,7 +723,7 @@ public class XQLFileManager implements AutoCloseable {
                 }
                 while (++i < j) {
                     String line = lines[i];
-                    String trimLine = formatAnonExpIf(line);
+                    String trimLine = trimExp(line);
                     if (startsWithsIgnoreCase(trimLine, CASE, DEFAULT)) {
                         boolean res = false;
                         if (startsWithIgnoreCase(trimLine, CASE)) {
@@ -728,8 +731,8 @@ public class XQLFileManager implements AutoCloseable {
                         }
                         if (res || startsWithIgnoreCase(trimLine, DEFAULT)) {
                             StringJoiner innerSb = new StringJoiner(NEW_LINE);
-                            while (++i < j && !startsWithIgnoreCase(formatAnonExpIf(lines[i]), BREAK)) {
-                                if (startsWithsIgnoreCase(formatAnonExpIf(lines[i]), CASE, DEFAULT)) {
+                            while (++i < j && !startsWithIgnoreCase(trimExp(lines[i]), BREAK)) {
+                                if (startsWithsIgnoreCase(trimExp(lines[i]), CASE, DEFAULT)) {
                                     throw new DynamicSQLException("missing '--#break' tag of expression '" + trimLine + "'");
                                 }
                                 innerSb.add(lines[i]);
@@ -742,14 +745,14 @@ public class XQLFileManager implements AutoCloseable {
                                 output.add(innerStr);
                             }
                             //noinspection StatementWithEmptyBody
-                            while (++i < j && !startsWithIgnoreCase(formatAnonExpIf(lines[i]), END)) ;
+                            while (++i < j && !startsWithIgnoreCase(trimExp(lines[i]), END)) ;
                             if (i == j) {
                                 throw new DynamicSQLException("missing '--#end' close tag of switch expression block.");
                             }
                             break;
                         } else {
-                            while (++i < j && !startsWithIgnoreCase(formatAnonExpIf(lines[i]), BREAK)) {
-                                if (startsWithsIgnoreCase(formatAnonExpIf(lines[i]), WHEN, DEFAULT)) {
+                            while (++i < j && !startsWithIgnoreCase(trimExp(lines[i]), BREAK)) {
+                                if (startsWithsIgnoreCase(trimExp(lines[i]), WHEN, DEFAULT)) {
                                     throw new DynamicSQLException("missing '--#break' tag of expression '" + trimLine + "'");
                                 }
                             }
@@ -773,7 +776,7 @@ public class XQLFileManager implements AutoCloseable {
                     String filter = m.group("filter");
                     // 认为for表达式块中有多行需要迭代的sql片段，在此全部找出来用换行分割，保留格式
                     StringJoiner loopPart = new StringJoiner("\n");
-                    while (++i < j && !startsWithIgnoreCase(formatAnonExpIf(lines[i]), END)) {
+                    while (++i < j && !startsWithIgnoreCase(trimExp(lines[i]), END)) {
                         loopPart.add(lines[i]);
                     }
                     Object loopObj = ObjectUtil.getValueWild(args, listName);
@@ -883,7 +886,7 @@ public class XQLFileManager implements AutoCloseable {
      * @param s 注释行
      * @return 前缀满足动态sql表达式的字符串或者首尾去除空白字符的字符串
      */
-    protected String formatAnonExpIf(String s) {
+    protected String trimExp(String s) {
         String trimS = s.trim();
         if (trimS.startsWith("--")) {
             String expAnon = trimS.substring(2).trim();

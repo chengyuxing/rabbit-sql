@@ -14,7 +14,10 @@ import org.junit.Test;
 import java.sql.DatabaseMetaData;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class SqliteTests {
 
@@ -64,5 +67,16 @@ public class SqliteTests {
         baki.query("select 1 union select 2")
                 .findFirst()
                 .ifPresent(System.out::println);
+    }
+
+    @Test
+    public void test11() {
+        try (Stream<DataRow> s = baki.query("&users.top100").stream()) {
+            List<User> users = s.map(d -> d.toEntity(User.class))
+                    .peek(System.out::println)
+                    .filter(u -> u.getAge() > 18)
+                    .filter(u -> u.getName().equals("admin"))
+                    .collect(Collectors.toList());
+        }
     }
 }

@@ -21,7 +21,7 @@ public class SqlFileTest {
 
     private static Ioc ioc;
 
-    @BeforeClass
+//    @BeforeClass
     public static void init() {
         ioc = new NutIoc(new JsonLoader("ioc.js"));
     }
@@ -92,7 +92,6 @@ public class SqlFileTest {
 
     @Test
     public void bakiDao() throws Exception {
-        BakiDao bakiDao = new BakiDao(null);
-        NutDao nutDao = new NutDao();
+        XQLFileManager xqlFileManager = new XQLFileManager();
     }
 }

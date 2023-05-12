@@ -2,7 +2,6 @@ package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.utils.CollectionUtil;
-import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.datasource.DataSourceUtil;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
@@ -28,7 +27,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.lang.reflect.InvocationTargetException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
@@ -519,7 +517,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * <blockquote>
      * <pre>
      *      {@link List}&lt;{@link DataRow}&gt; rows = {@link Tx}.using(() -&gt;
-     *         baki.call("{call test.func2(:c::refcursor)}",
+     *         baki.call("{call test.func(:c::refcursor)}",
      *             Args.create("c",Param.IN_OUT("result", OUTParamType.REF_CURSOR))
      *             ).get(0));
      * </pre>
@@ -660,18 +658,12 @@ public class BakiDao extends JdbcSupport implements Baki {
         if (!trimEndedSql.contains("${")) {
             return trimEndedSql;
         }
-        boolean hasArgs = args != null && !args.isEmpty();
         if (xqlFileManager != null) {
             Map<String, String> constants = xqlFileManager.getConstants();
-            if (!constants.isEmpty()) {
-                for (String key : constants.keySet()) {
-                    String constantName = "${" + key + "}";
-                    if (trimEndedSql.contains(constantName)) {
-                        // use args first, if not exists then constants.
-                        if (!hasArgs || !args.containsKey(constantName)) {
-                            trimEndedSql = trimEndedSql.replace(constantName, constants.get(key));
-                        }
-                    }
+            for (String constantName : constants.keySet()) {
+                // 如果用户参数中不存在，才去常量里找，用户参数优先级最高
+                if (args == null || !args.containsKey(constantName)) {
+                    trimEndedSql = StringUtil.format(trimEndedSql, constantName, constants.get(constantName));
                 }
             }
         }

@@ -10,11 +10,11 @@ import java.util.Map;
  * 默认的分页参数名占位符 {@code :start, :end}<br>
  * e.g.
  * <blockquote>
- * <pre>Select *
- * from (select t.*, rownum rn
- *       from (...) t
- *       where rownum{@code <=} :end)
- *  where rn{@code >=} :start</pre>
+ * <pre>SELECT *
+ * FROM (SELECT t.*, ROWNUM RN_BY_RABBIT_
+ *       FROM (...) t
+ *       WHERE ROWNUM{@code <=} :end)
+ *  WHERE RN_BY_RABBIT_{@code >=} :start</pre>
  * </blockquote>
  *
  * @see #pagedArgs()
@@ -39,11 +39,11 @@ public class OraclePageHelper extends PageHelper {
      */
     @Override
     public String pagedSql(String sql) {
-        return "Select * \n" +
-                "from (select t.*,rownum rn \n" +
-                "          from (" + sql + ") t\n" +
-                "          where rownum <= " + end() + ")\n" +
-                " where rn >=" + start();
+        return "SELECT * \n" +
+                "FROM (SELECT t.*, ROWNUM RN_BY_RABBIT_ \n" +
+                "          FROM (" + sql + ") t\n" +
+                "          WHERE ROWNUM <= " + end() + ")\n" +
+                " WHERE RN_BY_RABBIT_ >=" + start();
     }
 
     /**

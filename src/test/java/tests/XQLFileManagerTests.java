@@ -21,5 +21,6 @@ public class XQLFileManagerTests {
     public void test1() {
         XQLFileManager xqlFileManager = new XQLFileManager();
         System.out.println(xqlFileManager);
+        System.out.println(xqlFileManager.isHighlightSql());
     }
 }

@@ -1,11 +1,18 @@
 constants:
-  base: &basePath pgsql
+#  base: &basePath pgsql
 
 filenames:
-  - !path [ *basePath, multi.xql, 89 ]
+#  - data.xql
+#  - system.xql
+
 files:
-  dt: !join [ *basePath, dddd.xql ]
-  other: 15
+#  dt: !join [ *basePath, other.xql ]
+#  other: another.xql
+
 delimiter: ;
 charset: UTF-8
-named-param-prefix: '@'
+named-param-prefix: ':'
+pipes:
+highlight-sql: false
+check-period: 30
+check-modified: false

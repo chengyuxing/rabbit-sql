@@ -7,14 +7,16 @@
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
     <packaging>jar</packaging>
-    <version>7.1.11</version>
+    <version>7.1.12</version>
     <name>rabbit-sql</name>
     <url>https://github.com/chengyuxing/rabbit-sql</url>
 
     <properties>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
-        <rabbit.common.version>2.2.22</rabbit.common.version>
+        <snakeyaml.version>1.30</snakeyaml.version>
+        <slf4j.version>1.7.25</slf4j.version>
+        <rabbit.common.version>[2.2.20,)</rabbit.common.version>
     </properties>
 
     <licenses>
@@ -141,13 +143,13 @@
         <dependency>
             <groupId>org.yaml</groupId>
             <artifactId>snakeyaml</artifactId>
-            <version>1.30</version>
+            <version>${snakeyaml.version}</version>
         </dependency>
 
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.7.25</version>
+            <version>${slf4j.version}</version>
         </dependency>
 
         <dependency>

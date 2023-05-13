@@ -1,0 +1,10 @@
+constants:
+  base: &basePath pgsql
+
+filenames:
+  - !path [ *basePath, multi.xql, 89 ]
+files:
+  dt: !join [ *basePath, dddd.xql ]
+  other: 15
+delimiter: ;
+charset: UTF-8

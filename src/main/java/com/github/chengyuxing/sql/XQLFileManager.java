@@ -4,7 +4,6 @@ import com.github.chengyuxing.common.WatchDog;
 import com.github.chengyuxing.common.console.Color;
 import com.github.chengyuxing.common.console.Printer;
 import com.github.chengyuxing.common.io.FileResource;
-import com.github.chengyuxing.common.io.TypedProperties;
 import com.github.chengyuxing.common.script.Comparators;
 import com.github.chengyuxing.common.script.IPipe;
 import com.github.chengyuxing.common.script.impl.FastExpression;
@@ -13,7 +12,6 @@ import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.exceptions.DuplicateException;
 import com.github.chengyuxing.sql.exceptions.DynamicSQLException;
-import com.github.chengyuxing.sql.utils.SqlTranslator;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,8 +20,6 @@ import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
@@ -38,16 +34,13 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
 /**
  * <h2>支持扩展脚本解析动态SQL的文件管理器</h2>
  * 合理利用sql所支持的块注释（{@code /**}{@code /}）、行注释（{@code --}）、传名参数（{@code :name}）和字符串模版占位符（{@code ${template}}），对其进行了语法结构扩展，几乎没有对sql文件标准进行过改动，各种支持sql的IDE依然可以工作。<br>
- * 支持外部sql(本地文件系统)和classpath下的sql，
- * 本地sql文件以 {@code file:} (URI格式)开头，默认读取<strong>classpath</strong>下的sql文件，识别的文件格式支持: {@code .xql.sql}，
- * 默认情况下两种文件内容没区别，仅需内容遵循格式，{@code .xql}结尾用来表示此类型文件是 {@code XQLFileManager} 所支持的扩展的sql文件。
- * <blockquote>
- *     <ul>
- *         <li><pre>windows文件系统: file:\\D:\\rabbit.s(x)ql</pre></li>
- *         <li><pre>Linux/Unix文件系统: file:/root/rabbit.s(x)ql</pre></li>
- *         <li><pre>ClassPath: sql/rabbit.s(x)ql</pre></li>
- *     </ul>
- * </blockquote>
+ * 识别的文件格式支持: {@code .xql .sql}，两种文件内容没区别，{@code .xql} 结尾用来表示此类型文件是 {@code XQLFileManager} 所支持的扩展的sql文件。<br>
+ * {@link FileResource 支持外部sql(URI)和classpath下的sql}，例如：
+ * <ul>
+ *     <li><pre>windows文件系统: file:\\D:\\rabbit.xql</pre></li>
+ *     <li><pre>Linux/Unix文件系统: file:/root/rabbit.xql</pre></li>
+ *     <li><pre>ClassPath: sql/rabbit.xql</pre></li>
+ * </ul>
  * <h3>文件内容结构</h3>
  * <p>{@code key-value} 形式，key 为sql名，value为sql字符串，例如：</p>
  * <blockquote>
@@ -127,101 +120,54 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
  *
  * @see FastExpression
  */
-public class XQLFileManager implements AutoCloseable {
-    private final static Logger log = LoggerFactory.getLogger(XQLFileManager.class);
+public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseable {
+    private static final Logger log = LoggerFactory.getLogger(XQLFileManager.class);
     private final ReentrantLock lock = new ReentrantLock();
     private final Map<String, Map<String, String>> resources = new HashMap<>();
     private final Map<String, Long> fileLastModifiedDates = new HashMap<>();
-    public static final Pattern NAME_PATTERN = Pattern.compile("/\\*\\s*\\[\\s*(?<name>\\S+)\\s*]\\s*\\*/");
-    public static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+)\\s*}\\s*\\*/");
-    public static final Pattern FOR_PATTERN = Pattern.compile("(?<item>\\w+)(\\s*,\\s*(?<index>\\w+))?\\s+of\\s+:(?<list>[\\w.]+)(?<pipes>(\\s*\\|\\s*[\\w.]+)*)?(\\s+delimiter\\s+'(?<delimiter>[^']*)')?(\\s+filter\\s+(?<filter>[\\S\\s]+))?");
-    public static final Pattern SWITCH_PATTERN = Pattern.compile(":(?<name>[\\w.]+)\\s*(?<pipes>(\\s*\\|\\s*\\w+)*)?");
-    public static final String IF = "#if";
-    public static final String FI = "#fi";
-    public static final String CHOOSE = "#choose";
-    public static final String WHEN = "#when";
-    public static final String SWITCH = "#switch";
-    public static final String CASE = "#case";
-    public static final String FOR = "#for";
-    public static final String DEFAULT = "#default";
-    public static final String BREAK = "#break";
-    public static final String END = "#end";
     private WatchDog watchDog = null;
-    private volatile boolean loading;
     private volatile boolean initialized;
-    // ----------------optional properties------------------
-    private Map<String, String> files = new HashMap<>();
-    private Set<String> filenames = new HashSet<>();
-    private Map<String, String> constants = new HashMap<>();
-    private Map<String, IPipe<?>> pipeInstances = new HashMap<>();
-    private Map<String, String> pipes = new HashMap<>();
-    private int checkPeriod = 30; //seconds
-    private volatile boolean checkModified;
-    private String charset = "UTF-8";
-    private String delimiter = ";";
-    private char namedParamPrefix = ':';
-    private boolean highlightSql = false;
-    // ----------------optional properties------------------
-    private SqlTranslator sqlTranslator = new SqlTranslator(namedParamPrefix);
 
     /**
-     * Sql文件解析器实例
+     * XQL文件管理器<br>
+     * 如果 <code>classpath</code> 下存在：
+     * <ol>
+     *     <li><code>xql-file-manager.yml</code></li>
+     *     <li><code>xql-file-manager.properties</code></li>
+     * </ol>
+     * 则读取配置文件进行配置项初始化，如果文件同时存在，则按顺序读取。
+     *
+     * @see XQLFileManagerConfig
      */
     public XQLFileManager() {
-        initByProperties("xql-file-manager.properties");
-    }
-
-    /**
-     * Sql文件解析器实例
-     *
-     * @param propertiesLocation properties路径
-     */
-    public XQLFileManager(String propertiesLocation) {
-        initByProperties(propertiesLocation);
-    }
-
-    /**
-     * 根据properties文件初始化一个Sql文件解析器
-     *
-     * @param propertiesLocation properties路径
-     */
-    protected void initByProperties(String propertiesLocation) {
-        FileResource resource = new FileResource(propertiesLocation);
+        FileResource resource = new FileResource(YML);
         if (resource.exists()) {
-            TypedProperties properties = new TypedProperties();
-            try {
-                properties.load(resource.getInputStream());
-                Map<String, String> localFiles = new HashMap<>();
-                Map<String, String> localConstants = new HashMap<>();
-                Map<String, String> localPipes = new HashMap<>();
-                properties.forEach((k, s) -> {
-                    String p = k.toString().trim();
-                    String v = s.toString().trim();
-                    if (!p.equals("") && !v.equals("")) {
-                        if (p.startsWith("files.")) {
-                            localFiles.put(p.substring(6), v);
-                        } else if (p.startsWith("constants.")) {
-                            localConstants.put(p.substring(10), v);
-                        } else if (p.startsWith("pipes.")) {
-                            localPipes.put(p.substring(6), v);
-                        }
-                    }
-                });
-
-                setFiles(localFiles);
-                setConstants(localConstants);
-                setPipes(localPipes);
-                setFilenames(properties.getSet("filenames", new HashSet<>()));
-                setDelimiter(properties.getProperty("delimiter", ";"));
-                setCharset(properties.getProperty("charset", "UTF-8"));
-                setNamedParamPrefix(properties.getProperty("namedParamPrefix", ":").charAt(0));
-                setHighlightSql(properties.getBool("highlightSql", false));
-                setCheckPeriod(properties.getInt("checkPeriod", 30));
-                setCheckModified(properties.getBool("checkModified", false));
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
+            loadYaml(resource);
+            return;
         }
+        resource = new FileResource(PROPERTIES);
+        if (resource.exists()) {
+            loadProperties(resource);
+        }
+    }
+
+    /**
+     * XQL文件管理器
+     *
+     * @param configLocation {@link FileResource 配置文件}：支持 {@code yml} 和 {@code properties}
+     * @see XQLFileManagerConfig
+     */
+    public XQLFileManager(String configLocation) {
+        super(configLocation);
+    }
+
+    /**
+     * XQL文件管理器
+     *
+     * @param config 配置项
+     */
+    public XQLFileManager(XQLFileManagerConfig config) {
+        config.copyStateTo(this);
     }
 
     /**
@@ -274,24 +220,6 @@ public class XQLFileManager implements AutoCloseable {
         } finally {
             lock.unlock();
         }
-    }
-
-    /**
-     * 设置命名的sql文件
-     *
-     * @param files 文件 [别名，文件名]
-     */
-    public void setFiles(Map<String, String> files) {
-        this.files = files;
-    }
-
-    /**
-     * 设置文件全路径名，默认别名为文件名（不包含后缀）
-     *
-     * @param filenames 文件全路径名
-     */
-    public void setFilenames(Set<String> filenames) {
-        this.filenames = filenames;
     }
 
     /**
@@ -821,7 +749,7 @@ public class XQLFileManager implements AutoCloseable {
                             }
                         }
                         // 准备循环迭代生产满足条件的sql片段
-                        String sqlPart = sqlTranslator.formatSql(loopPart.toString().trim(), filterArgs);
+                        String sqlPart = getSqlTranslator().formatSql(loopPart.toString().trim(), filterArgs);
                         forSql.add(sqlPart);
                     }
                     output.add(forSql.toString());
@@ -989,12 +917,12 @@ public class XQLFileManager implements AutoCloseable {
      * @throws NoSuchElementException 如果没有找到相应名字的sql片段
      */
     public String get(String name) {
-        String fileAlias = name.substring(0, name.indexOf("."));
-        if (resources.containsKey(fileAlias)) {
-            Map<String, String> sqlsRow = resources.get(fileAlias);
+        String alias = name.substring(0, name.indexOf("."));
+        if (resources.containsKey(alias)) {
+            Map<String, String> singleResource = resources.get(alias);
             String sqlName = name.substring(name.indexOf(".") + 1);
-            if (sqlsRow.containsKey(sqlName)) {
-                return SqlUtil.trimEnd(sqlsRow.get(sqlName));
+            if (singleResource.containsKey(sqlName)) {
+                return SqlUtil.trimEnd(singleResource.get(sqlName));
             }
         }
         throw new NoSuchElementException(String.format("no SQL named [%s] was found.", name));
@@ -1035,110 +963,12 @@ public class XQLFileManager implements AutoCloseable {
     }
 
     /**
-     * 设置检查文件是否更新
-     *
-     * @param checkModified 是否检查更新
-     */
-    public void setCheckModified(boolean checkModified) {
-        this.checkModified = checkModified;
-    }
-
-    /**
-     * 是否启用文件自动检查更新
-     *
-     * @return 文件检查更新状态
-     */
-    public boolean isCheckModified() {
-        return checkModified;
-    }
-
-    /**
-     * 设置文件检查周期（单位：秒）
-     *
-     * @param checkPeriod 文件检查周期，默认30秒
-     */
-    public void setCheckPeriod(int checkPeriod) {
-        if (checkPeriod < 5) {
-            this.checkPeriod = 5;
-            log.warn("period cannot less than 5 seconds, auto set 5 seconds.");
-        } else
-            this.checkPeriod = checkPeriod;
-    }
-
-    /**
-     * 获取文件检查周期，默认为30秒，配合方法：{@link #setCheckModified(boolean)} {@code -> true} 来使用
-     *
-     * @return 文件检查周期
-     */
-    public int getCheckPeriod() {
-        return checkPeriod;
-    }
-
-    /**
-     * 设置解析sql文件使用的编码格式，默认为UTF-8
-     *
-     * @param charset 编码
-     * @see StandardCharsets
-     */
-    public void setCharset(Charset charset) {
-        checkConcurrentModify("cannot set charset when loading...");
-        this.charset = charset.name();
-    }
-
-    /**
-     * 设置解析sql文件使用的编码格式，默认为UTF-8
-     *
-     * @param charset 编码
-     * @see #setCharset(Charset)
-     */
-    public void setCharset(String charset) {
-        checkConcurrentModify("cannot set charset when loading...");
-        this.charset = charset;
-    }
-
-    /**
-     * 获取当前解析sql文件使用的编码格式，默认为UTF-8
-     *
-     * @return 当前解析sql文件使用的编码格式
-     */
-    public String getCharset() {
-        return charset;
-    }
-
-    /**
      * 获取是否已调用过初始化方法，此方法不影响重复初始化
      *
      * @return 是否已调用过初始化方法
      */
     public boolean isInitialized() {
         return initialized;
-    }
-
-    /**
-     * 设置全局常量集合<br>
-     * 初始化扫描sql时，如果sql文件中没有找到匹配的字符串模版，则从全局常量中寻找
-     * 格式为：
-     * <blockquote>
-     * <pre>constants: {db:"test"}</pre>
-     * <pre>sql: {@code select ${db}.user from table;}</pre>
-     * <pre>result: select test.user from table.</pre>
-     * </blockquote>
-     *
-     * @param constants 常量集合
-     */
-    public void setConstants(Map<String, String> constants) {
-        checkConcurrentModify("cannot set when loading...");
-        this.constants = constants;
-        log.debug("global constants defined: {}", constants);
-    }
-
-    /**
-     * 获取常量集合
-     *
-     * @return 常量集合
-     */
-    public Map<String, String> getConstants() {
-        return constants;
     }
 
     /**
@@ -1149,128 +979,6 @@ public class XQLFileManager implements AutoCloseable {
      */
     public String getConstant(String key) {
         return constants.get(key);
-    }
-
-    /**
-     * 每个文件的sql片段块解析分隔符，每一段完整的sql根据此设置来进行区分，生效于方法：{@link #resolveSqlContent(String, FileResource)}，
-     * 默认是单个分号（{@code ;}）遵循标准sql文件多段sql分隔符。<br>但是有一种情况，如果sql文件内有<b>psql</b>：{@code create function...} 或 {@code create procedure...}等，
-     * 内部会包含多段sql多个分号，为防止解析异常，单独设置自定义的分隔符：
-     * <ul>
-     *     <li>例如（{@code ;;}）双分号，也是标准sql所支持的, <b>并且支持仅扫描已命名的sql</b>；</li>
-     *     <li>也可以设置为null或空白，那么整个SQL文件多段SQL都应按照此方式分隔。</li>
-     * </ul>
-     *
-     * @param delimiter sql块分隔符
-     */
-    public void setDelimiter(String delimiter) {
-        checkConcurrentModify("cannot set delimiter when loading...");
-        this.delimiter = delimiter;
-    }
-
-    /**
-     * 获取当前的每个文件的sql片段块解析分隔符，默认是单个分号（{@code ;}）
-     *
-     * @return sql块分隔符
-     * @see #setDelimiter(String)
-     */
-    public String getDelimiter() {
-        return delimiter;
-    }
-
-    /**
-     * 如果在多线程情况下进行非法操作，抛出异常
-     *
-     * @param msg 异常信息
-     */
-    private void checkConcurrentModify(String msg) {
-        if (loading) {
-            throw new ConcurrentModificationException(msg);
-        }
-    }
-
-    /**
-     * 获取动态sql脚本自定义管道字典
-     *
-     * @return 自定义管道字典
-     */
-    public Map<String, String> getPipes() {
-        return pipes;
-    }
-
-    /**
-     * 配置动态sql脚本自定义管道字典
-     *
-     * @param pipes 自定义管道字典 [管道名, 管道类全名]
-     * @see IPipe
-     * @see #setPipeInstances(Map)
-     */
-    public void setPipes(Map<String, String> pipes) {
-        this.pipes = pipes;
-    }
-
-    /**
-     * 配置动态sql脚本自定义管道字典
-     *
-     * @param pipeInstances 自定义管道字典 [管道名, 管道类实例]
-     * @see IPipe
-     */
-    public void setPipeInstances(Map<String, IPipe<?>> pipeInstances) {
-        this.pipeInstances = pipeInstances;
-    }
-
-    /**
-     * 获取动态sql脚本自定义管道字典
-     *
-     * @return 自定义管道字典
-     */
-    public Map<String, IPipe<?>> getPipeInstances() {
-        return pipeInstances;
-    }
-
-    /**
-     * 获取命名参数前缀，主要针对sql中形如：{@code ${:name}} 这样的情况
-     *
-     * @return 命名参数前缀
-     */
-    public char getNamedParamPrefix() {
-        return namedParamPrefix;
-    }
-
-    /**
-     * 设置命名参数前缀，主要针对sql中形如：{@code ${:name}} 这样的情况
-     *
-     * @param namedParamPrefix 命名参数前缀
-     */
-    public void setNamedParamPrefix(char namedParamPrefix) {
-        this.namedParamPrefix = namedParamPrefix;
-        this.sqlTranslator = new SqlTranslator(namedParamPrefix);
-    }
-
-    /**
-     * debug模式下终端标准输出sql语法是否高亮
-     *
-     * @return 是否高亮
-     */
-    public boolean isHighlightSql() {
-        return highlightSql;
-    }
-
-    /**
-     * 设置debug模式下终端标准输出sql语法是否高亮
-     *
-     * @param highlightSql 是否高亮
-     */
-    public void setHighlightSql(boolean highlightSql) {
-        this.highlightSql = highlightSql;
-    }
-
-    /**
-     * 获取sql翻译解析器
-     *
-     * @return sql翻译解析器
-     */
-    public SqlTranslator getSqlTranslator() {
-        return sqlTranslator;
     }
 
     /**

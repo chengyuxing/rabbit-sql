@@ -8,3 +8,4 @@ files:
   other: 15
 delimiter: ;
 charset: UTF-8
+named-param-prefix: '@'

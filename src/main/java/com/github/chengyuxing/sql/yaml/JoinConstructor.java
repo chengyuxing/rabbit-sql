@@ -19,6 +19,7 @@ public class JoinConstructor extends Constructor {
         super(new LoaderOptions());
         this.yamlConstructors.put(new Tag("!join"), new ConstructJoin(""));
         this.yamlConstructors.put(new Tag("!path"), new ConstructJoin("/"));
+        this.setPropertyUtils(new HyphenatedPropertyUtil());
     }
 
     private class ConstructJoin extends AbstractConstruct {

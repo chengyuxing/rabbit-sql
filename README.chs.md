@@ -31,7 +31,7 @@ Maven 中央仓库
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.1.11</version>
+    <version>7.1.12</version>
 </dependency>
 ```
 
@@ -456,8 +456,38 @@ order by id;
 
 - **new XQLFileManager()**
 
-  如果源路径 `.../src/main/resources/`下有文件 `xql-file-manager.properties` 则根据此文件进行配置项初始化，初始化默认可选配置项为：
+  如果源路径 `.../src/main/resources/`下有文件 `xql-file-manager.properties` 或 `xql-file-manager.yml` 则根据此文件进行配置项初始化，如果同时存在，优先读取 `xql-file-manager.yml`。
 
+  初始化默认可选配置项：
+  
+  `xql-file-manager.yml`
+  
+  内置`!path` 标签函数：可用于连接列表为一个路径字符串。
+  
+  ```yaml
+  constants:
+  #  base: &basePath pgsql
+  
+  filenames:
+  #  - data.xql
+  #  - system.xql
+  
+  files:
+  # 使用 !path 标签合并列表得到 "pgsql/other.xql"
+  #  dt: !path [ *basePath, other.xql ]
+  #  other: another.xql
+  
+  delimiter: ;
+  charset: UTF-8
+  named-param-prefix: ':'
+  pipes:
+  highlight-sql: false
+  check-period: 30
+  check-modified: false
+  ```
+  
+  `xql-file-manager.properties`
+  
   ```properties
   # Format: multi xql file split by ',' symbol and file name is alias default, e,g:
   # filenames=data.xql,system.xql

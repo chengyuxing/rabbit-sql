@@ -31,7 +31,7 @@ Maven central
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.1.11</version>
+    <version>7.1.12</version>
 </dependency>
 ```
 
@@ -462,8 +462,38 @@ order by id;
 
 - **new XQLFileManager()**
 
-  If source root `.../src/main/resources` contains file what is named `xql-file-manager.properties` , optional properties will be init by this file, the default options in `sql-file-manager.properties` :
+  If source root `.../src/main/resources` contains file what is named `xql-file-manager.properties` or `xql-file-manager.yml`, optional properties will be init by this file, if both exists, `xql-file-manager.yml` go first,
 
+  Default options:
+  
+  `xql-file-manager.yml`
+  
+  `!path` tag use for merge list to path string.
+  
+  ```yaml
+  constants:
+  #  base: &basePath pgsql
+  
+  filenames:
+  #  - data.xql
+  #  - system.xql
+  
+  files:
+  # use !path tag merge list to "pgsql/other.xql"
+  #  dt: !path [ *basePath, other.xql ]
+  #  other: another.xql
+  
+  delimiter: ;
+  charset: UTF-8
+  named-param-prefix: ':'
+  pipes:
+  highlight-sql: false
+  check-period: 30
+  check-modified: false
+  ```
+  
+   `sql-file-manager.properties` 
+  
   ```properties
   # Format: multi xql file split by ',' symbol and file name is alias default, e,g:
   # filenames=data.xql,system.xql

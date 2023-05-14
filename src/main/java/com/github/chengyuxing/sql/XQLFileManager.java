@@ -300,72 +300,57 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @throws DuplicateException 如果同一个文件中有重复的内容命名
      */
     public Map<String, String> sqlFileStructured(FileResource resource) throws IOException {
-        String fileName = resource.getFileName();
         Map<String, String> singleResource = new LinkedHashMap<>();
-        String blockName = "";
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream(), charset))) {
+            String blockName = "";
+            List<String> sqlBodyBuffer = new ArrayList<>();
             String line;
             while ((line = reader.readLine()) != null) {
                 String trimLine = line.trim();
-                if (!trimLine.isEmpty()) {
-                    Matcher m_name = NAME_PATTERN.matcher(trimLine);
-                    Matcher m_part = PART_PATTERN.matcher(trimLine);
-                    if (m_name.matches()) {
-                        // 匹配到名字，那就说明上一段sql已扫描拼接完整，处理一下
-                        checkNoneDelimiterSqlBlock(singleResource, fileName, blockName);
-                        blockName = m_name.group("name");
-                        if (singleResource.containsKey(blockName)) {
-                            throw new DuplicateException("same sql fragment name: '" + blockName + "' in " + resource.getPath());
-                        }
-                        singleResource.put(blockName, "");
-                    } else if (m_part.matches()) {
-                        checkNoneDelimiterSqlBlock(singleResource, fileName, blockName);
-                        blockName = "${" + m_part.group("part") + "}";
-                        if (singleResource.containsKey(blockName)) {
-                            throw new DuplicateException("same sql template name: '" + blockName + "' in " + resource.getPath());
-                        }
-                        singleResource.put(blockName, "");
-                    } else {
-                        // exclude single line annotation except expression keywords
-                        if (!trimLine.startsWith("--") || (StringUtil.startsWithsIgnoreCase(trimExp(trimLine), IF, FI, CHOOSE, WHEN, SWITCH, FOR, CASE, DEFAULT, BREAK, END))) {
-                            if (!blockName.equals("")) {
-                                String prepareLine = singleResource.get(blockName) + line;
-                                if (delimiter != null && !delimiter.trim().equals("") && trimLine.endsWith(delimiter)) {
-                                    String naSql = removeAnnotationBlock(prepareLine);
-                                    singleResource.put(blockName, naSql.substring(0, naSql.lastIndexOf(delimiter)).trim());
-                                    log.debug("scan {} to get sql({}) [{}]：{}", fileName, delimiter, blockName, SqlUtil.buildPrintSql(singleResource.get(blockName), highlightSql));
-                                    blockName = "";
-                                } else {
-                                    singleResource.put(blockName, prepareLine.concat(NEW_LINE));
-                                }
-                            }
+                if (trimLine.isEmpty()) {
+                    continue;
+                }
+                Matcher m_name = NAME_PATTERN.matcher(trimLine);
+                if (m_name.matches()) {
+                    blockName = m_name.group("name");
+                    if (singleResource.containsKey(blockName)) {
+                        throw new DuplicateException("same sql fragment name: '" + blockName + "' in " + resource.getPath());
+                    }
+                    continue;
+                }
+                Matcher m_part = PART_PATTERN.matcher(trimLine);
+                if (m_part.matches()) {
+                    blockName = "${" + m_part.group("part") + "}";
+                    if (singleResource.containsKey(blockName)) {
+                        throw new DuplicateException("same sql template name: '" + blockName + "' in " + resource.getPath());
+                    }
+                    continue;
+                }
+                // exclude single line annotation except expression keywords
+                if (!trimLine.startsWith("--") || (StringUtil.startsWithsIgnoreCase(trimExp(trimLine), IF, FI, CHOOSE, WHEN, SWITCH, FOR, CASE, DEFAULT, BREAK, END))) {
+                    if (!blockName.equals("")) {
+                        sqlBodyBuffer.add(line);
+                        if (trimLine.endsWith(delimiter)) {
+                            String naSql = removeAnnotationBlock(String.join(NEW_LINE, sqlBodyBuffer));
+                            singleResource.put(blockName, naSql.substring(0, naSql.lastIndexOf(delimiter)).trim());
+                            log.debug("scan {} to get sql({}) [{}]：{}", resource.getFileName(), delimiter, blockName, SqlUtil.buildPrintSql(singleResource.get(blockName), highlightSql));
+                            blockName = "";
+                            sqlBodyBuffer.clear();
                         }
                     }
                 }
             }
-            // if last part of sql is not ends with ';' symbol
+            // if last part of sql is not ends with delimiter symbol
             if (!blockName.equals("")) {
-                String lastSql = singleResource.get(blockName).trim();
+                String lastSql = String.join(NEW_LINE, sqlBodyBuffer);
                 singleResource.put(blockName, removeAnnotationBlock(lastSql));
-                log.debug("scan {} to get sql({}) [{}]：{}", fileName, delimiter, blockName, SqlUtil.buildPrintSql(lastSql, highlightSql));
+                log.debug("scan {} to get sql({}) [{}]：{}", resource.getFileName(), delimiter, blockName, SqlUtil.buildPrintSql(lastSql, highlightSql));
             }
         }
-        mergeSqlPartIfNecessary(singleResource);
-        return singleResource;
-    }
-
-    /**
-     * 检查没有分隔符情况时扫描的sql片段，没有分隔符那么就会在找到下一个sql名字的时候，上一段sql已拼接完整
-     *
-     * @param singleResource sql文件资源
-     * @param blockName      sql块命名
-     */
-    private void checkNoneDelimiterSqlBlock(Map<String, String> singleResource, String fileName, String blockName) {
-        if ((delimiter == null || delimiter.trim().equals("")) && singleResource.containsKey(blockName)) {
-            String naSql = SqlUtil.trimEnd(removeAnnotationBlock(singleResource.get(blockName)));
-            singleResource.put(blockName, naSql);
-            log.debug("scan {} to get sql [{}]：{}", fileName, blockName, SqlUtil.buildPrintSql(naSql, highlightSql));
+        if (!singleResource.isEmpty()) {
+            mergeSqlPartIfNecessary(singleResource);
         }
+        return singleResource;
     }
 
     /**

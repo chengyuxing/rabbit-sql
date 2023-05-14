@@ -14,4 +14,4 @@ select ${fields}, ${concats}, '${otherFields}' from ${db}.user where id = :id;
 email, phone, message, facetime;
 
 /*[getGuest]*/
-select ${hobby} from test.user;
+select ${hobby} from test.user

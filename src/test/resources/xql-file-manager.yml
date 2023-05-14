@@ -1,17 +1,17 @@
 constants:
-#  base: &basePath pgsql
+  ba-se: &basePath pgsql
 
 filenames:
-#  - data.xql
-#  - system.xql
+  - data.xql
+  - system.xql
 
 files:
-#  dt: !join [ *basePath, other.xql ]
-#  other: another.xql
+  dt: !join [ *basePath, other.xql ]
+  other: another.xql
 
 delimiter: ;
 charset: UTF-8
-named-param-prefix: ':'
+named-param-prefix:
 pipes:
 highlight-sql: false
 check-period: 30

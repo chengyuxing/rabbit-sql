@@ -176,7 +176,10 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @param files 文件：[别名，文件名]
      */
     public XQLFileManager(Map<String, String> files) {
-        this.files = files;
+        if (files == null) {
+            return;
+        }
+        this.files = new HashMap<>(files);
     }
 
     /**

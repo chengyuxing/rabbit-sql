@@ -3,6 +3,7 @@ package com.github.chengyuxing.sql;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.io.TypedProperties;
 import com.github.chengyuxing.common.script.IPipe;
+import com.github.chengyuxing.sql.exceptions.YamlDeserializeException;
 import com.github.chengyuxing.sql.utils.SqlTranslator;
 import com.github.chengyuxing.sql.yaml.JoinConstructor;
 import org.slf4j.Logger;
@@ -52,12 +53,12 @@ public class XQLFileManagerConfig {
     protected Map<String, String> constants = new HashMap<>();
     protected Map<String, IPipe<?>> pipeInstances = new HashMap<>();
     protected Map<String, String> pipes = new HashMap<>();
-    protected int checkPeriod = 30; //seconds
-    protected volatile boolean checkModified;
+    protected Integer checkPeriod = 30; //seconds
+    protected volatile Boolean checkModified = false;
     protected String charset = "UTF-8";
     protected String delimiter = ";";
-    protected char namedParamPrefix = ':';
-    protected boolean highlightSql = false;
+    protected Character namedParamPrefix = ':';
+    protected Boolean highlightSql = false;
     // ----------------optional properties------------------
 
     /**
@@ -93,8 +94,12 @@ public class XQLFileManagerConfig {
      */
     public void loadYaml(FileResource yamlLocation) {
         Yaml yaml = new Yaml(new JoinConstructor());
-        XQLFileManagerConfig config = yaml.loadAs(yamlLocation.getInputStream(), XQLFileManagerConfig.class);
-        config.copyStateTo(this);
+        try {
+            XQLFileManagerConfig config = yaml.loadAs(yamlLocation.getInputStream(), XQLFileManagerConfig.class);
+            config.copyStateTo(this);
+        } catch (Exception e) {
+            throw new YamlDeserializeException("load yaml config error: ", e);
+        }
     }
 
     /**
@@ -127,24 +132,32 @@ public class XQLFileManagerConfig {
             setConstants(localConstants);
             setPipes(localPipes);
             setFilenames(properties.getSet("filenames", new HashSet<>()));
-            setDelimiter(properties.getProperty("delimiter", ";"));
-            setCharset(properties.getProperty("charset", "UTF-8"));
+            setDelimiter(properties.getProperty("delimiter"));
+            setCharset(properties.getProperty("charset"));
             setNamedParamPrefix(properties.getProperty("namedParamPrefix", ":").charAt(0));
-            setHighlightSql(properties.getBool("highlightSql", false));
-            setCheckPeriod(properties.getInt("checkPeriod", 30));
-            setCheckModified(properties.getBool("checkModified", false));
+            setHighlightSql(properties.getBool("highlightSql"));
+            setCheckPeriod(properties.getInt("checkPeriod"));
+            setCheckModified(properties.getBool("checkModified"));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
+    /**
+     * 拷贝所有配置项到另一个配置对象
+     *
+     * @param other 另一个配置对象
+     */
     public void copyStateTo(XQLFileManagerConfig other) {
         Field[] fields = XQLFileManagerConfig.class.getDeclaredFields();
         for (Field field : fields) {
             if (!Modifier.isFinal(field.getModifiers())) {
                 field.setAccessible(true);
                 try {
-                    field.set(other, field.get(this));
+                    Object v = field.get(this);
+                    if (v != null) {
+                        field.set(other, v);
+                    }
                 } catch (IllegalAccessException e) {
                     throw new RuntimeException("Failed to copy XQLFileManagerConfig state: " + e.getMessage(), e);
                 }
@@ -185,7 +198,10 @@ public class XQLFileManagerConfig {
      * @param files 文件 [别名，文件名]
      */
     public void setFiles(Map<String, String> files) {
-        this.files = files;
+        if (files == null) {
+            return;
+        }
+        this.files = new HashMap<>(files);
     }
 
     /**
@@ -194,7 +210,10 @@ public class XQLFileManagerConfig {
      * @param filenames 文件全路径名
      */
     public void setFilenames(Set<String> filenames) {
-        this.filenames = filenames;
+        if (filenames == null) {
+            return;
+        }
+        this.filenames = new HashSet<>(filenames);
     }
 
     /**
@@ -219,8 +238,11 @@ public class XQLFileManagerConfig {
      * @param constants 常量集合
      */
     public void setConstants(Map<String, String> constants) {
+        if (constants == null) {
+            return;
+        }
         checkLoading();
-        this.constants = constants;
+        this.constants = new HashMap<>(constants);
     }
 
     /**
@@ -239,7 +261,10 @@ public class XQLFileManagerConfig {
      * @see IPipe
      */
     public void setPipeInstances(Map<String, IPipe<?>> pipeInstances) {
-        this.pipeInstances = pipeInstances;
+        if (pipeInstances == null) {
+            return;
+        }
+        this.pipeInstances = new HashMap<>(pipeInstances);
     }
 
     /**
@@ -258,15 +283,18 @@ public class XQLFileManagerConfig {
      * @see IPipe
      */
     public void setPipes(Map<String, String> pipes) {
-        this.pipes = pipes;
+        if (pipes == null) {
+            return;
+        }
+        this.pipes = new HashMap<>(pipes);
     }
 
     /**
-     * 获取文件检查周期，默认为30秒，配合方法：{@link #setCheckModified(boolean)} {@code -> true} 来使用
+     * 获取文件检查周期，默认为30秒，配合方法：{@link #setCheckModified(Boolean)} {@code -> true} 来使用
      *
      * @return 文件检查周期
      */
-    public int getCheckPeriod() {
+    public Integer getCheckPeriod() {
         return checkPeriod;
     }
 
@@ -275,7 +303,10 @@ public class XQLFileManagerConfig {
      *
      * @param checkPeriod 文件检查周期，默认30秒
      */
-    public void setCheckPeriod(int checkPeriod) {
+    public void setCheckPeriod(Integer checkPeriod) {
+        if (checkPeriod == null) {
+            return;
+        }
         if (checkPeriod < 5) {
             this.checkPeriod = 5;
             log.warn("period cannot less than 5 seconds, auto set 5 seconds.");
@@ -288,7 +319,7 @@ public class XQLFileManagerConfig {
      *
      * @return 文件检查更新状态
      */
-    public boolean isCheckModified() {
+    public Boolean isCheckModified() {
         return checkModified;
     }
 
@@ -297,7 +328,10 @@ public class XQLFileManagerConfig {
      *
      * @param checkModified 是否检查更新
      */
-    public void setCheckModified(boolean checkModified) {
+    public void setCheckModified(Boolean checkModified) {
+        if (checkModified == null) {
+            return;
+        }
         this.checkModified = checkModified;
     }
 
@@ -317,6 +351,9 @@ public class XQLFileManagerConfig {
      * @see StandardCharsets
      */
     public void setCharset(String charset) {
+        if (charset == null) {
+            return;
+        }
         this.checkLoading();
         this.charset = charset;
     }
@@ -328,6 +365,9 @@ public class XQLFileManagerConfig {
      * @see StandardCharsets
      */
     public void setCharset(Charset charset) {
+        if (charset == null) {
+            return;
+        }
         checkLoading();
         this.charset = charset.name();
     }
@@ -347,12 +387,14 @@ public class XQLFileManagerConfig {
      * 内部会包含多段sql多个分号，为防止解析异常，单独设置自定义的分隔符：
      * <ul>
      *     <li>例如（{@code ;;}）双分号，也是标准sql所支持的, <b>并且支持仅扫描已命名的sql</b>；</li>
-     *     <li>也可以设置为null或空白，那么整个SQL文件多段SQL都应按照此方式分隔。</li>
      * </ul>
      *
      * @param delimiter sql块分隔符
      */
     public void setDelimiter(String delimiter) {
+        if (delimiter == null || delimiter.trim().equals("")) {
+            return;
+        }
         checkLoading();
         this.delimiter = delimiter;
     }
@@ -362,7 +404,7 @@ public class XQLFileManagerConfig {
      *
      * @return 命名参数前缀
      */
-    public char getNamedParamPrefix() {
+    public Character getNamedParamPrefix() {
         return namedParamPrefix;
     }
 
@@ -371,9 +413,12 @@ public class XQLFileManagerConfig {
      *
      * @param namedParamPrefix 命名参数前缀
      */
-    public void setNamedParamPrefix(char namedParamPrefix) {
+    public void setNamedParamPrefix(Character namedParamPrefix) {
+        if (namedParamPrefix == null || namedParamPrefix == ' ') {
+            return;
+        }
         this.namedParamPrefix = namedParamPrefix;
-        this.sqlTranslator = new SqlTranslator(namedParamPrefix);
+        this.sqlTranslator = new SqlTranslator(this.namedParamPrefix);
     }
 
     /**
@@ -381,7 +426,7 @@ public class XQLFileManagerConfig {
      *
      * @return 是否高亮
      */
-    public boolean isHighlightSql() {
+    public Boolean isHighlightSql() {
         return highlightSql;
     }
 
@@ -390,7 +435,10 @@ public class XQLFileManagerConfig {
      *
      * @param highlightSql 是否高亮
      */
-    public void setHighlightSql(boolean highlightSql) {
+    public void setHighlightSql(Boolean highlightSql) {
+        if (highlightSql == null) {
+            return;
+        }
         this.highlightSql = highlightSql;
     }
 }

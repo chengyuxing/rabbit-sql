@@ -77,7 +77,7 @@ public class ControlTest {
             if (trimLine.startsWith("--#if")) {
                 String filter = trimLine.substring(6);
                 CExpression expression = CExpression.of(filter);
-                skip = expression.calc(args);
+                skip = expression.calc(args, true);
                 continue;
             }
             if (trimLine.startsWith("--#fi")) {
@@ -117,7 +117,7 @@ public class ControlTest {
 
         CExpression expression = CExpression.of(":enable = true && :name = blank && :age<=21");
 
-        System.out.println(expression.calc(args));
+        System.out.println(expression.calc(args, true));
 
     }
 
@@ -131,7 +131,7 @@ public class ControlTest {
 
         CExpression expression = CExpression.of(":enable = false && :types @ \"\\w+\"");
 
-        System.out.println(expression.calc(args));
+        System.out.println(expression.calc(args, true));
     }
 
     @Test

@@ -1,6 +1,5 @@
 package tests;
 
-import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.sql.XQLFileManager;
 import com.github.chengyuxing.sql.yaml.JoinConstructor;
@@ -15,7 +14,7 @@ public class XQLFileManagerTests {
     public void test() {
         Yaml yaml = new Yaml(new JoinConstructor());
 //        yaml.addImplicitResolver(new Tag("!!merge"), Pattern.compile("!!merge"), "[");
-        Map<String, Object> res = yaml.loadAs(new FileResource("xql-file-manager.yml").getInputStream(), Map.class);
+        Map<String, Object> res = yaml.loadAs(new FileResource("xql-file-manager.old.yml").getInputStream(), Map.class);
         System.out.println(res);
     }
 

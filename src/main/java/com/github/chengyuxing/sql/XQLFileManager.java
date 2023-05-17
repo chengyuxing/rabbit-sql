@@ -5,6 +5,7 @@ import com.github.chengyuxing.common.console.Color;
 import com.github.chengyuxing.common.console.Printer;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.script.Comparators;
+import com.github.chengyuxing.common.script.IExpression;
 import com.github.chengyuxing.common.script.IPipe;
 import com.github.chengyuxing.common.script.impl.FastExpression;
 import com.github.chengyuxing.common.utils.ObjectUtil;
@@ -532,10 +533,9 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                         // 说明此处已经达到了嵌套fi的末尾
                         if (count == 0) {
                             // 此处计算外层if逻辑表达式，逻辑同程序语言的if逻辑
-                            FastExpression fx = FastExpression.of(trimOuterLine.substring(3));
-                            fx.setCustomPipes(pipeInstances);
-                            fx.setCheckArgsKey(checkArgsKey);
-                            boolean res = fx.calc(args);
+                            IExpression fx = FastExpression.of(trimOuterLine.substring(3));
+                            fx.setPipes(pipeInstances);
+                            boolean res = fx.calc(args, checkArgsKey);
                             // 如果外层判断为真，如果内层还有if表达式块或choose...end块，则进入内层继续处理
                             // 否则就认为是原始sql逻辑判断需要保留片段
                             if (res) {
@@ -575,10 +575,9 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     if (startsWithsIgnoreCase(trimLine, WHEN, DEFAULT)) {
                         boolean res = false;
                         if (startsWithIgnoreCase(trimLine, WHEN)) {
-                            FastExpression fx = FastExpression.of(trimLine.substring(5));
-                            fx.setCustomPipes(pipeInstances);
-                            fx.setCheckArgsKey(checkArgsKey);
-                            res = fx.calc(args);
+                            IExpression fx = FastExpression.of(trimLine.substring(5));
+                            fx.setPipes(pipeInstances);
+                            res = fx.calc(args, checkArgsKey);
                         }
                         // choose表达式块效果类似于程序语言的switch块，从前往后，只要满足一个分支，就跳出整个choose块
                         // 如果有default分支，前面所有when都不满足的情况下，就会直接选择default分支的sql作为结果保留
@@ -643,7 +642,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     if (startsWithsIgnoreCase(trimLine, CASE, DEFAULT)) {
                         boolean res = false;
                         if (startsWithIgnoreCase(trimLine, CASE)) {
-                            res = Comparators.compare(value, "=", trimLine.substring(5).trim());
+                            res = Comparators.compare(value, "=", Comparators.valueOf(trimLine.substring(5).trim()));
                         }
                         if (res || startsWithIgnoreCase(trimLine, DEFAULT)) {
                             StringJoiner innerSb = new StringJoiner(NEW_LINE);
@@ -729,10 +728,9 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                             }
                             // 将filter子句转为支持表达式解析的子句格式
                             expStr = StringUtil.format(expStr, filterTemps);
-                            FastExpression expression = FastExpression.of(expStr);
-                            expression.setCustomPipes(pipeInstances);
-                            expression.setCheckArgsKey(checkArgsKey);
-                            if (!expression.calc(filterArgs)) {
+                            IExpression fx = FastExpression.of(expStr);
+                            fx.setPipes(pipeInstances);
+                            if (!fx.calc(filterArgs, checkArgsKey)) {
                                 continue;
                             }
                         }

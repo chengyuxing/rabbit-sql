@@ -1,6 +1,8 @@
 package sql;
 
+import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.Args;
+import com.github.chengyuxing.sql.Keywords;
 import com.github.chengyuxing.sql.utils.SqlTranslator;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
@@ -26,11 +28,12 @@ public class TestStrTemplate {
 
     @Test
     public void testO() throws Exception {
-        System.out.println(sqlTranslator.formatSql("${a.b}",Args.create("a","b")));
+        System.out.println(sqlTranslator.formatSql("${a.b}", Args.create("a", "b")));
     }
 
     @Test
-    public void test42() throws Exception{
-        System.out.println(SqlUtil.deconstructArrayIfNecessary(null,false));
+    public void test42() throws Exception {
+        System.out.println(StringUtil.equalsAnyIgnoreCase("DESC", Keywords.STANDARD));
+        System.out.println(StringUtil.equalsAnyIgnoreCase("abc","1"));
     }
 }

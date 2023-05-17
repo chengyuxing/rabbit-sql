@@ -79,7 +79,7 @@ public class SqlTranslator {
     /**
      * 构建一条可执行的sql
      *
-     * @param sql     sql字符串
+     * @param sql     命名参数的sql字符串
      * @param args    参数
      * @param prepare 是否生成预编译sql
      * @return 预编译/普通sql和顺序的参数名集合

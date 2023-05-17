@@ -43,7 +43,7 @@ public class OraclePageHelper extends PageHelper {
                 "FROM (SELECT t.*, ROWNUM RN_4_RABBIT \n" +
                 "          FROM (" + sql + ") t\n" +
                 "          WHERE ROWNUM <= " + end() + ")\n" +
-                " WHERE RN_4_RABBIT >=" + start();
+                " WHERE RN_4_RABBIT >= " + start();
     }
 
     /**

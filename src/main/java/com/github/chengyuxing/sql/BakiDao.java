@@ -291,7 +291,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 }
                 String query = getSql(sql, args);
                 try (Stream<DataRow> s = executeQueryStream(pageHelper.pagedSql(query), args)) {
-                    return s.findFirst();
+                    return s.peek(d -> d.remove(PageHelper.ROW_NUM_KEY)).findFirst();
                 }
             }
 
@@ -505,7 +505,9 @@ public class BakiDao extends JdbcSupport implements Baki {
             args.putAll(rewriteArgsFunc == null ? pagedArgs : rewriteArgsFunc.apply(pagedArgs));
             String executeQuery = disablePageSql ? query : pageHelper.pagedSql(query);
             try (Stream<DataRow> s = executeQueryStream(executeQuery, args)) {
-                List<T> list = s.map(mapper).collect(Collectors.toList());
+                List<T> list = s.peek(d -> d.remove(PageHelper.ROW_NUM_KEY))
+                        .map(mapper)
+                        .collect(Collectors.toList());
                 return PagedResource.of(pageHelper, list);
             }
         }

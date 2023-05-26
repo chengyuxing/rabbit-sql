@@ -11,10 +11,10 @@ import java.util.Map;
  * e.g.
  * <blockquote>
  * <pre>SELECT *
- * FROM (SELECT t.*, ROWNUM RN_BY_RABBIT_
+ * FROM (SELECT t.*, ROWNUM RN_4_RABBIT
  *       FROM (...) t
  *       WHERE ROWNUM{@code <=} :end)
- *  WHERE RN_BY_RABBIT_{@code >=} :start</pre>
+ *  WHERE RN_4_RABBIT{@code >=} :start</pre>
  * </blockquote>
  *
  * @see #pagedArgs()
@@ -40,10 +40,10 @@ public class OraclePageHelper extends PageHelper {
     @Override
     public String pagedSql(String sql) {
         return "SELECT * \n" +
-                "FROM (SELECT t.*, ROWNUM RN_4_RABBIT \n" +
+                "FROM (SELECT t.*, ROWNUM " + ROW_NUM_KEY + " \n" +
                 "          FROM (" + sql + ") t\n" +
                 "          WHERE ROWNUM <= " + end() + ")\n" +
-                " WHERE RN_4_RABBIT >= " + start();
+                " WHERE " + ROW_NUM_KEY + " >= " + start();
     }
 
     /**

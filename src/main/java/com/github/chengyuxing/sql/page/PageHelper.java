@@ -6,6 +6,7 @@ import java.util.Map;
  * 抽象分页工具
  */
 public abstract class PageHelper {
+    public static final String ROW_NUM_KEY = "rn_4_rabbit";
     protected int pageNumber;
     protected int pageSize;
     protected int pageCount;

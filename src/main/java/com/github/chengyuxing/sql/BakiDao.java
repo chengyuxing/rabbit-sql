@@ -219,7 +219,8 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     @Override
     public int delete(String tableName, String where, Map<String, ?> arg) {
-        String w = StringUtil.startsWithIgnoreCase(where.trim(), "where") ? where : "\nwhere " + where;
+        String whereSql = getSql(where, Collections.emptyMap());
+        String w = StringUtil.startsWithIgnoreCase(whereSql.trim(), "where") ? whereSql : "\nwhere " + whereSql;
         return executeNonQuery("delete from " + tableName + w, Collections.singletonList(arg));
     }
 

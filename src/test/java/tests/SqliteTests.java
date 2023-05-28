@@ -1,6 +1,7 @@
 package tests;
 
 import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.Baki;
 import com.github.chengyuxing.sql.BakiDao;
 import com.github.chengyuxing.sql.PagedResource;
@@ -64,9 +65,21 @@ public class SqliteTests {
 
     @Test
     public void test2() {
-        baki.query("select 1 union select 2")
+        baki.query("select 1 union select 2 where id = :id")
+                .arg("id", 10)
                 .findFirst()
                 .ifPresent(System.out::println);
+    }
+
+    @Test
+    public void test34() {
+        baki.execute("select 1 union select 2 where id = :id");
+    }
+
+    @Test
+    public void test35() {
+        baki.update("test.user", "id = :id")
+                .save(Args.create("id", 10, "name", "cyx"));
     }
 
     @Test

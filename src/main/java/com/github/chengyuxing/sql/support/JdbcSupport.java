@@ -86,7 +86,7 @@ public abstract class JdbcSupport extends SqlSupport {
             }
             statement = null;
             releaseConnection(connection, getDataSource());
-            throw new UncheckedSqlException("execute sql:\n[" + sql + "]\nerror: ", e);
+            throw new UncheckedSqlException("execute sql:\n[" + sql + "]", e);
         } finally {
             try {
                 JdbcUtil.closeStatement(statement);
@@ -112,26 +112,30 @@ public abstract class JdbcSupport extends SqlSupport {
         Pair<String, List<String>> p = compileSql(sql, args);
         final List<String> argNames = p.getItem2();
         final String preparedSql = p.getItem1();
-        return execute(preparedSql, sc -> {
-            JdbcUtil.setSqlTypedArgs(sc, checkParameterType(), args, argNames);
-            boolean isQuery = sc.execute();
-            printSqlConsole(sc);
-            DataRow result;
-            if (isQuery) {
-                ResultSet resultSet = sc.getResultSet();
-                List<DataRow> rows = JdbcUtil.createDataRows(resultSet, preparedSql, -1);
-                JdbcUtil.closeResultSet(resultSet);
-                if (rows.size() == 1) {
-                    result = DataRow.fromPair("result", rows.get(0), "type", "QUERY statement");
+        try {
+            return execute(preparedSql, sc -> {
+                JdbcUtil.setSqlTypedArgs(sc, checkParameterType(), args, argNames);
+                boolean isQuery = sc.execute();
+                printSqlConsole(sc);
+                DataRow result;
+                if (isQuery) {
+                    ResultSet resultSet = sc.getResultSet();
+                    List<DataRow> rows = JdbcUtil.createDataRows(resultSet, preparedSql, -1);
+                    JdbcUtil.closeResultSet(resultSet);
+                    if (rows.size() == 1) {
+                        result = DataRow.fromPair("result", rows.get(0), "type", "QUERY statement");
+                    } else {
+                        result = DataRow.of(new String[]{"result", "type"}, new Object[]{rows, "QUERY statement"});
+                    }
                 } else {
-                    result = DataRow.of(new String[]{"result", "type"}, new Object[]{rows, "QUERY statement"});
+                    int count = sc.getUpdateCount();
+                    result = DataRow.fromPair("result", count, "type", "DD(M)L statement");
                 }
-            } else {
-                int count = sc.getUpdateCount();
-                result = DataRow.fromPair("result", count, "type", "DD(M)L statement");
-            }
-            return result;
-        });
+                return result;
+            });
+        } catch (Exception e) {
+            throw new RuntimeException("prepare sql error:\n[" + sql + "]\n" + args, e);
+        }
     }
 
     /**
@@ -188,7 +192,7 @@ public abstract class JdbcSupport extends SqlSupport {
                         action.accept(JdbcUtil.createDataRow(names, resultSet));
                         return true;
                     } catch (SQLException ex) {
-                        throw new UncheckedSqlException("reading result set of query:[" + preparedSql + "]\nerror: ", ex);
+                        throw new UncheckedSqlException("reading result set of query: [" + preparedSql + "]\nerror: ", ex);
                     }
                 }
             }, false).onClose(close);
@@ -200,7 +204,7 @@ public abstract class JdbcSupport extends SqlSupport {
                     ex.addSuppressed(e);
                 }
             }
-            throw new RuntimeException("\nstreaming query error:[" + preparedSql + "]\nargs:" + args, ex);
+            throw new RuntimeException("\nstreaming query error: \n[" + sql + "]\n[" + preparedSql + "]\n" + args, ex);
         }
     }
 
@@ -265,18 +269,22 @@ public abstract class JdbcSupport extends SqlSupport {
         Pair<String, List<String>> preparedSqlAndArgNames = compileSql(sql, first);
         final List<String> argNames = preparedSqlAndArgNames.getItem2();
         final String preparedSql = preparedSqlAndArgNames.getItem1();
-        return execute(preparedSql, sc -> {
-            if (args.isEmpty()) {
-                return sc.executeUpdate();
-            }
-            Iterator<? extends Map<String, ?>> iterator = args.iterator();
-            int i = 0;
-            while (iterator.hasNext()) {
-                JdbcUtil.setSqlTypedArgs(sc, checkParameterType(), iterator.next(), argNames);
-                i += sc.executeUpdate();
-            }
-            return i;
-        });
+        try {
+            return execute(preparedSql, sc -> {
+                if (args.isEmpty()) {
+                    return sc.executeUpdate();
+                }
+                Iterator<? extends Map<String, ?>> iterator = args.iterator();
+                int i = 0;
+                while (iterator.hasNext()) {
+                    JdbcUtil.setSqlTypedArgs(sc, checkParameterType(), iterator.next(), argNames);
+                    i += sc.executeUpdate();
+                }
+                return i;
+            });
+        } catch (Exception e) {
+            throw new RuntimeException("prepare sql error:\n[" + sql + "]\n" + args, e);
+        }
     }
 
     /**
@@ -352,7 +360,7 @@ public abstract class JdbcSupport extends SqlSupport {
             }
             statement = null;
             releaseConnection(connection, getDataSource());
-            throw new UncheckedSqlException("execute procedure [" + procedure + "] error:", e);
+            throw new UncheckedSqlException("execute procedure error: \n[" + procedure + "]\n" + args, e);
         } finally {
             try {
                 JdbcUtil.closeStatement(statement);

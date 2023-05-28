@@ -289,7 +289,7 @@ public class JdbcUtil {
                     statement.setObject(index, value.toString());
                 } else {
                     // maybe is java bean
-                    log.warn("you try to set an unknow class instance(maybe your java bean) data into string type field, auto convert to json string!");
+                    log.warn("you try to set an unknown class instance(maybe your java bean) data into string type field, auto convert to json string!");
                     statement.setObject(index, obj2Json(value));
                 }
                 // if is postgresql array
@@ -332,7 +332,7 @@ public class JdbcUtil {
             log.warn("you try to set a Map or Collection data, auto convert to json string!");
             statement.setObject(index, obj2Json(value));
         } else if (!value.getClass().getTypeName().startsWith("java.")) {
-            log.warn("you try to set an unknow class instance(maybe your java bean) data, auto convert to json string!");
+            log.warn("you try to set an unknown class instance(maybe your java bean) data, auto convert to json string!");
             statement.setObject(index, obj2Json(value));
         } else if (value instanceof InputStream) {
             statement.setBinaryStream(index, (InputStream) value);

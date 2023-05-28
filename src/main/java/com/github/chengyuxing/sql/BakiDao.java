@@ -331,18 +331,19 @@ public class BakiDao extends JdbcSupport implements Baki {
         if (data.isEmpty()) {
             return 0;
         }
+        String whereSql = getSql(where, Collections.emptyMap());
         // 这里是防止引用类型导致移除了必要的参数
         Map<String, ?> first = new HashMap<>(data.iterator().next());
         List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);
         // 获取where条件中的参数名
-        List<String> whereFields = sqlTranslator.getPreparedSql(where, Collections.emptyMap()).getItem2();
+        List<String> whereFields = sqlTranslator.getPreparedSql(whereSql, Collections.emptyMap()).getItem2();
         for (String key : whereFields) {
             // 如果where条件中参数名是小写，而第一行数据中是大写，则也需要删除那个数据，来保证生成正确的set更新数据块
             if (CollectionUtil.containsKeyIgnoreCase(first, key))
                 first.remove(key);
         }
         String update = sqlTranslator.generateNamedParamUpdate(tableName, first, tableFields);
-        String sql = update + "\nwhere " + where;
+        String sql = update + "\nwhere " + whereSql;
         return executeNonQuery(sql, data);
     }
 
@@ -377,11 +378,12 @@ public class BakiDao extends JdbcSupport implements Baki {
         if (data.isEmpty()) {
             return 0;
         }
+        String whereSql = getSql(where, Collections.emptyMap());
         String[] sqls = new String[data.size()];
         Map<String, Object> first = new HashMap<>(data.iterator().next());
         List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);
         // 获取where条件中的参数名
-        List<String> whereFields = sqlTranslator.generateSql(where, Collections.emptyMap(), true).getItem2();
+        List<String> whereFields = sqlTranslator.generateSql(whereSql, Collections.emptyMap(), true).getItem2();
         // 将where条件中的参数排除，因为where中的参数作为条件，而不是需要更新的值
         for (String key : whereFields) {
             if (CollectionUtil.containsKeyIgnoreCase(first, key))
@@ -389,7 +391,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         }
         // 以第一条记录构建出确定的传名参数的预编译sql，后续再处理为非预编译sql
         String update = sqlTranslator.generateNamedParamUpdate(tableName, first, tableFields);
-        String fullUpdatePrepared = update + "\nwhere " + where;
+        String fullUpdatePrepared = update + "\nwhere " + whereSql;
         Iterator<? extends Map<String, ?>> iterator = data.iterator();
         for (int i = 0; iterator.hasNext(); i++) {
             // 完整的参数字典

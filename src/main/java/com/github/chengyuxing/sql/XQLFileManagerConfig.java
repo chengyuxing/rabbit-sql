@@ -96,6 +96,10 @@ public class XQLFileManagerConfig {
         Yaml yaml = new Yaml(new JoinConstructor());
         try {
             XQLFileManagerConfig config = yaml.loadAs(yamlLocation.getInputStream(), XQLFileManagerConfig.class);
+            if (config == null) {
+                log.warn("yaml loaded nothing, resource length is " + yamlLocation.getInputStream().available());
+                return;
+            }
             config.copyStateTo(this);
         } catch (Exception e) {
             throw new YamlDeserializeException("load yaml config error: ", e);

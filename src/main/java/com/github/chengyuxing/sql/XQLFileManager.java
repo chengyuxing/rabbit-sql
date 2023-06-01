@@ -762,7 +762,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @param sql sql语句
      * @return 修复后的sql
      */
-    protected String repairSyntaxError(String sql) {
+    public String repairSyntaxError(String sql) {
         Pattern p;
         Matcher m;
         // if update statement

@@ -344,8 +344,7 @@ public class Tests {
         xqlFileManager.setFilenames(names);
         xqlFileManager.init();
 
-        boolean removed = xqlFileManager.remove("cyx");
-        System.out.println(removed);
+        xqlFileManager.remove("cyx");
 
         System.out.println(ReflectUtil.obj2Json(xqlFileManager));
     }
@@ -400,12 +399,23 @@ public class Tests {
     }
 
     @Test
+    public void test112() {
+        Map<String, String> map1 = new LinkedHashMap<>();
+        map1.put("b", "1");
+        map1.put("d", "1");
+        map1.put("a", "1");
+
+        System.out.println(Collections.unmodifiableMap(map1));
+    }
+
+    @Test
     public void test3() throws IOException {
         XQLFileManager xqlFileManager = new XQLFileManager();
         xqlFileManager.setHighlightSql(true);
         xqlFileManager.add("cyx", "pgsql/data.sql");
         xqlFileManager.init();
 //        Map<String, String> map = xqlFileManager.sqlFileStructured(new FileResource("pgsql/data.sql"));
+        xqlFileManager.removeByFilename("pgsql/data.sql");
         System.out.println(xqlFileManager);
     }
 }

@@ -143,9 +143,12 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * 添加sql文件，别名默认为文件名（不包含后缀）
      *
      * @param fileName 文件路径全名
+     * @return 文件别名
      */
-    public void add(String fileName) {
-        this.filenames.add(fileName);
+    public String add(String fileName) {
+        String alias = StringUtil.getFileName(fileName, false);
+        add(alias, fileName);
+        return alias;
     }
 
     /**
@@ -158,7 +161,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         try {
             resources.remove(alias);
             files.remove(alias);
-            filenames.removeIf(filename -> StringUtil.getFileName(filename, false).equals(alias));
         } finally {
             lock.unlock();
         }
@@ -172,7 +174,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public void removeByFilename(String filename) {
         lock.lock();
         try {
-            filenames.remove(filename);
             files.entrySet().removeIf(next -> next.getValue().equals(filename));
             resources.entrySet().removeIf(e -> e.getValue().getFilename().equals(filename));
         } finally {
@@ -188,50 +189,23 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * 清空所有文件以及解析的结果
+     * 清空所有文件
      */
     public void clearFiles() {
-        lock.lock();
-        try {
-            filenames.clear();
-            files.clear();
-            resources.clear();
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    /**
-     * 统一集合所有命名sql和未命名sql文件
-     *
-     * @return 所有sql文件集合
-     */
-    public Map<String, String> allFiles() {
-        Map<String, String> all = new HashMap<>(files);
-        filenames.forEach(fullName -> {
-            String defaultAlias = StringUtil.getFileName(fullName, false);
-            if (all.containsKey(defaultAlias)) {
-                throw new DuplicateException("auto generate sql alias error: '" + defaultAlias + "' already exists!");
-            }
-            if (all.containsValue(fullName)) {
-                throw new DuplicateException("xql file '" + fullName + "' already configured, do not configure again!");
-            }
-            all.put(defaultAlias, fullName);
-        });
-        return all;
+        files.clear();
     }
 
     /**
      * 更新sql文件资源
      *
-     * @param alias    文件别名
-     * @param filename 文件名
-     * @param resource 文件资源
+     * @param alias        文件别名
+     * @param filename     文件名
+     * @param fileResource 文件资源
      * @throws IOException        如果文件不存在或路径无效
      * @throws DuplicateException 如果同一个文件中有重复的内容命名
      */
-    protected void putResource(String alias, String filename, FileResource resource) throws IOException, URISyntaxException {
-        resources.put(alias, parse(alias, filename, resource));
+    protected void putResource(String alias, String filename, FileResource fileResource) throws IOException, URISyntaxException {
+        resources.put(alias, parse(alias, filename, fileResource));
     }
 
     /**
@@ -333,20 +307,20 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * 如果有检测到文件修改过，则重新加载已修改过的sql文件
      *
      * @throws UncheckedIOException 如果sql文件读取错误
+     * @throws RuntimeException     uri格式错误
      */
     protected void loadResource() {
         lock.lock();
         loading = true;
         try {
-            Map<String, String> allFiles = allFiles();
             // 如果通过copyStateTo拷贝配置
             // 这里每次都会拷贝到配置文件中的files和filenames
             // 但解析的resources并不会同步更新
             // 可能resources中会存在着早已经删了文件的解析结果
             // 所以先进行删除没有对应的脏数据
-            resources.entrySet().removeIf(e -> !allFiles.containsKey(e.getKey()));
+            resources.entrySet().removeIf(e -> !files.containsKey(e.getKey()));
             // 再完整的解析配置中的全部文件，确保文件和资源一一对应
-            for (Map.Entry<String, String> fileE : allFiles.entrySet()) {
+            for (Map.Entry<String, String> fileE : files.entrySet()) {
                 String alias = fileE.getKey();
                 String filename = fileE.getValue();
                 FileResource cr = new FileResource(filename);
@@ -596,6 +570,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     @Override
     public void close() {
         clearFiles();
+        clearResources();
         pipes.clear();
         pipeInstances.clear();
         constants.clear();
@@ -637,7 +612,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     /**
      * sql文件资源
      */
-    public static class Resource {
+    public class Resource {
         private final String alias;
         private final String filename;
         private long lastModified = -1;
@@ -647,6 +622,31 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             this.alias = alias;
             this.filename = filename;
             this.entry = Collections.emptyMap();
+        }
+
+        /**
+         * 刷新当前资源
+         *
+         * @return 如果资源正在加载或者文件没有被修改过返回 false，刷新成功返回 true
+         */
+        public boolean refresh() {
+            if (isLoading()) {
+                return false;
+            }
+            try {
+                FileResource fileResource = new FileResource(filename);
+                if (fileResource.getLastModified() == lastModified) {
+                    return false;
+                }
+                Resource resource = parse(alias, filename, fileResource);
+                setEntry(resource.getEntry());
+                setLastModified(resource.getLastModified());
+                return true;
+            } catch (IOException e) {
+                throw new UncheckedIOException("load sql file error: ", e);
+            } catch (URISyntaxException e) {
+                throw new RuntimeException("sql file uri syntax error: ", e);
+            }
         }
 
         public String getAlias() {

@@ -27,20 +27,19 @@ public class XQLFileManagerTests {
         XQLFileManager xqlFileManager = new XQLFileManager();
         System.out.println(xqlFileManager);
         System.out.println(xqlFileManager.isHighlightSql());
-        System.out.println(xqlFileManager.allFiles());
     }
 
     @Test
-    public void test4() {
-        Map<String, String> files = new HashMap<>();
-        files.put("data", "pgsql/data.sql");
-//        files.put("nest", "pgsql/nest.sql");
-        XQLFileManager xqlFileManager = new XQLFileManager(files);
-        xqlFileManager.add("pgsql/nest.sql");
-        xqlFileManager.setHighlightSql(true);
+    public void test4() throws IOException, URISyntaxException {
+        XQLFileManager xqlFileManager = new XQLFileManager(new HashMap<>());
+        xqlFileManager.add("a", "pgsql/nest.sql");
+        xqlFileManager.add("b", "pgsql/nest.sql");
         xqlFileManager.init();
 
-        xqlFileManager.remove("nest");
+        System.out.println("-----");
+//        boolean refreshed = xqlFileManager.getResource("a").refresh();
+//        System.out.println(refreshed);
+        xqlFileManager.removeByFilename("pgsql/nest.sql");
         System.out.println(xqlFileManager);
     }
 
@@ -51,5 +50,18 @@ public class XQLFileManagerTests {
         System.out.println("---");
         System.out.println(new FileResource("file:/Users/chengyuxing/IdeaProjects/rabbit-sql/src/test/resources/pgsql/data.sql").getLastModified());
         System.out.println(new FileResource("file:/Users/chengyuxing/IdeaProjects/rabbit-sql/src/test/resources/pgsql/nest.sql").getLastModified());
+    }
+
+    @Test
+    public void test12() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("a", "b");
+        map.put("b", "a");
+        map.put("name", "cyx");
+        map.put("cyx", "name");
+        map.put("bbc", "name");
+
+        map.remove(map.remove("bbc"));
+        System.out.println(map);
     }
 }

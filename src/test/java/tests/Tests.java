@@ -342,7 +342,6 @@ public class Tests {
         xqlFileManager.add("cyx", "pgsql/data.sql");
         Set<String> names = new HashSet<>();
         names.add("pgsql/dynamic.sql");
-        xqlFileManager.setFilenames(names);
         xqlFileManager.init();
 
         xqlFileManager.remove("cyx");

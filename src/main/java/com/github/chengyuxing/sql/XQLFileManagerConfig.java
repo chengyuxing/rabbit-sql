@@ -28,6 +28,7 @@ public class XQLFileManagerConfig {
 
     // ----------------optional properties------------------
     protected Map<String, String> files = new HashMap<>();
+    @Deprecated
     protected Set<String> filenames = new HashSet<>();
     protected Map<String, String> constants = new HashMap<>();
     protected Map<String, IPipe<?>> pipeInstances = new HashMap<>();
@@ -114,7 +115,6 @@ public class XQLFileManagerConfig {
             setFiles(localFiles);
             setConstants(localConstants);
             setPipes(localPipes);
-            setFilenames(properties.getSet("filenames", new HashSet<>()));
             setDelimiter(properties.getProperty("delimiter"));
             setCharset(properties.getProperty("charset"));
             setNamedParamPrefix(properties.getProperty("namedParamPrefix", ":").charAt(0));
@@ -176,27 +176,24 @@ public class XQLFileManagerConfig {
     }
 
     /**
+     * 命名的sql文件
+     *
+     * @return 文件字典 [别名，文件名]
+     */
+    public Map<String, String> getFiles() {
+        return files;
+    }
+
+    /**
      * 设置命名的sql文件
      *
-     * @param files 文件 [别名，文件名]
+     * @param files 文件字典 [别名，文件名]
      */
     public void setFiles(Map<String, String> files) {
         if (files == null) {
             return;
         }
         this.files = new HashMap<>(files);
-    }
-
-    /**
-     * 设置文件全路径名，默认别名为文件名（不包含后缀）
-     *
-     * @param filenames 文件全路径名
-     */
-    public void setFilenames(Set<String> filenames) {
-        if (filenames == null) {
-            return;
-        }
-        this.filenames = new HashSet<>(filenames);
     }
 
     /**
@@ -423,5 +420,28 @@ public class XQLFileManagerConfig {
             return;
         }
         this.highlightSql = highlightSql;
+    }
+
+    /**
+     * 获取文件名集合
+     *
+     * @see #getFiles()
+     * @deprecated 已弃用
+     */
+    @Deprecated
+    public Set<String> getFilenames() {
+        return filenames;
+    }
+
+    /**
+     * 设置文件名集合
+     *
+     * @param filenames 文件名集合
+     * @see #setFiles(Map)
+     * @deprecated 已弃用
+     */
+    @Deprecated
+    public void setFilenames(Set<String> filenames) {
+        this.filenames = filenames;
     }
 }

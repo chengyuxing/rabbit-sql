@@ -544,7 +544,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             sql = dynamicSqlParser.parse(sql, args, checkArgsKey);
             return SqlUtil.repairSyntaxError(sql);
         } catch (Exception e) {
-            throw new DynamicSQLException("an error occurred when getting dynamic sql: " + sql, e);
+            throw new DynamicSQLException("an error occurred when getting dynamic sql of name: " + name, e);
         }
     }
 

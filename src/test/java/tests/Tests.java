@@ -5,6 +5,7 @@ import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.DateTimes;
 import com.github.chengyuxing.common.ImmutableList;
 import com.github.chengyuxing.common.io.FileResource;
+import com.github.chengyuxing.common.script.IPipe;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.sql.Args;
@@ -413,9 +414,21 @@ public class Tests {
         XQLFileManager xqlFileManager = new XQLFileManager();
         xqlFileManager.setHighlightSql(true);
         xqlFileManager.add("cyx", "pgsql/data.sql");
+        xqlFileManager.add("abc", "pgsql/nest.sql");
+        xqlFileManager.setPipeInstances(Args.of("km2null", (IPipe<String>) value -> {
+            if (Objects.equals("kunming", value)) {
+                return null;
+            }
+            return value.toString();
+        }));
         xqlFileManager.init();
 //        Map<String, String> map = xqlFileManager.sqlFileStructured(new FileResource("pgsql/data.sql"));
-        xqlFileManager.removeByFilename("pgsql/data.sql");
         System.out.println(xqlFileManager);
+
+        System.out.println(xqlFileManager.get("cyx.update", Args.create(
+                "name", "cyx",
+                "address", "kunming",
+                "age", 103
+        ), false));
     }
 }

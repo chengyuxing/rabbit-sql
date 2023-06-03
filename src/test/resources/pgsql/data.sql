@@ -66,15 +66,15 @@ name    = :name,
 --#fi
 
 --#choose
---#if :age <100
-age     = :age,
---#fi
---#if :age > 100
-age     = 100,
---#fi
---#if :age > 150
-age     = 101,
---#fi
+    --#when :age <100
+    age     = :age,
+    --#break
+    --#when :age > 100
+    age     = 100,
+    --#break
+    --#when :age > 150
+    age     = 101,
+    --#break
 --#end
 
 --#if :open <> ''
@@ -82,15 +82,15 @@ family  = 'happy',
 --#fi
 
 --#choose
---#if :address != null
-address = :address
---#fi
---#if :address == 'kunming'
-    address = 'kunming'
---#fi
---#if :address == "beijing"
-    address = '北京'
---#fi
+    --#when :address | km2null != null
+    address = :address
+    --#break
+    --#when :address == 'kunming'
+        address = 'kunming'
+    --#break
+    --#when :address == "beijing"
+        address = '北京'
+    --#break
 --#end
 where id = 10;
 

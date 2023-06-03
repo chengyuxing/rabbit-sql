@@ -16,6 +16,8 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.github.chengyuxing.common.utils.StringUtil.startsWithIgnoreCase;
+
 /**
  * SQL工具类
  */
@@ -292,6 +294,49 @@ public class SqlUtil {
         return sb.toString();
     }
 
+    /**
+     * 修复sql常规语法错误<br>
+     * e.g.
+     * <blockquote>
+     * <pre>where and/or/order/limit...</pre>
+     * <pre>select ... from ...where</pre>
+     * <pre>update ... set  a=b, where</pre>
+     * </blockquote>
+     *
+     * @param sql sql语句
+     * @return 修复后的sql
+     */
+    public static String repairSyntaxError(String sql) {
+        Pattern p;
+        Matcher m;
+        // if update statement
+        if (startsWithIgnoreCase(sql.trim(), "update")) {
+            p = Pattern.compile(",\\s*where", Pattern.CASE_INSENSITIVE);
+            m = p.matcher(sql);
+            if (m.find()) {
+                sql = sql.substring(0, m.start()).concat(sql.substring(m.start() + 1));
+            }
+        }
+        // "where and" statement
+        p = Pattern.compile("where\\s+(and|or)\\s+", Pattern.CASE_INSENSITIVE);
+        m = p.matcher(sql);
+        if (m.find()) {
+            return sql.substring(0, m.start() + 6).concat(sql.substring(m.end()));
+        }
+        // if "where order by ..." statement
+        p = Pattern.compile("where\\s+(order by|limit|group by|union|\\))\\s+", Pattern.CASE_INSENSITIVE);
+        m = p.matcher(sql);
+        if (m.find()) {
+            return sql.substring(0, m.start()).concat(sql.substring(m.start() + 6));
+        }
+        // if "where" at end
+        p = Pattern.compile("where\\s*$", Pattern.CASE_INSENSITIVE);
+        m = p.matcher(sql);
+        if (m.find()) {
+            return sql.substring(0, m.start());
+        }
+        return sql;
+    }
 
     /**
      * 处理sql字符串高亮

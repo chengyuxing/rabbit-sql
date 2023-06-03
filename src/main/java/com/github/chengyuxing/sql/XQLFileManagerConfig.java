@@ -17,33 +17,12 @@ import java.lang.reflect.Modifier;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.regex.Pattern;
 
 /**
  * 支持扩展脚本解析动态SQL的文件管理器配置项
  */
 public class XQLFileManagerConfig {
     private static final Logger log = LoggerFactory.getLogger(XQLFileManagerConfig.class);
-    public static final Pattern NAME_PATTERN = Pattern.compile("/\\*\\s*\\[\\s*(?<name>\\S+)\\s*]\\s*\\*/");
-    public static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+)\\s*}\\s*\\*/");
-    public static final Pattern FOR_PATTERN = Pattern.compile("(?<item>\\w+)(\\s*,\\s*(?<index>\\w+))?\\s+of\\s+:(?<list>[\\w.]+)(?<pipes>(\\s*\\|\\s*[\\w.]+)*)?(\\s+delimiter\\s+'(?<delimiter>[^']*)')?(\\s+filter\\s+(?<filter>[\\S\\s]+))?");
-    public static final Pattern SWITCH_PATTERN = Pattern.compile(":(?<name>[\\w.]+)\\s*(?<pipes>(\\s*\\|\\s*\\w+)*)?");
-    public static final String PROPERTIES = "xql-file-manager.properties";
-    public static final String YML = "xql-file-manager.yml";
-
-    // ----------------dynamic sql expression tag------------------
-    public static final String IF = "#if";
-    public static final String FI = "#fi";
-    public static final String CHOOSE = "#choose";
-    public static final String WHEN = "#when";
-    public static final String SWITCH = "#switch";
-    public static final String CASE = "#case";
-    public static final String FOR = "#for";
-    public static final String DEFAULT = "#default";
-    public static final String BREAK = "#break";
-    public static final String END = "#end";
-    // ----------------dynamic sql expression tag------------------
-
     private SqlTranslator sqlTranslator;
     protected volatile boolean loading;
 

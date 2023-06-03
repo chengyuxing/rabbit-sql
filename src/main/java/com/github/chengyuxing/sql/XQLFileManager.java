@@ -4,11 +4,10 @@ import com.github.chengyuxing.common.WatchDog;
 import com.github.chengyuxing.common.console.Color;
 import com.github.chengyuxing.common.console.Printer;
 import com.github.chengyuxing.common.io.FileResource;
-import com.github.chengyuxing.common.script.Comparators;
 import com.github.chengyuxing.common.script.IExpression;
 import com.github.chengyuxing.common.script.IPipe;
+import com.github.chengyuxing.common.script.SimpleScriptParser;
 import com.github.chengyuxing.common.script.impl.FastExpression;
-import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.exceptions.DuplicateException;
@@ -19,9 +18,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
-import java.net.URI;
 import java.net.URISyntaxException;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
@@ -29,7 +26,8 @@ import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.github.chengyuxing.common.utils.StringUtil.*;
+import static com.github.chengyuxing.common.script.SimpleScriptParser.*;
+import static com.github.chengyuxing.common.utils.StringUtil.NEW_LINE;
 import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
 
 /**
@@ -38,7 +36,7 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
  * 识别的文件格式支持: {@code .xql .sql}，两种文件内容没区别，{@code .xql} 结尾用来表示此类型文件是 {@code XQLFileManager} 所支持的扩展的sql文件。<br>
  * {@link FileResource 支持外部sql(URI)和classpath下的sql}，例如：
  * <ul>
- *     <li><pre>windows文件系统: file:\\D:\\rabbit.xql</pre></li>
+ *     <li><pre>windows文件系统: file:/D:/rabbit.xql</pre></li>
  *     <li><pre>Linux/Unix文件系统: file:/root/rabbit.xql</pre></li>
  *     <li><pre>ClassPath: sql/rabbit.xql</pre></li>
  * </ul>
@@ -47,9 +45,9 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
  * <blockquote>
  *  /*[sq名1]*{@code /}<br>
  *  <pre>select * from test.region where
- *  --#if :id != blank
+ *  -- #if :id != blank
  *      id = :id
- *  --#fi
+ *  -- #fi
  * ${order};</pre>
  *  ...<br>
  *  /*[sql名n]*{@code /}<br>
@@ -59,72 +57,21 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
  *    <pre>order by id desc;</pre>
  *    ...
  * </blockquote>
- * <h3>动态sql</h3>
- * <p>{@link #get(String, Map)}, {@link #get(String, Map, boolean)}支持语法：</p>
- * <p>if语句块</p>
- * <blockquote>
- * 支持嵌套if，choose，switch
- * <pre>
- * --#if 表达式1
- *      --#if 表达式2
- *      ...
- *      --#fi
- * --#fi
- * </pre>
- * </blockquote>
- * <p>choose语句块</p>
- * <blockquote>
- *  分支中还可以嵌套if语句
- * <pre>
- * --#choose
- *      --#when 表达式1
- *      ...
- *      --#break
- *      --#when 表达式2
- *      ...
- *      --#break
- *      ...
- *      --#default
- *      ...
- *      --#break
- * --#end
- * </pre>
- * </blockquote>
- * <p>switch语句块</p>
- * <blockquote>
- *  分支中还可以嵌套if语句
- * <pre>
- * --#switch :变量 | {@linkplain IPipe 管道1} | {@linkplain IPipe 管道n} | ...
- *      --#case 值1
- *      ...
- *      --#break
- *      --#case 值2
- *      ...
- *      --#break
- *      ...
- *      --#default
- *      ...
- *      --#break
- * --#end
- * </pre>
- * </blockquote>
- * <p>for语句块</p>
- * <blockquote>
- * 内部不能嵌套其他任何标签，不进行解析
- * <pre>
- * --#for item[,idx] of :list [| {@linkplain IPipe pipe1} | pipe2 | ... ] [delimiter ','] [filter{@code $}{item.name}[| {@linkplain IPipe pipe1} | pipe2 | ... ]{@code <>} blank]
- *     ...
- * --#end
- * </pre>
- * </blockquote>
+ * <p>{@link #get(String, Map)}, {@link #get(String, Map, boolean)}</p>
+ * 动态sql脚本表达式写在行注释中 以 -- 开头，
  * 具体参考classpath下的文件：data.xql.template
  *
- * @see FastExpression
+ * @see SimpleScriptParser
  */
 public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(XQLFileManager.class);
+    public static final Pattern NAME_PATTERN = Pattern.compile("/\\*\\s*\\[\\s*(?<name>\\S+)\\s*]\\s*\\*/");
+    public static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+)\\s*}\\s*\\*/");
+    public static final String PROPERTIES = "xql-file-manager.properties";
+    public static final String YML = "xql-file-manager.yml";
     private final ReentrantLock lock = new ReentrantLock();
     private final Map<String, Resource> resources = new HashMap<>();
+    private final DynamicSqlParser dynamicSqlParser = new DynamicSqlParser();
     private WatchDog watchDog = null;
     private volatile boolean initialized;
 
@@ -183,22 +130,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * 获取文件名不包含后缀
-     *
-     * @param fullFileName 文件全路径名
-     * @return 文件名
-     */
-    protected String getFileNameWithoutExtension(String fullFileName) {
-        String name;
-        if (fullFileName.startsWith("file:")) {
-            name = Paths.get(URI.create(fullFileName)).getFileName().toString();
-        } else {
-            name = Paths.get(fullFileName).getFileName().toString();
-        }
-        return name.substring(0, name.lastIndexOf("."));
-    }
-
-    /**
      * 添加命名的sql文件
      *
      * @param alias    文件别名
@@ -227,7 +158,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         try {
             resources.remove(alias);
             files.remove(alias);
-            filenames.removeIf(filename -> getFileNameWithoutExtension(filename).equals(alias));
+            filenames.removeIf(filename -> StringUtil.getFileName(filename, false).equals(alias));
         } finally {
             lock.unlock();
         }
@@ -250,6 +181,27 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
+     * 清空所有已解析的sql资源
+     */
+    public void clearResources() {
+        resources.clear();
+    }
+
+    /**
+     * 清空所有文件以及解析的结果
+     */
+    public void clearFiles() {
+        lock.lock();
+        try {
+            filenames.clear();
+            files.clear();
+            resources.clear();
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
      * 统一集合所有命名sql和未命名sql文件
      *
      * @return 所有sql文件集合
@@ -257,7 +209,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public Map<String, String> allFiles() {
         Map<String, String> all = new HashMap<>(files);
         filenames.forEach(fullName -> {
-            String defaultAlias = getFileNameWithoutExtension(fullName);
+            String defaultAlias = StringUtil.getFileName(fullName, false);
             if (all.containsKey(defaultAlias)) {
                 throw new DuplicateException("auto generate sql alias error: '" + defaultAlias + "' already exists!");
             }
@@ -270,7 +222,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * 解析sql文件资源
+     * 更新sql文件资源
      *
      * @param alias    文件别名
      * @param filename 文件名
@@ -278,8 +230,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @throws IOException        如果文件不存在或路径无效
      * @throws DuplicateException 如果同一个文件中有重复的内容命名
      */
-    protected void parseResource(String alias, String filename, FileResource resource) throws IOException, URISyntaxException {
-        resources.put(alias, sqlFileStructured(alias, filename, resource));
+    protected void putResource(String alias, String filename, FileResource resource) throws IOException, URISyntaxException {
+        resources.put(alias, parse(alias, filename, resource));
     }
 
     /**
@@ -292,11 +244,9 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @throws DuplicateException 如果同一个文件中有重复的内容命名
      * @throws URISyntaxException 如果文件URI格式错误
      */
-    public Resource sqlFileStructured(String alias, String filename, FileResource fileResource) throws IOException, URISyntaxException {
+    public Resource parse(String alias, String filename, FileResource fileResource) throws IOException, URISyntaxException {
         Resource resource = new Resource(alias, filename);
         Map<String, String> entry = new LinkedHashMap<>();
-        resource.setEntry(entry);
-        resource.setLastModified(fileResource.getLastModified());
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(fileResource.getInputStream(), charset))) {
             String blockName = "";
             List<String> sqlBodyBuffer = new ArrayList<>();
@@ -323,13 +273,13 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     continue;
                 }
                 // exclude single line annotation except expression keywords
-                if (!trimLine.startsWith("--") || (StringUtil.startsWithsIgnoreCase(trimExp(trimLine), IF, FI, CHOOSE, WHEN, SWITCH, FOR, CASE, DEFAULT, BREAK, END))) {
+                if (!trimLine.startsWith("--") || (StringUtil.startsWithsIgnoreCase(dynamicSqlParser.trimExpression(trimLine), IF, FI, CHOOSE, WHEN, SWITCH, FOR, CASE, DEFAULT, BREAK, END))) {
                     if (!blockName.equals("")) {
                         sqlBodyBuffer.add(line);
                         if (trimLine.endsWith(delimiter)) {
                             String naSql = removeAnnotationBlock(String.join(NEW_LINE, sqlBodyBuffer));
                             entry.put(blockName, naSql.substring(0, naSql.lastIndexOf(delimiter)).trim());
-                            log.debug("scan {} to get sql({}) [{}]：{}", filename, delimiter, blockName, SqlUtil.buildPrintSql(entry.get(blockName), highlightSql));
+                            log.debug("scan {} to get sql({}) [{}.{}]：{}", filename, delimiter, alias, blockName, SqlUtil.buildPrintSql(entry.get(blockName), highlightSql));
                             blockName = "";
                             sqlBodyBuffer.clear();
                         }
@@ -340,12 +290,14 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             if (!blockName.equals("")) {
                 String lastSql = String.join(NEW_LINE, sqlBodyBuffer);
                 entry.put(blockName, removeAnnotationBlock(lastSql));
-                log.debug("scan {} to get sql({}) [{}]：{}", filename, delimiter, blockName, SqlUtil.buildPrintSql(lastSql, highlightSql));
+                log.debug("scan {} to get sql({}) [{}.{}]：{}", filename, delimiter, alias, blockName, SqlUtil.buildPrintSql(lastSql, highlightSql));
             }
         }
         if (!entry.isEmpty()) {
-            mergeSqlPartIfNecessary(entry);
+            mergeSqlTemplate(entry);
         }
+        resource.setEntry(Collections.unmodifiableMap(entry));
+        resource.setLastModified(fileResource.getLastModified());
         return resource;
     }
 
@@ -354,7 +306,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      *
      * @param sqlResource sql字符串资源
      */
-    protected void mergeSqlPartIfNecessary(Map<String, String> sqlResource) {
+    protected void mergeSqlTemplate(Map<String, String> sqlResource) {
         for (String key : sqlResource.keySet()) {
             if (key.startsWith("${")) {
                 for (Map.Entry<String, String> e : sqlResource.entrySet()) {
@@ -386,7 +338,15 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         lock.lock();
         loading = true;
         try {
-            for (Map.Entry<String, String> fileE : allFiles().entrySet()) {
+            Map<String, String> allFiles = allFiles();
+            // 如果通过copyStateTo拷贝配置
+            // 这里每次都会拷贝到配置文件中的files和filenames
+            // 但解析的resources并不会同步更新
+            // 可能resources中会存在着早已经删了文件的解析结果
+            // 所以先进行删除没有对应的脏数据
+            resources.entrySet().removeIf(e -> !allFiles.containsKey(e.getKey()));
+            // 再完整的解析配置中的全部文件，确保文件和资源一一对应
+            for (Map.Entry<String, String> fileE : allFiles.entrySet()) {
                 String alias = fileE.getKey();
                 String filename = fileE.getValue();
                 FileResource cr = new FileResource(filename);
@@ -398,11 +358,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                             long oldLastModified = resource.getLastModified();
                             long lastModified = cr.getLastModified();
                             if (oldLastModified != -1 && oldLastModified != 0 && oldLastModified != lastModified) {
-                                parseResource(alias, filename, cr);
+                                putResource(alias, filename, cr);
                                 log.debug("reload modified sql file: " + filename);
                             }
                         } else {
-                            parseResource(alias, filename, cr);
+                            putResource(alias, filename, cr);
                         }
                     }
                 } else {
@@ -415,71 +375,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             throw new RuntimeException("sql file uri syntax error: ", e);
         } finally {
             loading = false;
-            lock.unlock();
-        }
-    }
-
-    /**
-     * 根据别名重新加载一个sql资源文件
-     *
-     * @param alias 文件别名
-     * @return 如果资源不存在返回 false，存在刷新成果返回 true
-     */
-    public boolean reload(String alias) {
-        if (resources.containsKey(alias)) {
-            Resource resource = resources.get(alias);
-            String filename = resource.getFilename();
-            try {
-                parseResource(alias, filename, new FileResource(filename));
-                return true;
-            } catch (IOException e) {
-                throw new UncheckedIOException("load sql file error: ", e);
-            } catch (URISyntaxException e) {
-                throw new RuntimeException("sql file uri syntax error: ", e);
-            }
-        }
-        return false;
-    }
-
-    /**
-     * 根据文件名重新加载一个sql资源文件
-     *
-     * @param filename 文件别名
-     * @return 如果资源不存在返回 false，存在刷新成果返回 true
-     */
-    public boolean reloadByFilename(String filename) {
-        for (Map.Entry<String, Resource> entry : resources.entrySet()) {
-            if (entry.getValue().getFilename().equals(filename)) {
-                try {
-                    parseResource(entry.getKey(), filename, new FileResource(filename));
-                    return true;
-                } catch (IOException e) {
-                    throw new UncheckedIOException("load sql file error: ", e);
-                } catch (URISyntaxException e) {
-                    throw new RuntimeException("sql file uri syntax error: ", e);
-                }
-            }
-        }
-        return false;
-    }
-
-    /**
-     * 清空所有已解析的sql资源
-     */
-    public void clearResources() {
-        resources.clear();
-    }
-
-    /**
-     * 清空所有文件以及解析的结果
-     */
-    public void clearFiles() {
-        lock.lock();
-        try {
-            filenames.clear();
-            files.clear();
-            resources.clear();
-        } finally {
             lock.unlock();
         }
     }
@@ -526,321 +421,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                 watchDog.shutdown();
             }
         }
-    }
-
-    /**
-     * 解析一条动态sql<br>
-     *
-     * @param sql          动态sql字符串
-     * @param args         动态sql逻辑表达式参数字典
-     * @param checkArgsKey 检查参数中是否必须存在表达式中需要计算的key
-     * @return 解析后的sql
-     * @throws IllegalArgumentException 如果 {@code checkArgsKey} 为 {@code true} 并且 {@code args} 中不存在表达式所需要的key
-     * @throws NullPointerException     如果 {@code args} 为null
-     * @see FastExpression
-     */
-    public String dynamicCalc(String sql, Map<String, ?> args, boolean checkArgsKey) {
-        String[] lines = sql.split(NEW_LINE);
-        StringJoiner output = new StringJoiner(NEW_LINE);
-        for (int i = 0, j = lines.length; i < j; i++) {
-            String outerLine = lines[i];
-            String trimOuterLine = trimExp(outerLine);
-            int count = 0;
-            // 处理if表达式块
-            if (startsWithIgnoreCase(trimOuterLine, IF)) {
-                count++;
-                StringJoiner innerSb = new StringJoiner(NEW_LINE);
-                // 内循环推进游标，用来判断嵌套if表达式块
-                while (++i < j) {
-                    String line = lines[i];
-                    String trimLine = trimExp(line);
-                    if (startsWithIgnoreCase(trimLine, IF)) {
-                        innerSb.add(line);
-                        count++;
-                    } else if (startsWithIgnoreCase(trimLine, FI)) {
-                        count--;
-                        if (count < 0) {
-                            throw new DynamicSQLException("can not find pair of 'if-fi' block at line " + i);
-                        }
-                        // 说明此处已经达到了嵌套fi的末尾
-                        if (count == 0) {
-                            // 此处计算外层if逻辑表达式，逻辑同程序语言的if逻辑
-                            IExpression fx = FastExpression.of(trimOuterLine.substring(3));
-                            fx.setPipes(pipeInstances);
-                            boolean res = fx.calc(args, checkArgsKey);
-                            // 如果外层判断为真，如果内层还有if表达式块或choose...end块，则进入内层继续处理
-                            // 否则就认为是原始sql逻辑判断需要保留片段
-                            if (res) {
-                                String innerStr = innerSb.toString();
-                                if (containsAllIgnoreCase(innerStr, IF, FI) || containsAllIgnoreCase(innerStr, CHOOSE, END) || containsAllIgnoreCase(innerStr, SWITCH, END) || containsAllIgnoreCase(innerStr, FOR, END)) {
-                                    output.add(dynamicCalc(innerStr, args, checkArgsKey));
-                                } else {
-                                    output.add(innerStr);
-                                }
-                            }
-                            break;
-                        } else {
-                            // 说明此处没有达到外层fi，内层fi后面还有外层的sql表达式需要保留
-                            // e.g.
-                            // --#if
-                            // ...
-                            //      --#if
-                            //      ...
-                            //      --#fi
-                            //      and t.a = :a    --此处为需要保留的地方
-                            // --#fi
-                            innerSb.add(line);
-                        }
-                    } else {
-                        // 非表达式的部分sql需要保留
-                        innerSb.add(line);
-                    }
-                }
-                if (count != 0) {
-                    throw new DynamicSQLException("can not find pair of 'if-fi' block at line " + i);
-                }
-                // 处理choose表达式块
-            } else if (startsWithIgnoreCase(trimOuterLine, CHOOSE)) {
-                while (++i < j) {
-                    String line = lines[i];
-                    String trimLine = trimExp(line);
-                    if (startsWithsIgnoreCase(trimLine, WHEN, DEFAULT)) {
-                        boolean res = false;
-                        if (startsWithIgnoreCase(trimLine, WHEN)) {
-                            IExpression fx = FastExpression.of(trimLine.substring(5));
-                            fx.setPipes(pipeInstances);
-                            res = fx.calc(args, checkArgsKey);
-                        }
-                        // choose表达式块效果类似于程序语言的switch块，从前往后，只要满足一个分支，就跳出整个choose块
-                        // 如果有default分支，前面所有when都不满足的情况下，就会直接选择default分支的sql作为结果保留
-                        if (res || startsWithIgnoreCase(trimLine, DEFAULT)) {
-                            StringJoiner innerSb = new StringJoiner(NEW_LINE);
-                            // 移动游标直到此分支的break之前都是符合判断结果的sql保留下来
-                            while (++i < j && !startsWithIgnoreCase(trimExp(lines[i]), BREAK)) {
-                                if (startsWithsIgnoreCase(trimExp(lines[i]), WHEN, DEFAULT)) {
-                                    throw new DynamicSQLException("missing '--#break' tag of expression '" + trimLine + "'");
-                                }
-                                innerSb.add(lines[i]);
-                            }
-                            String innerStr = innerSb.toString();
-                            // when...break块中还可以包含if表达式块
-                            if (containsAllIgnoreCase(innerStr, IF, FI)) {
-                                output.add(dynamicCalc(innerStr, args, checkArgsKey));
-                            } else {
-                                output.add(innerStr);
-                            }
-                            // 到此处说明已经将满足条件的分支的sql保留下来
-                            // 在接下来的分支都直接略过，移动游标直到end结束标签，就跳出整个choose块
-                            //noinspection StatementWithEmptyBody
-                            while (++i < j && !startsWithIgnoreCase(trimExp(lines[i]), END)) ;
-                            if (i == j) {
-                                throw new DynamicSQLException("missing '--#end' close tag of choose expression block.");
-                            }
-                            break;
-                        } else {
-                            // 如果此分支when语句表达式不满足条件，就移动游标到当前分支break结束，进入下一个when分支
-                            while (++i < j && !startsWithIgnoreCase(trimExp(lines[i]), BREAK)) {
-                                if (startsWithsIgnoreCase(trimExp(lines[i]), WHEN, DEFAULT)) {
-                                    throw new DynamicSQLException("missing '--#break' tag of expression '" + trimLine + "'");
-                                }
-                            }
-                        }
-                    } else if (startsWithIgnoreCase(trimLine, END)) {
-                        //在语句块为空的情况下，遇到end结尾，就跳出整个choose块
-                        break;
-                    } else {
-                        output.add(line);
-                    }
-                }
-                // 处理switch表达式块，逻辑等同于choose表达式块
-            } else if (startsWithIgnoreCase(trimOuterLine, SWITCH)) {
-                Matcher m = SWITCH_PATTERN.matcher(trimOuterLine.substring(7));
-                String name = null;
-                String pipes = null;
-                if (m.find()) {
-                    name = m.group("name");
-                    pipes = m.group("pipes");
-                }
-                if (name == null) {
-                    throw new DynamicSQLException("switch syntax error of expression '" + trimOuterLine + "', cannot find var.");
-                }
-                Object value = ObjectUtil.getValueWild(args, name);
-                if (pipes != null && !pipes.trim().equals("")) {
-                    value = FastExpression.of("empty").pipedValue(value, pipes);
-                }
-                while (++i < j) {
-                    String line = lines[i];
-                    String trimLine = trimExp(line);
-                    if (startsWithsIgnoreCase(trimLine, CASE, DEFAULT)) {
-                        boolean res = false;
-                        if (startsWithIgnoreCase(trimLine, CASE)) {
-                            res = Comparators.compare(value, "=", Comparators.valueOf(trimLine.substring(5).trim()));
-                        }
-                        if (res || startsWithIgnoreCase(trimLine, DEFAULT)) {
-                            StringJoiner innerSb = new StringJoiner(NEW_LINE);
-                            while (++i < j && !startsWithIgnoreCase(trimExp(lines[i]), BREAK)) {
-                                if (startsWithsIgnoreCase(trimExp(lines[i]), CASE, DEFAULT)) {
-                                    throw new DynamicSQLException("missing '--#break' tag of expression '" + trimLine + "'");
-                                }
-                                innerSb.add(lines[i]);
-                            }
-                            String innerStr = innerSb.toString();
-                            // case...break块中还可以包含if表达式块
-                            if (containsAllIgnoreCase(innerStr, IF, FI)) {
-                                output.add(dynamicCalc(innerStr, args, checkArgsKey));
-                            } else {
-                                output.add(innerStr);
-                            }
-                            //noinspection StatementWithEmptyBody
-                            while (++i < j && !startsWithIgnoreCase(trimExp(lines[i]), END)) ;
-                            if (i == j) {
-                                throw new DynamicSQLException("missing '--#end' close tag of switch expression block.");
-                            }
-                            break;
-                        } else {
-                            while (++i < j && !startsWithIgnoreCase(trimExp(lines[i]), BREAK)) {
-                                if (startsWithsIgnoreCase(trimExp(lines[i]), WHEN, DEFAULT)) {
-                                    throw new DynamicSQLException("missing '--#break' tag of expression '" + trimLine + "'");
-                                }
-                            }
-                        }
-                    } else if (startsWithIgnoreCase(trimLine, END)) {
-                        break;
-                    } else {
-                        output.add(line);
-                    }
-                }
-            } else if (startsWithIgnoreCase(trimOuterLine, FOR)) {
-                Matcher m = FOR_PATTERN.matcher(trimOuterLine.substring(4).trim());
-                if (m.find()) {
-                    // 完整的表达式例如：item[,idx] of :list [| pipe1 | pipe2 | ... ] [delimiter ','] [filter ${item.name}[| pipe1 | pipe2 | ... ] <> blank]
-                    // 方括号中为可选参数
-                    String itemName = m.group("item");
-                    String idxName = m.group("index");
-                    String listName = m.group("list");
-                    String pipes = m.group("pipes");
-                    String delimiter = m.group("delimiter");
-                    String filter = m.group("filter");
-                    // 认为for表达式块中有多行需要迭代的sql片段，在此全部找出来用换行分割，保留格式
-                    StringJoiner loopPart = new StringJoiner("\n");
-                    while (++i < j && !startsWithIgnoreCase(trimExp(lines[i]), END)) {
-                        loopPart.add(lines[i]);
-                    }
-                    Object loopObj = ObjectUtil.getValueWild(args, listName);
-                    if (pipes != null && !pipes.trim().equals("")) {
-                        loopObj = FastExpression.of("empty").pipedValue(loopObj, pipes);
-                    }
-                    Object[] loopArr;
-                    if (loopObj instanceof Object[]) {
-                        loopArr = (Object[]) loopObj;
-                    } else if (loopObj instanceof Collection) {
-                        //noinspection unchecked
-                        loopArr = ((Collection<Object>) loopObj).toArray();
-                    } else {
-                        loopArr = new Object[]{loopObj};
-                    }
-                    // 如果没指定分割符，默认迭代sql片段最终使用逗号连接
-                    StringJoiner forSql = new StringJoiner(delimiter == null ? ", " : delimiter.replace("\\n", "\n").replace("\\t", "\t"));
-                    // 用于查找for定义变量的正则表达式
-                    /// 需要验证下正则表达式 例如：user.address.street，超过2级
-                    Pattern filterP = Pattern.compile("\\$\\{\\s*(?<tmp>(" + itemName + ")(.\\w+)*|" + idxName + ")\\s*}");
-                    for (int x = 0; x < loopArr.length; x++) {
-                        Map<String, Object> filterArgs = new HashMap<>();
-                        filterArgs.put(itemName, loopArr[x]);
-                        filterArgs.put(idxName, x);
-                        // 如果定义了过滤器，首先对数据进行筛选操作，不满足条件的直接过滤
-                        if (filter != null) {
-                            // 查找过滤器中的引用变量
-                            Matcher vx = filterP.matcher(filter);
-                            Map<String, Object> filterTemps = new HashMap<>();
-                            String expStr = filter;
-                            while (vx.find()) {
-                                String tmp = vx.group("tmp");
-                                filterTemps.put(tmp, ":" + tmp);
-                            }
-                            // 将filter子句转为支持表达式解析的子句格式
-                            expStr = StringUtil.format(expStr, filterTemps);
-                            IExpression fx = FastExpression.of(expStr);
-                            fx.setPipes(pipeInstances);
-                            if (!fx.calc(filterArgs, checkArgsKey)) {
-                                continue;
-                            }
-                        }
-                        // 准备循环迭代生产满足条件的sql片段
-                        String sqlPart = getSqlTranslator().formatSql(loopPart.toString().trim(), filterArgs);
-                        forSql.add(sqlPart);
-                    }
-                    output.add(forSql.toString());
-                } else {
-                    throw new DynamicSQLException("for syntax error of expression '" + trimOuterLine + "' ");
-                }
-            } else {
-                // 没有表达式的行，说明是原始sql的需要保留的部分
-                output.add(outerLine);
-            }
-        }
-        return output.toString();
-    }
-
-    /**
-     * 修复sql常规语法错误<br>
-     * e.g.
-     * <blockquote>
-     * <pre>where and/or/order/limit...</pre>
-     * <pre>select ... from ...where</pre>
-     * <pre>update ... set  a=b, where</pre>
-     * </blockquote>
-     *
-     * @param sql sql语句
-     * @return 修复后的sql
-     */
-    public String repairSyntaxError(String sql) {
-        Pattern p;
-        Matcher m;
-        // if update statement
-        if (startsWithIgnoreCase(sql.trim(), "update")) {
-            p = Pattern.compile(",\\s*where", Pattern.CASE_INSENSITIVE);
-            m = p.matcher(sql);
-            if (m.find()) {
-                sql = sql.substring(0, m.start()).concat(sql.substring(m.start() + 1));
-            }
-        }
-        // "where and" statement
-        p = Pattern.compile("where\\s+(and|or)\\s+", Pattern.CASE_INSENSITIVE);
-        m = p.matcher(sql);
-        if (m.find()) {
-            return sql.substring(0, m.start() + 6).concat(sql.substring(m.end()));
-        }
-        // if "where order by ..." statement
-        p = Pattern.compile("where\\s+(order by|limit|group by|union|\\))\\s+", Pattern.CASE_INSENSITIVE);
-        m = p.matcher(sql);
-        if (m.find()) {
-            return sql.substring(0, m.start()).concat(sql.substring(m.start() + 6));
-        }
-        // if "where" at end
-        p = Pattern.compile("where\\s*$", Pattern.CASE_INSENSITIVE);
-        m = p.matcher(sql);
-        if (m.find()) {
-            return sql.substring(0, m.start());
-        }
-        return sql;
-    }
-
-    /**
-     * 如果有必要则格式化注释表达式
-     *
-     * @param s 注释行
-     * @return 前缀满足动态sql表达式的字符串或者首尾去除空白字符的字符串
-     */
-    protected String trimExp(String s) {
-        String trimS = s.trim();
-        if (trimS.startsWith("--")) {
-            String expAnon = trimS.substring(2).trim();
-            if (expAnon.startsWith("#")) {
-                return expAnon;
-            }
-        }
-        return trimS;
     }
 
     /**
@@ -948,7 +528,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * 获取一条动态sql<br>
+     * 获取一条动态sql
      *
      * @param name         sql名字
      * @param args         动态sql逻辑表达式参数字典
@@ -956,12 +536,13 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @return 解析后的sql
      * @throws NoSuchElementException 如果没有找到相应名字的sql片段
      * @throws DynamicSQLException    动态sql表达式解析异常
-     * @see #dynamicCalc(String, Map, boolean)
+     * @see DynamicSqlParser
      */
     public String get(String name, Map<String, ?> args, boolean checkArgsKey) {
         String sql = get(name);
         try {
-            return repairSyntaxError(dynamicCalc(sql, args, checkArgsKey));
+            sql = dynamicSqlParser.parse(sql, args, checkArgsKey);
+            return SqlUtil.repairSyntaxError(sql);
         } catch (Exception e) {
             throw new DynamicSQLException("an error occurred when getting dynamic sql: " + sql, e);
         }
@@ -975,10 +556,20 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @return 解析后的sql
      * @throws NoSuchElementException 如果没有找到相应名字的sql片段
      * @throws DynamicSQLException    动态sql表达式解析异常
-     * @see #dynamicCalc(String, Map, boolean)
+     * @see DynamicSqlParser
      */
     public String get(String name, Map<String, ?> args) {
         return get(name, args, true);
+    }
+
+    /**
+     * 根据键获取常量值
+     *
+     * @param key 常量名
+     * @return 常量值
+     */
+    public String getConstant(String key) {
+        return constants.get(key);
     }
 
     /**
@@ -991,13 +582,12 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * 根据键获取常量值
+     * 获取动态sql解析器
      *
-     * @param key 常量名
-     * @return 常量值
+     * @return 动态sql解析器
      */
-    public String getConstant(String key) {
-        return constants.get(key);
+    public DynamicSqlParser dynamicSqlParser() {
+        return dynamicSqlParser;
     }
 
     /**
@@ -1015,6 +605,36 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
+     * 动态sql解析器
+     * {@inheritDoc}
+     */
+    public class DynamicSqlParser extends SimpleScriptParser {
+        @Override
+        protected IExpression expression(String expression) {
+            FastExpression fastExpression = new FastExpression(expression);
+            fastExpression.setPipes(getPipeInstances());
+            return fastExpression;
+        }
+
+        @Override
+        protected String forLoopBodyFormatter(String body, Map<String, Object> args) {
+            return getSqlTranslator().formatSql(body, args);
+        }
+
+        @Override
+        protected String trimExpression(String line) {
+            String trimS = line.trim();
+            if (trimS.startsWith("--")) {
+                String expAnon = trimS.substring(2).trim();
+                if (expAnon.startsWith("#")) {
+                    return expAnon;
+                }
+            }
+            return trimS;
+        }
+    }
+
+    /**
      * sql文件资源
      */
     public static class Resource {
@@ -1026,7 +646,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         public Resource(String alias, String filename) {
             this.alias = alias;
             this.filename = filename;
-            this.entry = new LinkedHashMap<>();
+            this.entry = Collections.emptyMap();
         }
 
         public String getAlias() {
@@ -1041,19 +661,19 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             return lastModified;
         }
 
-        public void setLastModified(long lastModified) {
+        void setLastModified(long lastModified) {
             this.lastModified = lastModified;
-        }
-
-        public void setEntry(Map<String, String> entry) {
-            if (entry == null) {
-                return;
-            }
-            this.entry = entry;
         }
 
         public Map<String, String> getEntry() {
             return entry;
+        }
+
+        void setEntry(Map<String, String> entry) {
+            if (entry == null) {
+                return;
+            }
+            this.entry = entry;
         }
     }
 }

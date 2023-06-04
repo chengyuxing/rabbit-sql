@@ -3,15 +3,16 @@ package tests;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.sql.XQLFileManager;
 import com.github.chengyuxing.sql.yaml.JoinConstructor;
+import io.reactivex.rxjava3.subjects.BehaviorSubject;
+import io.reactivex.rxjava3.subjects.PublishSubject;
 import org.junit.Test;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 public class XQLFileManagerTests {
     @Test
@@ -63,5 +64,33 @@ public class XQLFileManagerTests {
 
         map.remove(map.remove("bbc"));
         System.out.println(map);
+    }
+
+    @Test
+    public void test78() {
+
+    }
+
+    public static void main(String[] args) throws InterruptedException {
+        final BehaviorSubject<Integer> subject = BehaviorSubject.create();
+        subject.debounce(300, TimeUnit.MILLISECONDS)
+                .subscribe(v -> {
+                    System.out.println(v);
+                });
+        new Thread(() -> {
+            for (int i = 0; i < 10; i++) {
+                subject.onNext(i);
+                try {
+                    TimeUnit.MILLISECONDS.sleep((long) (Math.random() * 600));
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }).start();
+    }
+
+    @Test
+    public void hello() {
+        System.out.println(Math.random() * 500);
     }
 }

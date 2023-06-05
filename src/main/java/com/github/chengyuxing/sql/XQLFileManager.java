@@ -203,6 +203,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @param fileResource 文件资源
      * @throws IOException        如果文件不存在或路径无效
      * @throws DuplicateException 如果同一个文件中有重复的内容命名
+     * @throws URISyntaxException 如果文件URI格式错误
      */
     protected void putResource(String alias, String filename, FileResource fileResource) throws IOException, URISyntaxException {
         resources.put(alias, parse(alias, filename, fileResource));
@@ -211,6 +212,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     /**
      * 解析sql文件使之结构化
      *
+     * @param alias        文件别名
      * @param filename     sql文件名
      * @param fileResource sql文件资源
      * @return 结构化的sql文件对象

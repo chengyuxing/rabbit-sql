@@ -31,7 +31,7 @@ Maven 中央仓库
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.1.18</version>
+    <version>7.1.19</version>
 </dependency>
 ```
 
@@ -519,7 +519,7 @@ order by id;
 
   sql文件字典集合，键为别名，值为sql文件名，可通过 `别名.sql名` 来获取sql，如上例子：`my.query`；
 
-- **filenames**
+- **~~filenames~~**
 
   一组sql文件名，默认别名就是sql文件名，不包含后缀；
 

@@ -31,7 +31,7 @@ Maven central
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.1.18</version>
+    <version>7.1.19</version>
 </dependency>
 ```
 
@@ -525,7 +525,7 @@ order by id;
 
   Sql file mapping dictionary, key is alias, value is sql file name, you can get sql statement  by `alias.your_sql_name` when sql file added, as above example: `my.sql`;
 
-- **filenames**
+- **~~filenames~~**
 
   sql file name list, default alias is file name, exclude suffix;
 

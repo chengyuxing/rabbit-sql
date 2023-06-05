@@ -425,6 +425,7 @@ public class XQLFileManagerConfig {
     /**
      * 获取文件名集合
      *
+     * @return 文件名集合
      * @see #getFiles()
      * @deprecated 已弃用
      */

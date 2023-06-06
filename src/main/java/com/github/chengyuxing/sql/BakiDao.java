@@ -332,12 +332,12 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
 
             @Override
-            protected int[] executeBatch() {
+            public int[] executeBatch() {
                 return BakiDao.super.executeBatch(allSql());
             }
 
             @Override
-            protected DataRow execute() {
+            public DataRow execute() {
                 return BakiDao.super.execute(sql, args);
             }
         };
@@ -449,7 +449,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     public DeleteExecutor delete(String tableName) {
         return new DeleteExecutor(tableName) {
             @Override
-            protected int execute(String where) {
+            public int execute(String where) {
                 String whereSql = getSql(where, Collections.emptyMap());
                 String w = StringUtil.startsWithIgnoreCase(whereSql.trim(), "where") ? whereSql : "\nwhere " + whereSql;
                 return executeNonQuery("delete from " + tableName + w, Collections.singletonList(args));

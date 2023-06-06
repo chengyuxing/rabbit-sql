@@ -48,11 +48,11 @@ public class BakiSessionTest {
     }
 
     @Test
-    public void testWithInsert() throws Exception{
+    public void testWithInsert() throws Exception {
         baki.query("with res as (" +
                         "insert into test.temp (rpkid, name) values ('123', '456') returning pkid" +
                         ")\n" +
-                "select * from res;").findFirst()
+                        "select * from res;").findFirst()
                 .ifPresent(System.out::println);
     }
 
@@ -69,7 +69,7 @@ public class BakiSessionTest {
     }
 
     @Test
-    public void testAx() throws Exception{
+    public void testAx() throws Exception {
         baki.query("select * from test.big limit 5").stream()
                 .limit(2)
                 .forEach(System.out::println);
@@ -263,6 +263,15 @@ public class BakiSessionTest {
     public void testInsert() throws Exception {
         String pkid = UUID.randomUUID().toString();
         baki.insert("test.temp").save(Args.create("pkid", pkid, "RPKID", pkid, "name", "cyx"));
+    }
+
+    @Test
+    public void test56() {
+        baki.of("create table abc()")
+                .execute()
+                .forEach((k, v) -> {
+                    System.out.println(k + ":" + v);
+                });
     }
 
     @Test

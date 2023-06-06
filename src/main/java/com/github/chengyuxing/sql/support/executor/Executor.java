@@ -56,7 +56,7 @@ public abstract class Executor {
      * @return 每条sql执行的结果
      * @see com.github.chengyuxing.sql.support.JdbcSupport#executeBatch(List) executeBatch
      */
-    protected abstract int[] executeBatch();
+    public abstract int[] executeBatch();
 
     /**
      * 执行一条原始sql
@@ -64,5 +64,5 @@ public abstract class Executor {
      * @return 根据不同的类型返回不同的结果
      * @see com.github.chengyuxing.sql.support.JdbcSupport#execute(String, Map) execute
      */
-    protected abstract DataRow execute();
+    public abstract DataRow execute();
 }

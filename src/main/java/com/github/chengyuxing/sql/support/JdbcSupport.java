@@ -121,13 +121,13 @@ public abstract class JdbcSupport extends SqlParser {
                     List<DataRow> rows = JdbcUtil.createDataRows(resultSet, preparedSql, -1);
                     JdbcUtil.closeResultSet(resultSet);
                     if (rows.size() == 1) {
-                        result = DataRow.fromPair("result", rows.get(0), "type", "QUERY statement");
+                        result = DataRow.fromPair("result", rows.get(0), "type", "QUERY");
                     } else {
-                        result = DataRow.of(new String[]{"result", "type"}, new Object[]{rows, "QUERY statement"});
+                        result = DataRow.of(new String[]{"result", "type"}, new Object[]{rows, "QUERY"});
                     }
                 } else {
                     int count = sc.getUpdateCount();
-                    result = DataRow.fromPair("result", count, "type", "DD(M)L statement");
+                    result = DataRow.fromPair("result", count, "type", "DD(M)L");
                 }
                 return result;
             });

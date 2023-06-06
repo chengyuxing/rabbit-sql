@@ -52,5 +52,5 @@ public abstract class DeleteExecutor {
      * @param where 必要的where条件，e.g: {@code id = :id}
      * @return 受影响的行数
      */
-    protected abstract int execute(String where);
+    public abstract int execute(String where);
 }

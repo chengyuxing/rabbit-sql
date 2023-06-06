@@ -91,6 +91,8 @@ public interface Baki {
     /**
      * 通用执行器，执行query语句，ddl或dml语句
      *
+     * @param sql  sql或sql名
+     * @param more 更多sql或sql名
      * @return 执行器
      */
     Executor of(String sql, String... more);

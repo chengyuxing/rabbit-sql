@@ -305,8 +305,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @throws RuntimeException     uri格式错误
      */
     protected void loadResource() {
-        lock.lock();
-        loading = true;
         try {
             // 如果通过copyStateTo拷贝配置
             // 这里每次都会拷贝到配置文件中的files和filenames
@@ -342,9 +340,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             throw new UncheckedIOException("load sql file error: ", e);
         } catch (URISyntaxException e) {
             throw new RuntimeException("sql file uri syntax error: ", e);
-        } finally {
-            loading = false;
-            lock.unlock();
         }
     }
 
@@ -376,19 +371,26 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @throws DuplicateException   如果同一个sql文件中有重复的sql名
      */
     public void init() {
-        initialized = true;
-        loadResource();
-        loadPipes();
-        if (this.checkModified) {
-            if (watchDog == null) {
-                watchDog = new WatchDog(1);
-                watchDog.addListener("sqlFileUpdateListener", this::loadResource, checkPeriod, TimeUnit.SECONDS);
+        lock.lock();
+        try {
+            loading = true;
+            loadResource();
+            loadPipes();
+            if (this.checkModified) {
+                if (watchDog == null) {
+                    watchDog = new WatchDog(1);
+                    watchDog.addListener("sqlFileUpdateListener", this::loadResource, checkPeriod, TimeUnit.SECONDS);
+                }
+            } else {
+                if (watchDog != null) {
+                    watchDog.removeListener("sqlFileUpdateListener");
+                    watchDog.shutdown();
+                }
             }
-        } else {
-            if (watchDog != null) {
-                watchDog.removeListener("sqlFileUpdateListener");
-                watchDog.shutdown();
-            }
+        } finally {
+            loading = false;
+            initialized = true;
+            lock.unlock();
         }
     }
 

@@ -33,8 +33,8 @@ public abstract class QueryExecutor {
      * @return 查询执行器
      */
     public QueryExecutor args(Map<String, Object> args) {
-        if (!this.args.isEmpty()) {
-            this.args.putAll(args);
+        if (args == null) {
+            this.args = new HashMap<>();
         } else {
             this.args = args;
         }

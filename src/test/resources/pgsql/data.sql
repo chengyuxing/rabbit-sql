@@ -53,8 +53,9 @@ WHERE
 --#if :name != null
   and t.name ~ :name
 --#fi
+name = 'cyx'
 --#if :age <> blank && :age < 90
-and age < 90
+    and age < 90
 --#fi
 ;
 

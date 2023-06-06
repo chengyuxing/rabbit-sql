@@ -7,11 +7,11 @@ import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.script.IExpression;
 import com.github.chengyuxing.common.script.IPipe;
 import com.github.chengyuxing.common.script.SimpleScriptParser;
+import com.github.chengyuxing.common.script.expression.ScriptSyntaxException;
 import com.github.chengyuxing.common.script.impl.FastExpression;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.exceptions.DuplicateException;
-import com.github.chengyuxing.sql.exceptions.DynamicSQLException;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -522,7 +522,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @param checkArgsKey 检查参数中是否必须存在表达式中需要计算的key
      * @return 解析后的sql
      * @throws NoSuchElementException 如果没有找到相应名字的sql片段
-     * @throws DynamicSQLException    动态sql表达式解析异常
+     * @throws ScriptSyntaxException  动态sql表达式解析异常
      * @see DynamicSqlParser
      */
     public String get(String name, Map<String, ?> args, boolean checkArgsKey) {
@@ -531,7 +531,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             sql = dynamicSqlParser.parse(sql, args, checkArgsKey);
             return SqlUtil.repairSyntaxError(sql);
         } catch (Exception e) {
-            throw new DynamicSQLException("an error occurred when getting dynamic sql of name: " + name, e);
+            throw new ScriptSyntaxException("an error occurred when getting dynamic sql of name: " + name, e);
         }
     }
 
@@ -542,7 +542,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @param args 动态sql逻辑表达式参数字典
      * @return 解析后的sql
      * @throws NoSuchElementException 如果没有找到相应名字的sql片段
-     * @throws DynamicSQLException    动态sql表达式解析异常
+     * @throws ScriptSyntaxException  动态sql表达式解析异常
      * @see DynamicSqlParser
      */
     public String get(String name, Map<String, ?> args) {

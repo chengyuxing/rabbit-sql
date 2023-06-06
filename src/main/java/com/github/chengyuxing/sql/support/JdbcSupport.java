@@ -27,9 +27,9 @@ import java.util.stream.StreamSupport;
  * <pre>select * from ... where name = :name or id in (${:idList}) ${cnd};</pre>
  * </blockquote>
  *
- * @see SqlSupport
+ * @see SqlParser
  */
-public abstract class JdbcSupport extends SqlSupport {
+public abstract class JdbcSupport extends SqlParser {
     private final static Logger log = LoggerFactory.getLogger(JdbcSupport.class);
 
     /**
@@ -109,7 +109,7 @@ public abstract class JdbcSupport extends SqlSupport {
      * @throws UncheckedSqlException sql执行过程中出现错误
      */
     public DataRow execute(final String sql, Map<String, ?> args) {
-        Pair<String, List<String>> p = compileSql(sql, args);
+        Pair<String, List<String>> p = parse(sql, args);
         final List<String> argNames = p.getItem2();
         final String preparedSql = p.getItem1();
         try {
@@ -162,7 +162,7 @@ public abstract class JdbcSupport extends SqlSupport {
      * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误.
      */
     public Stream<DataRow> executeQueryStream(final String sql, Map<String, ?> args) {
-        Pair<String, List<String>> preparedSqlAndArgNames = compileSql(sql, args);
+        Pair<String, List<String>> preparedSqlAndArgNames = parse(sql, args);
         final List<String> argNames = preparedSqlAndArgNames.getItem2();
         final String preparedSql = preparedSqlAndArgNames.getItem1();
 
@@ -266,7 +266,7 @@ public abstract class JdbcSupport extends SqlSupport {
      */
     public int executeNonQuery(final String sql, Collection<? extends Map<String, ?>> args) {
         Map<String, ?> first = args.iterator().next();
-        Pair<String, List<String>> preparedSqlAndArgNames = compileSql(sql, first);
+        Pair<String, List<String>> preparedSqlAndArgNames = parse(sql, first);
         final List<String> argNames = preparedSqlAndArgNames.getItem2();
         final String preparedSql = preparedSqlAndArgNames.getItem1();
         try {
@@ -306,7 +306,7 @@ public abstract class JdbcSupport extends SqlSupport {
      * @throws UncheckedSqlException 存储过程或函数执行过程中出现错误
      */
     public DataRow executeCallStatement(final String procedure, Map<String, Param> args) {
-        Pair<String, List<String>> preparedSqlAndArgNames = compileSql(procedure, args);
+        Pair<String, List<String>> preparedSqlAndArgNames = parse(procedure, args);
         final String executeSql = preparedSqlAndArgNames.getItem1();
         final List<String> argNames = preparedSqlAndArgNames.getItem2();
 

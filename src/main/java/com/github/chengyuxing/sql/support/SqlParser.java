@@ -41,8 +41,8 @@ import java.util.Map;
  *
  * @see SqlTranslator
  */
-public abstract class SqlSupport {
-    private static final Logger log = LoggerFactory.getLogger(SqlSupport.class);
+public abstract class SqlParser {
+    private static final Logger log = LoggerFactory.getLogger(SqlParser.class);
 
     /**
      * 提供一个抽象方法供实现类对单前要执行的sql做一些准备操作
@@ -81,7 +81,7 @@ public abstract class SqlSupport {
      * @param args 参数字典
      * @return 预编译sql和参数名
      */
-    protected Pair<String, List<String>> compileSql(String sql, Map<String, ?> args) {
+    protected Pair<String, List<String>> parse(String sql, Map<String, ?> args) {
         if (args == null) {
             args = Collections.emptyMap();
         }

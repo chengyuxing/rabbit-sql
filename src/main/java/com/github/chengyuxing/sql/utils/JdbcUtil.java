@@ -328,6 +328,8 @@ public class JdbcUtil {
             statement.setObject(index, new Time(((LocalTime) value).atDate(LocalDate.now()).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
         } else if (value instanceof Instant) {
             statement.setObject(index, new Timestamp(((Instant) value).toEpochMilli()));
+        } else if (value instanceof UUID) {
+            statement.setObject(index, value.toString().replace("-", ""));
         } else if (value instanceof Map || value instanceof Collection) {
             log.warn("you try to set a Map or Collection data, auto convert to json string!");
             statement.setObject(index, obj2Json(value));

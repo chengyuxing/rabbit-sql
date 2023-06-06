@@ -1,9 +1,7 @@
 package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.DataRow;
-import com.github.chengyuxing.sql.support.executor.InsertExecutor;
-import com.github.chengyuxing.sql.support.executor.QueryExecutor;
-import com.github.chengyuxing.sql.support.executor.UpdateExecutor;
+import com.github.chengyuxing.sql.support.executor.*;
 import com.github.chengyuxing.sql.types.Param;
 
 import java.sql.Connection;
@@ -23,7 +21,10 @@ public interface Baki {
      *
      * @param sql 原始sql
      * @return 行数据
+     * @see #of(String, String...)
+     * @deprecated 已弃用
      */
+    @Deprecated
     DataRow execute(String sql);
 
     /**
@@ -32,7 +33,10 @@ public interface Baki {
      * @param sql  原始sql
      * @param args 参数
      * @return 行数据
+     * @see #of(String, String...)
+     * @deprecated 已弃用
      */
+    @Deprecated
     DataRow execute(String sql, Map<String, ?> args);
 
     /**
@@ -40,7 +44,10 @@ public interface Baki {
      *
      * @param sqls 一组sql
      * @return 每条sql执行的结果
+     * @see #of(String, String...)
+     * @deprecated 已弃用
      */
+    @Deprecated
     int[] batchExecute(List<String> sqls);
 
     /**
@@ -48,7 +55,10 @@ public interface Baki {
      *
      * @param sqls 一组sql
      * @return 每条sql执行的结果
+     * @see #of(String, String...)
+     * @deprecated 已弃用
      */
+    @Deprecated
     default int[] batchExecute(String... sqls) {
         return batchExecute(Arrays.asList(sqls));
     }
@@ -60,7 +70,10 @@ public interface Baki {
      * @param where     条件
      * @param arg       条件参数，支持参数占位符e.g. {@code id = :id}
      * @return 受影响的行数
+     * @see #delete(String)
+     * @deprecated 已弃用
      */
+    @Deprecated
     int delete(String tableName, String where, Map<String, ?> arg);
 
     /**
@@ -69,8 +82,18 @@ public interface Baki {
      * @param tableName 表名
      * @param where     条件
      * @return 受影响的行数
+     * @see #delete(String)
+     * @deprecated 已弃用
      */
+    @Deprecated
     int delete(String tableName, String where);
+
+    /**
+     * 通用执行器，执行query语句，ddl或dml语句
+     *
+     * @return 执行器
+     */
+    Executor of(String sql, String... more);
 
     /**
      * 查询执行器
@@ -96,6 +119,14 @@ public interface Baki {
      * @return 插入数据执行器
      */
     InsertExecutor insert(String tableName);
+
+    /**
+     * 删除数据执行器
+     *
+     * @param tableName 表名
+     * @return 删除数据执行器
+     */
+    DeleteExecutor delete(String tableName);
 
     /**
      * 执行存储过程或函数

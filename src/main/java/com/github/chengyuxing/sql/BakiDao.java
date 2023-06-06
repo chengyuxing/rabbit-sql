@@ -15,9 +15,7 @@ import com.github.chengyuxing.sql.page.impl.MysqlPageHelper;
 import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.github.chengyuxing.sql.support.JdbcSupport;
-import com.github.chengyuxing.sql.support.executor.InsertExecutor;
-import com.github.chengyuxing.sql.support.executor.QueryExecutor;
-import com.github.chengyuxing.sql.support.executor.UpdateExecutor;
+import com.github.chengyuxing.sql.support.executor.*;
 import com.github.chengyuxing.sql.transaction.Tx;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.utils.JdbcUtil;
@@ -155,6 +153,18 @@ public class BakiDao extends JdbcSupport implements Baki {
         return execute(sql, Collections.emptyMap());
     }
 
+    @Override
+    public int delete(String tableName, String where, Map<String, ?> arg) {
+        String whereSql = getSql(where, Collections.emptyMap());
+        String w = StringUtil.startsWithIgnoreCase(whereSql.trim(), "where") ? whereSql : "\nwhere " + whereSql;
+        return executeNonQuery("delete from " + tableName + w, Collections.singletonList(arg));
+    }
+
+    @Override
+    public int delete(String tableName, String where) {
+        return delete(tableName, where, Collections.emptyMap());
+    }
+
     /**
      * 插入
      *
@@ -194,113 +204,18 @@ public class BakiDao extends JdbcSupport implements Baki {
     protected int fastInsert(String tableName, Collection<? extends Map<String, ?>> data, boolean uncheck) {
         if (data.size() > 0) {
             Iterator<? extends Map<String, ?>> iterator = data.iterator();
-            String[] sqls = new String[data.size()];
+            List<String> sqls = new ArrayList<>(data.size());
             List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);
-            for (int i = 0; iterator.hasNext(); i++) {
+            while (iterator.hasNext()) {
                 String insertSql = sqlTranslator.generateInsert(tableName, iterator.next(), tableFields);
-                sqls[i] = insertSql;
+                sqls.add(insertSql);
             }
-            log.debug("preview sql: {}\nmore...", SqlUtil.buildPrintSql(sqls[0], highlightSql));
-            int count = batchExecute(sqls).length;
+            log.debug("preview sql: {}\nmore...", SqlUtil.buildPrintSql(sqls.get(0), highlightSql));
+            int count = super.batchExecute(sqls).length;
             log.debug("{} rows inserted!", count);
             return count;
         }
         return -1;
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @param tableName 表名
-     * @param where     条件
-     * @param arg       条件参数
-     * @return 受影响的行数
-     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
-     */
-    @Override
-    public int delete(String tableName, String where, Map<String, ?> arg) {
-        String whereSql = getSql(where, Collections.emptyMap());
-        String w = StringUtil.startsWithIgnoreCase(whereSql.trim(), "where") ? whereSql : "\nwhere " + whereSql;
-        return executeNonQuery("delete from " + tableName + w, Collections.singletonList(arg));
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @param tableName 表名
-     * @param where     条件
-     * @return 受影响的行数
-     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
-     */
-    @Override
-    public int delete(String tableName, String where) {
-        return delete(tableName, where, Collections.emptyMap());
-    }
-
-    @Override
-    public QueryExecutor query(String sql) {
-        return new QueryExecutor(sql) {
-            @Override
-            public Stream<DataRow> stream() {
-                return executeQueryStream(sql, args);
-            }
-
-            @Override
-            public List<Map<String, Object>> maps() {
-                try (Stream<DataRow> s = stream()) {
-                    return s.collect(Collectors.toList());
-                }
-            }
-
-            @Override
-            public List<DataRow> rows() {
-                try (Stream<DataRow> s = stream()) {
-                    return s.collect(Collectors.toList());
-                }
-            }
-
-            @Override
-            public <T> List<T> entities(Class<T> entityClass) {
-                try (Stream<DataRow> s = stream()) {
-                    return s.map(d -> d.toEntity(entityClass)).collect(Collectors.toList());
-                }
-            }
-
-            @Override
-            public IPageable pageable(int page, int size) {
-                IPageable iPageable = new SimplePageable(sql, page, size);
-                return iPageable.args(args);
-            }
-
-            @Override
-            public DataRow findFirstRow() {
-                return findFirst().orElseGet(DataRow::new);
-            }
-
-            @Override
-            public <T> T findFirstEntity(Class<T> entityClass) {
-                return findFirst().map(d -> d.toEntity(entityClass)).orElse(null);
-            }
-
-            @Override
-            public Optional<DataRow> findFirst() {
-                PageHelper pageHelper = defaultPager();
-                pageHelper.init(1, 1, 1);
-                Map<String, Integer> pagedArgs = pageHelper.pagedArgs();
-                if (pagedArgs != null) {
-                    args.putAll(pagedArgs);
-                }
-                String query = getSql(sql, args);
-                try (Stream<DataRow> s = executeQueryStream(pageHelper.pagedSql(query), args)) {
-                    return s.peek(d -> d.remove(PageHelper.ROW_NUM_KEY)).findFirst();
-                }
-            }
-
-            @Override
-            public boolean exists() {
-                return findFirst().isPresent();
-            }
-        };
     }
 
     /**
@@ -380,7 +295,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             return 0;
         }
         String whereSql = getSql(where, Collections.emptyMap());
-        String[] sqls = new String[data.size()];
+        List<String> sqls = new ArrayList<>(data.size());
         Map<String, Object> first = new HashMap<>(data.iterator().next());
         List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);
         // 获取where条件中的参数名
@@ -393,17 +308,103 @@ public class BakiDao extends JdbcSupport implements Baki {
         // 以第一条记录构建出确定的传名参数的预编译sql，后续再处理为非预编译sql
         String update = sqlTranslator.generateNamedParamUpdate(tableName, first, tableFields);
         String fullUpdatePrepared = update + "\nwhere " + whereSql;
-        Iterator<? extends Map<String, ?>> iterator = data.iterator();
-        for (int i = 0; iterator.hasNext(); i++) {
+        for (Map<String, ?> item : data) {
             // 完整的参数字典
-            Map<String, ?> item = iterator.next();
             String updateNonPrepared = sqlTranslator.generateSql(fullUpdatePrepared, item, false).getItem1();
-            sqls[i] = updateNonPrepared;
+            sqls.add(updateNonPrepared);
         }
-        log.debug("preview sql: {}\nmore...", SqlUtil.buildPrintSql(sqls[0], highlightSql));
-        int count = Arrays.stream(batchExecute(sqls)).sum();
+        log.debug("preview sql: {}\nmore...", SqlUtil.buildPrintSql(sqls.get(0), highlightSql));
+        int count = Arrays.stream(super.batchExecute(sqls)).sum();
         log.debug("{} rows updated!", count);
         return count;
+    }
+
+    @Override
+    public Executor of(String sql, String... more) {
+        return new Executor(sql, more) {
+            private List<String> allSql() {
+                List<String> all = new ArrayList<>();
+                all.add(sql);
+                all.addAll(Arrays.asList(more));
+                return all;
+            }
+
+            @Override
+            protected int[] executeBatch() {
+                return BakiDao.super.batchExecute(allSql());
+            }
+
+            @Override
+            protected DataRow execute() {
+                return BakiDao.super.execute(sql, args);
+            }
+        };
+    }
+
+    @Override
+    public QueryExecutor query(String sql) {
+        return new QueryExecutor(sql) {
+            @Override
+            public Stream<DataRow> stream() {
+                return executeQueryStream(sql, args);
+            }
+
+            @Override
+            public List<Map<String, Object>> maps() {
+                try (Stream<DataRow> s = stream()) {
+                    return s.collect(Collectors.toList());
+                }
+            }
+
+            @Override
+            public List<DataRow> rows() {
+                try (Stream<DataRow> s = stream()) {
+                    return s.collect(Collectors.toList());
+                }
+            }
+
+            @Override
+            public <T> List<T> entities(Class<T> entityClass) {
+                try (Stream<DataRow> s = stream()) {
+                    return s.map(d -> d.toEntity(entityClass)).collect(Collectors.toList());
+                }
+            }
+
+            @Override
+            public IPageable pageable(int page, int size) {
+                IPageable iPageable = new SimplePageable(sql, page, size);
+                return iPageable.args(args);
+            }
+
+            @Override
+            public DataRow findFirstRow() {
+                return findFirst().orElseGet(DataRow::new);
+            }
+
+            @Override
+            public <T> T findFirstEntity(Class<T> entityClass) {
+                return findFirst().map(d -> d.toEntity(entityClass)).orElse(null);
+            }
+
+            @Override
+            public Optional<DataRow> findFirst() {
+                PageHelper pageHelper = defaultPager();
+                pageHelper.init(1, 1, 1);
+                Map<String, Integer> pagedArgs = pageHelper.pagedArgs();
+                if (pagedArgs != null) {
+                    args.putAll(pagedArgs);
+                }
+                String query = getSql(sql, args);
+                try (Stream<DataRow> s = executeQueryStream(pageHelper.pagedSql(query), args)) {
+                    return s.peek(d -> d.remove(PageHelper.ROW_NUM_KEY)).findFirst();
+                }
+            }
+
+            @Override
+            public boolean exists() {
+                return findFirst().isPresent();
+            }
+        };
     }
 
     @Override
@@ -438,6 +439,18 @@ public class BakiDao extends JdbcSupport implements Baki {
                     return fastInsert(tableName, data, !safe);
                 }
                 return insert(tableName, data, !safe);
+            }
+        };
+    }
+
+    @Override
+    public DeleteExecutor delete(String tableName) {
+        return new DeleteExecutor(tableName) {
+            @Override
+            protected int execute(String where) {
+                String whereSql = getSql(where, Collections.emptyMap());
+                String w = StringUtil.startsWithIgnoreCase(whereSql.trim(), "where") ? whereSql : "\nwhere " + whereSql;
+                return executeNonQuery("delete from " + tableName + w, Collections.singletonList(args));
             }
         };
     }

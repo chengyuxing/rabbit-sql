@@ -22,7 +22,7 @@ public abstract class QueryExecutor {
      *
      * @param sql sql或sql名
      */
-    protected QueryExecutor(String sql) {
+    public QueryExecutor(String sql) {
         this.sql = sql;
     }
 

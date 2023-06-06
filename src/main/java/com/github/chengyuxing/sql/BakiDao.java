@@ -154,6 +154,11 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
+    public int[] batchExecute(List<String> sqls) {
+        return executeBatch(sqls);
+    }
+
+    @Override
     public int delete(String tableName, String where, Map<String, ?> arg) {
         String whereSql = getSql(where, Collections.emptyMap());
         String w = StringUtil.startsWithIgnoreCase(whereSql.trim(), "where") ? whereSql : "\nwhere " + whereSql;
@@ -211,7 +216,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 sqls.add(insertSql);
             }
             log.debug("preview sql: {}\nmore...", SqlUtil.buildPrintSql(sqls.get(0), highlightSql));
-            int count = super.batchExecute(sqls).length;
+            int count = super.executeBatch(sqls).length;
             log.debug("{} rows inserted!", count);
             return count;
         }
@@ -314,7 +319,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             sqls.add(updateNonPrepared);
         }
         log.debug("preview sql: {}\nmore...", SqlUtil.buildPrintSql(sqls.get(0), highlightSql));
-        int count = Arrays.stream(super.batchExecute(sqls)).sum();
+        int count = Arrays.stream(super.executeBatch(sqls)).sum();
         log.debug("{} rows updated!", count);
         return count;
     }
@@ -331,7 +336,7 @@ public class BakiDao extends JdbcSupport implements Baki {
 
             @Override
             protected int[] executeBatch() {
-                return BakiDao.super.batchExecute(allSql());
+                return BakiDao.super.executeBatch(allSql());
             }
 
             @Override

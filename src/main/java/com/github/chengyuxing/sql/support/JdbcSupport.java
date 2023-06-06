@@ -217,7 +217,7 @@ public abstract class JdbcSupport extends SqlSupport {
      * @throws UnsupportedOperationException 数据库或驱动版本不支持批量操作
      * @throws IllegalArgumentException      如果执行的sql条数少1条
      */
-    public int[] batchExecute(final List<String> sqls) {
+    public int[] executeBatch(final List<String> sqls) {
         if (sqls.size() > 0) {
             Statement statement = null;
             Connection connection = getConnection();

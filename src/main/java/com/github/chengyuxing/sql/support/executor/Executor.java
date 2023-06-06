@@ -54,7 +54,7 @@ public abstract class Executor {
      * 批量执行非查询sql（非预编译sql，不支持参数）
      *
      * @return 每条sql执行的结果
-     * @see com.github.chengyuxing.sql.support.JdbcSupport#batchExecute(List) batchExecute
+     * @see com.github.chengyuxing.sql.support.JdbcSupport#executeBatch(List) executeBatch
      */
     protected abstract int[] executeBatch();
 

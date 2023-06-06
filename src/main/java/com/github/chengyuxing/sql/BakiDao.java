@@ -53,9 +53,6 @@ import java.util.stream.Stream;
  *     s.forEach(System.out::println);
  *   }</pre>
  * </blockquote>
- *
- * @see JdbcSupport
- * @see Baki
  */
 public class BakiDao extends JdbcSupport implements Baki {
     private final static Logger log = LoggerFactory.getLogger(BakiDao.class);

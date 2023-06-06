@@ -182,13 +182,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * 清空所有已解析的sql资源
-     */
-    public void clearResources() {
-        resources.clear();
-    }
-
-    /**
      * 清空所有文件
      */
     public void clearFiles() {
@@ -475,6 +468,15 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
+     * 获取所有已解析的sql资源
+     *
+     * @return 不可修改的sql资源
+     */
+    public Map<String, Resource> getResources() {
+        return Collections.unmodifiableMap(resources);
+    }
+
+    /**
      * 是否存在资源
      *
      * @param alias 别名
@@ -482,6 +484,13 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     public boolean containsResource(String alias) {
         return resources.containsKey(alias);
+    }
+
+    /**
+     * 清空所有已解析的sql资源
+     */
+    public void clearResources() {
+        resources.clear();
     }
 
     /**

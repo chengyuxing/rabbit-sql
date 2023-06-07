@@ -30,9 +30,7 @@ public abstract class Executor {
      * @return 查询执行器
      */
     public Executor args(Map<String, Object> args) {
-        if (args == null) {
-            this.args = new HashMap<>();
-        } else {
+        if (args != null) {
             this.args = args;
         }
         return this;

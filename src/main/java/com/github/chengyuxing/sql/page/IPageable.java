@@ -41,10 +41,9 @@ public abstract class IPageable {
      * @return 分页对象
      */
     public IPageable args(Map<String, Object> args) {
-        if (!this.args.isEmpty()) {
-            this.args.putAll(args);
-        } else
+        if (args != null) {
             this.args = args;
+        }
         return this;
     }
 

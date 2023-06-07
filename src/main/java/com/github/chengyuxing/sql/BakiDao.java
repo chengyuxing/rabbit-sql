@@ -185,7 +185,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             log.debug("{} rows inserted!", count);
             return count;
         }
-        return -1;
+        return 0;
     }
 
     /**
@@ -295,7 +295,9 @@ public class BakiDao extends JdbcSupport implements Baki {
             private List<String> allSql() {
                 List<String> all = new ArrayList<>();
                 all.add(sql);
-                all.addAll(Arrays.asList(more));
+                if (more.length > 0) {
+                    all.addAll(Arrays.asList(more));
+                }
                 return all;
             }
 

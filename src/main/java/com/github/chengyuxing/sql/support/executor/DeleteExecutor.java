@@ -38,9 +38,7 @@ public abstract class DeleteExecutor {
      * @return 查询执行器
      */
     public DeleteExecutor args(Map<String, Object> args) {
-        if (args == null) {
-            this.args = new HashMap<>();
-        } else {
+        if (args != null) {
             this.args = args;
         }
         return this;

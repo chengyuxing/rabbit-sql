@@ -136,38 +136,6 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * 执行query语句，ddl或dml语句<br>
-     * 返回数据为:<br>
-     * 执行结果：{@code DataRow.get(0)} 或 {@code DataRow.get("result")}<br>
-     * 执行类型：{@code DataRow.get(1)} 或 {@code DataRow.getString("type")}
-     *
-     * @param sql 原始sql
-     * @return (结果 ， 类型)
-     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
-     */
-    @Override
-    public DataRow execute(String sql) {
-        return execute(sql, Collections.emptyMap());
-    }
-
-    @Override
-    public int[] batchExecute(List<String> sqls) {
-        return executeBatch(sqls);
-    }
-
-    @Override
-    public int delete(String tableName, String where, Map<String, ?> arg) {
-        String whereSql = getSql(where, Collections.emptyMap());
-        String w = StringUtil.startsWithIgnoreCase(whereSql.trim(), "where") ? whereSql : "\nwhere " + whereSql;
-        return executeNonQuery("delete from " + tableName + w, Collections.singletonList(arg));
-    }
-
-    @Override
-    public int delete(String tableName, String where) {
-        return delete(tableName, where, Collections.emptyMap());
-    }
-
-    /**
      * 插入
      *
      * @param tableName 表名

@@ -147,8 +147,8 @@ public class MyTest {
 
     @Test
     public void inserts() throws Exception {
-        baki.execute("insert into test.tb(strs)\n" +
-                "values ('{a,b,c}')");
+        baki.of("insert into test.tb(strs)\n" +
+                "values ('{a,b,c}')").execute();
     }
 
     @Test
@@ -201,7 +201,7 @@ public class MyTest {
 
     @Test
     public void executeAny() throws Exception {
-        DataRow row = baki.execute("(select current_date, current_time)");
+        DataRow row = baki.of("(select current_date, current_time)").execute();
         System.out.println(row);
         row.<List<DataRow>>getFirstAs()
                 .forEach(System.out::println);
@@ -269,7 +269,7 @@ public class MyTest {
 
     @Test
     public void line() throws Exception {
-        DataRow row = baki.execute("do\n" +
+        DataRow row = baki.of("do\n" +
                 "$$\n" +
                 "    declare\n" +
                 "        x    integer[];\n" +
@@ -281,7 +281,7 @@ public class MyTest {
                 "            end loop;\n" +
                 "    end;\n" +
                 "\n" +
-                "$$;");
+                "$$;").execute();
         System.out.println(row);
     }
 
@@ -328,7 +328,7 @@ public class MyTest {
 
     @Test
     public void loadData() throws Exception {
-        baki.execute("copy test.fruit from '/Users/chengyuxing/test/fruit2.txt' with delimiter ','");
+        baki.of("copy test.fruit from '/Users/chengyuxing/test/fruit2.txt' with delimiter ','");
 //        baki.execute("copy test.fruit from '/Users/chengyuxing/test/fruit2.txt' with delimiter ','");
     }
 

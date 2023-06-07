@@ -146,7 +146,7 @@ public class BakiSessionTest {
 
     @Test
     public void dst() throws Exception {
-        DataRow res = baki.execute("create table test.tx(a int)");
+        DataRow res = baki.of("create table test.tx(a int)").execute();
 //        DataRow res = baki.execute("drop table test.tx");
         System.out.println(res);
     }
@@ -176,7 +176,7 @@ public class BakiSessionTest {
 //        boolean ex = orclLight.tableExists("chengyuxing.fruit");
 //        System.out.println(ex);
 
-        System.out.println(baki.execute("drop table test.me"));
+        System.out.println(baki.of("drop table test.me").execute());
     }
 
     @Test
@@ -251,11 +251,11 @@ public class BakiSessionTest {
 
     @Test
     public void batchExe() throws Exception {
-        int[] res = baki.batchExecute(
+        int[] res = baki.of(
                 "insert into test.big (name, address, age) values ('cyx', '昆明', 28)",
                 "insert into test.big (name, address, age) values ('cyx', now(), 'abc')",
                 "insert into test.big (name, address, age) values ('cyx', '昆明', 28)"
-        );
+        ).executeBatch();
         System.out.println(Arrays.toString(res));
     }
 

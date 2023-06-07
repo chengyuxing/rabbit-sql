@@ -6,8 +6,6 @@ import com.github.chengyuxing.sql.types.Param;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -15,79 +13,6 @@ import java.util.function.Function;
  * 数据库基本操作通用接口
  */
 public interface Baki {
-
-    /**
-     * 执行一条原始sql
-     *
-     * @param sql 原始sql
-     * @return 行数据
-     * @see #of(String, String...)
-     * @deprecated 已弃用
-     */
-    @Deprecated
-    DataRow execute(String sql);
-
-    /**
-     * 执行一条原始sql
-     *
-     * @param sql  原始sql
-     * @param args 参数
-     * @return 行数据
-     * @see #of(String, String...)
-     * @deprecated 已弃用
-     */
-    @Deprecated
-    DataRow execute(String sql, Map<String, ?> args);
-
-    /**
-     * 批量执行非查询sql
-     *
-     * @param sqls 一组sql
-     * @return 每条sql执行的结果
-     * @see #of(String, String...)
-     * @deprecated 已弃用
-     */
-    @Deprecated
-    int[] batchExecute(List<String> sqls);
-
-    /**
-     * 批量执行非查询sql
-     *
-     * @param sqls 一组sql
-     * @return 每条sql执行的结果
-     * @see #of(String, String...)
-     * @deprecated 已弃用
-     */
-    @Deprecated
-    default int[] batchExecute(String... sqls) {
-        return batchExecute(Arrays.asList(sqls));
-    }
-
-    /**
-     * 删除
-     *
-     * @param tableName 表名
-     * @param where     条件
-     * @param arg       条件参数，支持参数占位符e.g. {@code id = :id}
-     * @return 受影响的行数
-     * @see #delete(String)
-     * @deprecated 已弃用
-     */
-    @Deprecated
-    int delete(String tableName, String where, Map<String, ?> arg);
-
-    /**
-     * 删除
-     *
-     * @param tableName 表名
-     * @param where     条件
-     * @return 受影响的行数
-     * @see #delete(String)
-     * @deprecated 已弃用
-     */
-    @Deprecated
-    int delete(String tableName, String where);
-
     /**
      * 通用执行器，执行query语句，ddl或dml语句
      *
@@ -135,7 +60,7 @@ public interface Baki {
      *
      * @param name 过程名
      * @param args 参数 （占位符名字，参数对象）
-     * @return 一个或多个结果或无结果
+     * @return 一个或多个结果或空对象
      */
     DataRow call(String name, Map<String, Param> args);
 

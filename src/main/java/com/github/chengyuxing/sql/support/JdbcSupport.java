@@ -4,6 +4,7 @@ import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.UncheckedCloseable;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.CollectionUtil;
+import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.types.ParamMode;
@@ -224,7 +225,9 @@ public abstract class JdbcSupport extends SqlParser {
                     statement = connection.createStatement();
                     Map<String, ?> empty = Collections.emptyMap();
                     for (String sql : sqls) {
-                        statement.addBatch(getSql(sql, empty));
+                        if (!StringUtil.isEmpty(sql)) {
+                            statement.addBatch(getSql(sql, empty));
+                        }
                     }
                     return statement.executeBatch();
                 } catch (SQLException e) {

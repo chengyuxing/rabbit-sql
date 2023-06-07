@@ -28,59 +28,18 @@ order by id;
 * 支持流程控制：
 * if...fi
 * choose when...break... end
-* switch case...break end
+* switch case...break... end
 * for...end
 **/
-
-/* [ get_user ] */
-select *
-from test.region t
-where t.enable = true
---#if :a <> blank
-  and t.a = :a
-  --#if :a1 <> blank && :a1 = 90
-  and t.a1 = :a1
-  --#fi
-  --#if :a2 <> blank
-  and t.a2 = :a2
-      --#choose
-          --#when :xx <> blank
-          and t.xx = :xx
-          --#break
-          --#when :yy <> blank
-          and t.yy = :yy
-          --#break
-          --#default
-          and t.zz = :zz
-          --#break
-      --#end
-  --#fi
---#fi
---#switch :name
-  --#case blank
-  and t.name = 'blank'
-  --#break
-  --#case 'chengyuxing'
-  and t.name = 'chengyuxing'
-  --#break
-  --#default
-  and t.name = 'unset'
-  --#break
---#end
---#if :b <> blank
-  and t.b = :b
---#fi
-  and x = :x
-;
 
 /*[q2]*/
 select *
 from test.user t
 where
 --#if :names <> blank
--- #for name,idx of :names delimiter ' and ' filter ${idx} > 0 && ${name} ~ 'o'
-t.name = ${:name.id}
--- #end
+    -- #for name,idx of :names delimiter ' and ' filter ${idx} > 0 && ${name} ~ 'o'
+        t.name = ${:name.id}
+    -- #end
 --#fi
 ;
 

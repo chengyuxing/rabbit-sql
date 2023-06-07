@@ -2,7 +2,6 @@ package com.github.chengyuxing.sql.support;
 
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.sql.utils.SqlTranslator;
-import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,20 +60,6 @@ public abstract class SqlParser {
     protected abstract SqlTranslator sqlTranslator();
 
     /**
-     * debug模式输出完整的sql，否则仅输出原始sql
-     *
-     * @return 是否输出已执行sql
-     */
-    protected abstract boolean debugFullSql();
-
-    /**
-     * debug模式下终端标准输出sql语法是否高亮
-     *
-     * @return 是否高亮
-     */
-    protected abstract boolean highlightSql();
-
-    /**
      * 将自定义的传名参数sql解析为数据库可执行的预编译sql
      *
      * @param sql  传名参数sql
@@ -85,16 +70,8 @@ public abstract class SqlParser {
         if (args == null) {
             args = Collections.emptyMap();
         }
-        String sourceSql = getSql(sql, args);
-        Pair<String, List<String>> preparedSqlAndArgNames = sqlTranslator().getPreparedSql(sourceSql, args);
-        if (log.isDebugEnabled()) {
-            log.debug("SQL:{}", SqlUtil.buildPrintSql(sourceSql, highlightSql()));
-            log.debug("Args:{}", args);
-            if (debugFullSql()) {
-                String fullSql = sqlTranslator().generateSql(sourceSql, args, false).getItem1();
-                log.debug("Full SQL: {}", SqlUtil.buildPrintSql(fullSql, highlightSql()));
-            }
-        }
-        return preparedSqlAndArgNames;
+        Pair<String, List<String>> p = sqlTranslator().getPreparedSql(getSql(sql, args));
+        log.debug("Prepared SQL: {}", p.getItem1());
+        return p;
     }
 }

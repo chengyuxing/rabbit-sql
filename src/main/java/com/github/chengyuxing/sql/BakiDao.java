@@ -222,7 +222,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         Map<String, ?> first = new HashMap<>(data.iterator().next());
         List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);
         // 获取where条件中的参数名
-        List<String> whereFields = sqlTranslator.getPreparedSql(whereSql, Collections.emptyMap()).getItem2();
+        List<String> whereFields = sqlTranslator.getPreparedSql(whereSql).getItem2();
         for (String key : whereFields) {
             // 如果where条件中参数名是小写，而第一行数据中是大写，则也需要删除那个数据，来保证生成正确的set更新数据块
             if (CollectionUtil.containsKeyIgnoreCase(first, key))
@@ -622,7 +622,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * 如果使用取地址符"&amp;sql文件别名.sql名"则获取sql文件中已缓存的sql
+     * 如果使用取地址符 {@code &sql别名.sql名} 则获取sql文件中已缓存的sql
      *
      * @param sql  sql或sql名
      * @param args 参数
@@ -639,22 +639,26 @@ public class BakiDao extends JdbcSupport implements Baki {
                 // 经过XQLFileManager获取的sql，已经去除了段落注释和行注释
                 // 内部的自定义常量也替换完成，后续都没必要再来一次
                 trimEndedSql = xqlFileManager.get(sql.substring(1), args, strictDynamicSqlArg);
-                return trimEndedSql;
             } else {
                 throw new NullPointerException("can not find property 'xqlFileManager' or XQLFileManager object init failed!");
             }
         }
         // 如果是sql字符串，没有字符串模版占位符，也没必要再去查找
-        if (!trimEndedSql.contains("${")) {
-            return trimEndedSql;
-        }
-        if (xqlFileManager != null) {
+        if (trimEndedSql.contains("${") && xqlFileManager != null) {
             Map<String, String> constants = xqlFileManager.getConstants();
             for (String constantName : constants.keySet()) {
                 // 如果用户参数中不存在，才去常量里找，用户参数优先级最高
                 if (args == null || !args.containsKey(constantName)) {
                     trimEndedSql = StringUtil.format(trimEndedSql, constantName, constants.get(constantName));
                 }
+            }
+        }
+        if (log.isDebugEnabled()) {
+            log.debug("SQL: {}", SqlUtil.buildPrintSql(trimEndedSql, highlightSql));
+            log.debug("Args: {}", args);
+            if (debugFullSql) {
+                String fullSql = sqlTranslator().generateSql(trimEndedSql, args, false).getItem1();
+                log.debug("Full SQL: {}", SqlUtil.buildPrintSql(fullSql, highlightSql));
             }
         }
         return trimEndedSql;
@@ -668,16 +672,6 @@ public class BakiDao extends JdbcSupport implements Baki {
     @Override
     protected boolean checkParameterType() {
         return checkParameterType;
-    }
-
-    @Override
-    protected boolean debugFullSql() {
-        return debugFullSql;
-    }
-
-    @Override
-    protected boolean highlightSql() {
-        return highlightSql;
     }
 
     @Override

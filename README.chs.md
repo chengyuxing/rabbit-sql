@@ -174,7 +174,7 @@ update ... set name = :name, age = :age where id = :id;
 事务的使用请遵循线程的隔离性。
 
 ```java
-Tx.using(()->{
+Tx.using(() -> {
   baki.update(...);
   baki.delete(...);
   baki.insert(...);
@@ -468,10 +468,6 @@ order by id;
   constants:
   #  base: &basePath pgsql
   
-  filenames:
-  #  - data.xql
-  #  - system.xql
-  
   files:
   # 使用 !path 标签合并列表得到 "pgsql/other.xql"
   #  dt: !path [ *basePath, other.xql ]
@@ -489,10 +485,6 @@ order by id;
   `xql-file-manager.properties`
   
   ```properties
-  # Format: multi xql file split by ',' symbol and file name is alias default, e,g:
-  # filenames=data.xql,system.xql
-  filenames=
-  
   # Format: multi xql file configure the custom alias, e.g:
   # files.dt=data.sql
   # files.sys=system.sql
@@ -518,10 +510,6 @@ order by id;
 - **files**
 
   sql文件字典集合，键为别名，值为sql文件名，可通过 `别名.sql名` 来获取sql，如上例子：`my.query`；
-
-- **~~filenames~~**
-
-  一组sql文件名，默认别名就是sql文件名，不包含后缀；
 
 - **pipeInstances/pipes**
 

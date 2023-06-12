@@ -174,7 +174,7 @@ update ... set name = :name, age = :age where id = :id;
 Use of transactions follows thread isolation:
 
 ```java
-Tx.using(()->{
+Tx.using(() -> {
   baki.update(...);
   baki.delete(...);
   baki.insert(...);
@@ -473,11 +473,7 @@ order by id;
   ```yaml
   constants:
   #  base: &basePath pgsql
-  
-  filenames:
-  #  - data.xql
-  #  - system.xql
-  
+
   files:
   # use !path tag merge list to "pgsql/other.xql"
   #  dt: !path [ *basePath, other.xql ]
@@ -495,10 +491,6 @@ order by id;
    `sql-file-manager.properties` 
   
   ```properties
-  # Format: multi xql file split by ',' symbol and file name is alias default, e,g:
-  # filenames=data.xql,system.xql
-  filenames=
-  
   # Format: multi xql file configure the custom alias, e.g:
   # files.dt=data.sql
   # files.sys=system.sql
@@ -524,10 +516,6 @@ order by id;
 - **files**
 
   Sql file mapping dictionary, key is alias, value is sql file name, you can get sql statement  by `alias.your_sql_name` when sql file added, as above example: `my.sql`;
-
-- **~~filenames~~**
-
-  sql file name list, default alias is file name, exclude suffix;
 
 - **pipeInstances/pipes**
 

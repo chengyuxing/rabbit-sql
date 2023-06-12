@@ -194,11 +194,11 @@ public abstract class AbstractTransactionSyncManager {
     }
 
     /**
-     * 标记事务的定义激活事务
+     * 初始化事务信息
      *
      * @param definition 事务定义
      */
-    public static void rememberTransactionDef(Definition definition) {
+    public static void initTransaction(Definition definition) {
         setTransactionActive(true);
         setCurrentTransactionName(definition.getName());
         setCurrentTransactionReadOnly(definition.isReadOnly());

@@ -269,7 +269,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         Map<String, Object> first = new HashMap<>(data.iterator().next());
         List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);
         // 获取where条件中的参数名
-        List<String> whereFields = sqlTranslator.generateSql(whereSql, Collections.emptyMap(), true).getItem2();
+        List<String> whereFields = sqlTranslator.getPreparedSql(whereSql).getItem2();
         // 将where条件中的参数排除，因为where中的参数作为条件，而不是需要更新的值
         for (String key : whereFields) {
             if (CollectionUtil.containsKeyIgnoreCase(first, key))
@@ -622,7 +622,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * 如果使用取地址符 {@code &sql别名.sql名} 则获取sql文件中已缓存的sql
+     * 如果使用取地址符 {@code &sql文件别名.sql名} 则获取sql文件中已缓存的sql
      *
      * @param sql  sql或sql名
      * @param args 参数
@@ -643,7 +643,6 @@ public class BakiDao extends JdbcSupport implements Baki {
                 throw new NullPointerException("can not find property 'xqlFileManager' or XQLFileManager object init failed!");
             }
         }
-        // 如果是sql字符串，没有字符串模版占位符，也没必要再去查找
         if (trimEndedSql.contains("${") && xqlFileManager != null) {
             Map<String, String> constants = xqlFileManager.getConstants();
             for (String constantName : constants.keySet()) {
@@ -696,7 +695,7 @@ public class BakiDao extends JdbcSupport implements Baki {
 
     @Override
     protected void releaseConnection(Connection connection, DataSource dataSource) {
-        DataSourceUtil.releaseConnectionIfNecessary(connection, dataSource);
+        DataSourceUtil.releaseConnection(connection, dataSource);
     }
 
     /**

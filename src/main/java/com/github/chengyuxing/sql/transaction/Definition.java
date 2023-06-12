@@ -40,7 +40,7 @@ public final class Definition {
     public static Definition defaultDefinition() {
         Definition definition = new Definition();
         definition.setReadOnly(false);
-        definition.setName("Trans_Unset");
+        definition.setName("Trans_Unnamed");
         definition.setLevel(Level.READ_COMMITTED);
         return definition;
     }

@@ -121,6 +121,6 @@ public abstract class IPageable {
      * @return 已分页的资源
      */
     public PagedResource<DataRow> collect() {
-        return collect(d -> d);
+        return collect(Function.identity());
     }
 }

@@ -7,7 +7,7 @@ import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.script.IExpression;
 import com.github.chengyuxing.common.script.IPipe;
 import com.github.chengyuxing.common.script.SimpleScriptParser;
-import com.github.chengyuxing.common.script.expression.ScriptSyntaxException;
+import com.github.chengyuxing.common.script.exception.ScriptSyntaxException;
 import com.github.chengyuxing.common.script.impl.FastExpression;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 
 import static com.github.chengyuxing.common.script.SimpleScriptParser.*;
 import static com.github.chengyuxing.common.utils.StringUtil.NEW_LINE;
+import static com.github.chengyuxing.common.utils.StringUtil.containsAnyIgnoreCase;
 import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
 
 /**
@@ -242,7 +243,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     continue;
                 }
                 // exclude single line annotation except expression keywords
-                if (!trimLine.startsWith("--") || (StringUtil.startsWithsIgnoreCase(dynamicSqlParser.trimExpression(trimLine), IF, FI, CHOOSE, WHEN, SWITCH, FOR, CASE, DEFAULT, BREAK, END))) {
+                if (!trimLine.startsWith("--") || (StringUtil.startsWithsIgnoreCase(dynamicSqlParser.trimExpression(trimLine), TAGS))) {
                     if (!blockName.equals("")) {
                         sqlBodyBuffer.add(line);
                         if (trimLine.endsWith(delimiter)) {
@@ -527,6 +528,9 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     public String get(String name, Map<String, ?> args, boolean checkArgsKey) {
         String sql = get(name);
+        if (!containsAnyIgnoreCase(sql, TAGS)) {
+            return sql;
+        }
         try {
             sql = dynamicSqlParser.parse(sql, args, checkArgsKey);
             return SqlUtil.repairSyntaxError(sql);

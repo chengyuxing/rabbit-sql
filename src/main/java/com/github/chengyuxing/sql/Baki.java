@@ -26,32 +26,32 @@ public interface Baki {
      * 查询执行器
      *
      * @param sql sql
-     * @return 更新数据执行器实例
+     * @return 查询执行器
      */
     QueryExecutor query(String sql);
 
     /**
-     * 更新数据执行器
+     * 更新执行器
      *
      * @param tableName 表名
      * @param where     条件
-     * @return 更新数据执行器实例
+     * @return 更新执行器
      */
     UpdateExecutor update(String tableName, String where);
 
     /**
-     * 插入数据执行器
+     * 插入执行器
      *
      * @param tableName 表名
-     * @return 插入数据执行器
+     * @return 插入执行器
      */
     InsertExecutor insert(String tableName);
 
     /**
-     * 删除数据执行器
+     * 删除执行器
      *
      * @param tableName 表名
-     * @return 删除数据执行器
+     * @return 删除执行器
      */
     DeleteExecutor delete(String tableName);
 

@@ -20,7 +20,7 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.replaceSqlSubstr;
  */
 public class SqlTranslator {
     private static final Logger log = LoggerFactory.getLogger(SqlTranslator.class);
-    private final String namedParamPrefix;
+    private String namedParamPrefix = ":";
     private static final char SPECIAL_CHAR = '\u0c32';
     /**
      * 匹配命名参数
@@ -38,15 +38,14 @@ public class SqlTranslator {
         if (_namedParamPrefix == ' ') {
             throw new IllegalArgumentException("prefix char cannot be empty.");
         }
-        String cs = String.valueOf(_namedParamPrefix);
-        if (cs.equals(":")) {
-            this.namedParamPrefix = ":";
-        } else {
-            this.namedParamPrefix = cs;
-            String regC = cs.replace(cs, "\\" + cs);
-            PARAM_PATTERN = Pattern.compile("(^" + regC + "|[^" + regC + "]" + regC + ")(?<name>[a-zA-Z_][\\w_]*)", Pattern.MULTILINE);
-            STR_TEMP_PATTERN = Pattern.compile("\\$\\{\\s*(?<key>" + regC + "?[\\w._-]+)\\s*}");
+        if (_namedParamPrefix == ':') {
+            return;
         }
+        String cs = String.valueOf(_namedParamPrefix);
+        this.namedParamPrefix = cs;
+        String regC = cs.replace(cs, "\\" + cs);
+        PARAM_PATTERN = Pattern.compile("(^" + regC + "|[^" + regC + "]" + regC + ")(?<name>[a-zA-Z_][\\w_]*)", Pattern.MULTILINE);
+        STR_TEMP_PATTERN = Pattern.compile("\\$\\{\\s*(?<key>" + regC + "?[\\w._-]+)\\s*}");
     }
 
     /**
@@ -86,7 +85,7 @@ public class SqlTranslator {
      */
     public Pair<String, List<String>> generateSql(final String sql, Map<String, ?> args, boolean prepare) {
         Map<String, ?> argx = new HashMap<>();
-        if (args != null) {
+        if (args != null && !args.isEmpty()) {
             argx = new HashMap<>(args);
         }
         // resolve the sql string template first
@@ -94,7 +93,6 @@ public class SqlTranslator {
         // exclude substr next
         Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSqlSubstr(fullSql);
         String noneStrSql = noneStrSqlAndHolder.getItem1();
-        Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
         Matcher matcher = PARAM_PATTERN.matcher(noneStrSql);
         List<String> names = new ArrayList<>();
         if (prepare) {
@@ -118,8 +116,11 @@ public class SqlTranslator {
             }
         }
         // finally, set placeholder into none-string-part sql
-        for (Map.Entry<String, String> e : placeholderMapper.entrySet()) {
-            noneStrSql = noneStrSql.replace(e.getKey(), e.getValue());
+        Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
+        if (!placeholderMapper.isEmpty()) {
+            for (Map.Entry<String, String> e : placeholderMapper.entrySet()) {
+                noneStrSql = noneStrSql.replace(e.getKey(), e.getValue());
+            }
         }
         return Pair.of(noneStrSql, names);
     }
@@ -127,12 +128,11 @@ public class SqlTranslator {
     /**
      * 解析传名参数sql处理为预编译的sql
      *
-     * @param sql  带参数占位符的sql
-     * @param args 参数
+     * @param sql 带参数占位符的sql
      * @return 预编译SQL和顺序的参数名集合
      */
-    public Pair<String, List<String>> getPreparedSql(final String sql, Map<String, ?> args) {
-        return generateSql(sql, args, true);
+    public Pair<String, List<String>> getPreparedSql(final String sql) {
+        return generateSql(sql, Collections.emptyMap(), true);
     }
 
     /**

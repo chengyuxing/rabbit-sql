@@ -73,7 +73,7 @@ public class SqliteTests {
 
     @Test
     public void test34() {
-        baki.execute("select 1 union select 2 where id = :id");
+        baki.of("select 1 union select 2 where id = :id");
     }
 
     @Test

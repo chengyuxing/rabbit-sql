@@ -57,25 +57,13 @@ public class SqlUtil {
         if (obj == null) {
             return "null";
         }
-        Class<?> clazz = obj.getClass();
-        if (clazz == String.class) {
+        if (obj instanceof String) {
             return safeQuote((String) obj);
         }
-        if (clazz == Integer.class ||
-                clazz == Long.class ||
-                clazz == Double.class ||
-                clazz == Short.class ||
-                clazz == Float.class ||
-                clazz == Byte.class ||
-                clazz == Boolean.class ||
-                clazz == Character.class ||
-                clazz.isPrimitive()) {
-            String v = obj.toString();
-            if (v.equals("'")) {
-                return safeQuote(v);
-            }
-            return v;
+        if (ReflectUtil.isBasicType(obj)) {
+            return obj.toString();
         }
+        Class<?> clazz = obj.getClass();
         if (Date.class.isAssignableFrom(clazz)) {
             String dtStr = DateTimes.of(((Date) obj).toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()).toString("yyyy-MM-dd HH:mm:ss");
             return "to_timestamp(" + quote(dtStr) + "," + quote("yyyy-mm-dd hh24:mi:ss") + ")";
@@ -101,7 +89,11 @@ public class SqlUtil {
             for (int i = 0; i < res.length; i++) {
                 Object o = objArr[i];
                 if (o != null)
-                    res[i] = safeQuote(o.toString());
+                    if (o instanceof String) {
+                        res[i] = safeQuote(o.toString());
+                    } else {
+                        res[i] = o.toString();
+                    }
             }
             return quote("{" + String.join(",", res) + "}");
         }
@@ -115,8 +107,7 @@ public class SqlUtil {
             }
             return "null";
         }
-        // default just quote
-        return quote(obj.toString());
+        return safeQuote(obj.toString());
     }
 
     /**
@@ -126,6 +117,9 @@ public class SqlUtil {
      * @return 替换字符串后带有特殊占位符的sql和占位符与字符串的映射
      */
     public static Pair<String, Map<String, String>> replaceSqlSubstr(final String sql) {
+        if (!sql.contains("'")) {
+            return Pair.of(sql, Collections.emptyMap());
+        }
         String noneStrSql = sql;
         Map<String, String> mapper = new HashMap<>();
         Matcher m = SUB_STR_PATTERN.matcher(sql);

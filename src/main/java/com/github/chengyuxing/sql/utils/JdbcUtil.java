@@ -94,7 +94,7 @@ public class JdbcUtil {
     }
 
     /**
-     * 判断是非支持批量执行修改操作
+     * 判断是否支持批量执行修改操作
      *
      * @param con 连接对象
      * @return 是否支持
@@ -285,6 +285,8 @@ public class JdbcUtil {
                     log.warn("you try to set a Map or Collection data into database string type field, auto convert to json string!");
                     statement.setObject(index, obj2Json(value));
                     // maybe Date, LocalDateTime, UUID, BigDecimal, Integer...
+                } else if (value instanceof UUID) {
+                    statement.setObject(index, value.toString().replace("-", ""));
                 } else if (value.getClass().getTypeName().startsWith("java.")) {
                     statement.setObject(index, value.toString());
                 } else {

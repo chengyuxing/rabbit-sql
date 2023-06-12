@@ -129,7 +129,7 @@ public class Tests {
         String sql = "insert into test.user(idd,name,id,age,address) values (:id,:name::integer,:idd::float,integer :age,date :address)";
 //        String sql2 = "select * from test.user where id = '1' and tag = '1' and num = '1' and name = :name";
 //        String jsonSql = "select '{\"a\":[1,2,3],\"b\":[4,5,6]}'::json #>> '{b,1}'";
-        Pair<String, List<String>> pair = new SqlTranslator(':').getPreparedSql(str, Collections.emptyMap());
+        Pair<String, List<String>> pair = new SqlTranslator(':').getPreparedSql(str);
         System.out.println(pair.getItem1());
         System.out.println(pair.getItem2());
 
@@ -424,7 +424,7 @@ public class Tests {
 //        Map<String, String> map = xqlFileManager.sqlFileStructured(new FileResource("pgsql/data.sql"));
         System.out.println(xqlFileManager);
 
-        System.out.println(xqlFileManager.get("cyx.update", Args.create(
+        System.out.println(xqlFileManager.get("cyx.query", Args.create(
                 "name", "cyx",
                 "address", "kunming",
                 "age", 103

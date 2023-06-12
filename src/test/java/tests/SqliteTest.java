@@ -32,7 +32,7 @@ public class SqliteTest {
 
     @Test
     public void test1() throws Exception {
-        baki.execute("create table user(id int primary key, name varchar(50), age int)");
+        baki.of("create table user(id int primary key, name varchar(50), age int)");
     }
 
 

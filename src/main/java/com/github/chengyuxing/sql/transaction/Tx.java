@@ -25,7 +25,7 @@ public final class Tx {
      */
     public static void begin(Definition definition) {
         //记住事务的定义，以在后续其他操作中沿用此事务的定义
-        AbstractTransactionSyncManager.rememberTransactionDef(definition);
+        AbstractTransactionSyncManager.initTransaction(definition);
         if (!AbstractTransactionSyncManager.isSynchronizationActive()) {
             AbstractTransactionSyncManager.initSynchronization();
         }

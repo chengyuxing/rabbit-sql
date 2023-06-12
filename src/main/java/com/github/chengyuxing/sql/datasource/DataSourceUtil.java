@@ -1,20 +1,18 @@
 package com.github.chengyuxing.sql.datasource;
 
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
-import com.github.chengyuxing.sql.transaction.Definition;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 
+import static com.github.chengyuxing.sql.datasource.AbstractTransactionSyncManager.*;
+
 /**
  * 数据源工具
  */
 public abstract class DataSourceUtil {
-    private final static Logger log = LoggerFactory.getLogger(DataSourceUtil.class);
-
     /**
      * 获取一个连接对象
      *
@@ -27,7 +25,7 @@ public abstract class DataSourceUtil {
     }
 
     private static Connection doGetConnection(DataSource dataSource) throws SQLException {
-        ConnectionHolder connectionHolder = AbstractTransactionSyncManager.getResource(dataSource);
+        ConnectionHolder connectionHolder = getResource(dataSource);
         // 当执行此分之时，说明当前是在一个事务中，事务还没有结束，新的请求将沿用带有事务的此连接对象
         if (connectionHolder != null && (connectionHolder.hasConnection() || connectionHolder.isSyncWithTransaction())) {
             connectionHolder.requested();
@@ -40,7 +38,7 @@ public abstract class DataSourceUtil {
         // 或者是从另一个数据源首次获取连接对象
         Connection connection = fetchConnection(dataSource);
         // 如果当前有正在活动的事务，则将连接绑定到当前的事务中，否则直接返回一个不绑定事务的连接
-        if (AbstractTransactionSyncManager.isTransactionActive()) {
+        if (isTransactionActive()) {
             ConnectionHolder holderToUse = connectionHolder;
             if (holderToUse == null) {
                 holderToUse = new ConnectionHolder(connection);
@@ -50,34 +48,15 @@ public abstract class DataSourceUtil {
             holderToUse.requested();
             connection.setAutoCommit(false);
             //noinspection MagicConstant
-            connection.setTransactionIsolation(AbstractTransactionSyncManager.getCurrentTransactionIsolationLevel());
-            connection.setReadOnly(AbstractTransactionSyncManager.isCurrentTransactionReadOnly());
-            AbstractTransactionSyncManager.registerSynchronization(new TransactionSynchronization(holderToUse, dataSource));
+            connection.setTransactionIsolation(getCurrentTransactionIsolationLevel());
+            connection.setReadOnly(isCurrentTransactionReadOnly());
+            registerSynchronization(new TransactionSynchronization(holderToUse, dataSource));
             holderToUse.setSyncWithTransaction(true);
             if (holderToUse != connectionHolder) {
-                AbstractTransactionSyncManager.bindResource(dataSource, holderToUse);
+                bindResource(dataSource, holderToUse);
             }
         }
         return connection;
-    }
-
-    /**
-     * 为事务准备初始化连接对象
-     *
-     * @param connection 连接
-     * @param definition 事务定义
-     * @throws SQLException ex
-     */
-    public static void prepareConnectionForTransaction(Connection connection, Definition definition) throws SQLException {
-        connection.setAutoCommit(false);
-        if (definition != null && definition.isReadOnly()) {
-            connection.setReadOnly(true);
-            int currentIsolationLevel = connection.getTransactionIsolation();
-            if (currentIsolationLevel != definition.getLevel()) {
-                //noinspection MagicConstant
-                connection.setTransactionIsolation(definition.getLevel());
-            }
-        }
     }
 
     /**
@@ -96,11 +75,11 @@ public abstract class DataSourceUtil {
      * @param connection 连接对象
      * @param dataSource 数据源
      */
-    public static void releaseConnectionIfNecessary(Connection connection, DataSource dataSource) {
+    public static void releaseConnection(Connection connection, DataSource dataSource) {
         try {
-            doReleaseConnectionIfNecessary(connection, dataSource);
+            doReleaseConnection(connection, dataSource);
         } catch (SQLException e) {
-            log.debug("Couldn't close JDBC connection:{}", e.getMessage());
+            throw new UncheckedSqlException("Couldn't close JDBC connection:{}", e);
         }
     }
 
@@ -111,12 +90,12 @@ public abstract class DataSourceUtil {
      * @param dataSource 数据源
      * @throws SQLException 释放连接对象失败
      */
-    public static void doReleaseConnectionIfNecessary(Connection connection, DataSource dataSource) throws SQLException {
+    private static void doReleaseConnection(Connection connection, DataSource dataSource) throws SQLException {
         if (connection == null) {
             return;
         }
         if (dataSource != null) {
-            ConnectionHolder holder = AbstractTransactionSyncManager.getResource(dataSource);
+            ConnectionHolder holder = getResource(dataSource);
             if (holder != null && connectionEquals(holder, connection)) {
                 // 此连接对象在事务中，不关闭，将引用计数减1
                 holder.released();
@@ -137,7 +116,7 @@ public abstract class DataSourceUtil {
         if (dataSource == null) {
             return false;
         }
-        ConnectionHolder conHolder = AbstractTransactionSyncManager.getResource(dataSource);
+        ConnectionHolder conHolder = getResource(dataSource);
         return (conHolder != null && connectionEquals(conHolder, con));
     }
 
@@ -197,9 +176,9 @@ public abstract class DataSourceUtil {
          * 事务完成后执行此操作，关闭连接对象并解除资源绑定
          */
         public void afterCompletion() {
-            AbstractTransactionSyncManager.unbindResource(dataSource);
+            unbindResource(dataSource);
             if (connectionHolder.hasConnection()) {
-                releaseConnectionIfNecessary(connectionHolder.getConnection(), null);
+                releaseConnection(connectionHolder.getConnection(), null);
                 connectionHolder.setConnection(null);
             }
             connectionHolder.clear();

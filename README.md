@@ -525,8 +525,7 @@ order by id;
 
   Sql file **"k-v"** structure delimiter **default `;`**, follows standard multi sql structure delimiter by `;`, but there is a condition, if you have plsql in file e.g: `create function...` or `create procedure...`, it will be multi sql statement in one sql object, you need specific custom delimiter for resolve correctly:
 
-  - e.g ( `;;`) double semicolon;
-  - `null` or `""` : every sql object must follows without delimiter.
+  - e.g ( `;;`) double semicolon.
 
 - **checkModified**
 

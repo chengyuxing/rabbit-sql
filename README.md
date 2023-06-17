@@ -115,8 +115,12 @@ PagedResource<DataRow> resource = baki.query("select ... where id < :id")
 
 ```sql
 /*[custom_paged]*/
-select * from test.region
-where id > :id limit :limit offset :offset;
+with t as (
+  select * from test.region
+  where id > :id limit :limit offset :offset
+)
+select * ftom t;
+;
 ```
 
 ```java

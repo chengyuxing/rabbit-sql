@@ -50,7 +50,7 @@ Get some usage from [document](https://github.com/chengyuxing/rabbit-sql-spring-
 
 ## IDEA plugin support
 
-plugin market: [Rabbit sql](https://plugins.jetbrains.com/plugin/21403-rabbit-sql).
+Plugin marketplace: [Rabbit sql](https://plugins.jetbrains.com/plugin/21403-rabbit-sql) and [documentation](https://github.com/chengyuxing/rabbit-sql-plugin#readme).
 
 ## Quick start
 

@@ -2,6 +2,7 @@
 
 [![License][badge:license]][license]
 [![Maven][badge:maven]][maven-repository]
+[![Version][badge:version]][versions]
 
 语言：[English](README.md) | 简体中文
 
@@ -533,7 +534,7 @@ order by id;
 [badge:maven]:https://img.shields.io/maven-central/v/com.github.chengyuxing/rabbit-sql
 [badge:license]: https://img.shields.io/github/license/chengyuxing/rabbit-sql
 
-
-
+[badge:version]:https://img.shields.io/jetbrains/plugin/v/21403
 [license]:https://github.com/chengyuxing/rabbit-sql/blob/main/LICENSE
 [maven-repository]:https://central.sonatype.com/artifact/com.github.chengyuxing/rabbit-sql/7.2.0?smo=true
+[versions]:https://plugins.jetbrains.com/plugin/21403-rabbit-sql/versions

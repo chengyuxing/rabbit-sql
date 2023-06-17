@@ -119,7 +119,7 @@ with t as (
   select * from test.region
   where id > :id limit :limit offset :offset
 )
-select * ftom t;
+select * from t;
 ;
 ```
 

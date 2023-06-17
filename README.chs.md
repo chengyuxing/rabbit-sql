@@ -1,5 +1,8 @@
 # rabbit-sql
 
+[![License][badge:license]][license]
+[![Maven][badge:maven]][maven-repository]
+
 语言：[English](README.md) | 简体中文
 
 你不喜欢写xml，不喜欢xml和接口强绑定？
@@ -524,3 +527,13 @@ order by id;
 - **checkModified**
 
   如果为 `true`，则开启sql文件修改监听器，默认30秒检测一次，如果修改过则重新加载，生产环境建议设置为 `false` 。
+
+
+
+[badge:maven]:https://img.shields.io/maven-central/v/com.github.chengyuxing/rabbit-sql
+[badge:license]: https://img.shields.io/github/license/chengyuxing/rabbit-sql
+
+
+
+[license]:https://github.com/chengyuxing/rabbit-sql/blob/main/LICENSE
+[maven-repository]:https://central.sonatype.com/artifact/com.github.chengyuxing/rabbit-sql/7.2.0?smo=true

@@ -1,5 +1,8 @@
 # rabbit-sql
 
+[![License][badge:license]][license]
+[![Maven][badge:maven]][maven-repository]
+
 Language: English | [简体中文](README.chs.md)
 
 You don't like sql in xml, don't like xml binding to interfaces?
@@ -473,7 +476,7 @@ order by id;
   ```yaml
   constants:
   #  base: &basePath pgsql
-
+  
   files:
   # use !path tag merge list to "pgsql/other.xql"
   #  dt: !path [ *basePath, other.xql ]
@@ -530,3 +533,13 @@ order by id;
 - **checkModified**
 
   Listening sql file modifiable for reload with default period 30 seconds if `true`, recommend set `false` where in production environment.
+
+
+
+[badge:maven]:https://img.shields.io/maven-central/v/com.github.chengyuxing/rabbit-sql
+[badge:license]: https://img.shields.io/github/license/chengyuxing/rabbit-sql
+
+
+
+[license]:https://github.com/chengyuxing/rabbit-sql/blob/main/LICENSE
+[maven-repository]:https://central.sonatype.com/artifact/com.github.chengyuxing/rabbit-sql/7.2.0?smo=true

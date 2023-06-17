@@ -48,7 +48,7 @@ Maven central
 
 Get some usage from [document](https://github.com/chengyuxing/rabbit-sql-spring-boot-starter).
 
-## IDEA plugin support
+## IDEA-plugin-support
 
 Plugin marketplace: [Rabbit sql](https://plugins.jetbrains.com/plugin/21403-rabbit-sql) and [documentation](https://github.com/chengyuxing/rabbit-sql-plugin#readme).
 
@@ -438,6 +438,8 @@ SQL file manager extends standard sql annotation implement more features, for su
 you can get sql syntax highlight, intelligent suggestions and error check when using sql develop tools cause support sql file with extension `.sql`, dba developer     work with java developer together so easy.
 
 Supported file extension with `.sql` or `.xql`, you can write any standard sql annotation in file, format reference `data.xql.template`.
+
+:bulb: Recommend use `.xql` file to get [plugin](#IDEA-plugin-support) supports.
 
 Every managed sql file must follows **"k-v"** structure, e.g:
 

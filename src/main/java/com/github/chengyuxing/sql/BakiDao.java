@@ -307,6 +307,11 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
 
             @Override
+            public int executeBatch(Collection<Map<String, ?>> argsForBatch) {
+                return executeNonQuery(sql, argsForBatch);
+            }
+
+            @Override
             public DataRow execute() {
                 return BakiDao.super.execute(sql, args);
             }

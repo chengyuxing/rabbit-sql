@@ -260,6 +260,23 @@ public class BakiSessionTest {
     }
 
     @Test
+    public void testExeP() {
+        int i = baki.of("insert into public.user (name) values (?name)")
+                .executeBatch(Arrays.asList(
+                        Args.create("name", "aaa"),
+                        Args.create("name", "bbb"),
+                        Args.create("name", "ccc")
+                ));
+        System.out.println(i);
+    }
+
+    @Test
+    public void testQuery2() {
+        baki.query("select * from public.user").stream()
+                .forEach(System.out::println);
+    }
+
+    @Test
     public void testInsert() throws Exception {
         String pkid = UUID.randomUUID().toString();
         baki.insert("test.temp").save(Args.create("pkid", pkid, "RPKID", pkid, "name", "cyx"));

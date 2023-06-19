@@ -49,7 +49,7 @@ public abstract class Executor {
     }
 
     /**
-     * 批量执行非查询sql（非预编译sql，不支持参数）
+     * 批量执行所有非查询sql（非预编译，不支持参数）
      *
      * @return 每条sql执行的结果
      * @see com.github.chengyuxing.sql.support.JdbcSupport#executeBatch(List) executeBatch
@@ -57,7 +57,16 @@ public abstract class Executor {
     public abstract int[] executeBatch();
 
     /**
-     * 执行一条原始sql
+     * 根据批量参数执行第一条非查询sql（预编译）
+     *
+     * @param argsForBatch 批量参数
+     * @return 受影响的行数
+     * @see com.github.chengyuxing.sql.support.JdbcSupport#executeNonQuery(String, Collection) executeNonQuery
+     */
+    public abstract int executeBatch(Collection<Map<String, ?>> argsForBatch);
+
+    /**
+     * 执行第一条sql（ddl、dml、query、plsql）
      *
      * @return 根据不同的类型返回不同的结果
      * @see com.github.chengyuxing.sql.support.JdbcSupport#execute(String, Map) execute

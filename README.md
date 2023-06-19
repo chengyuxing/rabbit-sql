@@ -35,7 +35,7 @@ Maven central
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.2.0</version>
+    <version>7.2.1</version>
 </dependency>
 ```
 
@@ -548,5 +548,5 @@ order by id;
 
 [badge:version]:https://img.shields.io/jetbrains/plugin/v/21403
 [license]:https://github.com/chengyuxing/rabbit-sql/blob/main/LICENSE
-[maven-repository]:https://central.sonatype.com/artifact/com.github.chengyuxing/rabbit-sql/7.2.0?smo=true
+[maven-repository]:https://central.sonatype.com/artifact/com.github.chengyuxing/rabbit-sql
 [versions]:https://plugins.jetbrains.com/plugin/21403-rabbit-sql/versions

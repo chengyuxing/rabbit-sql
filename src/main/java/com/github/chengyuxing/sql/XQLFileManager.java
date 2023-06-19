@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
@@ -217,7 +218,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public Resource parse(String alias, String filename, FileResource fileResource) throws IOException, URISyntaxException {
         Resource resource = new Resource(alias, filename);
         Map<String, String> entry = new LinkedHashMap<>();
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(fileResource.getInputStream(), charset))) {
+        try (BufferedReader reader = fileResource.getBufferedReader(Charset.forName(charset))) {
             String blockName = "";
             List<String> sqlBodyBuffer = new ArrayList<>();
             String line;

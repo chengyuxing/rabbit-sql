@@ -155,9 +155,8 @@ public class BakiDao extends JdbcSupport implements Baki {
         if (data.isEmpty()) {
             return 0;
         }
-        Map<String, ?> first = data.iterator().next();
         List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);
-        String sql = sqlTranslator.generateNamedParamInsert(tableName, first, tableFields);
+        String sql = sqlTranslator.generateNamedParamInsert(tableName, data.iterator().next(), tableFields);
         return executeNonQuery(sql, data);
     }
 

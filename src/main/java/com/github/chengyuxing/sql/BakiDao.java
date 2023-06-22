@@ -6,6 +6,7 @@ import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.datasource.DataSourceUtil;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
 import com.github.chengyuxing.sql.exceptions.DuplicateException;
+import com.github.chengyuxing.sql.exceptions.IllegalSqlException;
 import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 import com.github.chengyuxing.sql.page.IPageable;
 import com.github.chengyuxing.sql.page.PageHelper;
@@ -15,6 +16,7 @@ import com.github.chengyuxing.sql.page.impl.MysqlPageHelper;
 import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.github.chengyuxing.sql.support.JdbcSupport;
+import com.github.chengyuxing.sql.support.SqlInterceptor;
 import com.github.chengyuxing.sql.support.executor.*;
 import com.github.chengyuxing.sql.transaction.Tx;
 import com.github.chengyuxing.sql.types.Param;
@@ -61,6 +63,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     private SqlTranslator sqlTranslator = new SqlTranslator(':');
     //---------optional properties------
     private PageHelperProvider globalPageHelperProvider;
+    private SqlInterceptor sqlInterceptor;
     private XQLFileManager xqlFileManager;
     private char namedParamPrefix = ':';
     private boolean strictDynamicSqlArg = true;
@@ -442,6 +445,15 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
+     * 设置sql预处理拦截器
+     *
+     * @param sqlInterceptor sql预处理拦截器
+     */
+    public void setSqlInterceptor(SqlInterceptor sqlInterceptor) {
+        this.sqlInterceptor = sqlInterceptor;
+    }
+
+    /**
      * 简单的分页构建器实现
      */
     class SimplePageable extends IPageable {
@@ -655,6 +667,18 @@ public class BakiDao extends JdbcSupport implements Baki {
                 if (args == null || !args.containsKey(constantName)) {
                     trimEndedSql = StringUtil.format(trimEndedSql, constantName, constants.get(constantName));
                 }
+            }
+        }
+        if (sqlInterceptor != null) {
+            String error = "reject to execute invalid sql.\nSQL: " + trimEndedSql + "\nArgs: " + args;
+            boolean request;
+            try {
+                request = sqlInterceptor.prevHandle(trimEndedSql, args, metaData());
+            } catch (Throwable e) {
+                throw new IllegalSqlException(error, e);
+            }
+            if (!request) {
+                throw new IllegalSqlException(error);
             }
         }
         if (log.isDebugEnabled()) {

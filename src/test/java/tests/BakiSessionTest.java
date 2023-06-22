@@ -6,6 +6,7 @@ import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.BakiDao;
 import com.github.chengyuxing.sql.PagedResource;
 import com.github.chengyuxing.sql.XQLFileManager;
+import com.github.chengyuxing.sql.support.SqlInterceptor;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -15,8 +16,6 @@ import java.net.URISyntaxException;
 import java.sql.*;
 import java.time.*;
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -38,6 +37,7 @@ public class BakiSessionTest {
         XQLFileManager sqlFileManager = new XQLFileManager(Args.of("nest", "pgsql/nest.sql"));
         sqlFileManager.setConstants(Args.of("db", "test"));
         baki.setXqlFileManager(sqlFileManager);
+        baki.setSqlInterceptor(new SqlInterceptor.DefaultSqlInterceptor());
         baki.setNamedParamPrefix('?');
     }
 
@@ -280,6 +280,13 @@ public class BakiSessionTest {
     public void testInsert() throws Exception {
         String pkid = UUID.randomUUID().toString();
         baki.insert("test.temp").save(Args.create("pkid", pkid, "RPKID", pkid, "name", "cyx"));
+    }
+
+    @Test
+    public void testDelete() {
+        DataRow i = baki.of("delete from test.user")
+                .execute();
+        System.out.println(i);
     }
 
     @Test

@@ -10,24 +10,22 @@ import org.junit.Test;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class StrTests {
 
     @Test
-    public void testDtFmt() throws Exception{
+    public void testDtFmt() throws Exception {
         System.out.println(SqlUtil.quoteFormatValueIfNecessary(LocalTime.now()));
     }
 
     @Test
-    public void test1() throws Exception{
+    public void test1() throws Exception {
         XQLFileManager xqlFileManager = new XQLFileManager();
-        xqlFileManager.add("x","pgsql/multi.xql");
+        xqlFileManager.add("x", "pgsql/multi.xql");
         xqlFileManager.setDelimiter(null);
         xqlFileManager.setHighlightSql(true);
-        xqlFileManager.setPipes(Args.of("len","tests.Length"));
+        xqlFileManager.setPipes(Args.of("len", "tests.Length"));
         xqlFileManager.init();
         xqlFileManager.look();
     }
@@ -73,6 +71,31 @@ public class StrTests {
                 "id=:id and enable = :enable");
     }
 
+    @Test
+    public void testUpdate() {
+        SqlTranslator sqlTranslator = new SqlTranslator(':');
+        List<String> list = new ArrayList<>();
+        for (int i = 0; i < 10000; i++) {
+            Map<String, Object> args = Args.create(
+                    "id", 10,
+                    "name", "chengyuxing",
+                    "age", i,
+                    "address", "昆明",
+                    "work", "java"
+            );
+            String update = sqlTranslator.generateUpdate(
+                    "test.user",
+                    "id = :id and name = :name",
+                    args,
+                    Arrays.asList("name", "age", "work"),
+                    Arrays.asList("id", "name", "age", "work", "address"),
+                    false);
+            list.add(update);
+        }
+        System.out.println(list.size());
+        System.out.println(list.get(7810));
+    }
+
 
     public static void update(String tableName, Map<String, Object> data, String where) {
         Pair<String, List<String>> cnd = new SqlTranslator(':').generateSql(where, data, true);
@@ -80,9 +103,9 @@ public class StrTests {
         for (String key : cnd.getItem2()) {
             updateData.remove(key);
         }
-        String update = new SqlTranslator(':').generateNamedParamUpdate(tableName, updateData);
-        String w = StringUtil.startsWithIgnoreCase(where.trim(), "where") ? where : "\nwhere " + where;
-        System.out.println(update + w);
-        System.out.println(data);
+//        String update = new SqlTranslator(':').generateNamedParamUpdate(tableName, updateData);
+//        String w = StringUtil.startsWithIgnoreCase(where.trim(), "where") ? where : "\nwhere " + where;
+//        System.out.println(update + w);
+//        System.out.println(data);
     }
 }

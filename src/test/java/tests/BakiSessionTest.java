@@ -77,10 +77,10 @@ public class BakiSessionTest {
 
     @Test
     public void upd() throws Exception {
-        int i = baki.update("${db}.user", "name = ?oldName")
+        int i = baki.update("${db}.user", "&nest.updateCnd")
                 .safe()
-                .sets("address", "name")
-                .save(Args.of("name", "南亚风情第一城").add("oldName", "南亚风情园").add("abc", "123"));
+//                .sets("address", "name")
+                .save(Args.<Object>of("name", "南亚风情第一城").add("oldName", null).add("id", 18).add("abc", "123"));
         System.out.println(i);
     }
 

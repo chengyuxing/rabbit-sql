@@ -192,8 +192,8 @@ public class Tests {
 
 //        String sql = SqlUtil.generateInsert("test.user", paramMap, Ignore.BLANK, Arrays.asList("c", "d", "a"));
 
-        String upd = new SqlTranslator(':').generateNamedParamUpdate("test.user", paramMap);
-        System.out.println(upd);
+//        String upd = new SqlTranslator(':').generateNamedParamUpdate("test.user", paramMap);
+//        System.out.println(upd);
     }
 
     @Test

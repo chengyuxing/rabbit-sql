@@ -14,4 +14,13 @@ select ${fields}, ${concats}, '${otherFields}' from ${db}.user where id = :id;
 email, phone, message, facetime;
 
 /*[getGuest]*/
-select ${hobby} from test.user
+select ${hobby} from test.user;
+
+/*[updateCnd]*/
+-- #if :oldName <> blank
+name = ?oldName
+-- #fi
+-- #if :id <> blank
+or id = ?id
+-- #fi
+;

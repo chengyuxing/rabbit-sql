@@ -1,6 +1,7 @@
 package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.tuple.Pair;
+import com.github.chengyuxing.common.utils.CollectionUtil;
 import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import org.slf4j.Logger;
@@ -273,90 +274,92 @@ public class SqlTranslator {
     }
 
     /**
-     * 构建一个普通更新语句
-     *
-     * @param tableName 表名
-     * @param data      数据
-     * @param fields    需要包含的字段集合
-     * @return 更新语句
-     */
-    public String generateUpdate(String tableName, Map<String, ?> data, List<String> fields) {
-        return generateUpdate(tableName, data, fields, false);
-    }
-
-    /**
-     * 构建一个普通更新语句
-     *
-     * @param tableName 表名
-     * @param data      数据
-     * @return 更新语句
-     * @throws IllegalArgumentException 如果where条件为空或者没有生成需要更新的字段
-     */
-    public String generateUpdate(String tableName, Map<String, ?> data) {
-        return generateUpdate(tableName, data, Collections.emptyList());
-    }
-
-    /**
      * 构建一个传名参数占位符的更新语句
      *
-     * @param tableName 表名
-     * @param data      数据
-     * @param fields    需要包含的字段集合
+     * @param tableName   表名
+     * @param where       where条件
+     * @param data        数据
+     * @param setFields   更新需要包含的字段集合
+     * @param tableFields 表字段集合
      * @return 传名参数占位符的更新语句
      */
-    public String generateNamedParamUpdate(String tableName, Map<String, ?> data, List<String> fields) {
-        return generateUpdate(tableName, data, fields, true);
-    }
-
-    /**
-     * 构建一个传名参数的更新语句
-     *
-     * @param tableName 表名
-     * @param data      数据
-     * @return 传名参数的更新语句
-     * @throws IllegalArgumentException 如果参数为空
-     */
-    public String generateNamedParamUpdate(String tableName, Map<String, ?> data) {
-        return generateNamedParamUpdate(tableName, data, Collections.emptyList());
+    public String generateNamedParamUpdate(String tableName, String where, Map<String, ?> data, List<String> setFields, List<String> tableFields) {
+        return generateUpdate(tableName, where, data, setFields, tableFields, true);
     }
 
     /**
      * 构建一个更新语句
      *
      * @param tableName    表名
+     * @param where        where条件
      * @param data         数据
-     * @param fields       需要包含的字段集合
+     * @param setFields    更新需要包含的字段集合
+     * @param tableFields  表字段集合
      * @param isNamedParam 是否传名参数占位符
      * @return 传名参数占位符的sql或普通sql
      */
-    public String generateUpdate(String tableName, Map<String, ?> data, List<String> fields, boolean isNamedParam) {
-        if (data.isEmpty()) {
+    public String generateUpdate(String tableName, String where, Map<String, ?> data, List<String> setFields, List<String> tableFields, boolean isNamedParam) {
+        String whereStatement = where;
+        Map<String, ?> updateSets = getUpdateSets(whereStatement, data, setFields);
+        if (updateSets.isEmpty()) {
             throw new IllegalArgumentException("empty field set, generate update sql error.");
         }
-        Set<String> keys = filterKeys(data, fields);
+        Set<String> keys = filterKeys(updateSets, tableFields);
         if (keys.isEmpty()) {
             throw new IllegalArgumentException("empty field set, generate update sql error.");
         }
         StringJoiner sb = new StringJoiner(",\n\t");
         if (isNamedParam) {
             for (String key : keys) {
-                if (data.containsKey(key) || containsKeyIgnoreCase(data, key)) {
+                if (updateSets.containsKey(key) || containsKeyIgnoreCase(updateSets, key)) {
                     sb.add(key + " = " + namedParamPrefix + key);
                 }
             }
         } else {
             for (String key : keys) {
-                if (data.containsKey(key)) {
-                    String v = quoteFormatValueIfNecessary(data.get(key));
+                if (updateSets.containsKey(key)) {
+                    String v = quoteFormatValueIfNecessary(updateSets.get(key));
                     sb.add(key + " = " + v);
-                } else if (containsKeyIgnoreCase(data, key)) {
-                    log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your sql's named parameter and args.", key, data, key);
-                    String v = quoteFormatValueIfNecessary(getValueIgnoreCase(data, key));
+                } else if (containsKeyIgnoreCase(updateSets, key)) {
+                    log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your sql's named parameter and args.", key, updateSets, key);
+                    String v = quoteFormatValueIfNecessary(getValueIgnoreCase(updateSets, key));
                     sb.add(key + " = " + v);
                 }
             }
+            whereStatement = generateSql(whereStatement, data, false).getItem1();
         }
-        return "update " + tableName + " \nset " + sb;
+        return "update " + tableName + " \nset " + sb + "\nwhere " + whereStatement;
+    }
+
+    /**
+     * 获取update语句中set需要的参数字典
+     *
+     * @param where     可包含参数的where条件
+     * @param args      参数字典
+     * @param setFields 明确的set字段集合（如果为空，则自动从where条件中的命名参数来判断）
+     * @return set参数字典
+     */
+    public Map<String, ?> getUpdateSets(String where, Map<String, ?> args, List<String> setFields) {
+        Map<String, ?> argx = new HashMap<>();
+        if (args != null) {
+            argx = new HashMap<>(args);
+        }
+        Map<String, Object> sets = new HashMap<>();
+        if (setFields != null && !setFields.isEmpty()) {
+            for (String key : setFields) {
+                sets.put(key, CollectionUtil.getValueIgnoreCase(argx, key));
+            }
+            return sets;
+        }
+        // 获取where条件中的参数名
+        List<String> whereFields = getPreparedSql(where, argx).getItem2();
+        // 将where条件中的参数排除，因为where中的参数作为条件，而不是需要更新的值
+        for (Map.Entry<String, ?> e : argx.entrySet()) {
+            if (!CollectionUtil.containsIgnoreCase(whereFields, e.getKey())) {
+                sets.put(e.getKey(), e.getValue());
+            }
+        }
+        return sets;
     }
 
     /**

@@ -1,7 +1,6 @@
 package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.DataRow;
-import com.github.chengyuxing.common.utils.CollectionUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.datasource.DataSourceUtil;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
@@ -39,19 +38,9 @@ import java.util.stream.Stream;
 /**
  * <h2>数据库DAO对象实现</h2>
  * <p>如果配置了{@link XQLFileManager }，则接口所有方法都可以通过取地址符号来获取sql文件内的sql</p>
- * 取SQL通过 {@code &}符号前缀+sql键名：
- * <blockquote>
- * e.g. 配置类型:
- * <pre>
- *  files: {
- *       sys: 'pgsql/test.sql',
- *       mac: 'file:/Users/chengyuxing/Downloads/local.sql'
- *   }
- * </pre>
- * </blockquote>
  * 指定sql名执行：
  * <blockquote>
- * <pre>try ({@link Stream}&lt;{@link DataRow}&gt; s = baki.query("&amp;sys.getUser")) {
+ * <pre>try ({@link Stream}&lt;{@link DataRow}&gt; s = baki.query("&amp;sys.getUser").stream()) {
  *     s.forEach(System.out::println);
  *   }</pre>
  * </blockquote>
@@ -143,19 +132,19 @@ public class BakiDao extends JdbcSupport implements Baki {
      *
      * @param tableName 表名
      * @param data      数据
-     * @param uncheck   <ul>
-     *                  <li>true: 根据数据原封不动完全插入，如果有不存在的字段则抛出异常</li>
-     *                  <li>false: 根据数据库表字段名排除数据中不存在的key，安全的插入</li>
+     * @param safe      <ul>
+     *                  <li>true: 根据数据库表字段名排除数据中不存在的key，安全的插入</li>
+     *                  <li>false: 根据数据原封不动完全插入，如果有不存在的字段则抛出异常</li>
      *                  </ul>
      * @return 受影响的行数
      * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
      * @see #fastInsert(String, Collection, boolean)
      */
-    protected int insert(String tableName, Collection<? extends Map<String, ?>> data, boolean uncheck) {
+    protected int insert(String tableName, Collection<? extends Map<String, ?>> data, boolean safe) {
         if (data.isEmpty()) {
             return 0;
         }
-        List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);
+        List<String> tableFields = safe ? getTableFields(tableName) : new ArrayList<>();
         String sql = sqlTranslator.generateNamedParamInsert(tableName, data.iterator().next(), tableFields);
         return executeNonQuery(sql, data);
     }
@@ -166,21 +155,20 @@ public class BakiDao extends JdbcSupport implements Baki {
      *
      * @param tableName 表名
      * @param data      数据
-     * @param uncheck   <ul>
-     *                  <li>true: 根据数据原封不动完全插入，如果有不存在的字段则抛出异常</li>
-     *                  <li>false: 根据数据库表字段名排除数据中不存在的key，安全的插入</li>
+     * @param safe      <ul>
+     *                  <li>true: 根据数据库表字段名排除数据中不存在的key，安全的插入</li>
+     *                  <li>false: 根据数据原封不动完全插入，如果有不存在的字段则抛出异常</li>
      *                  </ul>
      * @return 受影响的行数
      * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
      */
-    protected int fastInsert(String tableName, Collection<? extends Map<String, ?>> data, boolean uncheck) {
+    protected int fastInsert(String tableName, Collection<? extends Map<String, ?>> data, boolean safe) {
         if (data.size() > 0) {
-            Iterator<? extends Map<String, ?>> iterator = data.iterator();
             List<String> sqls = new ArrayList<>(data.size());
-            List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);
-            while (iterator.hasNext()) {
-                String insertSql = sqlTranslator.generateInsert(tableName, iterator.next(), tableFields);
-                sqls.add(insertSql);
+            List<String> tableFields = safe ? getTableFields(tableName) : new ArrayList<>();
+            for (Map<String, ?> item : data) {
+                String sql = sqlTranslator.generateInsert(tableName, item, tableFields);
+                sqls.add(sql);
             }
             log.debug("preview sql: {}\nmore...", SqlUtil.buildPrintSql(sqls.get(0), highlightSql));
             int count = super.executeBatch(sqls).length;
@@ -206,26 +194,28 @@ public class BakiDao extends JdbcSupport implements Baki {
      * </blockquote>
      *
      * @param tableName 表名
+     * @param where     条件：条件中需要有传名参数作为更新的条件依据
      * @param data      数据：需要更新的数据和条件参数
      * @param sets      需要更新的字段
-     * @param uncheck   <ul>
-     *                  <li>true: 根据数据原封不动进行更新，如果有不存在的字段则抛出异常</li>
-     *                  <li>false: 根据数据库表字段名排除数据中不存在的key，安全的更新</li>
+     * @param safe      <ul>
+     *                  <li>true: 根据数据库表字段名排除数据中不存在的key，安全的更新</li>
+     *                  <li>false: 根据数据原封不动进行更新，如果有不存在的字段则抛出异常</li>
      *                  </ul>
-     * @param where     条件：条件中需要有传名参数作为更新的条件依据
      * @return 受影响的行数
      * @throws UncheckedSqlException sql执行过程中出现错误
      */
-    protected int update(String tableName, Collection<? extends Map<String, ?>> data, List<String> sets, boolean uncheck, String where) {
+    protected int update(String tableName, String where, Collection<? extends Map<String, ?>> data, List<String> sets, boolean safe) {
         if (data.isEmpty()) {
             return 0;
         }
-        String whereSql = getSql(where, Collections.emptyMap());
-        Map<String, ?> updateSets = getUpdateSets(whereSql, data.iterator().next(), sets);
-        List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);
-        String update = sqlTranslator.generateNamedParamUpdate(tableName, updateSets, tableFields);
-        String sql = update + "\nwhere " + whereSql;
-        return executeNonQuery(sql, data);
+        String whereStatement = getSql(where, Collections.emptyMap());
+        List<String> tableFields = safe ? getTableFields(tableName) : new ArrayList<>();
+        String updateStatement = sqlTranslator.generateNamedParamUpdate(tableName,
+                whereStatement,
+                data.iterator().next(),
+                sets,
+                tableFields);
+        return executeNonQuery(updateStatement, data);
     }
 
     /**
@@ -244,61 +234,38 @@ public class BakiDao extends JdbcSupport implements Baki {
      * </blockquote>
      *
      * @param tableName 表名
+     * @param where     条件：条件中需要有传名参数作为更新的条件依据
      * @param data      参数：需要更新的数据和条件参数
      * @param sets      需要更新的字段
-     * @param uncheck   <ul>
-     *                  <li>true: 根据数据原封不动进行更新，如果有不存在的字段则抛出异常</li>
-     *                  <li>false: 根据数据库表字段名排除数据中不存在的key，安全的更新</li>
+     * @param safe      <ul>
+     *                  <li>true: 根据数据库表字段名排除数据中不存在的key，安全的更新</li>
+     *                  <li>false: 根据数据原封不动进行更新，如果有不存在的字段则抛出异常</li>
      *                  </ul>
-     * @param where     条件：条件中需要有传名参数作为更新的条件依据
      * @return 受影响的行数
      * @throws UncheckedSqlException         执行批量操作时发生错误
      * @throws UnsupportedOperationException 数据库或驱动版本不支持批量操作
      * @throws IllegalArgumentException      数据条数少于一条
      */
-    protected int fastUpdate(String tableName, Collection<? extends Map<String, ?>> data, List<String> sets, boolean uncheck, String where) {
+    protected int fastUpdate(String tableName, String where, Collection<? extends Map<String, ?>> data, List<String> sets, boolean safe) {
         if (data.isEmpty()) {
             return 0;
         }
-        String whereSql = getSql(where, Collections.emptyMap());
+        String whereStatement = getSql(where, Collections.emptyMap());
+        List<String> tableFields = safe ? getTableFields(tableName) : new ArrayList<>();
         List<String> sqls = new ArrayList<>(data.size());
-        Map<String, ?> updateSets = getUpdateSets(whereSql, data.iterator().next(), sets);
-        List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);
-        // 以第一条记录构建出确定的传名参数的预编译sql，后续再处理为非预编译sql
-        String update = sqlTranslator.generateNamedParamUpdate(tableName, updateSets, tableFields);
-        String fullUpdatePrepared = update + "\nwhere " + whereSql;
         for (Map<String, ?> item : data) {
-            String updateNonPrepared = sqlTranslator.generateSql(fullUpdatePrepared, item, false).getItem1();
-            sqls.add(updateNonPrepared);
+            String updateStatement = sqlTranslator.generateUpdate(tableName,
+                    whereStatement,
+                    item,
+                    sets,
+                    tableFields,
+                    false);
+            sqls.add(updateStatement);
         }
         log.debug("preview sql: {}\nmore...", SqlUtil.buildPrintSql(sqls.get(0), highlightSql));
         int count = Arrays.stream(super.executeBatch(sqls)).sum();
         log.debug("{} rows updated!", count);
         return count;
-    }
-
-    protected Map<String, ?> getUpdateSets(String where, Map<String, ?> args, List<String> setFields) {
-        if (args == null || args.isEmpty()) {
-            return new HashMap<>();
-        }
-        Map<String, Object> sets = new HashMap<>();
-        if (setFields != null && !setFields.isEmpty()) {
-            for (String key : setFields) {
-                if (args.containsKey(key)) {
-                    sets.put(key, args.get(key));
-                }
-            }
-            return sets;
-        }
-        // 获取where条件中的参数名
-        List<String> whereFields = sqlTranslator.getPreparedSql(where, args).getItem2();
-        // 将where条件中的参数排除，因为where中的参数作为条件，而不是需要更新的值
-        for (Map.Entry<String, ?> e : args.entrySet()) {
-            if (!CollectionUtil.containsIgnoreCase(whereFields, e.getKey())) {
-                sets.put(e.getKey(), e.getValue());
-            }
-        }
-        return sets;
     }
 
     @Override
@@ -407,9 +374,9 @@ public class BakiDao extends JdbcSupport implements Baki {
             @Override
             public int save(Collection<? extends Map<String, ?>> data) {
                 if (fast) {
-                    return fastUpdate(tableName, data, sets, !safe, where);
+                    return fastUpdate(tableName, where, data, sets, safe);
                 }
-                return update(tableName, data, sets, !safe, where);
+                return update(tableName, where, data, sets, safe);
             }
         };
     }
@@ -425,9 +392,9 @@ public class BakiDao extends JdbcSupport implements Baki {
             @Override
             public int save(Collection<? extends Map<String, ?>> data) {
                 if (fast) {
-                    return fastInsert(tableName, data, !safe);
+                    return fastInsert(tableName, data, safe);
                 }
-                return insert(tableName, data, !safe);
+                return insert(tableName, data, safe);
             }
         };
     }

@@ -16,11 +16,6 @@ email, phone, message, facetime;
 /*[getGuest]*/
 select ${hobby} from test.user;
 
-/*[updateCnd]*/
--- #if :oldName <> blank
-name = ?oldName
--- #fi
--- #if :id <> blank
-or id = ?id
--- #fi
+/*[queryUsers]*/
+select * from public.user ${where}
 ;

@@ -70,8 +70,9 @@ public class BakiSessionTest {
 
     @Test
     public void testAx() throws Exception {
-        baki.query("select * from test.big limit 5").stream()
-                .limit(2)
+        baki.query("&nest.queryUsers")
+                .arg("where", "where id > 3")
+                .stream()
                 .forEach(System.out::println);
     }
 

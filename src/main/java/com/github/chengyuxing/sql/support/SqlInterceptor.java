@@ -19,6 +19,7 @@ public interface SqlInterceptor {
      * @param args     sql参数
      * @param metaData 当前数据库元数据
      * @return true：执行sql，false：拒绝执行
+     * @throws Throwable 抛出异常信息达到拒绝执行
      */
     boolean prevHandle(String sql, Map<String, ?> args, DatabaseMetaData metaData) throws Throwable;
 

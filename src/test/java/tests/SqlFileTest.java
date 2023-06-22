@@ -21,7 +21,7 @@ public class SqlFileTest {
 
     private static Ioc ioc;
 
-//    @BeforeClass
+    //    @BeforeClass
     public static void init() {
         ioc = new NutIoc(new JsonLoader("ioc.js"));
     }
@@ -66,7 +66,7 @@ public class SqlFileTest {
 
     @Test
     public void ref() throws Exception {
-        Pair<String, List<String>> pair = new SqlTranslator(':').getPreparedSql(":res = call getUser(:id, :name)");
+        Pair<String, List<String>> pair = new SqlTranslator(':').getPreparedSql(":res = call getUser(:id, :name)", Collections.emptyMap());
         System.out.println(pair.getItem1());
         System.out.println(pair.getItem2());
     }

@@ -225,7 +225,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         Map<String, ?> first = new HashMap<>(data.iterator().next());
         List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);
         // 获取where条件中的参数名
-        List<String> whereFields = sqlTranslator.getPreparedSql(whereSql).getItem2();
+        List<String> whereFields = sqlTranslator.getPreparedSql(whereSql, first).getItem2();
         for (String key : whereFields) {
             // 如果where条件中参数名是小写，而第一行数据中是大写，则也需要删除那个数据，来保证生成正确的set更新数据块
             if (CollectionUtil.containsKeyIgnoreCase(first, key))
@@ -272,7 +272,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         Map<String, Object> first = new HashMap<>(data.iterator().next());
         List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);
         // 获取where条件中的参数名
-        List<String> whereFields = sqlTranslator.getPreparedSql(whereSql).getItem2();
+        List<String> whereFields = sqlTranslator.getPreparedSql(whereSql, first).getItem2();
         // 将where条件中的参数排除，因为where中的参数作为条件，而不是需要更新的值
         for (String key : whereFields) {
             if (CollectionUtil.containsKeyIgnoreCase(first, key))
@@ -650,23 +650,21 @@ public class BakiDao extends JdbcSupport implements Baki {
     @Override
     protected String getSql(String sql, Map<String, ?> args) {
         String trimEndedSql = SqlUtil.trimEnd(sql);
-        // 如果是sql名则从文件取sql
         if (sql.startsWith("&")) {
             if (xqlFileManager != null) {
                 // 经过XQLFileManager获取的sql，已经去除了段落注释和行注释
-                // 内部的自定义常量也替换完成，后续都没必要再来一次
                 trimEndedSql = xqlFileManager.get(sql.substring(1), args, strictDynamicSqlArg);
             } else {
                 throw new NullPointerException("can not find property 'xqlFileManager' or XQLFileManager object init failed!");
             }
         }
+        if (trimEndedSql.contains("${")) {
+            trimEndedSql = sqlTranslator.formatSql(trimEndedSql, args);
+        }
         if (trimEndedSql.contains("${") && xqlFileManager != null) {
             Map<String, String> constants = xqlFileManager.getConstants();
             for (String constantName : constants.keySet()) {
-                // 如果用户参数中不存在，才去常量里找，用户参数优先级最高
-                if (args == null || !args.containsKey(constantName)) {
-                    trimEndedSql = StringUtil.format(trimEndedSql, constantName, constants.get(constantName));
-                }
+                trimEndedSql = StringUtil.format(trimEndedSql, constantName, constants.get(constantName));
             }
         }
         if (sqlInterceptor != null) {

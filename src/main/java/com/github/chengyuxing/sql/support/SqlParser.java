@@ -70,7 +70,8 @@ public abstract class SqlParser {
         if (args == null) {
             args = Collections.emptyMap();
         }
-        Pair<String, List<String>> p = sqlTranslator().getPreparedSql(getSql(sql, args));
+        String fullSql = getSql(sql, args);
+        Pair<String, List<String>> p = sqlTranslator().getPreparedSql(fullSql, args);
         log.debug("Prepared SQL: {}", p.getItem1());
         return p;
     }

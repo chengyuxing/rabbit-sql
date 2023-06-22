@@ -90,6 +90,9 @@ public class SqlTranslator {
         }
         // resolve the sql string template first
         String fullSql = formatSql(sql, argx);
+        if (!fullSql.contains(namedParamPrefix)) {
+            return Pair.of(fullSql, Collections.emptyList());
+        }
         // exclude substr next
         Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSqlSubstr(fullSql);
         String noneStrSql = noneStrSqlAndHolder.getItem1();
@@ -131,8 +134,8 @@ public class SqlTranslator {
      * @param sql 带参数占位符的sql
      * @return 预编译SQL和顺序的参数名集合
      */
-    public Pair<String, List<String>> getPreparedSql(final String sql) {
-        return generateSql(sql, Collections.emptyMap(), true);
+    public Pair<String, List<String>> getPreparedSql(final String sql, Map<String, ?> args) {
+        return generateSql(sql, args, true);
     }
 
     /**
@@ -149,6 +152,9 @@ public class SqlTranslator {
      * @return 替换模版占位符后的字符串
      */
     public String formatSql(final String str, final Map<String, ?> args) {
+        if (!str.contains("${")) {
+            return str;
+        }
         if (args == null || args.isEmpty()) {
             return str;
         }

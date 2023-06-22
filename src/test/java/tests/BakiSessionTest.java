@@ -272,7 +272,7 @@ public class BakiSessionTest {
 
     @Test
     public void testQuery2() {
-        baki.query("select * from public.user").stream()
+        baki.query("select * from public.${table}").arg("table", "user").stream()
                 .forEach(System.out::println);
     }
 

@@ -132,7 +132,8 @@ public class SqlTranslator {
     /**
      * 解析传名参数sql处理为预编译的sql
      *
-     * @param sql 带参数占位符的sql
+     * @param sql  带参数占位符的sql
+     * @param args 参数
      * @return 预编译SQL和顺序的参数名集合
      */
     public Pair<String, List<String>> getPreparedSql(final String sql, Map<String, ?> args) {

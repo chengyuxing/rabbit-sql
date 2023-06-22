@@ -208,6 +208,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      *
      * @param tableName 表名
      * @param data      数据：需要更新的数据和条件参数
+     * @param sets      需要更新的字段
      * @param uncheck   <ul>
      *                  <li>true: 根据数据原封不动进行更新，如果有不存在的字段则抛出异常</li>
      *                  <li>false: 根据数据库表字段名排除数据中不存在的key，安全的更新</li>
@@ -216,22 +217,14 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @return 受影响的行数
      * @throws UncheckedSqlException sql执行过程中出现错误
      */
-    protected int update(String tableName, Collection<? extends Map<String, ?>> data, boolean uncheck, String where) {
+    protected int update(String tableName, Collection<? extends Map<String, ?>> data, List<String> sets, boolean uncheck, String where) {
         if (data.isEmpty()) {
             return 0;
         }
         String whereSql = getSql(where, Collections.emptyMap());
-        // 这里是防止引用类型导致移除了必要的参数
-        Map<String, ?> first = new HashMap<>(data.iterator().next());
+        Map<String, ?> updateSets = getUpdateSets(whereSql, data.iterator().next(), sets);
         List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);
-        // 获取where条件中的参数名
-        List<String> whereFields = sqlTranslator.getPreparedSql(whereSql, first).getItem2();
-        for (String key : whereFields) {
-            // 如果where条件中参数名是小写，而第一行数据中是大写，则也需要删除那个数据，来保证生成正确的set更新数据块
-            if (CollectionUtil.containsKeyIgnoreCase(first, key))
-                first.remove(key);
-        }
-        String update = sqlTranslator.generateNamedParamUpdate(tableName, first, tableFields);
+        String update = sqlTranslator.generateNamedParamUpdate(tableName, updateSets, tableFields);
         String sql = update + "\nwhere " + whereSql;
         return executeNonQuery(sql, data);
     }
@@ -253,6 +246,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      *
      * @param tableName 表名
      * @param data      参数：需要更新的数据和条件参数
+     * @param sets      需要更新的字段
      * @param uncheck   <ul>
      *                  <li>true: 根据数据原封不动进行更新，如果有不存在的字段则抛出异常</li>
      *                  <li>false: 根据数据库表字段名排除数据中不存在的key，安全的更新</li>
@@ -263,26 +257,18 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @throws UnsupportedOperationException 数据库或驱动版本不支持批量操作
      * @throws IllegalArgumentException      数据条数少于一条
      */
-    protected int fastUpdate(String tableName, Collection<? extends Map<String, ?>> data, boolean uncheck, String where) {
+    protected int fastUpdate(String tableName, Collection<? extends Map<String, ?>> data, List<String> sets, boolean uncheck, String where) {
         if (data.isEmpty()) {
             return 0;
         }
         String whereSql = getSql(where, Collections.emptyMap());
         List<String> sqls = new ArrayList<>(data.size());
-        Map<String, Object> first = new HashMap<>(data.iterator().next());
+        Map<String, ?> updateSets = getUpdateSets(whereSql, data.iterator().next(), sets);
         List<String> tableFields = uncheck ? new ArrayList<>() : getTableFields(tableName);
-        // 获取where条件中的参数名
-        List<String> whereFields = sqlTranslator.getPreparedSql(whereSql, first).getItem2();
-        // 将where条件中的参数排除，因为where中的参数作为条件，而不是需要更新的值
-        for (String key : whereFields) {
-            if (CollectionUtil.containsKeyIgnoreCase(first, key))
-                first.remove(key);
-        }
         // 以第一条记录构建出确定的传名参数的预编译sql，后续再处理为非预编译sql
-        String update = sqlTranslator.generateNamedParamUpdate(tableName, first, tableFields);
+        String update = sqlTranslator.generateNamedParamUpdate(tableName, updateSets, tableFields);
         String fullUpdatePrepared = update + "\nwhere " + whereSql;
         for (Map<String, ?> item : data) {
-            // 完整的参数字典
             String updateNonPrepared = sqlTranslator.generateSql(fullUpdatePrepared, item, false).getItem1();
             sqls.add(updateNonPrepared);
         }
@@ -290,6 +276,30 @@ public class BakiDao extends JdbcSupport implements Baki {
         int count = Arrays.stream(super.executeBatch(sqls)).sum();
         log.debug("{} rows updated!", count);
         return count;
+    }
+
+    protected Map<String, ?> getUpdateSets(String where, Map<String, ?> args, List<String> setFields) {
+        if (args == null || args.isEmpty()) {
+            return new HashMap<>();
+        }
+        Map<String, Object> sets = new HashMap<>();
+        if (setFields != null && !setFields.isEmpty()) {
+            for (String key : setFields) {
+                if (args.containsKey(key)) {
+                    sets.put(key, args.get(key));
+                }
+            }
+            return sets;
+        }
+        // 获取where条件中的参数名
+        List<String> whereFields = sqlTranslator.getPreparedSql(where, args).getItem2();
+        // 将where条件中的参数排除，因为where中的参数作为条件，而不是需要更新的值
+        for (Map.Entry<String, ?> e : args.entrySet()) {
+            if (!CollectionUtil.containsIgnoreCase(whereFields, e.getKey())) {
+                sets.put(e.getKey(), e.getValue());
+            }
+        }
+        return sets;
     }
 
     @Override
@@ -398,9 +408,9 @@ public class BakiDao extends JdbcSupport implements Baki {
             @Override
             public int save(Collection<? extends Map<String, ?>> data) {
                 if (fast) {
-                    return fastUpdate(tableName, data, !safe, where);
+                    return fastUpdate(tableName, data, sets, !safe, where);
                 }
-                return update(tableName, data, !safe, where);
+                return update(tableName, data, sets, !safe, where);
             }
         };
     }

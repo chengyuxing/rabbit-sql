@@ -152,9 +152,6 @@ public class SqlTranslator {
      * @return 替换模版占位符后的字符串
      */
     public String formatSql(final String str, final Map<String, ?> args) {
-        if (!str.contains("${")) {
-            return str;
-        }
         if (args == null || args.isEmpty()) {
             return str;
         }

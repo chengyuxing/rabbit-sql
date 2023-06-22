@@ -1,6 +1,8 @@
 package com.github.chengyuxing.sql.support.executor;
 
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -9,6 +11,7 @@ import java.util.Map;
 public abstract class UpdateExecutor {
     protected final String tableName;
     protected final String where;
+    protected List<String> sets;
     protected boolean safe = false;
     protected boolean fast = false;
 
@@ -21,6 +24,28 @@ public abstract class UpdateExecutor {
     public UpdateExecutor(String tableName, String where) {
         this.tableName = tableName;
         this.where = where;
+    }
+
+    /**
+     * 明确指定需要更新的字段
+     *
+     * @param sets 需要更新的字段
+     * @return 更新构建器
+     */
+    public UpdateExecutor sets(List<String> sets) {
+        this.sets = sets;
+        return this;
+    }
+
+    /**
+     * 明确指定需要更新的字段
+     *
+     * @param sets 需要更新的字段
+     * @return 更新构建器
+     */
+    public UpdateExecutor sets(String... sets) {
+        this.sets = Arrays.asList(sets);
+        return this;
     }
 
     /**

@@ -1,8 +1,5 @@
 package com.github.chengyuxing.sql;
 
-import com.github.chengyuxing.common.WatchDog;
-import com.github.chengyuxing.common.console.Color;
-import com.github.chengyuxing.common.console.Printer;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.script.IExpression;
 import com.github.chengyuxing.common.script.IPipe;
@@ -16,18 +13,20 @@ import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.github.chengyuxing.common.script.SimpleScriptParser.*;
+import static com.github.chengyuxing.common.script.SimpleScriptParser.TAGS;
 import static com.github.chengyuxing.common.utils.StringUtil.NEW_LINE;
 import static com.github.chengyuxing.common.utils.StringUtil.containsAnyIgnoreCase;
 import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
@@ -74,7 +73,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     private final ReentrantLock lock = new ReentrantLock();
     private final Map<String, Resource> resources = new HashMap<>();
     private final DynamicSqlParser dynamicSqlParser = new DynamicSqlParser();
-    private WatchDog watchDog = null;
     private volatile boolean initialized;
 
     /**
@@ -84,7 +82,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      *     <li><code>xql-file-manager.yml</code></li>
      *     <li><code>xql-file-manager.properties</code></li>
      * </ol>
-     * 则读取配置文件进行配置项初始化，如果文件同时存在，则按顺序读取。
+     * 则读取配置文件进行配置项初始化，如果文件同时存在，则读取yml。
      *
      * @see XQLFileManagerConfig
      */
@@ -120,7 +118,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * Sql文件解析器实例
+     * XQL文件管理器
      *
      * @param files 文件：[别名，文件名]
      */
@@ -289,7 +287,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                 }
             }
         }
-        if (constants != null && !constants.isEmpty()) {
+        if (constants.size() > 0) {
             for (Map.Entry<String, String> sqlE : sqlResource.entrySet()) {
                 String sql = sqlE.getValue();
                 for (Map.Entry<String, String> constE : constants.entrySet()) {
@@ -306,7 +304,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @throws UncheckedIOException 如果sql文件读取错误
      * @throws RuntimeException     uri格式错误
      */
-    protected void loadResource() {
+    protected void loadResources() {
         try {
             // 如果通过copyStateTo拷贝配置
             // 这里每次都会拷贝到配置文件中的files和filenames
@@ -320,13 +318,13 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                 String filename = fileE.getValue();
                 FileResource cr = new FileResource(filename);
                 if (cr.exists()) {
-                    String suffix = cr.getFilenameExtension();
-                    if (suffix != null && (suffix.equals("sql") || suffix.equals("xql"))) {
+                    String ext = cr.getFilenameExtension();
+                    if (ext != null && (ext.equals("sql") || ext.equals("xql"))) {
                         if (resources.containsKey(alias)) {
                             Resource resource = resources.get(alias);
                             long oldLastModified = resource.getLastModified();
                             long lastModified = cr.getLastModified();
-                            if (oldLastModified != -1 && oldLastModified != 0 && oldLastModified != lastModified) {
+                            if (oldLastModified > 0 && oldLastModified != lastModified) {
                                 putResource(alias, filename, cr);
                                 log.debug("reload modified sql file: " + filename);
                             }
@@ -349,18 +347,17 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * 加载管道
      */
     protected void loadPipes() {
-        if (!pipes.isEmpty()) {
-            try {
-                for (Map.Entry<String, String> entry : pipes.entrySet()) {
-                    pipeInstances.put(entry.getKey(), (IPipe<?>) ReflectUtil.getInstance(Class.forName(entry.getValue())));
-                }
-            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
-                     InvocationTargetException | NoSuchMethodException e) {
-                throw new RuntimeException("init pipe error: ", e);
+        if (pipes.isEmpty()) return;
+        try {
+            for (Map.Entry<String, String> entry : pipes.entrySet()) {
+                pipeInstances.put(entry.getKey(), (IPipe<?>) ReflectUtil.getInstance(Class.forName(entry.getValue())));
             }
+        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
+                 InvocationTargetException | NoSuchMethodException e) {
+            throw new RuntimeException("init pipe error: ", e);
         }
         if (log.isDebugEnabled()) {
-            if (!pipeInstances.isEmpty())
+            if (pipeInstances.size() > 0)
                 log.debug("loaded pipes {}", pipeInstances);
         }
     }
@@ -376,41 +373,13 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         lock.lock();
         try {
             loading = true;
-            loadResource();
+            loadResources();
             loadPipes();
-            if (this.checkModified) {
-                if (watchDog == null) {
-                    watchDog = new WatchDog(1);
-                    watchDog.addListener("sqlFileUpdateListener", this::loadResource, checkPeriod, TimeUnit.SECONDS);
-                }
-            } else {
-                if (watchDog != null) {
-                    watchDog.removeListener("sqlFileUpdateListener");
-                    watchDog.shutdown();
-                }
-            }
         } finally {
             loading = false;
             initialized = true;
             lock.unlock();
         }
-    }
-
-    /**
-     * 遍历查看已扫描的sql资源
-     */
-    public void look() {
-        foreach((k, v) -> v.getEntry().forEach((n, o) -> {
-            Color color = Color.PURPLE;
-            if (n.startsWith("${")) {
-                color = Color.GREEN;
-            }
-            String prefix = k + "." + n;
-            if (highlightSql) {
-                prefix = Printer.colorful(prefix, color);
-            }
-            System.out.println(prefix + " -> " + SqlUtil.buildPrintSql(o, highlightSql));
-        }));
     }
 
     /**
@@ -454,11 +423,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     public boolean contains(String name) {
         String alias = name.substring(0, name.indexOf("."));
-        if (!resources.containsKey(alias)) {
-            return false;
+        if (resources.containsKey(alias)) {
+            String sqlName = name.substring(name.indexOf(".") + 1);
+            return getResource(alias).getEntry().containsKey(sqlName);
         }
-        String sqlName = name.substring(name.indexOf(".") + 1);
-        return getResource(alias).getEntry().containsKey(sqlName);
+        return false;
     }
 
     /**
@@ -587,13 +556,15 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     @Override
     public void close() {
-        clearFiles();
-        clearResources();
-        pipes.clear();
-        pipeInstances.clear();
-        constants.clear();
-        if (watchDog != null) {
-            watchDog.shutdown();
+        lock.lock();
+        try {
+            clearFiles();
+            clearResources();
+            pipes.clear();
+            pipeInstances.clear();
+            constants.clear();
+        } finally {
+            lock.unlock();
         }
     }
 

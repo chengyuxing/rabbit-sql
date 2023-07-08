@@ -33,7 +33,9 @@ public class XQLFileManagerConfig {
     protected Map<String, String> constants = new HashMap<>();
     protected Map<String, IPipe<?>> pipeInstances = new HashMap<>();
     protected Map<String, String> pipes = new HashMap<>();
+    @Deprecated
     protected Integer checkPeriod = 30; //seconds
+    @Deprecated
     protected volatile Boolean checkModified = false;
     protected String charset = "UTF-8";
     protected String delimiter = ";";
@@ -119,8 +121,6 @@ public class XQLFileManagerConfig {
             setCharset(properties.getProperty("charset"));
             setNamedParamPrefix(properties.getProperty("namedParamPrefix", ":").charAt(0));
             setHighlightSql(properties.getBool("highlightSql"));
-            setCheckPeriod(properties.getInt("checkPeriod"));
-            setCheckModified(properties.getBool("checkModified"));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -238,7 +238,6 @@ public class XQLFileManagerConfig {
      * 配置动态sql脚本自定义管道字典
      *
      * @param pipeInstances 自定义管道字典 [管道名, 管道类实例]
-     * @see IPipe
      */
     public void setPipeInstances(Map<String, IPipe<?>> pipeInstances) {
         if (pipeInstances == null) {
@@ -273,7 +272,9 @@ public class XQLFileManagerConfig {
      * 获取文件检查周期，默认为30秒，配合方法：{@link #setCheckModified(Boolean)} {@code -> true} 来使用
      *
      * @return 文件检查周期
+     * @deprecated no supported
      */
+    @Deprecated
     public Integer getCheckPeriod() {
         return checkPeriod;
     }
@@ -282,7 +283,9 @@ public class XQLFileManagerConfig {
      * 设置文件检查周期（单位：秒）
      *
      * @param checkPeriod 文件检查周期，默认30秒
+     * @deprecated no supported
      */
+    @Deprecated
     public void setCheckPeriod(Integer checkPeriod) {
         if (checkPeriod == null) {
             return;
@@ -298,7 +301,9 @@ public class XQLFileManagerConfig {
      * 是否启用文件自动检查更新
      *
      * @return 文件检查更新状态
+     * @deprecated no supported
      */
+    @Deprecated
     public Boolean isCheckModified() {
         return checkModified;
     }
@@ -307,7 +312,9 @@ public class XQLFileManagerConfig {
      * 设置检查文件是否更新
      *
      * @param checkModified 是否检查更新
+     * @deprecated no supported
      */
+    @Deprecated
     public void setCheckModified(Boolean checkModified) {
         if (checkModified == null) {
             return;

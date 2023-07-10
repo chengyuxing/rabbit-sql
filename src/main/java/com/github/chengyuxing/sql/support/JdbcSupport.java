@@ -63,6 +63,9 @@ public abstract class JdbcSupport extends SqlParser {
 
     /**
      * debug sql.
+     *
+     * @param sql  sql
+     * @param args 参数
      */
     protected abstract void debugSql(String sql, Map<String, ?> args);
 

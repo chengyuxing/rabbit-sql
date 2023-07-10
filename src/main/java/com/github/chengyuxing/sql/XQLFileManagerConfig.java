@@ -9,6 +9,7 @@ import com.github.chengyuxing.sql.yaml.JoinConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
+import org.yaml.snakeyaml.representer.Representer;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;

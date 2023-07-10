@@ -9,6 +9,7 @@ import org.yaml.snakeyaml.introspector.PropertyUtils;
 public class HyphenatedPropertyUtil extends PropertyUtils {
     @Override
     public Property getProperty(Class<?> type, String name) {
+        setSkipMissingProperties(true);
         return super.getProperty(type, camelize(name));
     }
 

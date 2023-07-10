@@ -90,6 +90,7 @@ public class SqlFileTest {
 
     @Test
     public void bakiDao() throws Exception {
-        XQLFileManager xqlFileManager = new XQLFileManager();
+        XQLFileManager xqlFileManager = new XQLFileManager("xql-file-manager.old.yml");
+        System.out.println(xqlFileManager);
     }
 }

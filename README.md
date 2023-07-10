@@ -494,8 +494,6 @@ order by id;
   named-param-prefix: ':'
   pipes:
   highlight-sql: false
-  check-period: 30
-  check-modified: false
   ```
   
    `sql-file-manager.properties` 
@@ -517,8 +515,6 @@ order by id;
   pipes=
   namedParamPrefix=:
   highlightSql=false
-  checkPeriod=30
-  checkModified=false
   ```
 
 #### Options
@@ -536,11 +532,6 @@ order by id;
   Sql file **"k-v"** structure delimiter **default `;`**, follows standard multi sql structure delimiter by `;`, but there is a condition, if you have plsql in file e.g: `create function...` or `create procedure...`, it will be multi sql statement in one sql object, you need specific custom delimiter for resolve correctly:
 
   - e.g ( `;;`) double semicolon.
-
-- **checkModified**
-
-  Listening sql file modifiable for reload with default period 30 seconds if `true`, recommend set `false` where in production environment.
-
 
 
 [badge:maven]:https://img.shields.io/maven-central/v/com.github.chengyuxing/rabbit-sql

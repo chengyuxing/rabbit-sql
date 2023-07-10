@@ -488,8 +488,6 @@ order by id;
   named-param-prefix: ':'
   pipes:
   highlight-sql: false
-  check-period: 30
-  check-modified: false
   ```
   
   `xql-file-manager.properties`
@@ -511,8 +509,6 @@ order by id;
   pipes=
   namedParamPrefix=:
   highlightSql=false
-  checkPeriod=30
-  checkModified=false
   ```
 
 #### 配置项
@@ -530,11 +526,6 @@ order by id;
   sql文件 **"k-v"** 结构分隔符，**默认是单个分号（;）**遵循标准sql文件多段sql分隔符，但是有一种情况，如果sql文件内有plsql：**create function...** 或 **create procedure...**等， 内部会包含多段sql多个分号，为防止解析异常，单独设置自定义的分隔符:
 
   - 例如（ `;;` ）双分号，也是标准sql所支持的, **并且支持仅扫描已命名的sql**。
-
-- **checkModified**
-
-  如果为 `true`，则开启sql文件修改监听器，默认30秒检测一次，如果修改过则重新加载，生产环境建议设置为 `false` 。
-
 
 
 [badge:maven]:https://img.shields.io/maven-central/v/com.github.chengyuxing/rabbit-sql

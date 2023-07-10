@@ -122,9 +122,9 @@ public abstract class JdbcSupport extends SqlParser {
      * @throws UncheckedSqlException sql执行过程中出现错误
      */
     public DataRow execute(final String sql, Map<String, ?> args) {
-        Pair<String, List<String>> p = prepare(sql, args);
-        final List<String> argNames = p.getItem2();
-        final String preparedSql = p.getItem1();
+        Pair<String, List<String>> prepared = prepare(sql, args);
+        final List<String> argNames = prepared.getItem2();
+        final String preparedSql = prepared.getItem1();
         debugSql(preparedSql, args);
         try {
             return execute(preparedSql, sc -> {
@@ -139,7 +139,7 @@ public abstract class JdbcSupport extends SqlParser {
                     if (rows.size() == 1) {
                         result = DataRow.fromPair("result", rows.get(0), "type", "QUERY");
                     } else {
-                        result = DataRow.of(new String[]{"result", "type"}, new Object[]{rows, "QUERY"});
+                        result = DataRow.fromPair("result", rows, "type", "QUERY");
                     }
                 } else {
                     int count = sc.getUpdateCount();
@@ -176,9 +176,9 @@ public abstract class JdbcSupport extends SqlParser {
      * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误.
      */
     public Stream<DataRow> executeQueryStream(final String sql, Map<String, ?> args) {
-        Pair<String, List<String>> preparedSqlAndArgNames = prepare(sql, args);
-        final List<String> argNames = preparedSqlAndArgNames.getItem2();
-        final String preparedSql = preparedSqlAndArgNames.getItem1();
+        Pair<String, List<String>> prepared = prepare(sql, args);
+        final List<String> argNames = prepared.getItem2();
+        final String preparedSql = prepared.getItem1();
         debugSql(preparedSql, args);
         UncheckedCloseable close = null;
         try {
@@ -283,9 +283,9 @@ public abstract class JdbcSupport extends SqlParser {
      */
     public int executeNonQuery(final String sql, Collection<? extends Map<String, ?>> args) {
         Map<String, ?> first = args.iterator().next();
-        Pair<String, List<String>> preparedSqlAndArgNames = prepare(sql, first);
-        final List<String> argNames = preparedSqlAndArgNames.getItem2();
-        final String preparedSql = preparedSqlAndArgNames.getItem1();
+        Pair<String, List<String>> prepared = prepare(sql, first);
+        final List<String> argNames = prepared.getItem2();
+        final String preparedSql = prepared.getItem1();
         debugSql(preparedSql, first);
         try {
             return execute(preparedSql, sc -> {

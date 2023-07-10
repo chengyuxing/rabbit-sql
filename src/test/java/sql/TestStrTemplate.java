@@ -28,7 +28,7 @@ public class TestStrTemplate {
 
     @Test
     public void testO() throws Exception {
-        System.out.println(sqlTranslator.formatSql("${a.b}", Args.create("a", "b")));
+        System.out.println(sqlTranslator.formatSql("${a}", Args.create("a", "b")));
     }
 
     @Test

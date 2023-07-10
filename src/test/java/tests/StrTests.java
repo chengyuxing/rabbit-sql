@@ -27,7 +27,6 @@ public class StrTests {
         xqlFileManager.setHighlightSql(true);
         xqlFileManager.setPipes(Args.of("len", "tests.Length"));
         xqlFileManager.init();
-        xqlFileManager.look();
     }
 
     @Test
@@ -88,7 +87,6 @@ public class StrTests {
                     "id = :id and name = :name",
                     args,
                     Arrays.asList("name", "age", "work"),
-                    Arrays.asList("id", "name", "age", "work", "address"),
                     false);
             list.add(update);
         }

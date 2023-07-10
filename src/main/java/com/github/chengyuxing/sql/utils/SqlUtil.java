@@ -60,6 +60,9 @@ public class SqlUtil {
         if (obj instanceof String) {
             return safeQuote((String) obj);
         }
+        if (obj instanceof Character) {
+            return safeQuote(obj.toString());
+        }
         if (ReflectUtil.isBasicType(obj)) {
             return obj.toString();
         }

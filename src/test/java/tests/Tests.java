@@ -239,7 +239,6 @@ public class Tests {
         manager.setConstants(Args.of("db", "test").add("fields", "name, address, enable"));
         manager.init();
         System.out.println("-------------");
-        manager.look();
     }
 
     @Test

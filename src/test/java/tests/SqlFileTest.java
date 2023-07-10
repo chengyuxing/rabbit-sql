@@ -54,7 +54,6 @@ public class SqlFileTest {
         XQLFileManager sqlFileManager = new XQLFileManager();
         sqlFileManager.add("rabbit", "file:/Users/chengyuxing/Downloads/local.sql");
         sqlFileManager.init();
-        sqlFileManager.look();
     }
 
     public static void main(String[] args) {
@@ -80,7 +79,6 @@ public class SqlFileTest {
     public void nutzIoc() throws Exception {
         XQLFileManager sqlFileManager = ioc.get(XQLFileManager.class, "sqlFileManager");
         sqlFileManager.init();
-        sqlFileManager.look();
     }
 
     @Test

@@ -62,6 +62,11 @@ public abstract class JdbcSupport extends SqlParser {
     protected abstract boolean checkParameterType();
 
     /**
+     * debug sql.
+     */
+    protected abstract void debugSql(String sql, Map<String, ?> args);
+
+    /**
      * 执行一句预编译的sql
      *
      * @param sql      sql
@@ -108,9 +113,10 @@ public abstract class JdbcSupport extends SqlParser {
      * @throws UncheckedSqlException sql执行过程中出现错误
      */
     public DataRow execute(final String sql, Map<String, ?> args) {
-        Pair<String, List<String>> p = parse(sql, args);
+        Pair<String, List<String>> p = prepare(sql, args);
         final List<String> argNames = p.getItem2();
         final String preparedSql = p.getItem1();
+        debugSql(preparedSql, args);
         try {
             return execute(preparedSql, sc -> {
                 JdbcUtil.setSqlTypedArgs(sc, checkParameterType(), args, argNames);
@@ -161,10 +167,10 @@ public abstract class JdbcSupport extends SqlParser {
      * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误.
      */
     public Stream<DataRow> executeQueryStream(final String sql, Map<String, ?> args) {
-        Pair<String, List<String>> preparedSqlAndArgNames = parse(sql, args);
+        Pair<String, List<String>> preparedSqlAndArgNames = prepare(sql, args);
         final List<String> argNames = preparedSqlAndArgNames.getItem2();
         final String preparedSql = preparedSqlAndArgNames.getItem1();
-
+        debugSql(preparedSql, args);
         UncheckedCloseable close = null;
         try {
             Connection connection = getConnection();
@@ -222,11 +228,12 @@ public abstract class JdbcSupport extends SqlParser {
             Connection connection = getConnection();
             if (JdbcUtil.supportsBatchUpdates(connection)) {
                 try {
+                    debugSql(sqls.get(0), Collections.emptyMap());
                     statement = connection.createStatement();
                     Map<String, ?> empty = Collections.emptyMap();
                     for (String sql : sqls) {
                         if (!StringUtil.isEmpty(sql)) {
-                            statement.addBatch(getSql(sql, empty));
+                            statement.addBatch(parseSql(sql, empty));
                         }
                     }
                     return statement.executeBatch();
@@ -267,9 +274,10 @@ public abstract class JdbcSupport extends SqlParser {
      */
     public int executeNonQuery(final String sql, Collection<? extends Map<String, ?>> args) {
         Map<String, ?> first = args.iterator().next();
-        Pair<String, List<String>> preparedSqlAndArgNames = parse(sql, first);
+        Pair<String, List<String>> preparedSqlAndArgNames = prepare(sql, first);
         final List<String> argNames = preparedSqlAndArgNames.getItem2();
         final String preparedSql = preparedSqlAndArgNames.getItem1();
+        debugSql(preparedSql, first);
         try {
             return execute(preparedSql, sc -> {
                 if (args.isEmpty()) {
@@ -307,10 +315,10 @@ public abstract class JdbcSupport extends SqlParser {
      * @throws UncheckedSqlException 存储过程或函数执行过程中出现错误
      */
     public DataRow executeCallStatement(final String procedure, Map<String, Param> args) {
-        Pair<String, List<String>> preparedSqlAndArgNames = parse(procedure, args);
+        Pair<String, List<String>> preparedSqlAndArgNames = prepare(procedure, args);
         final String executeSql = preparedSqlAndArgNames.getItem1();
         final List<String> argNames = preparedSqlAndArgNames.getItem2();
-
+        debugSql(executeSql, args);
         CallableStatement statement = null;
         Connection connection = getConnection();
         try {

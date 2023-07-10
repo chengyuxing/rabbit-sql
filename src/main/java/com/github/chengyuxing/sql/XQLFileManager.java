@@ -290,6 +290,9 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         if (constants.size() > 0) {
             for (Map.Entry<String, String> sqlE : sqlResource.entrySet()) {
                 String sql = sqlE.getValue();
+                if (!sql.contains("${")) {
+                    continue;
+                }
                 for (Map.Entry<String, String> constE : constants.entrySet()) {
                     sql = StringUtil.format(sql, constE.getKey(), constE.getValue());
                 }

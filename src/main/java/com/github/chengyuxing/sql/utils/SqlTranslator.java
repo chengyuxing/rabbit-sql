@@ -85,10 +85,7 @@ public class SqlTranslator {
      * @return 预编译/普通sql和顺序的参数名集合
      */
     public Pair<String, List<String>> generateSql(final String sql, Map<String, ?> args, boolean prepare) {
-        Map<String, ?> argx = new HashMap<>();
-        if (args != null && !args.isEmpty()) {
-            argx = new HashMap<>(args);
-        }
+        Map<String, ?> argx = args == null ? new HashMap<>() : args;
         // resolve the sql string template first
         String fullSql = formatSql(sql, argx);
         if (!fullSql.contains(namedParamPrefix)) {
@@ -113,18 +110,15 @@ public class SqlTranslator {
                     String value = quoteFormatValueIfNecessary(argx.get(name));
                     noneStrSql = StringUtil.replaceFirst(noneStrSql, namedParamPrefix + name, value);
                 } else if (containsKeyIgnoreCase(argx, name)) {
-                    log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your sql's named parameter and args.", name, args, name);
+                    log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your sql's named parameter and args.", name, argx, name);
                     String value = quoteFormatValueIfNecessary(getValueIgnoreCase(argx, name));
                     noneStrSql = StringUtil.replaceFirstIgnoreCase(noneStrSql, namedParamPrefix + name, value);
                 }
             }
         }
         // finally, set placeholder into none-string-part sql
-        Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
-        if (!placeholderMapper.isEmpty()) {
-            for (Map.Entry<String, String> e : placeholderMapper.entrySet()) {
-                noneStrSql = noneStrSql.replace(e.getKey(), e.getValue());
-            }
+        for (Map.Entry<String, String> e : noneStrSqlAndHolder.getItem2().entrySet()) {
+            noneStrSql = noneStrSql.replace(e.getKey(), e.getValue());
         }
         return Pair.of(noneStrSql, names);
     }
@@ -146,7 +140,7 @@ public class SqlTranslator {
      * <blockquote>
      * <pre>字符串：select ${ fields } from test.user where ${  cnd} and id in (${:idArr}) or id = ${:idArr.1}</pre>
      * <pre>参数：{fields: "id, name", cnd: "name = 'cyx'", idArr: ["a", "b", "c"]}</pre>
-     * <pre>结果：select id, name from test.user where name = 'cyx' and id in ("a", "b", "c") or id = "b"</pre>
+     * <pre>结果：select id, name from test.user where name = 'cyx' and id in ('a', 'b', 'c') or id = 'b'</pre>
      * </blockquote>
      *
      * @param str  带有字符串模版占位符的字符串
@@ -240,10 +234,6 @@ public class SqlTranslator {
             if (row.containsKey(key)) {
                 f.add(key);
                 v.add(quoteFormatValueIfNecessary(row.get(key)));
-            } else if (containsKeyIgnoreCase(row, key)) {
-                log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your sql's named parameter and args.", key, row, key);
-                f.add(key);
-                v.add(quoteFormatValueIfNecessary(getValueIgnoreCase(row, key)));
             }
         }
         return "insert into " + tableName + "(" + f + ") \nvalues (" + v + ")";
@@ -266,7 +256,7 @@ public class SqlTranslator {
         StringJoiner f = new StringJoiner(", ");
         StringJoiner h = new StringJoiner(", ");
         for (String key : keys) {
-            if (row.containsKey(key) || containsKeyIgnoreCase(row, key)) {
+            if (row.containsKey(key)) {
                 f.add(key);
                 h.add(namedParamPrefix + key);
             }
@@ -280,12 +270,11 @@ public class SqlTranslator {
      * @param tableName   表名
      * @param where       where条件
      * @param data        数据
-     * @param setFields   更新需要包含的字段集合
      * @param tableFields 表字段集合
      * @return 传名参数占位符的更新语句
      */
-    public String generateNamedParamUpdate(String tableName, String where, Map<String, ?> data, List<String> setFields, List<String> tableFields) {
-        return generateUpdate(tableName, where, data, setFields, tableFields, true);
+    public String generateNamedParamUpdate(String tableName, String where, Map<String, ?> data, List<String> tableFields) {
+        return generateUpdate(tableName, where, data, tableFields, true);
     }
 
     /**
@@ -294,14 +283,13 @@ public class SqlTranslator {
      * @param tableName    表名
      * @param where        where条件
      * @param data         数据
-     * @param setFields    更新需要包含的字段集合
      * @param tableFields  表字段集合
      * @param isNamedParam 是否传名参数占位符
      * @return 传名参数占位符的sql或普通sql
      */
-    public String generateUpdate(String tableName, String where, Map<String, ?> data, List<String> setFields, List<String> tableFields, boolean isNamedParam) {
+    public String generateUpdate(String tableName, String where, Map<String, ?> data, List<String> tableFields, boolean isNamedParam) {
         String whereStatement = where;
-        Map<String, ?> updateSets = getUpdateSets(whereStatement, data, setFields);
+        Map<String, ?> updateSets = getUpdateSets(whereStatement, data);
         if (updateSets.isEmpty()) {
             throw new IllegalArgumentException("empty field set, generate update sql error.");
         }
@@ -312,7 +300,7 @@ public class SqlTranslator {
         StringJoiner sb = new StringJoiner(",\n\t");
         if (isNamedParam) {
             for (String key : keys) {
-                if (updateSets.containsKey(key) || containsKeyIgnoreCase(updateSets, key)) {
+                if (updateSets.containsKey(key)) {
                     sb.add(key + " = " + namedParamPrefix + key);
                 }
             }
@@ -320,10 +308,6 @@ public class SqlTranslator {
             for (String key : keys) {
                 if (updateSets.containsKey(key)) {
                     String v = quoteFormatValueIfNecessary(updateSets.get(key));
-                    sb.add(key + " = " + v);
-                } else if (containsKeyIgnoreCase(updateSets, key)) {
-                    log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your sql's named parameter and args.", key, updateSets, key);
-                    String v = quoteFormatValueIfNecessary(getValueIgnoreCase(updateSets, key));
                     sb.add(key + " = " + v);
                 }
             }
@@ -335,27 +319,19 @@ public class SqlTranslator {
     /**
      * 获取update语句中set需要的参数字典
      *
-     * @param where     可包含参数的where条件
-     * @param args      参数字典
-     * @param setFields 明确的set字段集合（如果为空，则自动从where条件中的命名参数来判断）
+     * @param where 可包含参数的where条件
+     * @param args  参数字典
      * @return set参数字典
      */
-    public Map<String, ?> getUpdateSets(String where, Map<String, ?> args, List<String> setFields) {
-        Map<String, ?> argx = new HashMap<>();
-        if (args != null) {
-            argx = new HashMap<>(args);
+    public Map<String, ?> getUpdateSets(String where, Map<String, ?> args) {
+        if (args == null || args.isEmpty()) {
+            return new HashMap<>();
         }
         Map<String, Object> sets = new HashMap<>();
-        if (setFields != null && !setFields.isEmpty()) {
-            for (String key : setFields) {
-                sets.put(key, CollectionUtil.getValueIgnoreCase(argx, key));
-            }
-            return sets;
-        }
         // 获取where条件中的参数名
-        List<String> whereFields = getPreparedSql(where, argx).getItem2();
+        List<String> whereFields = getPreparedSql(where, args).getItem2();
         // 将where条件中的参数排除，因为where中的参数作为条件，而不是需要更新的值
-        for (Map.Entry<String, ?> e : argx.entrySet()) {
+        for (Map.Entry<String, ?> e : args.entrySet()) {
             if (!CollectionUtil.containsIgnoreCase(whereFields, e.getKey())) {
                 sets.put(e.getKey(), e.getValue());
             }

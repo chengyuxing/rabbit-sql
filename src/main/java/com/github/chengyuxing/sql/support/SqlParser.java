@@ -50,7 +50,7 @@ public abstract class SqlParser {
      * @param args 参数
      * @return 处理后的sql
      */
-    protected abstract String getSql(String sql, Map<String, ?> args);
+    protected abstract String parseSql(String sql, Map<String, ?> args);
 
     /**
      * sql翻译帮助
@@ -66,12 +66,10 @@ public abstract class SqlParser {
      * @param args 参数字典
      * @return 预编译sql和参数名
      */
-    protected Pair<String, List<String>> parse(String sql, Map<String, ?> args) {
-        if (args == null) {
-            args = Collections.emptyMap();
-        }
-        String fullSql = getSql(sql, args);
-        Pair<String, List<String>> p = sqlTranslator().getPreparedSql(fullSql, args);
+    protected Pair<String, List<String>> prepare(String sql, Map<String, ?> args) {
+        Map<String, ?> map = args == null ? Collections.emptyMap() : args;
+        String fullSql = parseSql(sql, map);
+        Pair<String, List<String>> p = sqlTranslator().getPreparedSql(fullSql, map);
         log.debug("Prepared SQL: {}", p.getItem1());
         return p;
     }

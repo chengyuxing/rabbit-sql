@@ -57,6 +57,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     private char namedParamPrefix = ':';
     private boolean strictDynamicSqlArg = true;
     private boolean checkParameterType = true;
+    @Deprecated
     private boolean debugFullSql = false;
     private boolean highlightSql = false;
 
@@ -180,7 +181,7 @@ public class BakiDao extends JdbcSupport implements Baki {
 
     /**
      * 更新<br>
-     * e.g. {@code update(<table>, <List>, "id = :id")}<br>
+     * e.g. {@code update(<table>, "id = :id", <List>)}<br>
      * 关于此方法的说明举例：
      * <blockquote>
      * 根据第一条数据生成预编译SQL
@@ -196,7 +197,6 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param tableName 表名
      * @param where     条件：条件中需要有传名参数作为更新的条件依据
      * @param data      数据：需要更新的数据和条件参数
-     * @param sets      需要更新的字段
      * @param safe      <ul>
      *                  <li>true: 根据数据库表字段名排除数据中不存在的key，安全的更新</li>
      *                  <li>false: 根据数据原封不动进行更新，如果有不存在的字段则抛出异常</li>
@@ -204,16 +204,15 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @return 受影响的行数
      * @throws UncheckedSqlException sql执行过程中出现错误
      */
-    protected int update(String tableName, String where, Collection<? extends Map<String, ?>> data, List<String> sets, boolean safe) {
+    protected int update(String tableName, String where, Collection<? extends Map<String, ?>> data, boolean safe) {
         if (data.isEmpty()) {
             return 0;
         }
-        String whereStatement = getSql(where, Collections.emptyMap());
+        String whereStatement = parseSql(where, Collections.emptyMap());
         List<String> tableFields = safe ? getTableFields(tableName) : new ArrayList<>();
         String updateStatement = sqlTranslator.generateNamedParamUpdate(tableName,
                 whereStatement,
                 data.iterator().next(),
-                sets,
                 tableFields);
         return executeNonQuery(updateStatement, data);
     }
@@ -221,7 +220,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     /**
      * 更新（非预编译SQL）<br>
      * 注：不支持更新二进制对象<br>
-     * e.g. {@code fastUpdate(<table>, <List<Map>>, "id = :id")}
+     * e.g. {@code fastUpdate(<table>, "id = :id", <List<Map>>)}
      * 关于此方法的说明举例：
      * <blockquote>
      * <pre>
@@ -236,7 +235,6 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param tableName 表名
      * @param where     条件：条件中需要有传名参数作为更新的条件依据
      * @param data      参数：需要更新的数据和条件参数
-     * @param sets      需要更新的字段
      * @param safe      <ul>
      *                  <li>true: 根据数据库表字段名排除数据中不存在的key，安全的更新</li>
      *                  <li>false: 根据数据原封不动进行更新，如果有不存在的字段则抛出异常</li>
@@ -246,18 +244,17 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @throws UnsupportedOperationException 数据库或驱动版本不支持批量操作
      * @throws IllegalArgumentException      数据条数少于一条
      */
-    protected int fastUpdate(String tableName, String where, Collection<? extends Map<String, ?>> data, List<String> sets, boolean safe) {
+    protected int fastUpdate(String tableName, String where, Collection<? extends Map<String, ?>> data, boolean safe) {
         if (data.isEmpty()) {
             return 0;
         }
-        String whereStatement = getSql(where, Collections.emptyMap());
+        String whereStatement = parseSql(where, Collections.emptyMap());
         List<String> tableFields = safe ? getTableFields(tableName) : new ArrayList<>();
         List<String> sqls = new ArrayList<>(data.size());
         for (Map<String, ?> item : data) {
             String updateStatement = sqlTranslator.generateUpdate(tableName,
                     whereStatement,
                     item,
-                    sets,
                     tableFields,
                     false);
             sqls.add(updateStatement);
@@ -350,7 +347,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 if (pagedArgs != null) {
                     args.putAll(pagedArgs);
                 }
-                String query = getSql(sql, args);
+                String query = parseSql(sql, args);
                 try (Stream<DataRow> s = executeQueryStream(pageHelper.pagedSql(query), args)) {
                     return s.peek(d -> d.remove(PageHelper.ROW_NUM_KEY)).findFirst();
                 }
@@ -374,9 +371,9 @@ public class BakiDao extends JdbcSupport implements Baki {
             @Override
             public int save(Collection<? extends Map<String, ?>> data) {
                 if (fast) {
-                    return fastUpdate(tableName, where, data, sets, safe);
+                    return fastUpdate(tableName, where, data, safe);
                 }
-                return update(tableName, where, data, sets, safe);
+                return update(tableName, where, data, safe);
             }
         };
     }
@@ -404,7 +401,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         return new DeleteExecutor(tableName) {
             @Override
             public int execute(String where) {
-                String whereSql = getSql(where, Collections.emptyMap());
+                String whereSql = parseSql(where, Collections.emptyMap());
                 String w = StringUtil.startsWithIgnoreCase(whereSql.trim(), "where") ? whereSql : "\nwhere " + whereSql;
                 return executeNonQuery("delete from " + tableName + w, Collections.singletonList(args));
             }
@@ -447,7 +444,7 @@ public class BakiDao extends JdbcSupport implements Baki {
 
         @Override
         public <T> PagedResource<T> collect(Function<DataRow, T> mapper) {
-            String query = getSql(recordQuery, args);
+            String query = parseSql(recordQuery, args);
             if (count == null) {
                 String cq = countQuery;
                 if (cq == null) {
@@ -604,7 +601,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @throws UncheckedSqlException 执行查询表字段出现异常
      */
     protected List<String> getTableFields(String tableName) {
-        String sql = getSql("select * from " + tableName + " where 1 = 2", Collections.emptyMap());
+        String sql = parseSql("select * from " + tableName + " where 1 = 2", Collections.emptyMap());
         return execute(sql, sc -> {
             ResultSet fieldsResultSet = sc.executeQuery();
             List<String> fields = Arrays.asList(JdbcUtil.createNames(fieldsResultSet, ""));
@@ -624,30 +621,32 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @throws IllegalArgumentException 如果严格模式下动态sql参数为null或空
      */
     @Override
-    protected String getSql(String sql, Map<String, ?> args) {
-        String trimEndedSql = SqlUtil.trimEnd(sql);
-        if (sql.startsWith("&")) {
+    protected String parseSql(String sql, Map<String, ?> args) {
+        String trimSql = SqlUtil.trimEnd(sql.trim());
+        if (trimSql.startsWith("&")) {
             if (xqlFileManager != null) {
                 // 经过XQLFileManager获取的sql，已经去除了段落注释和行注释
-                trimEndedSql = xqlFileManager.get(sql.substring(1), args, strictDynamicSqlArg);
+                trimSql = xqlFileManager.get(trimSql.substring(1), args, strictDynamicSqlArg);
             } else {
                 throw new NullPointerException("can not find property 'xqlFileManager' or XQLFileManager object init failed!");
             }
         }
-        if (trimEndedSql.contains("${")) {
-            trimEndedSql = sqlTranslator.formatSql(trimEndedSql, args);
+        // 优先替换用户参数的模版字符串
+        if (trimSql.contains("${")) {
+            trimSql = sqlTranslator.formatSql(trimSql, args);
         }
-        if (trimEndedSql.contains("${") && xqlFileManager != null) {
+        // 如果还有${，再从常量中查找替换
+        if (trimSql.contains("${") && xqlFileManager != null) {
             Map<String, String> constants = xqlFileManager.getConstants();
             for (String constantName : constants.keySet()) {
-                trimEndedSql = StringUtil.format(trimEndedSql, constantName, constants.get(constantName));
+                trimSql = StringUtil.format(trimSql, constantName, constants.get(constantName));
             }
         }
         if (sqlInterceptor != null) {
-            String error = "reject to execute invalid sql.\nSQL: " + trimEndedSql + "\nArgs: " + args;
+            String error = "reject to execute invalid sql.\nSQL: " + trimSql + "\nArgs: " + args;
             boolean request;
             try {
-                request = sqlInterceptor.prevHandle(trimEndedSql, args, metaData());
+                request = sqlInterceptor.prevHandle(trimSql, args, metaData());
             } catch (Throwable e) {
                 throw new IllegalSqlException(error, e);
             }
@@ -655,15 +654,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 throw new IllegalSqlException(error);
             }
         }
-        if (log.isDebugEnabled()) {
-            log.debug("SQL: {}", SqlUtil.buildPrintSql(trimEndedSql, highlightSql));
-            log.debug("Args: {}", args);
-            if (debugFullSql) {
-                String fullSql = sqlTranslator().generateSql(trimEndedSql, args, false).getItem1();
-                log.debug("Full SQL: {}", SqlUtil.buildPrintSql(fullSql, highlightSql));
-            }
-        }
-        return trimEndedSql;
+        return trimSql;
     }
 
     @Override
@@ -674,6 +665,14 @@ public class BakiDao extends JdbcSupport implements Baki {
     @Override
     protected boolean checkParameterType() {
         return checkParameterType;
+    }
+
+    @Override
+    protected void debugSql(String sql, Map<String, ?> args) {
+        if (log.isDebugEnabled()) {
+            log.debug("SQL: {}", SqlUtil.buildPrintSql(sql, highlightSql));
+            log.debug("Args: {}", args);
+        }
     }
 
     @Override
@@ -742,6 +741,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      *
      * @param debugFullSql 是否调试模式输出拼接完整的sql
      */
+    @Deprecated
     public void setDebugFullSql(boolean debugFullSql) {
         this.debugFullSql = debugFullSql;
     }

@@ -668,14 +668,6 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    protected void debugSql(String sql, Map<String, ?> args) {
-        if (log.isDebugEnabled()) {
-            log.debug("SQL: {}", SqlUtil.buildConsoleSql(sql));
-            log.debug("Args: {}", args);
-        }
-    }
-
-    @Override
     protected DataSource getDataSource() {
         return dataSource;
     }

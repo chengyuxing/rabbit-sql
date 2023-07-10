@@ -9,6 +9,7 @@ import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.types.ParamMode;
 import com.github.chengyuxing.sql.utils.JdbcUtil;
+import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,7 +68,12 @@ public abstract class JdbcSupport extends SqlParser {
      * @param sql  sql
      * @param args 参数
      */
-    protected abstract void debugSql(String sql, Map<String, ?> args);
+    protected void debugSql(String sql, Map<String, ?> args) {
+        if (log.isDebugEnabled()) {
+            log.debug("SQL: {}", SqlUtil.buildConsoleSql(sql));
+            log.debug("Args: {}", args);
+        }
+    }
 
     /**
      * 执行一句预编译的sql

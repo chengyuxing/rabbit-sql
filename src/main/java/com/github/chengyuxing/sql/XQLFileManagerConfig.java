@@ -40,6 +40,7 @@ public class XQLFileManagerConfig {
     protected String charset = "UTF-8";
     protected String delimiter = ";";
     protected Character namedParamPrefix = ':';
+    @Deprecated
     protected Boolean highlightSql = false;
     // ----------------optional properties------------------
 
@@ -120,7 +121,6 @@ public class XQLFileManagerConfig {
             setDelimiter(properties.getProperty("delimiter"));
             setCharset(properties.getProperty("charset"));
             setNamedParamPrefix(properties.getProperty("namedParamPrefix", ":").charAt(0));
-            setHighlightSql(properties.getBool("highlightSql"));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -413,6 +413,7 @@ public class XQLFileManagerConfig {
      *
      * @return 是否高亮
      */
+    @Deprecated
     public Boolean isHighlightSql() {
         return highlightSql;
     }
@@ -422,6 +423,7 @@ public class XQLFileManagerConfig {
      *
      * @param highlightSql 是否高亮
      */
+    @Deprecated
     public void setHighlightSql(Boolean highlightSql) {
         if (highlightSql == null) {
             return;

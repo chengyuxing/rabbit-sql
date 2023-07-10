@@ -248,7 +248,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                         if (trimLine.endsWith(delimiter)) {
                             String naSql = removeAnnotationBlock(String.join(NEW_LINE, sqlBodyBuffer));
                             entry.put(blockName, naSql.substring(0, naSql.lastIndexOf(delimiter)).trim());
-                            log.debug("scan {} to get sql({}) [{}.{}]：{}", filename, delimiter, alias, blockName, SqlUtil.buildPrintSql(entry.get(blockName), highlightSql));
+                            log.debug("scan {} to get sql({}) [{}.{}]：{}", filename, delimiter, alias, blockName, SqlUtil.buildConsoleSql(entry.get(blockName)));
                             blockName = "";
                             sqlBodyBuffer.clear();
                         }
@@ -259,7 +259,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             if (!blockName.equals("")) {
                 String lastSql = String.join(NEW_LINE, sqlBodyBuffer);
                 entry.put(blockName, removeAnnotationBlock(lastSql));
-                log.debug("scan {} to get sql({}) [{}.{}]：{}", filename, delimiter, alias, blockName, SqlUtil.buildPrintSql(lastSql, highlightSql));
+                log.debug("scan {} to get sql({}) [{}.{}]：{}", filename, delimiter, alias, blockName, SqlUtil.buildConsoleSql(lastSql));
             }
         }
         if (!entry.isEmpty()) {

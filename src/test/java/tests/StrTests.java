@@ -8,6 +8,10 @@ import com.github.chengyuxing.sql.utils.SqlTranslator;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
@@ -105,5 +109,11 @@ public class StrTests {
 //        String w = StringUtil.startsWithIgnoreCase(where.trim(), "where") ? where : "\nwhere " + where;
 //        System.out.println(update + w);
 //        System.out.println(data);
+    }
+
+    @Test
+    public void tst35() throws IOException {
+        String sql = SqlUtil.highlightSql("select 1,2,3, current_timestamp;");
+        Files.write(Paths.get("/Users/chengyuxing/Downloads/bbb.txt"), sql.getBytes(StandardCharsets.UTF_8));
     }
 }

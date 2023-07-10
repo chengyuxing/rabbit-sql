@@ -2,6 +2,7 @@ package com.github.chengyuxing.sql.support;
 
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.sql.utils.SqlTranslator;
+import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,7 +71,7 @@ public abstract class SqlParser {
         Map<String, ?> map = args == null ? Collections.emptyMap() : args;
         String fullSql = parseSql(sql, map);
         Pair<String, List<String>> p = sqlTranslator().getPreparedSql(fullSql, map);
-        log.debug("Prepared SQL: {}", p.getItem1());
+        log.debug("Prepared SQL: {}", SqlUtil.buildConsoleSql(p.getItem1()));
         return p;
     }
 }

@@ -59,6 +59,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     private boolean checkParameterType = true;
     @Deprecated
     private boolean debugFullSql = false;
+    @Deprecated
     private boolean highlightSql = false;
 
     /**
@@ -91,7 +92,6 @@ public class BakiDao extends JdbcSupport implements Baki {
     public void setXqlFileManager(XQLFileManager xqlFileManager) {
         this.xqlFileManager = xqlFileManager;
         this.xqlFileManager.setNamedParamPrefix(namedParamPrefix);
-        this.xqlFileManager.setHighlightSql(highlightSql);
         if (!xqlFileManager.isInitialized()) {
             xqlFileManager.init();
         }
@@ -171,7 +171,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 String sql = sqlTranslator.generateInsert(tableName, item, tableFields);
                 sqls.add(sql);
             }
-            log.debug("preview sql: {}\nmore...", SqlUtil.buildPrintSql(sqls.get(0), highlightSql));
+            log.debug("preview sql: {}\nmore...", SqlUtil.buildConsoleSql(sqls.get(0)));
             int count = super.executeBatch(sqls).length;
             log.debug("{} rows inserted!", count);
             return count;
@@ -259,7 +259,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                     false);
             sqls.add(updateStatement);
         }
-        log.debug("preview sql: {}\nmore...", SqlUtil.buildPrintSql(sqls.get(0), highlightSql));
+        log.debug("preview sql: {}\nmore...", SqlUtil.buildConsoleSql(sqls.get(0)));
         int count = Arrays.stream(super.executeBatch(sqls)).sum();
         log.debug("{} rows updated!", count);
         return count;
@@ -670,7 +670,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     @Override
     protected void debugSql(String sql, Map<String, ?> args) {
         if (log.isDebugEnabled()) {
-            log.debug("SQL: {}", SqlUtil.buildPrintSql(sql, highlightSql));
+            log.debug("SQL: {}", SqlUtil.buildConsoleSql(sql));
             log.debug("Args: {}", args);
         }
     }
@@ -751,6 +751,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      *
      * @return 是否高亮
      */
+    @Deprecated
     public boolean isHighlightSql() {
         return highlightSql;
     }
@@ -760,6 +761,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      *
      * @param highlightSql 是否高亮
      */
+    @Deprecated
     public void setHighlightSql(boolean highlightSql) {
         this.highlightSql = highlightSql;
         if (xqlFileManager != null) {

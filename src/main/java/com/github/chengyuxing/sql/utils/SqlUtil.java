@@ -408,14 +408,13 @@ public class SqlUtil {
     }
 
     /**
-     * 创建适用于打印sql的字符串
+     * 终端输出有高亮的sql或者重定向输出非高亮的sql
      *
-     * @param sql         sql字符串
-     * @param isHighlight 是否语法高亮
+     * @param sql sql字符串
      * @return 普通sql或语法高亮的sql
      */
-    public static String buildPrintSql(String sql, boolean isHighlight) {
-        if (isHighlight) {
+    public static String buildConsoleSql(String sql) {
+        if (System.console() != null) {
             return highlightSql(sql);
         }
         return sql;

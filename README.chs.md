@@ -35,7 +35,7 @@ Maven 中央仓库
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.2.4</version>
+    <version>7.2.5</version>
 </dependency>
 ```
 
@@ -487,7 +487,6 @@ order by id;
   charset: UTF-8
   named-param-prefix: ':'
   pipes:
-  highlight-sql: false
   ```
   
   `xql-file-manager.properties`
@@ -508,7 +507,6 @@ order by id;
   constants=
   pipes=
   namedParamPrefix=:
-  highlightSql=false
   ```
 
 #### 配置项

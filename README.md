@@ -35,7 +35,7 @@ Maven central
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.2.5</version>
+    <version>7.2.6</version>
 </dependency>
 ```
 

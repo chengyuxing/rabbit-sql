@@ -51,7 +51,7 @@ public class SqlTests {
             while (mx.find()) {
                 String valuePath = mx.group("tmp").substring(itemName.length());
                 String jPath = valuePath.replace(".", "/");
-                Object value = ObjectUtil.getDeepNestValue(list.get(i), jPath);
+                Object value = ObjectUtil.getDeepValue(list.get(i), jPath);
                 sqlPart = sqlPart.replace("${" + itemName + valuePath + "}", SqlUtil.quoteFormatValue(value));
             }
             if (idxName != null) {
@@ -103,7 +103,7 @@ public class SqlTests {
                         while (vx.find()) {
                             String valuePath = vx.group("tmp").substring(itemName.length());
                             String jPath = valuePath.replace(".", "/");
-                            Object value = ObjectUtil.getDeepNestValue(list.get(j), jPath);
+                            Object value = ObjectUtil.getDeepValue(list.get(j), jPath);
                             fArgs.put(vx.group("tmp"), value);
                             expStr = expStr.replace("${" + itemName + valuePath + "}", ":" + itemName + valuePath);
                         }
@@ -115,7 +115,7 @@ public class SqlTests {
                             while (mx.find()) {
                                 String valuePath = mx.group("tmp").substring(itemName.length());
                                 String jPath = valuePath.replace(".", "/");
-                                Object value = ObjectUtil.getDeepNestValue(list.get(j), jPath);
+                                Object value = ObjectUtil.getDeepValue(list.get(j), jPath);
                                 sqlPart = sqlPart.replace("${" + itemName + valuePath + "}", SqlUtil.quoteFormatValue(value));
                             }
                             if (idxName != null) {

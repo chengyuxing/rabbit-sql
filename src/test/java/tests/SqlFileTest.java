@@ -56,7 +56,6 @@ public class SqlFileTest {
     public static void main(String[] args) {
         XQLFileManager sqlFileManager = new XQLFileManager();
         sqlFileManager.add("rabbit", "file:/Users/chengyuxing/Downloads/local.sql");
-        sqlFileManager.setCheckModified(true);
         sqlFileManager.init();
     }
 

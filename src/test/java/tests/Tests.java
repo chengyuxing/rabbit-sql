@@ -408,7 +408,6 @@ public class Tests {
     @Test
     public void test3() throws IOException {
         XQLFileManager xqlFileManager = new XQLFileManager();
-        xqlFileManager.setHighlightSql(true);
         xqlFileManager.add("cyx", "pgsql/data.sql");
         xqlFileManager.add("abc", "pgsql/nest.sql");
         xqlFileManager.setPipeInstances(Args.of("km2null", (IPipe<String>) value -> {

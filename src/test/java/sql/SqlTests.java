@@ -52,7 +52,7 @@ public class SqlTests {
                 String valuePath = mx.group("tmp").substring(itemName.length());
                 String jPath = valuePath.replace(".", "/");
                 Object value = ObjectUtil.getDeepNestValue(list.get(i), jPath);
-                sqlPart = sqlPart.replace("${" + itemName + valuePath + "}", SqlUtil.quoteFormatValueIfNecessary(value));
+                sqlPart = sqlPart.replace("${" + itemName + valuePath + "}", SqlUtil.quoteFormatValue(value));
             }
             if (idxName != null) {
                 sqlPart = sqlPart.replace("${" + idxName + "}", i + "");
@@ -116,7 +116,7 @@ public class SqlTests {
                                 String valuePath = mx.group("tmp").substring(itemName.length());
                                 String jPath = valuePath.replace(".", "/");
                                 Object value = ObjectUtil.getDeepNestValue(list.get(j), jPath);
-                                sqlPart = sqlPart.replace("${" + itemName + valuePath + "}", SqlUtil.quoteFormatValueIfNecessary(value));
+                                sqlPart = sqlPart.replace("${" + itemName + valuePath + "}", SqlUtil.quoteFormatValue(value));
                             }
                             if (idxName != null) {
                                 sqlPart = sqlPart.replace("${" + idxName + "}", j + "");
@@ -133,7 +133,7 @@ public class SqlTests {
 
     @Test
     public void testz() throws Exception {
-        System.out.println(SqlUtil.quoteFormatValueIfNecessary(new Object[]{"a", "'v", "D"}));
+        System.out.println(SqlUtil.quoteFormatValue(new Object[]{"a", "'v", "D"}));
     }
 
     @Test

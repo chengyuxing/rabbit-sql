@@ -3,11 +3,13 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <description>Light wrapper of JDBC, support ddl, dml, query, plsql/procedure/function, transaction and manage sql file.</description>
+    <description>Light wrapper of JDBC, support ddl, dml, query, plsql/procedure/function, transaction and manage sql
+        file.
+    </description>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
     <packaging>jar</packaging>
-    <version>7.2.6</version>
+    <version>7.3.0</version>
     <name>rabbit-sql</name>
     <url>https://github.com/chengyuxing/rabbit-sql</url>
 
@@ -16,7 +18,7 @@
         <maven.compiler.target>1.8</maven.compiler.target>
         <snakeyaml.version>1.30</snakeyaml.version>
         <slf4j.version>1.7.25</slf4j.version>
-        <rabbit.common.version>2.3.9</rabbit.common.version>
+        <rabbit.common.version>2.3.10</rabbit.common.version>
     </properties>
 
     <licenses>

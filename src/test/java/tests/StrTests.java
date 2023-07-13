@@ -1,10 +1,9 @@
 package tests;
 
 import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.XQLFileManager;
-import com.github.chengyuxing.sql.utils.SqlTranslator;
+import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
 
@@ -20,7 +19,7 @@ public class StrTests {
 
     @Test
     public void testDtFmt() throws Exception {
-        System.out.println(SqlUtil.quoteFormatValueIfNecessary(LocalTime.now()));
+        System.out.println(SqlUtil.quoteFormatValue(LocalTime.now()));
     }
 
     @Test
@@ -76,7 +75,7 @@ public class StrTests {
 
     @Test
     public void testUpdate() {
-        SqlTranslator sqlTranslator = new SqlTranslator(':');
+        SqlGenerator sqlGenerator = new SqlGenerator(':');
         List<String> list = new ArrayList<>();
         for (int i = 0; i < 10000; i++) {
             Map<String, Object> args = Args.create(
@@ -86,7 +85,7 @@ public class StrTests {
                     "address", "昆明",
                     "work", "java"
             );
-            String update = sqlTranslator.generateUpdate(
+            String update = sqlGenerator.generateUpdate(
                     "test.user",
                     "id = :id and name = :name",
                     args,
@@ -100,12 +99,12 @@ public class StrTests {
 
 
     public static void update(String tableName, Map<String, Object> data, String where) {
-        Pair<String, List<String>> cnd = new SqlTranslator(':').generateSql(where, data, true);
+        Pair<String, List<String>> cnd = new SqlGenerator(':').generateSql(where, data, true);
         Map<String, Object> updateData = new HashMap<>(data);
         for (String key : cnd.getItem2()) {
             updateData.remove(key);
         }
-//        String update = new SqlTranslator(':').generateNamedParamUpdate(tableName, updateData);
+//        String update = new SqlGenerator(':').generateNamedParamUpdate(tableName, updateData);
 //        String w = StringUtil.startsWithIgnoreCase(where.trim(), "where") ? where : "\nwhere " + where;
 //        System.out.println(update + w);
 //        System.out.println(data);

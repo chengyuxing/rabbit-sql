@@ -4,6 +4,7 @@ import com.github.chengyuxing.common.DateTimes;
 import com.github.chengyuxing.common.console.Color;
 import com.github.chengyuxing.common.console.Printer;
 import com.github.chengyuxing.common.tuple.Pair;
+import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.Keywords;
@@ -53,7 +54,7 @@ public class SqlUtil {
      * @param obj 值对象
      * @return 格式化后的值
      */
-    public static String quoteFormatValueIfNecessary(Object obj) {
+    public static String quoteFormatValue(Object obj) {
         if (obj == null) {
             return "null";
         }
@@ -86,19 +87,9 @@ public class SqlUtil {
         if (clazz == byte[].class) {
             return quote("blob:" + StringUtil.getSize((byte[]) obj));
         }
+        // PostgreSQL array
         if (Object[].class.isAssignableFrom(clazz)) {
-            Object[] objArr = (Object[]) obj;
-            String[] res = new String[objArr.length];
-            for (int i = 0; i < res.length; i++) {
-                Object o = objArr[i];
-                if (o != null)
-                    if (o instanceof String) {
-                        res[i] = safeQuote(o.toString());
-                    } else {
-                        res[i] = o.toString();
-                    }
-            }
-            return quote("{" + String.join(",", res) + "}");
+            return toPgArrayLiteral((Object[]) obj);
         }
         // I think you wanna save json string
         if (Map.class.isAssignableFrom(clazz) ||
@@ -111,6 +102,50 @@ public class SqlUtil {
             return "null";
         }
         return safeQuote(obj.toString());
+    }
+
+    /**
+     * 格式化值为适配sql的字符串
+     *
+     * @param value 可能是数组的值
+     * @param quote 是否加引号
+     * @return 匹配sql的字符串
+     */
+    public static String formatObject(Object value, boolean quote) {
+        Object[] values = ObjectUtil.toArray(value);
+        StringJoiner sb = new StringJoiner(", ");
+        if (quote) {
+            for (Object v : values) {
+                sb.add(quoteFormatValue(v));
+            }
+        } else {
+            for (Object v : values) {
+                if (v != null) {
+                    sb.add(v.toString());
+                }
+            }
+        }
+        return sb.toString();
+    }
+
+    /**
+     * 转换为postgreSQL数组类型字面量
+     *
+     * @param values 对象数组
+     * @return 数组字面量
+     */
+    public static String toPgArrayLiteral(Object[] values) {
+        String[] res = new String[values.length];
+        for (int i = 0; i < res.length; i++) {
+            Object o = values[i];
+            if (o != null)
+                if (o instanceof String) {
+                    res[i] = safeQuote(o.toString());
+                } else {
+                    res[i] = o.toString();
+                }
+        }
+        return quote("{" + String.join(",", res) + "}");
     }
 
     /**
@@ -258,40 +293,6 @@ public class SqlUtil {
     }
 
     /**
-     * 解构数组类型的值为适配sql的字符串
-     *
-     * @param value 可能是数组的值
-     * @param quote 是否加引号
-     * @return 匹配sql的字符串
-     */
-    @SuppressWarnings("unchecked")
-    public static String deconstructArrayIfNecessary(Object value, boolean quote) {
-        Object[] values;
-        if (value instanceof Object[]) {
-            values = (Object[]) value;
-        } else if (value instanceof Collection) {
-            values = ((Collection<Object>) value).toArray();
-        } else {
-            values = new Object[]{value};
-        }
-        StringJoiner sb = new StringJoiner(", ");
-        if (quote) {
-            // expand and quote safe args
-            for (Object v : values) {
-                sb.add(quoteFormatValueIfNecessary(v));
-            }
-        } else {
-            // just expand
-            for (Object v : values) {
-                if (v != null) {
-                    sb.add(v.toString());
-                }
-            }
-        }
-        return sb.toString();
-    }
-
-    /**
      * 修复sql常规语法错误<br>
      * e.g.
      * <blockquote>
@@ -345,7 +346,7 @@ public class SqlUtil {
         try {
             Pair<String, Map<String, String>> r = SqlUtil.replaceSqlSubstr(sql);
             String rSql = r.getItem1();
-            Pair<List<String>, List<String>> x = StringUtil.regexSplit(rSql, "(?<sp>[\\s,\\[\\]()::;])", "sp");
+            Pair<List<String>, List<String>> x = StringUtil.regexSplit(rSql, "(?<sp>[\\s,\\[\\]():;])", "sp");
             List<String> maybeKeywords = x.getItem1();
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < maybeKeywords.size(); i++) {

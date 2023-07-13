@@ -2,13 +2,10 @@ package tests;
 
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.sql.Args;
-import com.github.chengyuxing.sql.BakiDao;
 import com.github.chengyuxing.sql.XQLFileManager;
-import com.github.chengyuxing.sql.utils.SqlTranslator;
+import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.utils.SqlUtil;
-import org.junit.BeforeClass;
 import org.junit.Test;
-import org.nutz.dao.impl.NutDao;
 import org.nutz.ioc.Ioc;
 import org.nutz.ioc.impl.NutIoc;
 import org.nutz.ioc.loader.json.JsonLoader;
@@ -65,7 +62,7 @@ public class SqlFileTest {
 
     @Test
     public void ref() throws Exception {
-        Pair<String, List<String>> pair = new SqlTranslator(':').getPreparedSql(":res = call getUser(:id, :name)", Collections.emptyMap());
+        Pair<String, List<String>> pair = new SqlGenerator(':').getPreparedSql(":res = call getUser(:id, :name)", Collections.emptyMap());
         System.out.println(pair.getItem1());
         System.out.println(pair.getItem2());
     }
@@ -92,5 +89,15 @@ public class SqlFileTest {
     public void bakiDao() throws Exception {
         XQLFileManager xqlFileManager = new XQLFileManager("xql-file-manager.old.yml");
         System.out.println(xqlFileManager);
+    }
+
+    @Test
+    public void testA() {
+        XQLFileManager xqlFileManager = new XQLFileManager();
+        xqlFileManager.add("pgsql/nest.sql");
+        xqlFileManager.setConstants(Args.of("db", "test.user"));
+        xqlFileManager.init();
+        XQLFileManager.Resource resource = xqlFileManager.getResource("nest");
+        System.out.println(resource);
     }
 }

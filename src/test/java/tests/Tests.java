@@ -16,7 +16,7 @@ import com.github.chengyuxing.sql.exceptions.DuplicateException;
 import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.github.chengyuxing.sql.types.Param;
-import com.github.chengyuxing.sql.utils.SqlTranslator;
+import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import com.zaxxer.hikari.HikariDataSource;
 import func.BeanUtil;
@@ -27,10 +27,8 @@ import org.nutz.json.Json;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -129,7 +127,7 @@ public class Tests {
         String sql = "insert into test.user(idd,name,id,age,address) values (:id,:name::integer,:idd::float,integer :age,date :address)";
 //        String sql2 = "select * from test.user where id = '1' and tag = '1' and num = '1' and name = :name";
 //        String jsonSql = "select '{\"a\":[1,2,3],\"b\":[4,5,6]}'::json #>> '{b,1}'";
-        Pair<String, List<String>> pair = new SqlTranslator(':').getPreparedSql(str, Collections.emptyMap());
+        Pair<String, List<String>> pair = new SqlGenerator(':').getPreparedSql(str, Collections.emptyMap());
         System.out.println(pair.getItem1());
         System.out.println(pair.getItem2());
 
@@ -141,7 +139,7 @@ public class Tests {
     @Test
     public void sqlPlaceHolder() throws Exception {
         String query = "select * from test where id = ?id and id = ?id and idCard = '5301111' or name = ?name ${cnd}";
-        Pair<String, List<String>> sql = new SqlTranslator('?').generateSql(query, Args.of("cnd", "and date <= '${date}'")
+        Pair<String, List<String>> sql = new SqlGenerator('?').generateSql(query, Args.of("cnd", "and date <= '${date}'")
                 .add("date", "2020-12-23 ${time}")
                 .add("time", "11:23:44"), true);
         System.out.println(sql.getItem1());
@@ -192,7 +190,7 @@ public class Tests {
 
 //        String sql = SqlUtil.generateInsert("test.user", paramMap, Ignore.BLANK, Arrays.asList("c", "d", "a"));
 
-//        String upd = new SqlTranslator(':').generateNamedParamUpdate("test.user", paramMap);
+//        String upd = new SqlGenerator(':').generateNamedParamUpdate("test.user", paramMap);
 //        System.out.println(upd);
     }
 
@@ -276,7 +274,7 @@ public class Tests {
                 ")\n" +
                 "select *\n" +
                 "from cte;";
-        String cq = new SqlTranslator(':').generateCountQuery(sql);
+        String cq = new SqlGenerator(':').generateCountQuery(sql);
         System.out.println(cq);
     }
 
@@ -306,17 +304,17 @@ public class Tests {
                 "words", "it's my time!",
                 "dt", LocalDateTime.now());
 
-        System.out.println(new SqlTranslator('?').generateNamedParamInsert("t.user", args, Arrays.asList("id", "name", "asx")));
-        System.out.println(new SqlTranslator('?').generateInsert("t.user", args, Collections.emptyList()));
+        System.out.println(new SqlGenerator('?').generateNamedParamInsert("t.user", args, Arrays.asList("id", "name", "asx")));
+        System.out.println(new SqlGenerator('?').generateInsert("t.user", args, Collections.emptyList()));
 
     }
 
     @Test
     public void testInserGenerate() {
-        SqlTranslator sqlTranslator = new SqlTranslator(':');
+        SqlGenerator sqlGenerator = new SqlGenerator(':');
         String[] allFields = new String[]{"a", "b", "c", "d", "e", "f"};
         Args<Object> args = Args.create("A", 1, "B", 2, "C", 3, "D", 4);
-        System.out.println(sqlTranslator.generateNamedParamInsert("user", args, Arrays.asList(allFields)));
+        System.out.println(sqlGenerator.generateNamedParamInsert("user", args, Arrays.asList(allFields)));
     }
 
     @Test
@@ -328,10 +326,10 @@ public class Tests {
         map.put("C", 1);
         map.put("D", 1);
 
-        SqlTranslator sqlTranslator = new SqlTranslator(':');
+        SqlGenerator sqlGenerator = new SqlGenerator(':');
 
-        System.out.println(sqlTranslator.filterKeys(map, Arrays.asList("a", "b", "c")));
-        System.out.println(sqlTranslator.generateNamedParamInsert("test.t", map, Arrays.asList("a", "b", "c")));
+        System.out.println(sqlGenerator.filterKeys(map, Arrays.asList("a", "b", "c")));
+        System.out.println(sqlGenerator.generateNamedParamInsert("test.t", map, Arrays.asList("a", "b", "c")));
 
     }
 

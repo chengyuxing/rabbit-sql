@@ -1,7 +1,7 @@
 package com.github.chengyuxing.sql.support;
 
 import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.sql.utils.SqlTranslator;
+import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,7 +12,7 @@ import java.util.Map;
 
 /**
  * <h2>提供对命名参数sql的预解析处理</h2>
- * <p>默认的命名参数前缀为 ':' 号，可通过实现 {@link #sqlTranslator()} 来进行自定义。</p>
+ * <p>默认的命名参数前缀为 ':' 号，可通过实现 {@link #sqlGenerator()} 来进行自定义。</p>
  * 命名参数格式：
  * <blockquote>
  * :name (jdbc标准的传名参数写法，参数将被预编译安全处理)
@@ -39,7 +39,7 @@ import java.util.Map;
  *     </pre>
  * </blockquote>
  *
- * @see SqlTranslator
+ * @see SqlGenerator
  */
 public abstract class SqlParser {
     private static final Logger log = LoggerFactory.getLogger(SqlParser.class);
@@ -58,7 +58,7 @@ public abstract class SqlParser {
      *
      * @return sql翻译帮助实例
      */
-    protected abstract SqlTranslator sqlTranslator();
+    protected abstract SqlGenerator sqlGenerator();
 
     /**
      * 将自定义的传名参数sql解析为数据库可执行的预编译sql
@@ -70,7 +70,7 @@ public abstract class SqlParser {
     protected Pair<String, List<String>> prepare(String sql, Map<String, ?> args) {
         Map<String, ?> map = args == null ? Collections.emptyMap() : args;
         String fullSql = parseSql(sql, map);
-        Pair<String, List<String>> p = sqlTranslator().getPreparedSql(fullSql, map);
+        Pair<String, List<String>> p = sqlGenerator().getPreparedSql(fullSql, map);
         log.debug("Prepared SQL: {}", SqlUtil.buildConsoleSql(p.getItem1()));
         return p;
     }

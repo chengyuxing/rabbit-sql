@@ -214,7 +214,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @throws URISyntaxException 如果文件URI格式错误
      */
     public Resource parse(String alias, String filename, FileResource fileResource) throws IOException, URISyntaxException {
-        Resource resource = new Resource(alias, filename);
         Map<String, String> entry = new LinkedHashMap<>();
         try (BufferedReader reader = fileResource.getBufferedReader(Charset.forName(charset))) {
             String blockName = "";
@@ -265,6 +264,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         if (!entry.isEmpty()) {
             mergeSqlTemplate(entry);
         }
+        Resource resource = new Resource(alias, filename);
         resource.setEntry(Collections.unmodifiableMap(entry));
         resource.setLastModified(fileResource.getLastModified());
         return resource;
@@ -276,27 +276,22 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @param sqlResource sql字符串资源
      */
     protected void mergeSqlTemplate(Map<String, String> sqlResource) {
-        for (String key : sqlResource.keySet()) {
-            if (key.startsWith("${")) {
-                for (Map.Entry<String, String> e : sqlResource.entrySet()) {
-                    String sql = e.getValue();
-                    String sqlPart = sqlResource.get(key);
-                    String holder = key.substring(2, key.length() - 1);
-                    sql = StringUtil.format(sql, holder, sqlPart);
-                    e.setValue(sql);
-                }
+        Map<String, String> templates = new HashMap<>();
+        for (Map.Entry<String, String> e : sqlResource.entrySet()) {
+            String k = e.getKey();
+            if (k.startsWith("${")) {
+                templates.put(k.substring(2, k.length() - 1), e.getValue());
             }
         }
-        if (constants.size() > 0) {
-            for (Map.Entry<String, String> sqlE : sqlResource.entrySet()) {
-                String sql = sqlE.getValue();
-                if (!sql.contains("${")) {
-                    continue;
-                }
-                for (Map.Entry<String, String> constE : constants.entrySet()) {
-                    sql = StringUtil.format(sql, constE.getKey(), constE.getValue());
-                }
-                sqlE.setValue(sql);
+        if (templates.isEmpty() && constants.isEmpty()) {
+            return;
+        }
+        for (Map.Entry<String, String> e : sqlResource.entrySet()) {
+            String sql = e.getValue();
+            if (sql.contains("${")) {
+                sql = getSqlGenerator().formatSql(sql, templates);
+                sql = getSqlGenerator().formatSql(sql, constants);
+                e.setValue(sql);
             }
         }
     }
@@ -585,7 +580,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
 
         @Override
         protected String forLoopBodyFormatter(String body, Map<String, Object> args) {
-            return getSqlTranslator().formatSql(body, args);
+            return getSqlGenerator().formatSql(body, args);
         }
 
         @Override

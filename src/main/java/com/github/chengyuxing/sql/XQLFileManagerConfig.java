@@ -4,12 +4,11 @@ import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.io.TypedProperties;
 import com.github.chengyuxing.common.script.IPipe;
 import com.github.chengyuxing.sql.exceptions.YamlDeserializeException;
-import com.github.chengyuxing.sql.utils.SqlTranslator;
+import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.yaml.JoinConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.representer.Representer;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -24,32 +23,24 @@ import java.util.*;
  */
 public class XQLFileManagerConfig {
     private static final Logger log = LoggerFactory.getLogger(XQLFileManagerConfig.class);
-    private SqlTranslator sqlTranslator;
+    private SqlGenerator sqlGenerator;
     protected volatile boolean loading;
 
     // ----------------optional properties------------------
     protected Map<String, String> files = new HashMap<>();
-    @Deprecated
-    protected Set<String> filenames = new HashSet<>();
     protected Map<String, String> constants = new HashMap<>();
     protected Map<String, IPipe<?>> pipeInstances = new HashMap<>();
     protected Map<String, String> pipes = new HashMap<>();
-    @Deprecated
-    protected Integer checkPeriod = 30; //seconds
-    @Deprecated
-    protected volatile Boolean checkModified = false;
     protected String charset = "UTF-8";
     protected String delimiter = ";";
     protected Character namedParamPrefix = ':';
-    @Deprecated
-    protected Boolean highlightSql = false;
     // ----------------optional properties------------------
 
     /**
      * 配置项构造器
      */
     public XQLFileManagerConfig() {
-        this.sqlTranslator = new SqlTranslator(namedParamPrefix);
+        this.sqlGenerator = new SqlGenerator(namedParamPrefix);
     }
 
     /**
@@ -163,8 +154,8 @@ public class XQLFileManagerConfig {
      *
      * @return sql翻译解析器
      */
-    public SqlTranslator getSqlTranslator() {
-        return sqlTranslator;
+    public SqlGenerator getSqlGenerator() {
+        return sqlGenerator;
     }
 
     /**
@@ -270,60 +261,6 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * 获取文件检查周期，默认为30秒，配合方法：{@link #setCheckModified(Boolean)} {@code -> true} 来使用
-     *
-     * @return 文件检查周期
-     * @deprecated no supported
-     */
-    @Deprecated
-    public Integer getCheckPeriod() {
-        return checkPeriod;
-    }
-
-    /**
-     * 设置文件检查周期（单位：秒）
-     *
-     * @param checkPeriod 文件检查周期，默认30秒
-     * @deprecated no supported
-     */
-    @Deprecated
-    public void setCheckPeriod(Integer checkPeriod) {
-        if (checkPeriod == null) {
-            return;
-        }
-        if (checkPeriod < 5) {
-            this.checkPeriod = 5;
-            log.warn("period cannot less than 5 seconds, auto set 5 seconds.");
-        } else
-            this.checkPeriod = checkPeriod;
-    }
-
-    /**
-     * 是否启用文件自动检查更新
-     *
-     * @return 文件检查更新状态
-     * @deprecated no supported
-     */
-    @Deprecated
-    public Boolean isCheckModified() {
-        return checkModified;
-    }
-
-    /**
-     * 设置检查文件是否更新
-     *
-     * @param checkModified 是否检查更新
-     * @deprecated no supported
-     */
-    @Deprecated
-    public void setCheckModified(Boolean checkModified) {
-        if (checkModified == null) {
-            return;
-        }
-        this.checkModified = checkModified;
-    }
-
-    /**
      * 获取当前解析sql文件使用的编码格式，默认为UTF-8
      *
      * @return 当前解析sql文件使用的编码格式
@@ -406,53 +343,6 @@ public class XQLFileManagerConfig {
             return;
         }
         this.namedParamPrefix = namedParamPrefix;
-        this.sqlTranslator = new SqlTranslator(this.namedParamPrefix);
-    }
-
-    /**
-     * debug模式下终端标准输出sql语法是否高亮
-     *
-     * @return 是否高亮
-     */
-    @Deprecated
-    public Boolean isHighlightSql() {
-        return highlightSql;
-    }
-
-    /**
-     * 设置debug模式下终端标准输出sql语法是否高亮
-     *
-     * @param highlightSql 是否高亮
-     */
-    @Deprecated
-    public void setHighlightSql(Boolean highlightSql) {
-        if (highlightSql == null) {
-            return;
-        }
-        this.highlightSql = highlightSql;
-    }
-
-    /**
-     * 获取文件名集合
-     *
-     * @return 文件名集合
-     * @see #getFiles()
-     * @deprecated 已弃用
-     */
-    @Deprecated
-    public Set<String> getFilenames() {
-        return filenames;
-    }
-
-    /**
-     * 设置文件名集合
-     *
-     * @param filenames 文件名集合
-     * @see #setFiles(Map)
-     * @deprecated 已弃用
-     */
-    @Deprecated
-    public void setFilenames(Set<String> filenames) {
-        this.filenames = filenames;
+        this.sqlGenerator = new SqlGenerator(this.namedParamPrefix);
     }
 }

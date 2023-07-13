@@ -1,52 +1,48 @@
 package com.github.chengyuxing.sql.utils;
 
+import com.github.chengyuxing.common.StringFormatter;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.CollectionUtil;
-import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.github.chengyuxing.common.utils.CollectionUtil.*;
-import static com.github.chengyuxing.sql.utils.SqlUtil.quoteFormatValueIfNecessary;
-import static com.github.chengyuxing.sql.utils.SqlUtil.replaceSqlSubstr;
+import static com.github.chengyuxing.sql.utils.SqlUtil.*;
 
 /**
  * sql构建工具帮助类
  */
-public class SqlTranslator {
-    private static final Logger log = LoggerFactory.getLogger(SqlTranslator.class);
-    private String namedParamPrefix = ":";
-    private static final char SPECIAL_CHAR = '\u0c32';
+public class SqlGenerator {
+    private static final Logger log = LoggerFactory.getLogger(SqlGenerator.class);
+    private final String namedParamPrefix;
+    private final StringFormatter stringFormatter;
     /**
      * 匹配命名参数
      */
-    Pattern PARAM_PATTERN = Pattern.compile("(^:|[^:]:)(?<name>[a-zA-Z_][\\w_]*)", Pattern.MULTILINE);
-
-    Pattern STR_TEMP_PATTERN = Pattern.compile("\\$\\{\\s*(?<key>:?[\\w._-]+)\\s*}");
+    private final Pattern PARAM_PATTERN;
 
     /**
      * sql翻译帮助实例
      *
      * @param _namedParamPrefix 命名参数前缀符号
      */
-    public SqlTranslator(char _namedParamPrefix) {
+    public SqlGenerator(char _namedParamPrefix) {
         if (_namedParamPrefix == ' ') {
             throw new IllegalArgumentException("prefix char cannot be empty.");
         }
-        if (_namedParamPrefix == ':') {
-            return;
-        }
-        String cs = String.valueOf(_namedParamPrefix);
-        this.namedParamPrefix = cs;
-        String regC = cs.replace(cs, "\\" + cs);
-        PARAM_PATTERN = Pattern.compile("(^" + regC + "|[^" + regC + "]" + regC + ")(?<name>[a-zA-Z_][\\w_]*)", Pattern.MULTILINE);
-        STR_TEMP_PATTERN = Pattern.compile("\\$\\{\\s*(?<key>" + regC + "?[\\w._-]+)\\s*}");
+        this.PARAM_PATTERN = Pattern.compile("(^\\" + _namedParamPrefix + "|[^\\" + _namedParamPrefix + "]\\" + _namedParamPrefix + ")(?<name>[a-zA-Z_][\\w_]*)", Pattern.MULTILINE);
+        this.namedParamPrefix = String.valueOf(_namedParamPrefix);
+        this.stringFormatter = new StringFormatter(_namedParamPrefix) {
+            @Override
+            protected String parseValue(Object value, boolean isSpecial) {
+                return formatObject(value, isSpecial);
+            }
+        };
     }
 
     /**
@@ -64,7 +60,7 @@ public class SqlTranslator {
      * @return 字符串模版参数解析正则表达式
      */
     public Pattern getSTR_TEMP_PATTERN() {
-        return STR_TEMP_PATTERN;
+        return stringFormatter.getPattern();
     }
 
     /**
@@ -74,6 +70,23 @@ public class SqlTranslator {
      */
     public String getNamedParamPrefix() {
         return namedParamPrefix;
+    }
+
+    /**
+     * 格式化sql字符串模版<br>
+     * e.g.
+     * <blockquote>
+     * <pre>字符串：select ${ fields } from test.user where ${  cnd} and id in (${:idArr}) or id = ${:idArr.1}</pre>
+     * <pre>参数：{fields: "id, name", cnd: "name = 'cyx'", idArr: ["a", "b", "c"]}</pre>
+     * <pre>结果：select id, name from test.user where name = 'cyx' and id in ('a', 'b', 'c') or id = 'b'</pre>
+     * </blockquote>
+     *
+     * @param template 带有字符串模版占位符的字符串
+     * @param data     参数
+     * @return 替换模版占位符后的字符串
+     */
+    public String formatSql(final String template, final Map<String, ?> data) {
+        return stringFormatter.format(template, data);
     }
 
     /**
@@ -107,11 +120,11 @@ public class SqlTranslator {
                 String name = matcher.group("name");
                 names.add(name);
                 if (argx.containsKey(name)) {
-                    String value = quoteFormatValueIfNecessary(argx.get(name));
+                    String value = quoteFormatValue(argx.get(name));
                     noneStrSql = StringUtil.replaceFirst(noneStrSql, namedParamPrefix + name, value);
                 } else if (containsKeyIgnoreCase(argx, name)) {
                     log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your sql's named parameter and args.", name, argx, name);
-                    String value = quoteFormatValueIfNecessary(getValueIgnoreCase(argx, name));
+                    String value = quoteFormatValue(getValueIgnoreCase(argx, name));
                     noneStrSql = StringUtil.replaceFirstIgnoreCase(noneStrSql, namedParamPrefix + name, value);
                 }
             }
@@ -132,63 +145,6 @@ public class SqlTranslator {
      */
     public Pair<String, List<String>> getPreparedSql(final String sql, Map<String, ?> args) {
         return generateSql(sql, args, true);
-    }
-
-    /**
-     * 格式化sql字符串模版<br>
-     * e.g.
-     * <blockquote>
-     * <pre>字符串：select ${ fields } from test.user where ${  cnd} and id in (${:idArr}) or id = ${:idArr.1}</pre>
-     * <pre>参数：{fields: "id, name", cnd: "name = 'cyx'", idArr: ["a", "b", "c"]}</pre>
-     * <pre>结果：select id, name from test.user where name = 'cyx' and id in ('a', 'b', 'c') or id = 'b'</pre>
-     * </blockquote>
-     *
-     * @param str  带有字符串模版占位符的字符串
-     * @param args 参数
-     * @return 替换模版占位符后的字符串
-     */
-    public String formatSql(final String str, final Map<String, ?> args) {
-        if (args == null || args.isEmpty()) {
-            return str;
-        }
-        String copyStr = str;
-        Matcher m = STR_TEMP_PATTERN.matcher(copyStr);
-        if (m.find()) {
-            // full str template key e.g. ${ :myKey  }
-            String tempKey = m.group(0);
-            // real key e.g. :myKey
-            String key = m.group("key");
-            boolean quote = key.startsWith(namedParamPrefix);
-            if (quote) {
-                key = key.substring(1);
-            }
-            // e.g. user.cats.1
-            // 字符串中有键路径，但参数中没有此路径键，才默认是键路径表达式，否分，默认args有名为此路径的键
-            boolean isKeyPath = key.contains(".") && !args.containsKey(key);
-            String tk = key;
-            if (isKeyPath) {
-                tk = key.substring(0, key.indexOf("."));
-            }
-            if (!args.containsKey(tk)) {
-                copyStr = copyStr.replace(tempKey, SPECIAL_CHAR + tempKey.substring(1));
-            }
-            try {
-                String subStr;
-                if (isKeyPath) {
-                    subStr = SqlUtil.deconstructArrayIfNecessary(ObjectUtil.getDeepNestValue(args, "/" + key.replace(".", "/")), quote);
-                } else {
-                    subStr = SqlUtil.deconstructArrayIfNecessary(args.get(key), quote);
-                }
-                copyStr = copyStr.replace(tempKey, subStr);
-                return formatSql(copyStr, args);
-            } catch (InvocationTargetException | IllegalAccessException e) {
-                throw new RuntimeException(e);
-            }
-        }
-        if (copyStr.lastIndexOf(SPECIAL_CHAR) != -1) {
-            copyStr = copyStr.replace(SPECIAL_CHAR, '$');
-        }
-        return copyStr;
     }
 
     /**
@@ -233,7 +189,7 @@ public class SqlTranslator {
         for (String key : keys) {
             if (row.containsKey(key)) {
                 f.add(key);
-                v.add(quoteFormatValueIfNecessary(row.get(key)));
+                v.add(quoteFormatValue(row.get(key)));
             }
         }
         return "insert into " + tableName + "(" + f + ") \nvalues (" + v + ")";
@@ -307,7 +263,7 @@ public class SqlTranslator {
         } else {
             for (String key : keys) {
                 if (updateSets.containsKey(key)) {
-                    String v = quoteFormatValueIfNecessary(updateSets.get(key));
+                    String v = quoteFormatValue(updateSets.get(key));
                     sb.add(key + " = " + v);
                 }
             }

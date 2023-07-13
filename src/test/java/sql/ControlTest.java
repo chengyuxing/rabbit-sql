@@ -4,7 +4,7 @@ import com.github.chengyuxing.common.script.impl.CExpression;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.XQLFileManager;
-import com.github.chengyuxing.sql.utils.SqlTranslator;
+import com.github.chengyuxing.sql.utils.SqlGenerator;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -28,8 +28,8 @@ public class ControlTest {
     public void testxsz() throws Exception {
         String sql = "insert into user (x, xm ,xb) values (:xx,:x, :xm, :xb)";
         System.out.println(sql.length());
-        SqlTranslator sqlTranslator = new SqlTranslator(':');
-        System.out.println(sqlTranslator.generateSql(sql, Args.create(), true));
+        SqlGenerator sqlGenerator = new SqlGenerator(':');
+        System.out.println(sqlGenerator.generateSql(sql, Args.create(), true));
     }
 
     @Test
@@ -154,24 +154,24 @@ public class ControlTest {
 
 //        mergeMap(args);
 
-//        System.out.println(new SqlTranslator(':').formatSql(sql, args));
+//        System.out.println(new SqlGenerator(':').formatSql(sql, args));
 //        String[] sqls = new String[1000];
 //        for (int i = 0; i < 1000; i++) {
-//            String sqlx = new SqlTranslator(':').generateSql(sql, args, false).getItem1();
+//            String sqlx = new SqlGenerator(':').generateSql(sql, args, false).getItem1();
 //            sqls[i] = sqlx;
 //        }
 //        System.out.println(sqls.length);
-        SqlTranslator sqlTranslator = new SqlTranslator(':');
-        System.out.println(sqlTranslator.formatSql(sql, args));
+        SqlGenerator sqlGenerator = new SqlGenerator(':');
+        System.out.println(sqlGenerator.formatSql(sql, args));
 
         System.out.println("-----");
-        String first = sqlTranslator.formatSql(sql, args);
+        String first = sqlGenerator.formatSql(sql, args);
         System.out.println(first);
-//        String second = sqlTranslator.resolveSqlStrTemplateRec2(first, args);
+//        String second = sqlGenerator.resolveSqlStrTemplateRec2(first, args);
 //        System.out.println(second);
-//        String third = sqlTranslator.resolveSqlStrTemplateRec2(second, args);
+//        String third = sqlGenerator.resolveSqlStrTemplateRec2(second, args);
 //        System.out.println(third);
-//        String fourth = sqlTranslator.resolveSqlStrTemplateRec2(third, args);
+//        String fourth = sqlGenerator.resolveSqlStrTemplateRec2(third, args);
 //        System.out.println(fourth);
 
     }

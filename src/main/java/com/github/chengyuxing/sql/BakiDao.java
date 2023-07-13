@@ -20,7 +20,7 @@ import com.github.chengyuxing.sql.support.executor.*;
 import com.github.chengyuxing.sql.transaction.Tx;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.utils.JdbcUtil;
-import com.github.chengyuxing.sql.utils.SqlTranslator;
+import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +49,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     private final static Logger log = LoggerFactory.getLogger(BakiDao.class);
     private final DataSource dataSource;
     private DatabaseMetaData currentMetaData;
-    private SqlTranslator sqlTranslator = new SqlTranslator(':');
+    private SqlGenerator sqlGenerator = new SqlGenerator(':');
     //---------optional properties------
     private PageHelperProvider globalPageHelperProvider;
     private SqlInterceptor sqlInterceptor;
@@ -57,10 +57,6 @@ public class BakiDao extends JdbcSupport implements Baki {
     private char namedParamPrefix = ':';
     private boolean strictDynamicSqlArg = true;
     private boolean checkParameterType = true;
-    @Deprecated
-    private boolean debugFullSql = false;
-    @Deprecated
-    private boolean highlightSql = false;
 
     /**
      * 构造函数
@@ -122,7 +118,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     public void setNamedParamPrefix(char namedParamPrefix) {
         this.namedParamPrefix = namedParamPrefix;
-        this.sqlTranslator = new SqlTranslator(namedParamPrefix);
+        this.sqlGenerator = new SqlGenerator(namedParamPrefix);
         if (xqlFileManager != null) {
             xqlFileManager.setNamedParamPrefix(namedParamPrefix);
         }
@@ -146,7 +142,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             return 0;
         }
         List<String> tableFields = safe ? getTableFields(tableName) : new ArrayList<>();
-        String sql = sqlTranslator.generateNamedParamInsert(tableName, data.iterator().next(), tableFields);
+        String sql = sqlGenerator.generateNamedParamInsert(tableName, data.iterator().next(), tableFields);
         return executeNonQuery(sql, data);
     }
 
@@ -168,7 +164,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             List<String> sqls = new ArrayList<>(data.size());
             List<String> tableFields = safe ? getTableFields(tableName) : new ArrayList<>();
             for (Map<String, ?> item : data) {
-                String sql = sqlTranslator.generateInsert(tableName, item, tableFields);
+                String sql = sqlGenerator.generateInsert(tableName, item, tableFields);
                 sqls.add(sql);
             }
             log.debug("preview sql: {}\nmore...", SqlUtil.buildConsoleSql(sqls.get(0)));
@@ -210,7 +206,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         }
         String whereStatement = parseSql(where, Collections.emptyMap());
         List<String> tableFields = safe ? getTableFields(tableName) : new ArrayList<>();
-        String updateStatement = sqlTranslator.generateNamedParamUpdate(tableName,
+        String updateStatement = sqlGenerator.generateNamedParamUpdate(tableName,
                 whereStatement,
                 data.iterator().next(),
                 tableFields);
@@ -252,7 +248,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         List<String> tableFields = safe ? getTableFields(tableName) : new ArrayList<>();
         List<String> sqls = new ArrayList<>(data.size());
         for (Map<String, ?> item : data) {
-            String updateStatement = sqlTranslator.generateUpdate(tableName,
+            String updateStatement = sqlGenerator.generateUpdate(tableName,
                     whereStatement,
                     item,
                     tableFields,
@@ -448,7 +444,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             if (count == null) {
                 String cq = countQuery;
                 if (cq == null) {
-                    cq = sqlTranslator.generateCountQuery(query);
+                    cq = sqlGenerator.generateCountQuery(query);
                 }
                 DataRow cnRow = execute(cq, args).getFirstAs();
                 Object cn = cnRow.getFirst();
@@ -631,15 +627,10 @@ public class BakiDao extends JdbcSupport implements Baki {
                 throw new NullPointerException("can not find property 'xqlFileManager' or XQLFileManager object init failed!");
             }
         }
-        // 优先替换用户参数的模版字符串
         if (trimSql.contains("${")) {
-            trimSql = sqlTranslator.formatSql(trimSql, args);
-        }
-        // 如果还有${，再从常量中查找替换
-        if (trimSql.contains("${") && xqlFileManager != null) {
-            Map<String, String> constants = xqlFileManager.getConstants();
-            for (String constantName : constants.keySet()) {
-                trimSql = StringUtil.format(trimSql, constantName, constants.get(constantName));
+            trimSql = sqlGenerator.formatSql(trimSql, args);
+            if (xqlFileManager != null) {
+                trimSql = sqlGenerator.formatSql(trimSql, xqlFileManager.getConstants());
             }
         }
         if (sqlInterceptor != null) {
@@ -658,8 +649,8 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    protected SqlTranslator sqlTranslator() {
-        return sqlTranslator;
+    protected SqlGenerator sqlGenerator() {
+        return sqlGenerator;
     }
 
     @Override
@@ -726,38 +717,5 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     public void setCheckParameterType(boolean checkParameterType) {
         this.checkParameterType = checkParameterType;
-    }
-
-    /**
-     * 设置是否打印拼接完整的SQL，否则只打印原始SQL与参数
-     *
-     * @param debugFullSql 是否调试模式输出拼接完整的sql
-     */
-    @Deprecated
-    public void setDebugFullSql(boolean debugFullSql) {
-        this.debugFullSql = debugFullSql;
-    }
-
-    /**
-     * debug模式下终端标准输出sql语法是否高亮
-     *
-     * @return 是否高亮
-     */
-    @Deprecated
-    public boolean isHighlightSql() {
-        return highlightSql;
-    }
-
-    /**
-     * 设置debug模式下终端标准输出sql语法是否高亮
-     *
-     * @param highlightSql 是否高亮
-     */
-    @Deprecated
-    public void setHighlightSql(boolean highlightSql) {
-        this.highlightSql = highlightSql;
-        if (xqlFileManager != null) {
-            xqlFileManager.setHighlightSql(highlightSql);
-        }
     }
 }

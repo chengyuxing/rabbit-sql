@@ -48,7 +48,6 @@ public class MyTest {
 
         BakiDao bakiDao = BakiDao.of(dataSource);
         bakiDao.setXqlFileManager(manager);
-        bakiDao.setDebugFullSql(true);
         baki = bakiDao;
         baki2 = BakiDao.of(dataSource);
 //        bakiDao.setSqlPath("pgsql");

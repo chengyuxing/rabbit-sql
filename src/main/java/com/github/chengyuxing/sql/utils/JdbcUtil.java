@@ -3,6 +3,7 @@ package com.github.chengyuxing.sql.utils;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.DateTimes;
 import com.github.chengyuxing.common.utils.CollectionUtil;
+import com.github.chengyuxing.common.utils.Jackson;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.types.ParamMode;
 import org.slf4j.Logger;
@@ -20,7 +21,6 @@ import java.util.*;
 
 import static com.github.chengyuxing.common.utils.CollectionUtil.containsKeyIgnoreCase;
 import static com.github.chengyuxing.common.utils.CollectionUtil.getValueIgnoreCase;
-import static com.github.chengyuxing.common.utils.ReflectUtil.obj2Json;
 
 /**
  * JDBC工具类
@@ -278,12 +278,12 @@ public class JdbcUtil {
                 if (value instanceof String) {
                     statement.setObject(index, createPgObject(pTypeName, value.toString()));
                 } else {
-                    statement.setObject(index, createPgObject(pTypeName, obj2Json(value)));
+                    statement.setObject(index, createPgObject(pTypeName, Jackson.toJson(value)));
                 }
             } else if (pClass.equals("java.lang.String") && !(value instanceof String)) {
                 if (value instanceof Map || value instanceof Collection) {
                     log.warn("you try to set a Map or Collection data into database string type field, auto convert to json string!");
-                    statement.setObject(index, obj2Json(value));
+                    statement.setObject(index, Jackson.toJson(value));
                     // maybe Date, LocalDateTime, UUID, BigDecimal, Integer...
                 } else if (value instanceof UUID) {
                     statement.setObject(index, value.toString().replace("-", ""));
@@ -292,7 +292,7 @@ public class JdbcUtil {
                 } else {
                     // maybe is java bean
                     log.warn("you try to set an unknown class instance(maybe your java bean) data into string type field, auto convert to json string!");
-                    statement.setObject(index, obj2Json(value));
+                    statement.setObject(index, Jackson.toJson(value));
                 }
                 // if is postgresql array
             } else if (pClass.equals("java.sql.Array") && value instanceof Collection) {
@@ -334,10 +334,10 @@ public class JdbcUtil {
             statement.setObject(index, value.toString().replace("-", ""));
         } else if (value instanceof Map || value instanceof Collection) {
             log.warn("you try to set a Map or Collection data, auto convert to json string!");
-            statement.setObject(index, obj2Json(value));
+            statement.setObject(index, Jackson.toJson(value));
         } else if (!value.getClass().getTypeName().startsWith("java.")) {
             log.warn("you try to set an unknown class instance(maybe your java bean) data, auto convert to json string!");
-            statement.setObject(index, obj2Json(value));
+            statement.setObject(index, Jackson.toJson(value));
         } else if (value instanceof InputStream) {
             statement.setBinaryStream(index, (InputStream) value);
         } else if (value instanceof Path) {

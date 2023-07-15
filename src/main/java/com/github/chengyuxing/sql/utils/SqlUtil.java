@@ -4,6 +4,7 @@ import com.github.chengyuxing.common.DateTimes;
 import com.github.chengyuxing.common.console.Color;
 import com.github.chengyuxing.common.console.Printer;
 import com.github.chengyuxing.common.tuple.Pair;
+import com.github.chengyuxing.common.utils.Jackson;
 import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
@@ -12,7 +13,6 @@ import com.github.chengyuxing.sql.Keywords;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
-import java.time.ZoneId;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -69,7 +69,7 @@ public class SqlUtil {
         }
         Class<?> clazz = obj.getClass();
         if (Date.class.isAssignableFrom(clazz)) {
-            String dtStr = DateTimes.of(((Date) obj).toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime()).toString("yyyy-MM-dd HH:mm:ss");
+            String dtStr = DateTimes.of((Date) obj).toString("yyyy-MM-dd HH:mm:ss");
             return "to_timestamp(" + quote(dtStr) + "," + quote("yyyy-mm-dd hh24:mi:ss") + ")";
         }
         if (clazz == LocalDateTime.class) {
@@ -81,7 +81,7 @@ public class SqlUtil {
             return "to_date(" + quote(dtStr) + "," + quote("yyyy-mm-dd") + ")";
         }
         if (clazz == LocalTime.class) {
-            String dtStr = DateTimes.of(((LocalTime) obj).atDate(LocalDate.now()).atZone(ZoneId.systemDefault()).toInstant()).toString("yyyy-MM-dd HH:mm:ss");
+            String dtStr = DateTimes.of((LocalTime) obj).toString("yyyy-MM-dd HH:mm:ss");
             return "to_timestamp(" + quote(dtStr) + "," + quote("yyyy-mm-dd hh24:mi:ss") + ")";
         }
         if (clazz == byte[].class) {
@@ -95,7 +95,7 @@ public class SqlUtil {
         if (Map.class.isAssignableFrom(clazz) ||
                 Collection.class.isAssignableFrom(clazz) ||
                 !clazz.getTypeName().startsWith("java.")) {
-            String value = ReflectUtil.obj2Json(obj);
+            String value = Jackson.toJson(obj);
             if (value != null) {
                 return safeQuote(value);
             }
@@ -387,10 +387,10 @@ public class SqlUtil {
             for (int i = 0; i < sqlLine.length; i++) {
                 String line = sqlLine[i];
                 if (line.trim().startsWith("--")) {
-                    sqlLine[i] = Printer.colorful(line.replaceAll("\033\\[\\d{2}m|\033\\[0m", ""), Color.SILVER);
+                    sqlLine[i] = Printer.colorful(line, Color.SILVER);
                 } else if (line.contains("--")) {
                     int idx = line.indexOf("--");
-                    sqlLine[i] = line.substring(0, idx) + Printer.colorful(line.substring(idx).replaceAll("\033\\[\\d{2}m|\033\\[0m", ""), Color.SILVER);
+                    sqlLine[i] = line.substring(0, idx) + Printer.colorful(line.substring(idx), Color.SILVER);
                 }
             }
             colorfulSql = String.join("\n", sqlLine);

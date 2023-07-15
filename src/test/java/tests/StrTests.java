@@ -114,4 +114,21 @@ public class StrTests {
         String sql = SqlUtil.highlightSql("select 1,2,3, current_timestamp;");
         Files.write(Paths.get("/Users/chengyuxing/Downloads/bbb.txt"), sql.getBytes(StandardCharsets.UTF_8));
     }
+
+    @Test
+    public void yesy36() {
+        SqlGenerator generator = new SqlGenerator(':');
+        String sql = "select * from test.user where name = ${:name}";
+        String pair = generator.formatSql(sql, Args.create("name", "'; drop table test.user;--'"));
+        System.out.println(pair);
+    }
+
+    @Test
+    public void test37() {
+        getClazz(null);
+    }
+
+    public static void getClazz(Object o) {
+        System.out.println(o.getClass());
+    }
 }

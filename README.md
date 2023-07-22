@@ -35,7 +35,7 @@ Maven central
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.3.3</version>
+    <version>7.3.4</version>
 </dependency>
 ```
 
@@ -494,6 +494,8 @@ order by id;
   
   delimiter: ;
   charset: UTF-8
+  # for plugin
+  named-param-prefix: ':'
   ```
   
    `sql-file-manager.properties` 
@@ -514,6 +516,8 @@ order by id;
   
   # UTF-8 is the default.
   charset=UTF-8
+  # for plugin
+  namedParamPrefix=:
   ```
 
 #### Options

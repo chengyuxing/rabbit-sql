@@ -119,7 +119,7 @@ public class StrTests {
     public void yesy36() {
         SqlGenerator generator = new SqlGenerator(':');
         String sql = "select * from test.user where name = ${:name}";
-        String pair = generator.formatSql(sql, Args.create("name", "'; drop table test.user;--'"));
+        String pair = SqlUtil.formatSql(sql, Args.create("name", "'; drop table test.user;--'"));
         System.out.println(pair);
     }
 

@@ -1,6 +1,7 @@
 package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.DateTimes;
+import com.github.chengyuxing.common.StringFormatter;
 import com.github.chengyuxing.common.console.Color;
 import com.github.chengyuxing.common.console.Printer;
 import com.github.chengyuxing.common.tuple.Pair;
@@ -24,6 +25,30 @@ import static com.github.chengyuxing.common.utils.StringUtil.startsWithIgnoreCas
  */
 public class SqlUtil {
     public static final Pattern SUB_STR_PATTERN = Pattern.compile("'[^']*'", Pattern.MULTILINE);
+
+    public static final StringFormatter FMT = new StringFormatter() {
+        @Override
+        protected String parseValue(Object value, boolean isSpecial) {
+            return formatObject(value, isSpecial);
+        }
+    };
+
+    /**
+     * 格式化sql字符串模版<br>
+     * e.g.
+     * <blockquote>
+     * <pre>字符串：select ${ fields } from test.user where ${  cnd} and id in (${:idArr}) or id = ${:idArr.1}</pre>
+     * <pre>参数：{fields: "id, name", cnd: "name = 'cyx'", idArr: ["a", "b", "c"]}</pre>
+     * <pre>结果：select id, name from test.user where name = 'cyx' and id in ('a', 'b', 'c') or id = 'b'</pre>
+     * </blockquote>
+     *
+     * @param template 带有字符串模版占位符的字符串
+     * @param data     参数
+     * @return 替换模版占位符后的字符串
+     */
+    public static String formatSql(final String template, final Map<String, ?> data) {
+        return FMT.format(template, data);
+    }
 
     /**
      * 使用单引号包裹

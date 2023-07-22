@@ -4,6 +4,7 @@ import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.XQLFileManager;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
+import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -83,10 +84,10 @@ public class ControlTest {
 //        }
 //        System.out.println(sqls.length);
         SqlGenerator sqlGenerator = new SqlGenerator(':');
-        System.out.println(sqlGenerator.formatSql(sql, args));
+        System.out.println(SqlUtil.formatSql(sql, args));
 
         System.out.println("-----");
-        String first = sqlGenerator.formatSql(sql, args);
+        String first = SqlUtil.formatSql(sql, args);
         System.out.println(first);
 //        String second = sqlGenerator.resolveSqlStrTemplateRec2(first, args);
 //        System.out.println(second);

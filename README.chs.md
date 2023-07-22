@@ -35,7 +35,7 @@ Maven 中央仓库
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.3.2</version>
+    <version>7.3.3</version>
 </dependency>
 ```
 
@@ -483,18 +483,23 @@ order by id;
   #  dt: !path [ *basePath, other.xql ]
   #  other: another.xql
   
+  pipes:
+  #  upper: org.example.Upper
+  
   delimiter: ;
   charset: UTF-8
-  named-param-prefix: ':'
-  pipes:
   ```
   
   `xql-file-manager.properties`
   
   ```properties
   # Format: multi xql file configure the custom alias, e.g:
-  # files.dt=data.sql
-  # files.sys=system.sql
+  files.dt=data.sql
+  files.sys=system.sql
+  
+  pipes.upper=org.example.Upper
+  
+  constants=
   
   # Multi sql fragment delimiter symbol in xql file, ';' is the default also standard.
   # Notice: if your sql fragment is ddl or procedure, maybe one fragment contains
@@ -503,10 +508,6 @@ order by id;
   
   # UTF-8 is the default.
   charset=UTF-8
-  
-  constants=
-  pipes=
-  namedParamPrefix=:
   ```
 
 #### 配置项

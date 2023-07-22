@@ -5,6 +5,7 @@ import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.Keywords;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
+import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -22,7 +23,7 @@ public class TestStrTemplate {
 
     @Test
     public void testOld() throws Exception {
-        System.out.println(sqlGenerator.formatSql(sql, args));
+        System.out.println(SqlUtil.formatSql(sql, args));
         System.out.println("---");
     }
 

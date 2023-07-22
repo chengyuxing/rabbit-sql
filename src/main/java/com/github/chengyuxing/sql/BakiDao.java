@@ -87,7 +87,6 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     public void setXqlFileManager(XQLFileManager xqlFileManager) {
         this.xqlFileManager = xqlFileManager;
-        this.xqlFileManager.setNamedParamPrefix(namedParamPrefix);
         if (!xqlFileManager.isInitialized()) {
             xqlFileManager.init();
         }
@@ -119,9 +118,6 @@ public class BakiDao extends JdbcSupport implements Baki {
     public void setNamedParamPrefix(char namedParamPrefix) {
         this.namedParamPrefix = namedParamPrefix;
         this.sqlGenerator = new SqlGenerator(namedParamPrefix);
-        if (xqlFileManager != null) {
-            xqlFileManager.setNamedParamPrefix(namedParamPrefix);
-        }
     }
 
     /**
@@ -628,9 +624,9 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
         }
         if (trimSql.contains("${")) {
-            trimSql = sqlGenerator.formatSql(trimSql, args);
+            trimSql = SqlUtil.formatSql(trimSql, args);
             if (xqlFileManager != null) {
-                trimSql = sqlGenerator.formatSql(trimSql, xqlFileManager.getConstants());
+                trimSql = SqlUtil.formatSql(trimSql, xqlFileManager.getConstants());
             }
         }
         if (sqlInterceptor != null) {

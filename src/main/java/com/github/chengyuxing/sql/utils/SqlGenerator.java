@@ -1,6 +1,5 @@
 package com.github.chengyuxing.sql.utils;
 
-import com.github.chengyuxing.common.StringFormatter;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.CollectionUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
@@ -20,7 +19,6 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.*;
 public class SqlGenerator {
     private static final Logger log = LoggerFactory.getLogger(SqlGenerator.class);
     private final String namedParamPrefix;
-    private final StringFormatter stringFormatter;
     /**
      * 匹配命名参数
      */
@@ -37,12 +35,6 @@ public class SqlGenerator {
         }
         this.PARAM_PATTERN = Pattern.compile("(^\\" + _namedParamPrefix + "|[^\\" + _namedParamPrefix + "]\\" + _namedParamPrefix + ")(?<name>[a-zA-Z_][\\w_]*)", Pattern.MULTILINE);
         this.namedParamPrefix = String.valueOf(_namedParamPrefix);
-        this.stringFormatter = new StringFormatter(_namedParamPrefix) {
-            @Override
-            protected String parseValue(Object value, boolean isSpecial) {
-                return formatObject(value, isSpecial);
-            }
-        };
     }
 
     /**
@@ -55,38 +47,12 @@ public class SqlGenerator {
     }
 
     /**
-     * 获取字符串模版参数解析正则表达式
-     *
-     * @return 字符串模版参数解析正则表达式
-     */
-    public Pattern getSTR_TEMP_PATTERN() {
-        return stringFormatter.getPattern();
-    }
-
-    /**
      * 获取命名参数前缀符号
      *
      * @return 命名参数前缀符号
      */
     public String getNamedParamPrefix() {
         return namedParamPrefix;
-    }
-
-    /**
-     * 格式化sql字符串模版<br>
-     * e.g.
-     * <blockquote>
-     * <pre>字符串：select ${ fields } from test.user where ${  cnd} and id in (${:idArr}) or id = ${:idArr.1}</pre>
-     * <pre>参数：{fields: "id, name", cnd: "name = 'cyx'", idArr: ["a", "b", "c"]}</pre>
-     * <pre>结果：select id, name from test.user where name = 'cyx' and id in ('a', 'b', 'c') or id = 'b'</pre>
-     * </blockquote>
-     *
-     * @param template 带有字符串模版占位符的字符串
-     * @param data     参数
-     * @return 替换模版占位符后的字符串
-     */
-    public String formatSql(final String template, final Map<String, ?> data) {
-        return stringFormatter.format(template, data);
     }
 
     /**
@@ -100,7 +66,7 @@ public class SqlGenerator {
     public Pair<String, List<String>> generateSql(final String sql, Map<String, ?> args, boolean prepare) {
         Map<String, ?> argx = args == null ? new HashMap<>() : args;
         // resolve the sql string template first
-        String fullSql = formatSql(sql, argx);
+        String fullSql = SqlUtil.formatSql(sql, argx);
         if (!fullSql.contains(namedParamPrefix)) {
             return Pair.of(fullSql, Collections.emptyList());
         }

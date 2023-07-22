@@ -289,8 +289,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         for (Map.Entry<String, String> e : sqlResource.entrySet()) {
             String sql = e.getValue();
             if (sql.contains("${")) {
-                sql = getSqlGenerator().formatSql(sql, templates);
-                sql = getSqlGenerator().formatSql(sql, constants);
+                sql = SqlUtil.formatSql(sql, templates);
+                sql = SqlUtil.formatSql(sql, constants);
                 e.setValue(sql);
             }
         }
@@ -580,7 +580,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
 
         @Override
         protected String forLoopBodyFormatter(String body, Map<String, Object> args) {
-            return getSqlGenerator().formatSql(body, args);
+            return SqlUtil.formatSql(body, args);
         }
 
         @Override

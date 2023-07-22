@@ -4,6 +4,7 @@ import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.io.TypedProperties;
 import com.github.chengyuxing.common.script.IPipe;
 import com.github.chengyuxing.sql.exceptions.YamlDeserializeException;
+import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.yaml.JoinConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -15,16 +16,16 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.ConcurrentModificationException;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 
 /**
  * 支持扩展脚本解析动态SQL的文件管理器配置项
  */
 public class XQLFileManagerConfig {
     private static final Logger log = LoggerFactory.getLogger(XQLFileManagerConfig.class);
+    private SqlGenerator sqlGenerator;
     protected volatile boolean loading;
+
     // ----------------optional properties------------------
     protected Map<String, String> files = new HashMap<>();
     protected Map<String, String> constants = new HashMap<>();
@@ -32,8 +33,12 @@ public class XQLFileManagerConfig {
     protected Map<String, String> pipes = new HashMap<>();
     protected String charset = "UTF-8";
     protected String delimiter = ";";
+    protected Character namedParamPrefix = ':';
     // ----------------optional properties------------------
 
+    /**
+     * 配置项构造器
+     */
     public XQLFileManagerConfig() {
     }
 
@@ -43,6 +48,7 @@ public class XQLFileManagerConfig {
      * @param configLocation 配置文件路径名
      */
     public XQLFileManagerConfig(String configLocation) {
+        this();
         FileResource resource = new FileResource(configLocation);
         if (configLocation.endsWith(".yml")) {
             loadYaml(resource);
@@ -99,11 +105,13 @@ public class XQLFileManagerConfig {
                     }
                 }
             });
+
             setFiles(localFiles);
             setConstants(localConstants);
             setPipes(localPipes);
             setDelimiter(properties.getProperty("delimiter"));
             setCharset(properties.getProperty("charset"));
+            setNamedParamPrefix(properties.getProperty("namedParamPrefix", ":").charAt(0));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -304,5 +312,26 @@ public class XQLFileManagerConfig {
         }
         checkLoading();
         this.delimiter = delimiter;
+    }
+
+    /**
+     * 获取命名参数前缀（用于支持插件识别）
+     *
+     * @return 命名参数前缀
+     */
+    public Character getNamedParamPrefix() {
+        return namedParamPrefix;
+    }
+
+    /**
+     * 设置命名参数前缀（用于支持插件识别）
+     *
+     * @param namedParamPrefix 命名参数前缀
+     */
+    public void setNamedParamPrefix(Character namedParamPrefix) {
+        if (namedParamPrefix == null || namedParamPrefix == ' ') {
+            return;
+        }
+        this.namedParamPrefix = namedParamPrefix;
     }
 }

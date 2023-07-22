@@ -35,7 +35,7 @@ Maven 中央仓库
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.3.4</version>
+    <version>7.4.0</version>
 </dependency>
 ```
 
@@ -202,19 +202,19 @@ Tx.using(() -> {
 
 ### 字符串模版
 
-`${[:]name}` (通用的字符串模版占位符，不进行预编译，可用于sql片段的复用)
+`${[!]name}` (通用的字符串模版占位符，不进行预编译，可用于sql片段的复用)
 
 字符串模版有2种格式：
 
-- `${part}` 如果类型是**装箱类型数组(String[], Integer[]...)**或**集合(Set, List...)**，则先展开（逗号分割），再进行sql片段的替换；
-- `${:part}` 名字前多了前缀符号( `:` )，如果类型是**装箱类型数组(String[], Integer[]...)**或**集合(Set, List...)**，则先展开（逗号分隔），并做一定的字符串安全处理，再进行sql片段的替换。
+- `${name}` 如果类型是**装箱类型数组(String[], Integer[]...)**或**集合(Set, List...)**，则先展开（逗号分割），再进行sql片段的替换；
+- `${!name}` 名字前多了前缀符号( `!` )，如果类型是**装箱类型数组(String[], Integer[]...)**或**集合(Set, List...)**，则先展开（逗号分隔），并做一定的字符串安全处理，再进行sql片段的替换。
 
 #### 示例
 
 sql：
 
 ```sql
-select ${fields}, ${moreFields} from ... where word in (${:words}) or id = :id;
+select ${fields}, ${moreFields} from ... where word in (${!words}) or id = :id;
 ```
 
 参数：
@@ -242,7 +242,7 @@ select * from test.user t
 where
 --#if :names <> blank
 	-- #for name,idx of :names delimiter ' and ' filter ${idx} > 0 && ${name} ~ 'o'
-		t.name = ${:name.id}
+		t.name = ${!name.id}
 	-- #end
 --#fi
 --#if :id > -1
@@ -422,8 +422,6 @@ C --pipeN--> D[...]
   ```sql
   where id = ?id
   ```
-
-  > :warning: 命名参数语法和动态sql表达式没任何关系，[表达式](#表达式脚本)参数值键名依然以 `:` 号开头。
 
 - [分页查询](#分页查询)如果没有受支持的数据库，则可以通过属性 `globalPageHelperProvider` 实现自定义的数据库分页帮助提供程序；
 

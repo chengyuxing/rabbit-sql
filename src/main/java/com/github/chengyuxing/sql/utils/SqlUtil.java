@@ -37,7 +37,7 @@ public class SqlUtil {
      * 格式化sql字符串模版<br>
      * e.g.
      * <blockquote>
-     * <pre>字符串：select ${ fields } from test.user where ${  cnd} and id in (${:idArr}) or id = ${:idArr.1}</pre>
+     * <pre>字符串：select ${ fields } from test.user where ${  cnd} and id in (${!idArr}) or id = ${!idArr.1}</pre>
      * <pre>参数：{fields: "id, name", cnd: "name = 'cyx'", idArr: ["a", "b", "c"]}</pre>
      * <pre>结果：select id, name from test.user where name = 'cyx' and id in ('a', 'b', 'c') or id = 'b'</pre>
      * </blockquote>

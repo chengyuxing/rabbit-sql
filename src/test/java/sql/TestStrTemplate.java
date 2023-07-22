@@ -15,9 +15,9 @@ public class TestStrTemplate {
     static final Args<Object> args = Args.<Object>of("ids", Arrays.asList("I'm Ok!", "b", "c"))
             .add("fields", "id, name, age")
             .add("id", Math.random())
-            .add("date", "2020-12-23 ${:time}")
+            .add("date", "2020-12-23 ${!time}")
             .add("time", "11:23:44")
-            .add("cnd", "id in (${ :ids.0 },${fields}) and id = :id or ${date} '${mn}' and ${");
+            .add("cnd", "id in (${ !ids.0 },${fields}) and id = :id or ${date} '${mn}' and ${");
 
     static SqlGenerator sqlGenerator = new SqlGenerator(':');
 

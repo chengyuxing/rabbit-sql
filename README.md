@@ -35,7 +35,7 @@ Maven central
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.3.4</version>
+    <version>7.4.0</version>
 </dependency>
 ```
 
@@ -202,19 +202,19 @@ Prepare sql support named parameter style, e.g:
 
 ### String template
 
-`${[:]name}` (string template holder, not prepare, use for sql fragment reuse)
+`${[!]name}` (string template holder, not prepare, use for sql fragment reuse)
 
 2 styles：
 
-- `${part}`: if value type is **boxed type array(String[], Integer[]...)** or **collection (Set, List...)**, just expand value and replace.
-- `${:part}`: name start with `:`, if value type is **boxed type array(String[], Integer[]...)** or **collection(Set, List...)**, expand value and safe quote, then replace.
+- `${name}`: if value type is **boxed type array(String[], Integer[]...)** or **collection (Set, List...)**, just expand value and replace.
+- `${!name}`: name start with `!`, if value type is **boxed type array(String[], Integer[]...)** or **collection(Set, List...)**, expand value and safe quote, then replace.
 
 #### Example
 
 sql:
 
 ```sql
-select ${fields}, ${moreFields} from ... where word in (${:words}) or id = :id;
+select ${fields}, ${moreFields} from ... where word in (${!words}) or id = :id;
 ```
 
 args:
@@ -242,7 +242,7 @@ select * from test.user t
 where
 --#if :names <> blank
 	-- #for name,idx of :names delimiter ' and ' filter ${idx} > 0 && ${name} ~ 'o'
-		t.name = ${:name.id}
+		t.name = ${!name.id}
 	-- #end
 --#fi
 --#if :id > -1
@@ -426,8 +426,6 @@ Default implement of interface **Baki**, support some basic operation.
   ```sql
   where id = ?id
   ```
-
-  > :warning: Named parameter syntax has nothing to do with dynamic sql expression，[expression](#Expression-script)'s value of key also start with `:`.
 
 - if [pageable query](#paging) not support your database, implement custom page helper provider to property `globalPageHelperProvider` get support.
 

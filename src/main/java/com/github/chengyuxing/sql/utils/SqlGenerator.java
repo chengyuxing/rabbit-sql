@@ -33,7 +33,7 @@ public class SqlGenerator {
         if (_namedParamPrefix == ' ') {
             throw new IllegalArgumentException("prefix char cannot be empty.");
         }
-        this.PARAM_PATTERN = Pattern.compile("(^\\" + _namedParamPrefix + "|[^\\" + _namedParamPrefix + "]\\" + _namedParamPrefix + ")(?<name>[a-zA-Z_][\\w_]*)", Pattern.MULTILINE);
+        this.PARAM_PATTERN = Pattern.compile("(^\\" + _namedParamPrefix + "|[^\\" + _namedParamPrefix + "]\\" + _namedParamPrefix + ")(?<name>[a-zA-Z_][\\w_.-]*)", Pattern.MULTILINE);
         this.namedParamPrefix = String.valueOf(_namedParamPrefix);
     }
 

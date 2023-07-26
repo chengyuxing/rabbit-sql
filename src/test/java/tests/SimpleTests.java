@@ -9,6 +9,6 @@ public class SimpleTests {
     @Test
     public void test1() throws Exception {
         System.out.println("ababab".replace("ba", "$"));
-        System.out.println(new SqlGenerator(':').generateSql("id = id and name = name", Collections.emptyMap(), true));
+        System.out.println(new SqlGenerator(':').generateSql("id = id and name = name", Collections.emptyMap()));
     }
 }

@@ -30,11 +30,6 @@ public class SqliteTest {
         baki = BakiDao.of(ds);
     }
 
-    @Test
-    public void test1() throws Exception {
-        baki.of("create table user(id int primary key, name varchar(50), age int)");
-    }
-
 
     @Test
     public void query() {

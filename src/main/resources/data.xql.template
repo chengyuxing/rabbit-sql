@@ -5,7 +5,7 @@
 * ${} (通用的字符串模版占位符，不进行预编译，用于动态sql的拼接)
 * 字符串模版参数名两种格式：
 * ${part} 如果类型是装箱类型数组(String[], Integer[]...)或集合(Set, List...)，则先展开（逗号分割），再进行sql片段的替换；
-* ${:part} 名字前多了前缀符号(:)，如果类型是装箱类型数组(String[], Integer[]...)或集合(Set, List...)，则先展开（逗号分隔），并做一定的字符串安全处理，再进行sql片段的替换。
+* ${!part} 名字前多了前缀符号(:)，如果类型是装箱类型数组(String[], Integer[]...)或集合(Set, List...)，则先展开（逗号分隔），并做一定的字符串安全处理，再进行sql片段的替换。
 * 字符串模版中还可以使用传名参数
 * 小提示：PostgreSQL中，带有问号的操作符(?,?|,?&,@?)可以使用双问号(??,??|,??&,@??)解决预编译sql参数未设定的报错()，或者直接使用函数
 **/
@@ -29,27 +29,16 @@ order by id;
 * if...fi
 * choose when...break... end
 * switch case...break... end
-* for...end
+* for...done
 **/
 
-/*[q2]*/
-select *
-from test.user t
-where
---#if :names <> blank
-    -- #for name,idx of :names delimiter ' and ' filter ${idx} > 0 && ${name} ~ 'o'
-        t.name = ${:name.id}
-    -- #end
---#fi
-;
-
-/*[pipe]*/
-select *
-from test.user t
-where
---#if :idCard | is_id_card == true
-t.id = :idCard
---#fi
+/*[for]*/
+select * from test.user where id = 1
+-- #for id of :ids delimiter ', \n' open ' or id in (' close ')'
+    -- #if :id > 0
+    :_for.id
+    -- #fi
+-- #done
 ;
 
 /*[good_query]*/

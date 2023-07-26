@@ -6,6 +6,7 @@ import com.github.chengyuxing.common.script.IPipe;
 import com.github.chengyuxing.common.script.SimpleScriptParser;
 import com.github.chengyuxing.common.script.exception.ScriptSyntaxException;
 import com.github.chengyuxing.common.script.impl.FastExpression;
+import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.exceptions.DuplicateException;
@@ -27,8 +28,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.github.chengyuxing.common.script.SimpleScriptParser.TAGS;
-import static com.github.chengyuxing.common.utils.StringUtil.NEW_LINE;
-import static com.github.chengyuxing.common.utils.StringUtil.containsAnyIgnoreCase;
+import static com.github.chengyuxing.common.utils.StringUtil.*;
 import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
 
 /**
@@ -58,7 +58,7 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
  *    <pre>order by id desc;</pre>
  *    ...
  * </blockquote>
- * <p>{@link #get(String, Map)}, {@link #get(String, Map, boolean)}</p>
+ * <p>{@link #get(String, Map)}</p>
  * 动态sql脚本表达式写在行注释中 以 -- 开头，
  * 具体参考classpath下的文件：data.xql.template
  *
@@ -70,9 +70,9 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+)\\s*}\\s*\\*/");
     public static final String PROPERTIES = "xql-file-manager.properties";
     public static final String YML = "xql-file-manager.yml";
+    private final ClassLoader classLoader = this.getClass().getClassLoader();
     private final ReentrantLock lock = new ReentrantLock();
     private final Map<String, Resource> resources = new HashMap<>();
-    private final DynamicSqlParser dynamicSqlParser = new DynamicSqlParser();
     private volatile boolean initialized;
 
     /**
@@ -241,7 +241,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     continue;
                 }
                 // exclude single line annotation except expression keywords
-                if (!trimLine.startsWith("--") || (StringUtil.startsWithsIgnoreCase(dynamicSqlParser.trimExpression(trimLine), TAGS))) {
+                if (!trimLine.startsWith("--") || (StringUtil.startsWithsIgnoreCase(trimAnnotation(trimLine), TAGS))) {
                     if (!blockName.equals("")) {
                         sqlBodyBuffer.add(line);
                         if (trimLine.endsWith(delimiter)) {
@@ -348,7 +348,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         if (pipes.isEmpty()) return;
         try {
             for (Map.Entry<String, String> entry : pipes.entrySet()) {
-                pipeInstances.put(entry.getKey(), (IPipe<?>) ReflectUtil.getInstance(Class.forName(entry.getValue())));
+                pipeInstances.put(entry.getKey(), (IPipe<?>) ReflectUtil.getInstance(classLoader.loadClass(entry.getValue())));
             }
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
                  InvocationTargetException | NoSuchMethodException e) {
@@ -486,39 +486,25 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     /**
      * 获取一条动态sql
      *
-     * @param name         sql名字
-     * @param args         动态sql逻辑表达式参数字典
-     * @param checkArgsKey 检查参数中是否必须存在表达式中需要计算的key
-     * @return 解析后的sql
+     * @param name sql名字
+     * @param args 动态sql逻辑表达式参数字典
+     * @return 解析后的sql和#for表达式中的临时变量（如果有）
      * @throws NoSuchElementException 如果没有找到相应名字的sql片段
      * @throws ScriptSyntaxException  动态sql表达式解析异常
      * @see DynamicSqlParser
      */
-    public String get(String name, Map<String, ?> args, boolean checkArgsKey) {
+    public Pair<String, Map<String, Object>> get(String name, Map<String, ?> args) {
         String sql = get(name);
         if (!containsAnyIgnoreCase(sql, TAGS)) {
-            return sql;
+            return Pair.of(sql, Collections.emptyMap());
         }
         try {
-            sql = dynamicSqlParser.parse(sql, args, checkArgsKey);
-            return SqlUtil.repairSyntaxError(sql);
+            DynamicSqlParser parser = new DynamicSqlParser();
+            sql = SqlUtil.repairSyntaxError(parser.parse(sql, args));
+            return Pair.of(sql, parser.getForVars());
         } catch (Exception e) {
             throw new ScriptSyntaxException("an error occurred when getting dynamic sql of name: " + name, e);
         }
-    }
-
-    /**
-     * 获取一条动态sql<br>
-     *
-     * @param name sql名字
-     * @param args 动态sql逻辑表达式参数字典
-     * @return 解析后的sql
-     * @throws NoSuchElementException 如果没有找到相应名字的sql片段
-     * @throws ScriptSyntaxException  动态sql表达式解析异常
-     * @see DynamicSqlParser
-     */
-    public String get(String name, Map<String, ?> args) {
-        return get(name, args, true);
     }
 
     /**
@@ -541,15 +527,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * 获取动态sql解析器
-     *
-     * @return 动态sql解析器
-     */
-    public DynamicSqlParser dynamicSqlParser() {
-        return dynamicSqlParser;
-    }
-
-    /**
      * 关闭sql文件管理器释放所有文件资源
      */
     @Override
@@ -567,10 +544,30 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
+     * 裁剪注释行以识别动态sql表达式前缀
+     *
+     * @param line 当前行
+     * @return 注释行或表达式
+     */
+    protected String trimAnnotation(String line) {
+        String trimS = line.trim();
+        if (trimS.startsWith("--")) {
+            String expAnon = trimS.substring(2).trim();
+            if (expAnon.startsWith("#")) {
+                return expAnon;
+            }
+        }
+        return trimS;
+    }
+
+    /**
      * 动态sql解析器
      * {@inheritDoc}
      */
     public class DynamicSqlParser extends SimpleScriptParser {
+        public static final String FOR_VARS_KEY = "_for";
+        private static final String VAR_PREFIX = FOR_VARS_KEY + ".";
+
         @Override
         protected IExpression expression(String expression) {
             FastExpression fastExpression = new FastExpression(expression);
@@ -578,28 +575,44 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             return fastExpression;
         }
 
+        /**
+         * 去除for循环内的多余注释，为符合格式的命名参数进行编号
+         * @param forIndex 每个for循环语句的序号
+         * @param varIndex for变量的序号
+         * @param varName  for变量名
+         * @param idxName  for变量序号名
+         * @param body     for循环里的内容主体
+         * @param args     用户参数和for循环每次迭代的参数（序号和值）
+         * @return 经过格式化处理的内容
+         */
         @Override
-        protected String forLoopBodyFormatter(String body, Map<String, Object> args) {
-            return SqlUtil.formatSql(body, args);
+        protected String forLoopBodyFormatter(int forIndex, int varIndex, String varName, String idxName, List<String> body, Map<String, Object> args) {
+            body.removeIf(l -> {
+                String tl = l.trim();
+                return tl.startsWith("--") && !tl.substring(2).trim().startsWith("#");
+            });
+            String formatted = SqlUtil.formatSql(String.join(NEW_LINE, body), args);
+            if (varName != null) {
+                String varParam = VAR_PREFIX + forVarKey(varName, forIndex, varIndex);
+                formatted = formatted.replace(VAR_PREFIX + varName, varParam);
+            }
+            if (idxName != null) {
+                String idxParam = VAR_PREFIX + forVarKey(idxName, forIndex, varIndex);
+                formatted = formatted.replace(VAR_PREFIX + idxName, idxParam);
+            }
+            return formatted;
         }
 
         @Override
         protected String trimExpression(String line) {
-            String trimS = line.trim();
-            if (trimS.startsWith("--")) {
-                String expAnon = trimS.substring(2).trim();
-                if (expAnon.startsWith("#")) {
-                    return expAnon;
-                }
-            }
-            return trimS;
+            return trimAnnotation(line);
         }
     }
 
     /**
      * sql文件资源
      */
-    public class Resource {
+    public static class Resource {
         private final String alias;
         private final String filename;
         private long lastModified = -1;
@@ -609,31 +622,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             this.alias = alias;
             this.filename = filename;
             this.entry = Collections.emptyMap();
-        }
-
-        /**
-         * 刷新当前资源
-         *
-         * @return 如果资源正在加载或者文件没有被修改过返回 false，刷新成功返回 true
-         */
-        public boolean refresh() {
-            if (isLoading()) {
-                return false;
-            }
-            try {
-                FileResource fileResource = new FileResource(filename);
-                if (fileResource.getLastModified() == lastModified) {
-                    return false;
-                }
-                Resource resource = parse(alias, filename, fileResource);
-                setEntry(resource.getEntry());
-                setLastModified(resource.getLastModified());
-                return true;
-            } catch (IOException e) {
-                throw new UncheckedIOException("load sql file error: ", e);
-            } catch (URISyntaxException e) {
-                throw new RuntimeException("sql file uri syntax error: ", e);
-            }
         }
 
         public String getAlias() {

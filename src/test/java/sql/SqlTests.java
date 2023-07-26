@@ -109,7 +109,7 @@ public class SqlTests {
                         }
 
                         FastExpression expression = FastExpression.of(expStr);
-                        if (expression.calc(fArgs, true)) {
+                        if (expression.calc(fArgs)) {
                             String sqlPart = loopPart.toString();
                             Matcher mx = itemP.matcher(sqlPart);
                             while (mx.find()) {

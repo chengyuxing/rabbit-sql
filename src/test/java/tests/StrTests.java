@@ -63,16 +63,6 @@ public class StrTests {
     }
 
     @Test
-    public void gu() throws Exception {
-        update("test.user",
-                Args.<Object>of("id", 10)
-                        .add("name", "chengyuxing")
-                        .add("now", LocalDateTime.now())
-                        .add("enable", true),
-                "id=:id and enable = :enable");
-    }
-
-    @Test
     public void testUpdate() {
         SqlGenerator sqlGenerator = new SqlGenerator(':');
         List<String> list = new ArrayList<>();
@@ -96,19 +86,6 @@ public class StrTests {
         System.out.println(list.get(7810));
     }
 
-
-    public static void update(String tableName, Map<String, Object> data, String where) {
-        Pair<String, List<String>> cnd = new SqlGenerator(':').generateSql(where, data, true);
-        Map<String, Object> updateData = new HashMap<>(data);
-        for (String key : cnd.getItem2()) {
-            updateData.remove(key);
-        }
-//        String update = new SqlGenerator(':').generateNamedParamUpdate(tableName, updateData);
-//        String w = StringUtil.startsWithIgnoreCase(where.trim(), "where") ? where : "\nwhere " + where;
-//        System.out.println(update + w);
-//        System.out.println(data);
-    }
-
     @Test
     public void tst35() throws IOException {
         String sql = SqlUtil.highlightSql("select 1,2,3, current_timestamp;");
@@ -121,11 +98,6 @@ public class StrTests {
         String sql = "select * from test.user where name = ${:name}";
         String pair = SqlUtil.formatSql(sql, Args.create("name", "'; drop table test.user;--'"));
         System.out.println(pair);
-    }
-
-    @Test
-    public void test37() {
-        getClazz(null);
     }
 
     public static void getClazz(Object o) {

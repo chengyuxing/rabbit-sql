@@ -7,6 +7,7 @@ import com.github.chengyuxing.common.ImmutableList;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.script.IPipe;
 import com.github.chengyuxing.common.tuple.Pair;
+import com.github.chengyuxing.common.utils.Jackson;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.BakiDao;
@@ -127,7 +128,7 @@ public class Tests {
         String sql = "insert into test.user(idd,name,id,age,address) values (:id,:name::integer,:idd::float,integer :age,date :address)";
 //        String sql2 = "select * from test.user where id = '1' and tag = '1' and num = '1' and name = :name";
 //        String jsonSql = "select '{\"a\":[1,2,3],\"b\":[4,5,6]}'::json #>> '{b,1}'";
-        Pair<String, List<String>> pair = new SqlGenerator(':').getPreparedSql(str, Collections.emptyMap());
+        Pair<String, List<String>> pair = new SqlGenerator(':').generatePreparedSql(str, Collections.emptyMap());
         System.out.println(pair.getItem1());
         System.out.println(pair.getItem2());
 
@@ -138,10 +139,10 @@ public class Tests {
 
     @Test
     public void sqlPlaceHolder() throws Exception {
-        String query = "select * from test where id = ?id and id = ?id and idCard = '5301111' or name = ?name ${cnd}";
-        Pair<String, List<String>> sql = new SqlGenerator('?').generateSql(query, Args.of("cnd", "and date <= '${date}'")
+        String query = "select * from test where id = ?_i.d and id = ?id and idCard = '5301111' or name = ?na-me ${cnd}";
+        Pair<String, List<String>> sql = new SqlGenerator('?').generatePreparedSql(query, Args.of("cnd", "and date <= '${date}'")
                 .add("date", "2020-12-23 ${time}")
-                .add("time", "11:23:44"), true);
+                .add("time", "11:23:44"));
         System.out.println(sql.getItem1());
         System.out.println(sql.getItem2());
     }
@@ -304,8 +305,8 @@ public class Tests {
                 "words", "it's my time!",
                 "dt", LocalDateTime.now());
 
-        System.out.println(new SqlGenerator('?').generateNamedParamInsert("t.user", args, Arrays.asList("id", "name", "asx")));
-        System.out.println(new SqlGenerator('?').generateInsert("t.user", args, Collections.emptyList()));
+        System.out.println(new SqlGenerator('?').generateNamedParamInsert("t.user", args, Arrays.asList("id", "name", "asx"), true));
+        System.out.println(new SqlGenerator('?').generateInsert("t.user", args, Collections.emptyList(), true));
 
     }
 
@@ -314,7 +315,7 @@ public class Tests {
         SqlGenerator sqlGenerator = new SqlGenerator(':');
         String[] allFields = new String[]{"a", "b", "c", "d", "e", "f"};
         Args<Object> args = Args.create("A", 1, "B", 2, "C", 3, "D", 4);
-        System.out.println(sqlGenerator.generateNamedParamInsert("user", args, Arrays.asList(allFields)));
+        System.out.println(sqlGenerator.generateNamedParamInsert("user", args, Arrays.asList(allFields), true));
     }
 
     @Test
@@ -322,14 +323,14 @@ public class Tests {
         Map<String, Object> map = new HashMap<>();
         map.put("a", 1);
         map.put("A", 1);
-        map.put("B", 1);
+        map.put("B", null);
         map.put("C", 1);
         map.put("D", 1);
 
         SqlGenerator sqlGenerator = new SqlGenerator(':');
 
         System.out.println(sqlGenerator.filterKeys(map, Arrays.asList("a", "b", "c")));
-        System.out.println(sqlGenerator.generateNamedParamInsert("test.t", map, Arrays.asList("a", "b", "c")));
+        System.out.println(sqlGenerator.generateNamedParamInsert("test.t", map, Arrays.asList("a", "b", "c"), true));
 
     }
 
@@ -343,7 +344,7 @@ public class Tests {
 
         xqlFileManager.remove("cyx");
 
-        System.out.println(ReflectUtil.obj2Json(xqlFileManager));
+        System.out.println(Jackson.toJson(xqlFileManager));
     }
 
     @Test
@@ -363,7 +364,7 @@ public class Tests {
         Object xql = ReflectUtil.getInstance(XQLFileManager.class);
         Method m = xql.getClass().getDeclaredMethod("setFilenames", Set.class);
         m.invoke(xql, Stream.of("a/v/d/bbb.xql", "111/222/ddd.xql").collect(Collectors.toSet()));
-        System.out.println(ReflectUtil.obj2Json(xql));
+        System.out.println(Jackson.toJson(xql));
     }
 
     @Test
@@ -424,6 +425,6 @@ public class Tests {
                 "name", "cyx",
                 "address", "kunming",
                 "age", 103
-        ), false));
+        )));
     }
 }

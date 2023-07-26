@@ -2,6 +2,7 @@ package tests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.common.utils.Jackson;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.sql.*;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
@@ -140,14 +141,8 @@ public class MyTest {
         List<Map<String, Object>> trees = new ArrayList<>();
         trees.add(tree);
         mergeTreeInverse(list, trees);
-        System.out.println(ReflectUtil.obj2Json(trees));
+        System.out.println(Jackson.toJson(trees));
         System.out.println(list.size());
-    }
-
-    @Test
-    public void inserts() throws Exception {
-        baki.of("insert into test.tb(strs)\n" +
-                "values ('{a,b,c}')").execute();
     }
 
     @Test
@@ -198,19 +193,7 @@ public class MyTest {
         baki.insert("test.tb").save(Args.of("blob", new FileInputStream("/Users/chengyuxing/Downloads/Bob.app.zip")));
     }
 
-    @Test
-    public void executeAny() throws Exception {
-        DataRow row = baki.of("(select current_date, current_time)").execute();
-        System.out.println(row);
-        row.<List<DataRow>>getFirstAs()
-                .forEach(System.out::println);
-        int i = OracleTypes.CURSOR;
-//        DataRow row1 = baki.execute("insert into test.tb(a,b) values (:a,:b)", Args.<Object>of("a", 5).add("b", 5));
-//        System.out.println(row1);
-//
-//        DataRow row2 = baki.execute("create index idx_a on test.tb(a)");
-//        System.out.println(row2);
-    }
+
 
     @Test
     public void defaultPager() throws Exception {
@@ -268,7 +251,7 @@ public class MyTest {
 
     @Test
     public void line() throws Exception {
-        DataRow row = baki.of("do\n" +
+        DataRow row = baki.execute("do\n" +
                 "$$\n" +
                 "    declare\n" +
                 "        x    integer[];\n" +
@@ -280,7 +263,7 @@ public class MyTest {
                 "            end loop;\n" +
                 "    end;\n" +
                 "\n" +
-                "$$;").execute();
+                "$$;");
         System.out.println(row);
     }
 
@@ -327,7 +310,7 @@ public class MyTest {
 
     @Test
     public void loadData() throws Exception {
-        baki.of("copy test.fruit from '/Users/chengyuxing/test/fruit2.txt' with delimiter ','");
+        baki.execute("copy test.fruit from '/Users/chengyuxing/test/fruit2.txt' with delimiter ','");
 //        baki.execute("copy test.fruit from '/Users/chengyuxing/test/fruit2.txt' with delimiter ','");
     }
 

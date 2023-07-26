@@ -4,7 +4,6 @@ import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.io.TypedProperties;
 import com.github.chengyuxing.common.script.IPipe;
 import com.github.chengyuxing.sql.exceptions.YamlDeserializeException;
-import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.yaml.JoinConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,14 +15,15 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.*;
+import java.util.ConcurrentModificationException;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * 支持扩展脚本解析动态SQL的文件管理器配置项
  */
 public class XQLFileManagerConfig {
     private static final Logger log = LoggerFactory.getLogger(XQLFileManagerConfig.class);
-    private SqlGenerator sqlGenerator;
     protected volatile boolean loading;
 
     // ----------------optional properties------------------

@@ -10,6 +10,7 @@ import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -76,7 +77,7 @@ public class DynamicTests {
                 "ff", null,
                 "name", "78"
         );
-        String sql = sqlFileManager.get("nest.region", args);
+        Object sql = sqlFileManager.get("nest.region", args);
         System.out.println(sql);
     }
 

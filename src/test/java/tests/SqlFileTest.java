@@ -61,7 +61,7 @@ public class SqlFileTest {
 
     @Test
     public void ref() throws Exception {
-        Pair<String, List<String>> pair = new SqlGenerator(':').getPreparedSql(":res = call getUser(:id, :name)", Collections.emptyMap());
+        Pair<String, List<String>> pair = new SqlGenerator(':').generatePreparedSql(":res = call getUser(:id, :name)", Collections.emptyMap());
         System.out.println(pair.getItem1());
         System.out.println(pair.getItem2());
     }

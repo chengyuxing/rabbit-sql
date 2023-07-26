@@ -325,7 +325,8 @@ public class BakiDao extends JdbcSupport implements Baki {
                     args.putAll(pagedArgs);
                 }
                 Pair<String, Map<String, Object>> result = parseSql(sql, args);
-                try (Stream<DataRow> s = executeQueryStream(pageHelper.pagedSql(result.getItem1()), result.getItem2())) {
+                String pagedSql = pageHelper.pagedSql(result.getItem1());
+                try (Stream<DataRow> s = executeQueryStream(pagedSql, result.getItem2())) {
                     return s.peek(d -> d.remove(PageHelper.ROW_NUM_KEY)).findFirst();
                 }
             }
@@ -659,11 +660,29 @@ public class BakiDao extends JdbcSupport implements Baki {
                 throw new IllegalSqlException(error);
             }
         }
-        if (log.isDebugEnabled()) {
-            log.debug("SQL: {}", SqlUtil.buildConsoleSql(trimSql));
-            log.debug("Args: {}", data);
-        }
+        debugSql(trimSql, data);
         return Pair.of(trimSql, data);
+    }
+
+    /**
+     * debug模式下打印sql
+     *
+     * @param sql  sql
+     * @param data 数据
+     */
+    protected void debugSql(String sql, Map<String, Object> data) {
+        if (log.isDebugEnabled()) {
+            log.debug("SQL: {}", SqlUtil.buildConsoleSql(sql));
+            StringJoiner sb = new StringJoiner(", ", "{", "}");
+            data.forEach((k, v) -> {
+                if (v == null) {
+                    sb.add(k + " -> null");
+                } else {
+                    sb.add(k + " -> " + v + "(" + v.getClass().getSimpleName() + ")");
+                }
+            });
+            log.debug("Args: {}", sb);
+        }
     }
 
     @Override

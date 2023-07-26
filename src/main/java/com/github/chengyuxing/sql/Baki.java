@@ -1,13 +1,15 @@
 package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.DataRow;
-import com.github.chengyuxing.sql.support.executor.*;
+import com.github.chengyuxing.sql.support.executor.DeleteExecutor;
+import com.github.chengyuxing.sql.support.executor.InsertExecutor;
+import com.github.chengyuxing.sql.support.executor.QueryExecutor;
+import com.github.chengyuxing.sql.support.executor.UpdateExecutor;
 import com.github.chengyuxing.sql.types.Param;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.util.Collection;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -71,7 +73,7 @@ public interface Baki {
      * @param sqls sql或sql名
      * @return 每条sql的执行结果
      */
-    int[] executeBatch(List<String> sqls);
+    int[] executeBatch(String... sqls);
 
     /**
      * 批量执行非查询sql（非预编译）

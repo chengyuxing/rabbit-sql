@@ -218,40 +218,40 @@ public abstract class JdbcSupport extends SqlParser {
      * @throws IllegalArgumentException      如果执行的sql条数少1条
      */
     public int[] executeBatch(final List<String> sqls) {
-        if (sqls.size() > 0) {
-            Statement statement = null;
-            Connection connection = getConnection();
-            if (JdbcUtil.supportsBatchUpdates(connection)) {
-                try {
-                    statement = connection.createStatement();
-                    Map<String, ?> empty = Collections.emptyMap();
-                    for (String sql : sqls) {
-                        if (!StringUtil.isEmpty(sql)) {
-                            statement.addBatch(parseSql(sql, empty).getItem1());
-                        }
-                    }
-                    return statement.executeBatch();
-                } catch (SQLException e) {
-                    try {
-                        JdbcUtil.closeStatement(statement);
-                    } catch (SQLException ex) {
-                        e.addSuppressed(ex);
-                    }
-                    statement = null;
-                    releaseConnection(connection, getDataSource());
-                    throw new UncheckedSqlException("execute batch error: ", e);
-                } finally {
-                    try {
-                        JdbcUtil.closeStatement(statement);
-                    } catch (SQLException e) {
-                        log.error("close statement error: ", e);
-                    }
-                    releaseConnection(connection, getDataSource());
-                }
-            }
-            throw new UnsupportedOperationException("your database or jdbc driver not support batch execute currently!");
+        if (sqls.isEmpty()) {
+            return new int[0];
         }
-        throw new IllegalArgumentException("must not be less than one SQL.");
+        Statement statement = null;
+        Connection connection = getConnection();
+        if (JdbcUtil.supportsBatchUpdates(connection)) {
+            try {
+                statement = connection.createStatement();
+                Map<String, ?> empty = Collections.emptyMap();
+                for (String sql : sqls) {
+                    if (!StringUtil.isEmpty(sql)) {
+                        statement.addBatch(parseSql(sql, empty).getItem1());
+                    }
+                }
+                return statement.executeBatch();
+            } catch (SQLException e) {
+                try {
+                    JdbcUtil.closeStatement(statement);
+                } catch (SQLException ex) {
+                    e.addSuppressed(ex);
+                }
+                statement = null;
+                releaseConnection(connection, getDataSource());
+                throw new UncheckedSqlException("execute batch error: ", e);
+            } finally {
+                try {
+                    JdbcUtil.closeStatement(statement);
+                } catch (SQLException e) {
+                    log.error("close statement error: ", e);
+                }
+                releaseConnection(connection, getDataSource());
+            }
+        }
+        throw new UnsupportedOperationException("your database or jdbc driver not support batch execute currently!");
     }
 
     /**

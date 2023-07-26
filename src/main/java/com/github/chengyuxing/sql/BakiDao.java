@@ -393,6 +393,11 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
+    public int[] executeBatch(String... sqls) {
+        return executeBatch(Arrays.asList(sqls));
+    }
+
+    @Override
     public int[] executeBatch(String namedSql, Collection<Map<String, ?>> data) {
         List<String> list = new ArrayList<>();
         for (Map<String, ?> item : data) {

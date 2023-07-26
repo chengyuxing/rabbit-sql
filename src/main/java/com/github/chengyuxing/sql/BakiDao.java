@@ -125,12 +125,13 @@ public class BakiDao extends JdbcSupport implements Baki {
     /**
      * 插入
      *
-     * @param tableName 表名
-     * @param data      数据
-     * @param safe      <ul>
-     *                  <li>true: 根据数据库表字段名排除数据中不存在的key，安全的插入</li>
-     *                  <li>false: 根据数据原封不动完全插入，如果有不存在的字段则抛出异常</li>
-     *                  </ul>
+     * @param tableName  表名
+     * @param data       数据
+     * @param safe       <ul>
+     *                   <li>true: 根据数据库表字段名排除数据中不存在的key，安全的插入</li>
+     *                   <li>false: 根据数据原封不动完全插入，如果有不存在的字段则抛出异常</li>
+     *                   </ul>
+     * @param ignoreNull 忽略null值
      * @return 受影响的行数
      * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
      * @see #fastInsert(String, Collection, boolean, boolean)

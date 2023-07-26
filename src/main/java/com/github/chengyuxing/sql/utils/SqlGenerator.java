@@ -1,23 +1,22 @@
 package com.github.chengyuxing.sql.utils;
 
+import com.github.chengyuxing.common.script.Patterns;
 import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.common.utils.CollectionUtil;
+import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.github.chengyuxing.common.utils.CollectionUtil.*;
-import static com.github.chengyuxing.sql.utils.SqlUtil.*;
+import static com.github.chengyuxing.common.utils.CollectionUtil.containsIgnoreCase;
+import static com.github.chengyuxing.sql.utils.SqlUtil.quoteFormatValue;
+import static com.github.chengyuxing.sql.utils.SqlUtil.replaceSqlSubstr;
 
 /**
  * sql构建工具帮助类
  */
 public class SqlGenerator {
-    private static final Logger log = LoggerFactory.getLogger(SqlGenerator.class);
     private final String namedParamPrefix;
     /**
      * 匹配命名参数
@@ -33,7 +32,7 @@ public class SqlGenerator {
         if (_namedParamPrefix == ' ') {
             throw new IllegalArgumentException("prefix char cannot be empty.");
         }
-        this.PARAM_PATTERN = Pattern.compile("(^\\" + _namedParamPrefix + "|[^\\" + _namedParamPrefix + "]\\" + _namedParamPrefix + ")(?<name>[a-zA-Z_][\\w_.-]*)", Pattern.MULTILINE);
+        this.PARAM_PATTERN = Pattern.compile("(^\\" + _namedParamPrefix + "|[^\\" + _namedParamPrefix + "]\\" + _namedParamPrefix + ")(?<name>" + Patterns.VAR_KEY_PATTERN + ")");
         this.namedParamPrefix = String.valueOf(_namedParamPrefix);
     }
 
@@ -56,6 +55,28 @@ public class SqlGenerator {
     }
 
     /**
+     * 解析传名参数sql处理为预编译的sql
+     *
+     * @param sql  带参数占位符的sql
+     * @param args 参数
+     * @return 预编译SQL和顺序的参数名集合
+     */
+    public Pair<String, List<String>> generatePreparedSql(final String sql, Map<String, ?> args) {
+        return _generateSql(sql, args, true);
+    }
+
+    /**
+     * 解析传名参数sql处理为普通sql
+     *
+     * @param sql  带参数占位符的sql
+     * @param args 参数
+     * @return 普通sql
+     */
+    public String generateSql(final String sql, Map<String, ?> args) {
+        return _generateSql(sql, args, false).getItem1();
+    }
+
+    /**
      * 构建一条可执行的sql
      *
      * @param sql     命名参数的sql字符串
@@ -63,10 +84,10 @@ public class SqlGenerator {
      * @param prepare 是否生成预编译sql
      * @return 预编译/普通sql和顺序的参数名集合
      */
-    public Pair<String, List<String>> generateSql(final String sql, Map<String, ?> args, boolean prepare) {
-        Map<String, ?> argx = args == null ? new HashMap<>() : args;
+    private Pair<String, List<String>> _generateSql(final String sql, Map<String, ?> args, boolean prepare) {
+        Map<String, ?> data = args == null ? new HashMap<>() : args;
         // resolve the sql string template first
-        String fullSql = SqlUtil.formatSql(sql, argx);
+        String fullSql = SqlUtil.formatSql(sql, data);
         if (!fullSql.contains(namedParamPrefix)) {
             return Pair.of(fullSql, Collections.emptyList());
         }
@@ -84,14 +105,12 @@ public class SqlGenerator {
         } else {
             while (matcher.find()) {
                 String name = matcher.group("name");
-                names.add(name);
-                if (argx.containsKey(name)) {
-                    String value = quoteFormatValue(argx.get(name));
+                if (data.containsKey(name)) {
+                    String value = quoteFormatValue(data.get(name));
                     noneStrSql = StringUtil.replaceFirst(noneStrSql, namedParamPrefix + name, value);
-                } else if (containsKeyIgnoreCase(argx, name)) {
-                    log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your sql's named parameter and args.", name, argx, name);
-                    String value = quoteFormatValue(getValueIgnoreCase(argx, name));
-                    noneStrSql = StringUtil.replaceFirstIgnoreCase(noneStrSql, namedParamPrefix + name, value);
+                } else if (name.contains(".")) {
+                    String value = quoteFormatValue(ObjectUtil.getDeepValue(data, name));
+                    noneStrSql = StringUtil.replaceFirst(noneStrSql, namedParamPrefix + name, value);
                 }
             }
         }
@@ -103,28 +122,17 @@ public class SqlGenerator {
     }
 
     /**
-     * 解析传名参数sql处理为预编译的sql
-     *
-     * @param sql  带参数占位符的sql
-     * @param args 参数
-     * @return 预编译SQL和顺序的参数名集合
-     */
-    public Pair<String, List<String>> getPreparedSql(final String sql, Map<String, ?> args) {
-        return generateSql(sql, args, true);
-    }
-
-    /**
      * 忽略大小写过滤筛选掉不满足条件的字段
      *
-     * @param row    数据行
-     * @param fields 需要包含的字段集合
+     * @param row         数据行
+     * @param fieldsScope 只允许数据行key存在的字段范围
      * @return 满足条件的字段
      */
-    public Set<String> filterKeys(final Map<String, ?> row, List<String> fields) {
-        if (fields == null || fields.isEmpty()) {
+    public Set<String> filterKeys(final Map<String, ?> row, List<String> fieldsScope) {
+        if (fieldsScope == null || fieldsScope.isEmpty()) {
             return row.keySet();
         }
-        String[] fieldArr = fields.toArray(new String[0]);
+        String[] fieldArr = fieldsScope.toArray(new String[0]);
         Set<String> set = new HashSet<>();
         for (String k : row.keySet()) {
             if (StringUtil.equalsAnyIgnoreCase(k, fieldArr)) {
@@ -139,14 +147,15 @@ public class SqlGenerator {
     /**
      * 构建一个普通插入语句
      *
-     * @param tableName 表名
-     * @param row       数据
-     * @param fields    需要包含的字段集合
+     * @param tableName   表名
+     * @param row         数据
+     * @param fieldsScope 只允许数据行key存在的字段范围
+     * @param ignoreNull  忽略null值
      * @return 插入语句
      * @throws IllegalArgumentException 如果参数为空
      */
-    public String generateInsert(final String tableName, final Map<String, ?> row, List<String> fields) {
-        Set<String> keys = filterKeys(row, fields);
+    public String generateInsert(final String tableName, final Map<String, ?> row, List<String> fieldsScope, boolean ignoreNull) {
+        Set<String> keys = filterKeys(row, fieldsScope);
         if (keys.isEmpty()) {
             throw new IllegalArgumentException("empty field set, generate insert sql error.");
         }
@@ -154,8 +163,12 @@ public class SqlGenerator {
         StringJoiner v = new StringJoiner(", ");
         for (String key : keys) {
             if (row.containsKey(key)) {
+                Object value = row.get(key);
+                if (ignoreNull && Objects.isNull(value)) {
+                    continue;
+                }
                 f.add(key);
-                v.add(quoteFormatValue(row.get(key)));
+                v.add(quoteFormatValue(value));
             }
         }
         return "insert into " + tableName + "(" + f + ") \nvalues (" + v + ")";
@@ -164,14 +177,15 @@ public class SqlGenerator {
     /**
      * 构建一个传名参数占位符的插入语句
      *
-     * @param tableName 表名
-     * @param row       数据
-     * @param fields    需要包含的字段集合
+     * @param tableName   表名
+     * @param row         数据
+     * @param fieldsScope 只允许数据行key存在的字段范围
+     * @param ignoreNull  忽略null值
      * @return 传名参数占位符的插入语句
      * @throws IllegalArgumentException 如果参数为空
      */
-    public String generateNamedParamInsert(final String tableName, final Map<String, ?> row, List<String> fields) {
-        Set<String> keys = filterKeys(row, fields);
+    public String generateNamedParamInsert(final String tableName, final Map<String, ?> row, List<String> fieldsScope, boolean ignoreNull) {
+        Set<String> keys = filterKeys(row, fieldsScope);
         if (keys.isEmpty()) {
             throw new IllegalArgumentException("empty field set, generate insert sql error.");
         }
@@ -179,6 +193,9 @@ public class SqlGenerator {
         StringJoiner h = new StringJoiner(", ");
         for (String key : keys) {
             if (row.containsKey(key)) {
+                if (ignoreNull && Objects.isNull(row.get(key))) {
+                    continue;
+                }
                 f.add(key);
                 h.add(namedParamPrefix + key);
             }
@@ -187,54 +204,68 @@ public class SqlGenerator {
     }
 
     /**
-     * 构建一个传名参数占位符的更新语句
+     * 构建一个更新语句
      *
      * @param tableName   表名
      * @param where       where条件
      * @param data        数据
-     * @param tableFields 表字段集合
-     * @return 传名参数占位符的更新语句
+     * @param fieldsScope 只允许数据行key存在的字段范围
+     * @param ignoreNull  忽略null值
+     * @return 传名参数占位符的sql或普通sql
      */
-    public String generateNamedParamUpdate(String tableName, String where, Map<String, ?> data, List<String> tableFields) {
-        return generateUpdate(tableName, where, data, tableFields, true);
+    public String generateNamedParamUpdate(String tableName, String where, Map<String, ?> data, List<String> fieldsScope, boolean ignoreNull) {
+        Map<String, ?> updateSets = getUpdateSets(where, data);
+        if (updateSets.isEmpty()) {
+            throw new IllegalArgumentException("empty field set, generate update sql error.");
+        }
+        Set<String> keys = filterKeys(updateSets, fieldsScope);
+        if (keys.isEmpty()) {
+            throw new IllegalArgumentException("empty field set, generate update sql error.");
+        }
+        StringJoiner sb = new StringJoiner(",\n\t");
+        for (String key : keys) {
+            if (updateSets.containsKey(key)) {
+                if (ignoreNull && Objects.isNull(updateSets.get(key))) {
+                    continue;
+                }
+                sb.add(key + " = " + namedParamPrefix + key);
+            }
+        }
+        return "update " + tableName + " \nset " + sb + "\nwhere " + where;
     }
 
     /**
      * 构建一个更新语句
      *
-     * @param tableName    表名
-     * @param where        where条件
-     * @param data         数据
-     * @param tableFields  表字段集合
-     * @param isNamedParam 是否传名参数占位符
+     * @param tableName   表名
+     * @param where       where条件
+     * @param data        数据
+     * @param fieldsScope 只允许数据行key存在的字段范围
+     * @param ignoreNull  忽略null值
      * @return 传名参数占位符的sql或普通sql
      */
-    public String generateUpdate(String tableName, String where, Map<String, ?> data, List<String> tableFields, boolean isNamedParam) {
+    public String generateUpdate(String tableName, String where, Map<String, ?> data, List<String> fieldsScope, boolean ignoreNull) {
         String whereStatement = where;
         Map<String, ?> updateSets = getUpdateSets(whereStatement, data);
         if (updateSets.isEmpty()) {
             throw new IllegalArgumentException("empty field set, generate update sql error.");
         }
-        Set<String> keys = filterKeys(updateSets, tableFields);
+        Set<String> keys = filterKeys(updateSets, fieldsScope);
         if (keys.isEmpty()) {
             throw new IllegalArgumentException("empty field set, generate update sql error.");
         }
         StringJoiner sb = new StringJoiner(",\n\t");
-        if (isNamedParam) {
-            for (String key : keys) {
-                if (updateSets.containsKey(key)) {
-                    sb.add(key + " = " + namedParamPrefix + key);
+        for (String key : keys) {
+            if (updateSets.containsKey(key)) {
+                Object value = updateSets.get(key);
+                if (ignoreNull && Objects.isNull(value)) {
+                    continue;
                 }
+                String v = quoteFormatValue(value);
+                sb.add(key + " = " + v);
             }
-        } else {
-            for (String key : keys) {
-                if (updateSets.containsKey(key)) {
-                    String v = quoteFormatValue(updateSets.get(key));
-                    sb.add(key + " = " + v);
-                }
-            }
-            whereStatement = generateSql(whereStatement, data, false).getItem1();
         }
+        whereStatement = generateSql(whereStatement, data);
         return "update " + tableName + " \nset " + sb + "\nwhere " + whereStatement;
     }
 
@@ -251,10 +282,11 @@ public class SqlGenerator {
         }
         Map<String, Object> sets = new HashMap<>();
         // 获取where条件中的参数名
-        List<String> whereFields = getPreparedSql(where, args).getItem2();
+        List<String> whereFields = generatePreparedSql(where, args).getItem2();
         // 将where条件中的参数排除，因为where中的参数作为条件，而不是需要更新的值
+        // where id = :id
         for (Map.Entry<String, ?> e : args.entrySet()) {
-            if (!CollectionUtil.containsIgnoreCase(whereFields, e.getKey())) {
+            if (!containsIgnoreCase(whereFields, e.getKey())) {
                 sets.put(e.getKey(), e.getValue());
             }
         }

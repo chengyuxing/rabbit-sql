@@ -2,8 +2,8 @@ package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.DateTimes;
-import com.github.chengyuxing.common.utils.CollectionUtil;
 import com.github.chengyuxing.common.utils.Jackson;
+import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.types.ParamMode;
 import org.slf4j.Logger;
@@ -18,9 +18,6 @@ import java.sql.Date;
 import java.sql.*;
 import java.time.*;
 import java.util.*;
-
-import static com.github.chengyuxing.common.utils.CollectionUtil.containsKeyIgnoreCase;
-import static com.github.chengyuxing.common.utils.CollectionUtil.getValueIgnoreCase;
 
 /**
  * JDBC工具类
@@ -374,9 +371,8 @@ public class JdbcUtil {
                     String name = names.get(i);
                     if (args.containsKey(name)) {
                         setSpecialStatementValue(statement, index, args.get(name));
-                    } else if (containsKeyIgnoreCase(args, name)) {
-                        log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your sql's named parameter and args.", name, args, name);
-                        setSpecialStatementValue(statement, index, getValueIgnoreCase(args, name));
+                    } else if (name.contains(".")) {
+                        setSpecialStatementValue(statement, index, ObjectUtil.getDeepValue(args, name));
                     }
                 }
             } else {
@@ -399,9 +395,9 @@ public class JdbcUtil {
             String name = names.get(i);
             if (args.containsKey(name)) {
                 setStatementValue(statement, index, args.get(name));
-            } else if (containsKeyIgnoreCase(args, name)) {
-                log.warn("cannot find name: '{}' in args: {}, auto get value by '{}' ignore case, maybe you should check your sql's named parameter and args.", name, args, name);
-                setStatementValue(statement, index, getValueIgnoreCase(args, name));
+            } else if (name.contains(".")) {
+                // maybe path expression
+                setStatementValue(statement, index, ObjectUtil.getDeepValue(args, name));
             }
         }
     }
@@ -421,8 +417,8 @@ public class JdbcUtil {
             for (int i = 0; i < names.size(); i++) {
                 int index = i + 1;
                 String name = names.get(i);
-                if (args.containsKey(name) || containsKeyIgnoreCase(args, name)) {
-                    Param param = args.containsKey(name) ? args.get(name) : CollectionUtil.getValueIgnoreCase(args, name);
+                if (args.containsKey(name)) {
+                    Param param = args.get(name);
                     if (param != null) {
                         if (param.getParamMode() == ParamMode.OUT || param.getParamMode() == ParamMode.IN_OUT) {
                             statement.registerOutParameter(index, param.getType().getTypeNumber());
@@ -434,8 +430,8 @@ public class JdbcUtil {
             for (int i = 0; i < names.size(); i++) {
                 int index = i + 1;
                 String name = names.get(i);
-                if (args.containsKey(name) || containsKeyIgnoreCase(args, name)) {
-                    Param param = args.containsKey(name) ? args.get(name) : CollectionUtil.getValueIgnoreCase(args, name);
+                if (args.containsKey(name)) {
+                    Param param = args.get(name);
                     if (param != null) {
                         if (param.getParamMode() == ParamMode.IN || param.getParamMode() == ParamMode.IN_OUT) {
                             setStatementValue(statement, index, param.getValue());

@@ -3,13 +3,12 @@ package com.github.chengyuxing.sql.support;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.UncheckedCloseable;
 import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.common.utils.CollectionUtil;
+import com.github.chengyuxing.common.tuple.Triple;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.types.ParamMode;
 import com.github.chengyuxing.sql.utils.JdbcUtil;
-import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -26,7 +25,7 @@ import java.util.stream.StreamSupport;
  * 提供基本的通用接口，支持流查询、批量更新、ddl、dml、存储过程、函数、过程语句的执行，支持执行传名参数sql<br>
  * 例如：
  * <blockquote>
- * <pre>select * from ... where name = :name or id in (${:idList}) ${cnd};</pre>
+ * <pre>select * from ... where name = :name or id in (${!idList}) ${cnd};</pre>
  * </blockquote>
  */
 public abstract class JdbcSupport extends SqlParser {
@@ -61,19 +60,6 @@ public abstract class JdbcSupport extends SqlParser {
      * @return 是否检查
      */
     protected abstract boolean checkParameterType();
-
-    /**
-     * debug sql.
-     *
-     * @param sql  sql
-     * @param args 参数
-     */
-    protected void debugSql(String sql, Map<String, ?> args) {
-        if (log.isDebugEnabled()) {
-            log.debug("SQL: {}", SqlUtil.buildConsoleSql(sql));
-            log.debug("Args: {}", args);
-        }
-    }
 
     /**
      * 执行一句预编译的sql
@@ -122,13 +108,13 @@ public abstract class JdbcSupport extends SqlParser {
      * @throws UncheckedSqlException sql执行过程中出现错误
      */
     public DataRow execute(final String sql, Map<String, ?> args) {
-        Pair<String, List<String>> prepared = prepare(sql, args);
+        Triple<String, List<String>, Map<String, Object>> prepared = prepare(sql, args);
         final List<String> argNames = prepared.getItem2();
         final String preparedSql = prepared.getItem1();
-        debugSql(preparedSql, args);
+        final Map<String, Object> data = prepared.getItem3();
         try {
             return execute(preparedSql, sc -> {
-                JdbcUtil.setSqlTypedArgs(sc, checkParameterType(), args, argNames);
+                JdbcUtil.setSqlTypedArgs(sc, checkParameterType(), data, argNames);
                 boolean isQuery = sc.execute();
                 printSqlConsole(sc);
                 DataRow result;
@@ -148,7 +134,7 @@ public abstract class JdbcSupport extends SqlParser {
                 return result;
             });
         } catch (Exception e) {
-            throw new RuntimeException("prepare sql error:\n[" + sql + "]\n" + args, e);
+            throw new RuntimeException("prepare sql error:\n[" + sql + "]\n" + data, e);
         }
     }
 
@@ -176,10 +162,10 @@ public abstract class JdbcSupport extends SqlParser {
      * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误.
      */
     public Stream<DataRow> executeQueryStream(final String sql, Map<String, ?> args) {
-        Pair<String, List<String>> prepared = prepare(sql, args);
+        Triple<String, List<String>, Map<String, Object>> prepared = prepare(sql, args);
         final List<String> argNames = prepared.getItem2();
         final String preparedSql = prepared.getItem1();
-        debugSql(preparedSql, args);
+        final Map<String, Object> data = prepared.getItem3();
         UncheckedCloseable close = null;
         try {
             Connection connection = getConnection();
@@ -188,7 +174,7 @@ public abstract class JdbcSupport extends SqlParser {
             close = UncheckedCloseable.wrap(() -> releaseConnection(connection, getDataSource()));
             PreparedStatement statement = connection.prepareStatement(preparedSql);
             close = close.nest(statement);
-            JdbcUtil.setSqlTypedArgs(statement, checkParameterType(), args, argNames);
+            JdbcUtil.setSqlTypedArgs(statement, checkParameterType(), data, argNames);
             ResultSet resultSet = statement.executeQuery();
             close = close.nest(resultSet);
             return StreamSupport.stream(new Spliterators.AbstractSpliterator<DataRow>(Long.MAX_VALUE, Spliterator.ORDERED) {
@@ -218,7 +204,7 @@ public abstract class JdbcSupport extends SqlParser {
                     ex.addSuppressed(e);
                 }
             }
-            throw new RuntimeException("\nstreaming query error: \n[" + sql + "]\n[" + preparedSql + "]\n" + args, ex);
+            throw new RuntimeException("\nstreaming query error: \n[" + sql + "]\n[" + preparedSql + "]\n" + data, ex);
         }
     }
 
@@ -237,12 +223,11 @@ public abstract class JdbcSupport extends SqlParser {
             Connection connection = getConnection();
             if (JdbcUtil.supportsBatchUpdates(connection)) {
                 try {
-                    debugSql(sqls.get(0), Collections.emptyMap());
                     statement = connection.createStatement();
                     Map<String, ?> empty = Collections.emptyMap();
                     for (String sql : sqls) {
                         if (!StringUtil.isEmpty(sql)) {
-                            statement.addBatch(parseSql(sql, empty));
+                            statement.addBatch(parseSql(sql, empty).getItem1());
                         }
                     }
                     return statement.executeBatch();
@@ -274,34 +259,28 @@ public abstract class JdbcSupport extends SqlParser {
      * e.g.
      * <blockquote>
      * <pre>insert into table (a,b,c) values (:v1,:v2,:v3)</pre>
-     * <pre>[{v1:'a',v2:'b',v3:'c'},{...},...]</pre>
+     * <pre>{v1:'a',v2:'b',v3:'c'}</pre>
      * </blockquote>
      *
      * @param sql  sql
      * @param args 一组数据
      * @return 受影响的行数
      */
-    public int executeNonQuery(final String sql, Collection<? extends Map<String, ?>> args) {
-        Map<String, ?> first = args.iterator().next();
-        Pair<String, List<String>> prepared = prepare(sql, first);
+    public int executeNonQuery(final String sql, Map<String, ?> args) {
+        Triple<String, List<String>, Map<String, Object>> prepared = prepare(sql, args);
         final List<String> argNames = prepared.getItem2();
         final String preparedSql = prepared.getItem1();
-        debugSql(preparedSql, first);
+        final Map<String, Object> data = prepared.getItem3();
         try {
             return execute(preparedSql, sc -> {
-                if (args.isEmpty()) {
+                if (data.isEmpty()) {
                     return sc.executeUpdate();
                 }
-                Iterator<? extends Map<String, ?>> iterator = args.iterator();
-                int i = 0;
-                while (iterator.hasNext()) {
-                    JdbcUtil.setSqlTypedArgs(sc, checkParameterType(), iterator.next(), argNames);
-                    i += sc.executeUpdate();
-                }
-                return i;
+                JdbcUtil.setSqlTypedArgs(sc, checkParameterType(), data, argNames);
+                return sc.executeUpdate();
             });
         } catch (Exception e) {
-            throw new RuntimeException("prepare sql error:\n[" + sql + "]\n" + args, e);
+            throw new RuntimeException("prepare sql error:\n[" + sql + "]\n" + data, e);
         }
     }
 
@@ -327,7 +306,6 @@ public abstract class JdbcSupport extends SqlParser {
         Pair<String, List<String>> preparedSqlAndArgNames = prepare(procedure, args);
         final String executeSql = preparedSqlAndArgNames.getItem1();
         final List<String> argNames = preparedSqlAndArgNames.getItem2();
-        debugSql(executeSql, args);
         CallableStatement statement = null;
         Connection connection = getConnection();
         try {
@@ -336,8 +314,8 @@ public abstract class JdbcSupport extends SqlParser {
             if (!args.isEmpty()) {
                 JdbcUtil.setStoreArgs(statement, args, argNames);
                 for (String name : argNames) {
-                    if (args.containsKey(name) || CollectionUtil.containsKeyIgnoreCase(args, name)) {
-                        ParamMode mode = args.containsKey(name) ? args.get(name).getParamMode() : CollectionUtil.getValueIgnoreCase(args, name).getParamMode();
+                    if (args.containsKey(name)) {
+                        ParamMode mode = args.get(name).getParamMode();
                         if (mode == ParamMode.OUT || mode == ParamMode.IN_OUT) {
                             outNames.add(name);
                         }

@@ -1,10 +1,8 @@
 package com.github.chengyuxing.sql.support;
 
 import com.github.chengyuxing.common.tuple.Pair;
+import com.github.chengyuxing.common.tuple.Triple;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
-import com.github.chengyuxing.sql.utils.SqlUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.Collections;
 import java.util.List;
@@ -42,16 +40,15 @@ import java.util.Map;
  * @see SqlGenerator
  */
 public abstract class SqlParser {
-    private static final Logger log = LoggerFactory.getLogger(SqlParser.class);
 
     /**
      * 提供一个抽象方法供实现类对单前要执行的sql做一些准备操作
      *
      * @param sql  sql
      * @param args 参数
-     * @return 处理后的sql
+     * @return 处理后的sql和参数
      */
-    protected abstract String parseSql(String sql, Map<String, ?> args);
+    protected abstract Pair<String, Map<String, Object>> parseSql(String sql, Map<String, ?> args);
 
     /**
      * sql翻译帮助
@@ -65,13 +62,14 @@ public abstract class SqlParser {
      *
      * @param sql  传名参数sql
      * @param args 参数字典
-     * @return 预编译sql和参数名
+     * @return 预编译sql和参数名和参数字典
      */
-    protected Pair<String, List<String>> prepare(String sql, Map<String, ?> args) {
-        Map<String, ?> map = args == null ? Collections.emptyMap() : args;
-        String fullSql = parseSql(sql, map);
-        Pair<String, List<String>> p = sqlGenerator().getPreparedSql(fullSql, map);
-        log.debug("Prepared SQL: {}", SqlUtil.buildConsoleSql(p.getItem1()));
-        return p;
+    protected Triple<String, List<String>, Map<String, Object>> prepare(String sql, Map<String, ?> args) {
+        Map<String, ?> data = args == null ? Collections.emptyMap() : args;
+        Pair<String, Map<String, Object>> result = parseSql(sql, data);
+        String parsedSql = result.getItem1();
+        Map<String, Object> parsedData = result.getItem2();
+        Pair<String, List<String>> p = sqlGenerator().generatePreparedSql(parsedSql, parsedData);
+        return Triple.of(p.getItem1(), p.getItem2(), parsedData);
     }
 }

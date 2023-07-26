@@ -24,7 +24,7 @@ import static com.github.chengyuxing.common.utils.StringUtil.startsWithIgnoreCas
  * SQL工具类
  */
 public class SqlUtil {
-    public static final Pattern SUB_STR_PATTERN = Pattern.compile("'[^']*'", Pattern.MULTILINE);
+    public static final Pattern STR_PATTERN = Pattern.compile("'[^']*'", Pattern.MULTILINE);
 
     public static final StringFormatter FMT = new StringFormatter() {
         @Override
@@ -185,7 +185,7 @@ public class SqlUtil {
         }
         String noneStrSql = sql;
         Map<String, String> mapper = new HashMap<>();
-        Matcher m = SUB_STR_PATTERN.matcher(sql);
+        Matcher m = STR_PATTERN.matcher(sql);
         while (m.find()) {
             // sql part of substr
             String str = m.group();
@@ -210,17 +210,6 @@ public class SqlUtil {
             tSql += ";";
         }
         return tSql;
-    }
-
-
-    /**
-     * 去除行注释，可能需要配合方法 {@link #replaceSqlSubstr(String)} 方法进行字符串安全处理
-     *
-     * @param line 行
-     * @return 去除行注释的字符串
-     */
-    public static String cleanLineAnnotation(String line) {
-        return line.substring(0, line.indexOf("--"));
     }
 
     /**

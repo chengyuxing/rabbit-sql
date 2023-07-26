@@ -13,6 +13,7 @@ public abstract class InsertExecutor {
     protected final String tableName;
     protected boolean safe = false;
     protected boolean fast = false;
+    protected boolean ignoreNull = false;
 
     /**
      * 插入执行器实例
@@ -42,6 +43,16 @@ public abstract class InsertExecutor {
      */
     public InsertExecutor fast() {
         this.fast = true;
+        return this;
+    }
+
+    /**
+     * 忽略null值
+     *
+     * @return 插入构建器
+     */
+    public InsertExecutor ignoreNull() {
+        this.ignoreNull = true;
         return this;
     }
 

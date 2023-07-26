@@ -1,7 +1,10 @@
 package com.github.chengyuxing.sql.support.executor;
 
+import com.github.chengyuxing.common.DataRow;
+
 import java.util.Collection;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * 更新执行器
@@ -11,6 +14,7 @@ public abstract class UpdateExecutor {
     protected final String where;
     protected boolean safe = false;
     protected boolean fast = false;
+    protected boolean ignoreNull = false;
 
     /**
      * 构造函数和
@@ -42,6 +46,16 @@ public abstract class UpdateExecutor {
      */
     public UpdateExecutor fast() {
         this.fast = true;
+        return this;
+    }
+
+    /**
+     * 忽略null值
+     *
+     * @return 插入构建器
+     */
+    public UpdateExecutor ignoreNull() {
+        this.ignoreNull = true;
         return this;
     }
 
@@ -82,4 +96,24 @@ public abstract class UpdateExecutor {
      * @return 受影响的行数
      */
     public abstract int save(Collection<? extends Map<String, ?>> data);
+
+    /**
+     * 更新一个实体
+     *
+     * @param entity 标准java bean实体
+     * @return 受影响的行数
+     */
+    public int saveEntity(Object entity) {
+        return save(DataRow.fromEntity(entity));
+    }
+
+    /**
+     * 更新一组实体
+     *
+     * @param entities 一组标准java bean实体类
+     * @return 受影响的行数
+     */
+    public int saveEntities(Collection<Object> entities) {
+        return save(entities.stream().map(DataRow::fromEntity).collect(Collectors.toList()));
+    }
 }

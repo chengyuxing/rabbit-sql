@@ -35,7 +35,7 @@ Maven 中央仓库
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.4.0</version>
+    <version>7.5.0</version>
 </dependency>
 ```
 
@@ -234,35 +234,19 @@ select id, name, address, email, enable from ... where id in ('I''m Ok!', 'book'
 
 ## 动态SQL
 
-动态sql的工作依赖于[XQLFileManager](#XQLFileManager)，通过解析特殊的注释标记，在不破坏sql文件标准的前提下进行动态编译，一条动态sql如下：
-
-```sql
-/*[q2]*/
-select * from test.user t
-where
---#if :names <> blank
-	-- #for name,idx of :names delimiter ' and ' filter ${idx} > 0 && ${name} ~ 'o'
-		t.name = ${!name.id}
-	-- #end
---#fi
---#if :id > -1
-        and id = :id
---#fi
-...
-;
-```
+动态sql的工作依赖于[XQLFileManager](#XQLFileManager)，通过解析特殊的注释标记，在不破坏sql文件标准的前提下进行动态编译。
 
 ### 注释标记
 
-注释标记都必须成对出现，都具有开闭标签。
+注释标记都必须成对出现，都具有开闭标签，缩进不是必要的，只为了有层次感。
 
 #### if标签
 
-类似于Mybatis的 `if` 标签，支持嵌套 `if`，`choose`，`switch`，`for` ：
+类似于Mybatis的 `if` 标签：
 
 ```sql
---#if 表达式
-       --#if 表达式
+--#if :user <> null
+       --#if :user.name <> blank
        ...
        --#fi
 --#fi
@@ -270,11 +254,11 @@ where
 
 #### switch标签
 
-效果类似于程序代码的 `switch` ，分支中还可以嵌套 `if` 语句:
+效果类似于程序代码的 `switch` :
 
 ```sql
---#switch :变量名
-       --#case 值
+--#switch :name
+       --#case 'jack'
        	...
        --#break
        ...
@@ -286,11 +270,11 @@ where
 
 #### choose标签
 
-效果类似于mybatis的 `choose...when` 标签，分支中还可以嵌套 `if` 语句：
+效果类似于mybatis的 `choose...when` 标签：
 
 ```sql
 --#choose
-       --#when 表达式
+       --#when :id >= 0
        	...
        --#break
        ...
@@ -302,61 +286,34 @@ where
 
 #### for标签
 
-内部不能嵌套其他任何标签，不进行解析，但可以嵌套在 `if` 表达式中，类似于程序的 `foreach` ，并进行了一些扩展：
+类似于mybatis的 `foreach` ，并进行了一些扩展：
 
 ```sql
---#for 表达式
+--#for item,idx of :list delimiter ',' open '' close ''
 	...
 --#end
 ```
 
 **for表达式**语法说明：
 
-关键字：`of` `delimiter` `filter`
+:warning: 从此版本开始， **for**表达式移除关键字 `filter`。
+
+关键字：`of` `delimiter` `open` `close`
 
 ```sql
-item[,idx] of :list [|pipe1| ... ] [delimiter ','] [filter ${item.name}[|pipe1|... ] <> blank]
+item[,index] of :list [|pipe1|pipeN|... ] [delimiter ','] [open ''] [close '']
 ```
 
-完整的for表达式由3部分组成：
-
-迭代主体：
-
-```sql
-item[,idx] of :list [|pipe1| ... ]
-```
-
-> `item` 表示迭代项，`idx` 表示迭代索引，可以随意命名，但不能一样；
-
-迭代部分连接符 （可选）：
-
-```sql
-delimiter ','
-```
-> 不指定默认使用 `, ` 号进行连接。
-
-过滤器（可选）：
-
-```sql
-filter ${item.name}[|pipe1|... ] <> blank
-```
-
-> 如果指定 `filter` 过滤器，则对迭代对象进行筛选匹配值影响最终生成的sql；
-> `filter` 的表达式语法和标准的有些不同，因为**被比较值**来自于for循环，不能使用`:参数名`，所以只能使用`${for定义的参数名}`来表示。
-
-`[...]` 表示可选配置项，一个最简单的表达式例如：
-
-  ```sql
-  for item of :list
-  ```
-
-具体例子可以参考[如上](#动态SQL)。
+- `[...]` 表示可选配置项；
+- `item` 表示当前值，`index` 表示当前序号；
+- `:list` 表示当前迭代的对象，后面可以追加[管道](#管道)进行一些特殊处理；
+- `delimiter` 表示循环的每项连接符，默认为 `,` ；
+- `open` 表示当前循环最终结果的前缀，如果结果不为空，则被添加到前面；
+- `close` 表示当前循环最终结果后缀，如果结果不为空，则被添加到后面；
 
 ### 表达式脚本
 
-左侧为参数键名，以 `:` 号开头；
-
-右侧为比较的值。
+参数键名以 `:` 号开头。
 
  一个简单的表达式语法如下：
 
@@ -406,6 +363,138 @@ C --pipeN--> D[...]
 ```
 
 通过实现接口 `com.github.chengyuxing.common.script.IPipe` 并添加到 [XQLFileManager](#XQLFileManager) 来使用管道。
+
+**内置管道**：
+
+- **length**：获取字符串的长度；
+- **upper**：转大写；
+- **lower**：转小写；
+- **pairs**：map转为一个二元组集合 `List<Pair>`。
+
+### 例子
+
+以下的例子主要以动态生成**命名参数sql**来展开进行讲解，**命名参数**最终都会被进行预编译为 `?` ，避免sql注入的风险。
+
+:warning: for循环体中的 **_for.**  前缀主要就是为**识别命名参数进行自动编号**，以生成正确且唯一的命名参数。
+
+**for**标签特别是在构建sql的 `in` 语句时且需要达到预编译sql的效果时特别有用：
+
+```sql
+/*[query]*/
+select * from test.user where id = 1
+-- #for id of :ids delimiter ', \n' open ' or id in (' close ')'
+    -- #if :id >= 8
+    :_for.id
+    -- #fi
+-- #done
+```
+
+```json
+{ids: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}
+```
+
+以上将会生成如下sql和一些必要的变量：
+
+```sql
+select * from test.user where id = 1
+ or id in (
+    :_for.id_0_7, 
+    :_for.id_0_8, 
+    :_for.id_0_9, 
+    :_for.id_0_10, 
+    :_for.id_0_11
+)
+```
+
+```json
+{
+  _for:{
+    		id_0_0:1,
+        id_0_2:3, 
+        id_0_1:2, 
+        id_0_10:11, 
+        id_0_11:12, 
+        id_0_4:5, 
+        id_0_3:4, 
+        id_0_6:7, 
+        id_0_5:6, 
+        id_0_8:9, 
+        id_0_7:8, 
+        id_0_9:10
+       }
+}
+```
+
+针对几个特别的地方进行说明：
+
+- 当有满足项时，`open` 会在前面加上 `or id in(` , `close` 会在后面加上 `)` , 反之则不会加；
+- 在sql中以 `:` 开头的变量名，意味着这是一个将会进行预编译的命名参数；
+- 前缀 `_for.` 是 `for` 表达式中特殊的变量名，使用本 for 中的变量用于命名参数，那么必须以此前缀开头，然后在解析的过程中为此命名参数自动进行编号，确保达到预期的效果；
+
+**for**也可以用来构建`update`语句：
+
+```sql
+/*[update]*/
+update test.user
+set
+-- #for pair of :data | pairs delimiter ',\n'
+    ${pair.item1} = :_for.pair.item2
+-- #done
+where id = :id;
+```
+
+```json
+{
+  id: 10,
+  data:{
+    name: "abc",
+    age: 30,
+    address: "kunming"
+  }
+}
+```
+
+以上将会生成如下的sql和一些必要变量：
+
+```sql
+update test.user
+set
+    address = :_for.pair_0_0.item2,
+    name = :_for.pair_0_1.item2,
+    age = :_for.pair_0_2.item2
+where id = :id
+```
+
+```json
+id: 10,
+_for: {
+	pair_0_2:{item1: 'age', item2: 30},
+	pair_0_1:{item1: 'name', item2: 'abc'}, 
+	pair_0_0:{item1:'address', item2:'kunming'}
+}
+```
+
+说明：
+
+- `:data` 对应的值是一个map对象，经过 `pairs` [管道](#管道)后变成了一个**二元组集合**，所以可以用于 for 表达式；
+- `${pair.item1}` 是字符串模版占位符，每次迭代时就提前进行了格式化，所以不需要 `_for.` 前缀。
+
+根据不同数据库进行判断来拼接适合的sql：
+
+```sql
+/*[query]*/
+select * from test.user
+where id = 3
+-- #if :_databaseId == 'postgresql'
+    ...
+-- #fi
+-- #if :_databaseId == 'oracle'
+    ...
+-- #fi
+;
+```
+
+- 内置变量名 `_databaseId` 值为当前数据库的名称。
 
 ## 附录
 

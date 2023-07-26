@@ -35,7 +35,7 @@ Maven central
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.4.0</version>
+    <version>7.5.0</version>
 </dependency>
 ```
 
@@ -234,35 +234,19 @@ select id, name, address, email, enable from ... where id in ('I''m Ok!', 'book'
 
 ## Dynamic-SQL
 
-Dynamic SQL depends on [XQLFileManager](#XQLFileManager), based on resolve special annotation mark, dynamic compile without breaking sql file standards, a simple dynamic sql example following:
-
-```sql
-/*[q2]*/
-select * from test.user t
-where
---#if :names <> blank
-	-- #for name,idx of :names delimiter ' and ' filter ${idx} > 0 && ${name} ~ 'o'
-		t.name = ${!name.id}
-	-- #end
---#fi
---#if :id > -1
-        and id = :id
---#fi
-...
-;
-```
+Dynamic SQL depends on [XQLFileManager](#XQLFileManager), based on resolve special annotation mark, dynamic compile without breaking sql file standards.
 
 ### Annotation mark
 
-Annotation mark must be pair and follows **open-close** tag:
+Annotation mark must be pair and follows **open-close** tag.
 
 #### if
 
-Similar to Mybatis's  `if`  tag, support nest `if`，`choose`，`switch`，`for` :
+Similar to Mybatis's  `if`  tag:
 
 ```sql
---#if expression
-       --#if expression
+--#if :user <> null
+       --#if :user.name <> blank
        ...
        --#fi
 --#fi
@@ -270,14 +254,12 @@ Similar to Mybatis's  `if`  tag, support nest `if`，`choose`，`switch`，`for`
 
 #### switch
 
-Similar to program language `switch`'s logic, support nest `if` tag:
+Similar to program language `switch`'s logic:
 
 ```sql
 --#switch :name
-       --#case value
-       		--#if expression
-       			...
-       		--#fi
+       --#case 'jack'
+			 ...
        --#break
        ...
        --#default
@@ -288,14 +270,12 @@ Similar to program language `switch`'s logic, support nest `if` tag:
 
 #### choose
 
-Similar to Mybatis's `choose...when` tag, support nest `if` tag:
+Similar to Mybatis's `choose...when` tag:
 
 ```sql
 --#choose
-       --#when expression
-       		--#if expression
-       			...
-       		--#fi
+       --#when :id >= 0
+       ...
        --#break
        ...
        --#default
@@ -306,61 +286,34 @@ Similar to Mybatis's `choose...when` tag, support nest `if` tag:
 
 #### for
 
-Can not nest any tag, but can nested in `if` tag, similar to program language `foreach`'s logic, and more features:
+Similar to Mybatis's `foreach`, and more features:
 
 ```sql
---#for expression
+--#for item,idx of :list delimiter ',' open '' close ''
 	...
 --#end
 ```
 
 **For expression** syntax:
 
-Keywords: `of` `delimiter` `filter`
+:warning: `filter` keyword removed from this version, not support anymore.
+
+Keywords: `of` `delimiter` `open` `close`
 
 ```sql
-item[,idx] of :list [|pipe1| ... ] [delimiter ','] [filter ${item.name}[|pipe1|... ] <> blank]
+item[,index] of :list [|pipe1|pipeN|... ] [delimiter ','] [open ''] [close '']
 ```
 
-a complete for expression has 3 part:
-
-Iterator body:
-
-```sql
-item[,idx] of :list [|pipe1| ... ]
-```
-
-> `item` is current item，`idx` is current index(0 is first), support custom naming but different.
-
-Iterator body delimiter (optional):
-
-```sql
-delimiter ','
-```
-> Default `, `.
-
-Filter (optional): 
-
-```sql
-filter ${item.name}[|pipe1|... ] <> blank
-```
-
-> Iterate to generate sql by matched item if `filter` configured;
-> `filter` expression is a little different from standard, because **compared value** is from for expression, so do not use named parameter , use `${}` instead.
-
-`[...]` means optional item, a simple expression e.g:
-
-  ```sql
-  for item of :list
-  ```
-
-Get details follows [example](#Dynamic-SQL).
+- `[...]` means optional;
+- `item` is current value, `index` is current index;
+- `:list` is iterator, it can be following some [pipes](#Pipe) to do something special;
+- `delimiter` is a separator for concat each item,  `,` is default;
+- `open` is a prefix which will pe prepend to result if result is not empty;
+- `close` is a suffix which will be append to result if result is not empty.
 
 ### Expression-script
 
-Left start with `:` is data's key.
-
-Right is compared value.
+Data's key is starts with `:`.
 
  A simple expression syntax following: 
 
@@ -410,6 +363,138 @@ C --pipeN--> D[...]
 ```
 
 Implement  `com.github.chengyuxing.common.script.IPipe`  interface and add to [XQLFileManager](#XQLFileManager)  to use pipe.
+
+**Built-In pipes:**
+
+- **length**: get length of string value;
+- **upper**: convert to upper case;
+- **lower**: convert to lower case;
+- **pairs**: map convert to pairs `List<Pair>`.
+
+### Example
+
+Here is about dynamic generate **named parameter sql**,  **named parameter** will be     prepare compile to `?`  to keep safe.
+
+:warning: Prefix  **_for.** in `for` body is an identity to **generate named parameter unique index automatically**, for generate correct named parameter.
+
+**for** is useful at sql `in` statement, it can be build prepared sql:
+
+```sql
+/*[query]*/
+select * from test.user where id = 1
+-- #for id of :ids delimiter ', \n' open ' or id in (' close ')'
+    -- #if :id >= 8
+    :_for.id
+    -- #fi
+-- #done
+```
+
+```json
+{ids: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}
+```
+
+example above will be generate sql and variables:
+
+```sql
+select * from test.user where id = 1
+ or id in (
+    :_for.id_0_7, 
+    :_for.id_0_8, 
+    :_for.id_0_9, 
+    :_for.id_0_10, 
+    :_for.id_0_11
+)
+```
+
+```json
+{
+  _for:{
+    		id_0_0:1,
+        id_0_2:3, 
+        id_0_1:2, 
+        id_0_10:11, 
+        id_0_11:12, 
+        id_0_4:5, 
+        id_0_3:4, 
+        id_0_6:7, 
+        id_0_5:6, 
+        id_0_8:9, 
+        id_0_7:8, 
+        id_0_9:10
+       }
+}
+```
+
+For a few special places to explain:
+
+- If for loop result is not empty, `open` means `or id in(` will be prepend to result, `close` means `)` will be append to result;
+- Variable starts with `:` in sql means it's a named parameter which will be prepare compile;
+- Prefix `_for.` is special variable name in for loop body, it's necessary to following the rule when use for-variable for named parameter, for auto generate named parameter with unique index correctly.
+
+**for** work with `update` statement sets part:
+
+```sql
+/*[update]*/
+update test.user
+set
+-- #for pair of :data | pairs delimiter ',\n'
+    ${pair.item1} = :_for.pair.item2
+-- #done
+where id = :id;
+```
+
+```json
+{
+  id: 10,
+  data:{
+    name: "abc",
+    age: 30,
+    address: "kunming"
+  }
+}
+```
+
+example above will be generate sql and variables:
+
+```sql
+update test.user
+set
+    address = :_for.pair_0_0.item2,
+    name = :_for.pair_0_1.item2,
+    age = :_for.pair_0_2.item2
+where id = :id
+```
+
+```json
+id: 10,
+_for: {
+	pair_0_2:{item1: 'age', item2: 30},
+	pair_0_1:{item1: 'name', item2: 'abc'}, 
+	pair_0_0:{item1:'address', item2:'kunming'}
+}
+```
+
+Explain:
+
+- `:data` is a map, it convert to pairs `List<pair>` by pipe `pairs`, so it can be work with for expression;
+- `${pair.item1}` is string template holder, it's formatting on each loop, so prefix `_for.` is not required.
+
+Concat different sql statement by database name:
+
+```sql
+/*[query]*/
+select * from test.user
+where id = 3
+-- #if :_databaseId == 'postgresql'
+    ...
+-- #fi
+-- #if :_databaseId == 'oracle'
+    ...
+-- #fi
+;
+```
+
+- Built-In variable `_databaseId` is current database name.
 
 ## Appendix
 

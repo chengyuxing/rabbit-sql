@@ -6,6 +6,8 @@ import com.github.chengyuxing.sql.types.Param;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -14,18 +16,9 @@ import java.util.function.Function;
  */
 public interface Baki {
     /**
-     * 通用执行器，执行query语句，ddl或dml语句
-     *
-     * @param sql  sql或sql名
-     * @param more 更多sql或sql名
-     * @return 执行器
-     */
-    Executor of(String sql, String... more);
-
-    /**
      * 查询执行器
      *
-     * @param sql sql
+     * @param sql sql或sql名
      * @return 查询执行器
      */
     QueryExecutor query(String sql);
@@ -54,6 +47,40 @@ public interface Baki {
      * @return 删除执行器
      */
     DeleteExecutor delete(String tableName);
+
+    /**
+     * 执行一条sql（ddl、dml、query、plsql）
+     *
+     * @param sql  sql或sql名
+     * @param args 参数
+     * @return 执行结果
+     */
+    DataRow execute(String sql, Map<String, ?> args);
+
+    /**
+     * 执行一条sql（ddl、dml、query、plsql）
+     *
+     * @param sql sql或sql名
+     * @return 执行结果
+     */
+    DataRow execute(String sql);
+
+    /**
+     * 批量执行非查询sql（非预编译）
+     *
+     * @param sqls sql或sql名
+     * @return 每条sql的执行结果
+     */
+    int[] executeBatch(List<String> sqls);
+
+    /**
+     * 批量执行非查询sql（非预编译）
+     *
+     * @param namedSql 命名参数的sql
+     * @param data     数据
+     * @return 每条sql的执行结果
+     */
+    int[] executeBatch(String namedSql, Collection<Map<String, ?>> data);
 
     /**
      * 执行存储过程或函数

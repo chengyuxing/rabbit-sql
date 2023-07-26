@@ -1,6 +1,7 @@
 package tests;
 
 import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.common.utils.Jackson;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.BakiDao;
@@ -122,7 +123,7 @@ public class BakiSessionTest {
         baki.query("select '{\"a\":\"cyx\"}'::jsonb as x").findFirst().ifPresent(d -> {
             Object v = d.get("x");
             System.out.println(d.getType(0));
-            System.out.println(ReflectUtil.obj2Json(d.get("x")));
+            System.out.println(Jackson.toJson(d.get("x")));
         });
     }
 
@@ -148,7 +149,7 @@ public class BakiSessionTest {
 
     @Test
     public void dst() throws Exception {
-        DataRow res = baki.of("create table test.tx(a int)").execute();
+        DataRow res = baki.execute("create table test.tx(a int)", Args.create());
 //        DataRow res = baki.execute("drop table test.tx");
         System.out.println(res);
     }
@@ -177,8 +178,6 @@ public class BakiSessionTest {
     public void sqlTest() throws Exception {
 //        boolean ex = orclLight.tableExists("chengyuxing.fruit");
 //        System.out.println(ex);
-
-        System.out.println(baki.of("drop table test.me").execute());
     }
 
     @Test
@@ -253,18 +252,18 @@ public class BakiSessionTest {
 
     @Test
     public void batchExe() throws Exception {
-        int[] res = baki.of(
-                "insert into test.big (name, address, age) values ('cyx', '昆明', 28)",
-                "insert into test.big (name, address, age) values ('cyx', now(), 'abc')",
-                "insert into test.big (name, address, age) values ('cyx', '昆明', 28)"
-        ).executeBatch();
+        int[] res = baki.executeBatch(
+                Arrays.asList("insert into test.big (name, address, age) values ('cyx', '昆明', 28)",
+                        "insert into test.big (name, address, age) values ('cyx', now(), 'abc')",
+                        "insert into test.big (name, address, age) values ('cyx', '昆明', 28)")
+        );
         System.out.println(Arrays.toString(res));
     }
 
     @Test
     public void testExeP() {
-        int i = baki.of("insert into public.user (name) values (?name)")
-                .executeBatch(Arrays.asList(
+        int[] i = baki.executeBatch("insert into public.user (name) values (?name)",
+                Arrays.asList(
                         Args.create("name", "aaa"),
                         Args.create("name", "bbb"),
                         Args.create("name", "ccc")
@@ -282,22 +281,6 @@ public class BakiSessionTest {
     public void testInsert() throws Exception {
         String pkid = UUID.randomUUID().toString();
         baki.insert("test.temp").save(Args.create("pkid", pkid, "RPKID", pkid, "name", "cyx"));
-    }
-
-    @Test
-    public void testDelete() {
-        DataRow i = baki.of("delete from test.user")
-                .execute();
-        System.out.println(i);
-    }
-
-    @Test
-    public void test56() {
-        baki.of("create table abc()")
-                .execute()
-                .forEach((k, v) -> {
-                    System.out.println(k + ":" + v);
-                });
     }
 
     @Test

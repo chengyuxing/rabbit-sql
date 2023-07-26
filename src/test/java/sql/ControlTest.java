@@ -29,7 +29,7 @@ public class ControlTest {
         String sql = "insert into user (x, xm ,xb) values (:xx,:x, :xm, :xb)";
         System.out.println(sql.length());
         SqlGenerator sqlGenerator = new SqlGenerator(':');
-        System.out.println(sqlGenerator.generateSql(sql, Args.create(), true));
+        System.out.println(sqlGenerator.generateSql(sql, Args.create()));
     }
 
     @Test

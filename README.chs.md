@@ -35,7 +35,7 @@ Maven 中央仓库
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.5.2</version>
+    <version>7.5.3</version>
 </dependency>
 ```
 
@@ -387,6 +387,25 @@ select * from test.user where id = 1
     :_for.id
     -- #fi
 -- #done
+```
+
+为保持sql语法完整性，在具有语法检查的IDE中不出现高亮语法错误，推荐下面等效的写法：
+
+```sql
+select * from test.${db} where
+-- #if :id != blank
+    id = :id
+-- #fi
+-- #if :users != blank
+or id in (
+    -- #for user of :users delimiter ',\n'
+  			-- #if :user.id >= 8
+        :_for.user.id
+  			-- #fi
+    -- #done
+    )
+-- #fi
+;
 ```
 
 ```json

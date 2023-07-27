@@ -389,6 +389,22 @@ select * from test.user where id = 1
 -- #done
 ```
 
+To maintain sql syntax integrity, highlighting syntax errors does not occur in ides with syntax checking, and the following equivalent writing is recommended:
+
+```sql
+select * from test.user where id = 1
+-- #if :ids != blank
+or id in (
+    -- #for id of :ids delimiter ',\n'
+  			-- #if :id >= 8
+        :_for.id
+  			-- #fi
+    -- #done
+    )
+-- #fi
+;
+```
+
 ```json
 {"ids": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}
 ```

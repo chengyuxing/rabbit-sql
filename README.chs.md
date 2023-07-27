@@ -392,15 +392,12 @@ select * from test.user where id = 1
 为保持sql语法完整性，在具有语法检查的IDE中不出现高亮语法错误，推荐下面等效的写法：
 
 ```sql
-select * from test.${db} where
--- #if :id != blank
-    id = :id
--- #fi
--- #if :users != blank
+select * from test.user where id = 1
+-- #if :ids != blank
 or id in (
-    -- #for user of :users delimiter ',\n'
-  			-- #if :user.id >= 8
-        :_for.user.id
+    -- #for id of :ids delimiter ',\n'
+  			-- #if :id >= 8
+        :_for.id
   			-- #fi
     -- #done
     )

@@ -2,6 +2,7 @@ package strtests;
 
 import com.github.chengyuxing.common.WatchDog;
 import com.github.chengyuxing.sql.Args;
+import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
 
 import java.time.Clock;
@@ -50,7 +51,7 @@ public class StrTests {
                 .add("name", null)
                 .add("b", "2")
                 .add("c", null);
-                args.removeIfAbsentExclude("name");
+        args.removeIfAbsentExclude("name");
         System.out.println(args);
     }
 
@@ -67,5 +68,10 @@ public class StrTests {
         String sql = "select '${tableName}',${age} age from test.${tableName} where id = 10";
         Args<Object> args = Args.<Object>of("${tableName}", "user").add("${age}", 28);
 //        System.out.println(SqlUtil.resolveSqlPart(sql, args));
+    }
+
+    @Test
+    public void testSqlFix() {
+        System.out.println(SqlUtil.repairSyntaxError("update test.user set id = :id,\nname=:name,\nwhere order by id desc"));
     }
 }

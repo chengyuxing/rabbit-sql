@@ -18,13 +18,20 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.github.chengyuxing.common.utils.StringUtil.startsWithIgnoreCase;
-
 /**
  * SQL工具类
  */
 public class SqlUtil {
+    //language=RegExp
     public static final Pattern STR_PATTERN = Pattern.compile("'[^']*'", Pattern.MULTILINE);
+    //language=RegExp
+    public static final Pattern SQL_ERR_COMMA_WHERE = Pattern.compile(",\\s*where", Pattern.CASE_INSENSITIVE);
+    //language=RegExp
+    public static final Pattern SQL_ERR_WHERE_AND_OR = Pattern.compile("where\\s+(and|or)\\s+", Pattern.CASE_INSENSITIVE);
+    //language=RegExp
+    public static final Pattern SQL_ERR_WHERE_ORDER = Pattern.compile("where(\\s+order|\\s+limit|\\s+group|\\s+union|\\s*\\))\\s+", Pattern.CASE_INSENSITIVE);
+    //language=RegExp
+    public static final Pattern SQL_ERR_WHERE_END = Pattern.compile("where\\s*$", Pattern.CASE_INSENSITIVE);
 
     public static final StringFormatter FMT = new StringFormatter() {
         @Override
@@ -319,33 +326,26 @@ public class SqlUtil {
      * @return 修复后的sql
      */
     public static String repairSyntaxError(String sql) {
-        Pattern p;
         Matcher m;
-        // if update statement
-        if (startsWithIgnoreCase(sql.trim(), "update")) {
-            p = Pattern.compile(",\\s*where", Pattern.CASE_INSENSITIVE);
-            m = p.matcher(sql);
-            if (m.find()) {
-                sql = sql.substring(0, m.start()).concat(sql.substring(m.start() + 1));
-            }
+        // e.g: update user set id = :id, where ...
+        m = SQL_ERR_COMMA_WHERE.matcher(sql);
+        while (m.find()) {
+            sql = sql.substring(0, m.start()).concat(sql.substring(m.start() + 1));
         }
-        // "where and" statement
-        p = Pattern.compile("where\\s+(and|or)\\s+", Pattern.CASE_INSENSITIVE);
-        m = p.matcher(sql);
-        if (m.find()) {
-            return sql.substring(0, m.start() + 6).concat(sql.substring(m.end()));
+        // "where and|or" statement
+        m = SQL_ERR_WHERE_AND_OR.matcher(sql);
+        while (m.find()) {
+            sql = sql.substring(0, m.start() + 6).concat(sql.substring(m.end()));
         }
         // if "where order by ..." statement
-        p = Pattern.compile("where\\s+(order by|limit|group by|union|\\))\\s+", Pattern.CASE_INSENSITIVE);
-        m = p.matcher(sql);
-        if (m.find()) {
-            return sql.substring(0, m.start()).concat(sql.substring(m.start() + 6));
+        m = SQL_ERR_WHERE_ORDER.matcher(sql);
+        while (m.find()) {
+            sql = sql.substring(0, m.start()).concat(sql.substring(m.start() + 6));
         }
         // if "where" at end
-        p = Pattern.compile("where\\s*$", Pattern.CASE_INSENSITIVE);
-        m = p.matcher(sql);
-        if (m.find()) {
-            return sql.substring(0, m.start());
+        m = SQL_ERR_WHERE_END.matcher(sql);
+        while (m.find()) {
+            sql = sql.substring(0, m.start());
         }
         return sql;
     }

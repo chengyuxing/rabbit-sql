@@ -27,6 +27,7 @@ public interface SqlInterceptor {
      * 默认的sql拦截器，拦截DDL语句和无效条件的delete语句
      */
     class DefaultSqlInterceptor implements SqlInterceptor {
+        //language=RegExp
         private final Pattern CRITERIA = Pattern.compile("(?<a>[\\w._]+)\\s*=\\s*(?<b>[\\w._]+)");
 
         @Override

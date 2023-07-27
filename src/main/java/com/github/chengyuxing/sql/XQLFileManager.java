@@ -66,7 +66,9 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
  */
 public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(XQLFileManager.class);
+    //language=RegExp
     public static final Pattern NAME_PATTERN = Pattern.compile("/\\*\\s*\\[\\s*(?<name>\\S+)\\s*]\\s*\\*/");
+    //language=RegExp
     public static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+)\\s*}\\s*\\*/");
     public static final String PROPERTIES = "xql-file-manager.properties";
     public static final String YML = "xql-file-manager.yml";

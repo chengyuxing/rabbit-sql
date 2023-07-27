@@ -390,7 +390,7 @@ select * from test.user where id = 1
 ```
 
 ```json
-{ids: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}
+{"ids": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}
 ```
 
 以上将会生成如下sql和一些必要的变量：
@@ -408,20 +408,20 @@ select * from test.user where id = 1
 
 ```json
 {
-  _for:{
-    		id_0_0:1,
-        id_0_2:3, 
-        id_0_1:2, 
-        id_0_10:11, 
-        id_0_11:12, 
-        id_0_4:5, 
-        id_0_3:4, 
-        id_0_6:7, 
-        id_0_5:6, 
-        id_0_8:9, 
-        id_0_7:8, 
-        id_0_9:10
-       }
+  "_for": {
+    "id_0_0": 1,
+    "id_0_2": 3,
+    "id_0_1": 2,
+    "id_0_10": 11,
+    "id_0_11": 12,
+    "id_0_4": 5,
+    "id_0_3": 4,
+    "id_0_6": 7,
+    "id_0_5": 6,
+    "id_0_8": 9,
+    "id_0_7": 8,
+    "id_0_9": 10
+  }
 }
 ```
 
@@ -445,11 +445,11 @@ where id = :id;
 
 ```json
 {
-  id: 10,
-  data:{
-    name: "abc",
-    age: 30,
-    address: "kunming"
+  "id": 10,
+  "data": {
+    "name": "abc",
+    "age": 30,
+    "address": "kunming"
   }
 }
 ```
@@ -466,11 +466,22 @@ where id = :id
 ```
 
 ```json
-id: 10,
-_for: {
-	pair_0_2:{item1: 'age', item2: 30},
-	pair_0_1:{item1: 'name', item2: 'abc'}, 
-	pair_0_0:{item1:'address', item2:'kunming'}
+{
+  "id": 10,
+  "_for": {
+    "pair_0_2": {
+      "item1": "age",
+      "item2": 30
+    },
+    "pair_0_1": {
+      "item1": "name",
+      "item2": "abc"
+    },
+    "pair_0_0": {
+      "item1": "address",
+      "item2": "kunming"
+    }
+  }
 }
 ```
 

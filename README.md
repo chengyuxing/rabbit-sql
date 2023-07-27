@@ -396,9 +396,9 @@ select * from test.user where id = 1
 -- #if :ids != blank
 or id in (
     -- #for id of :ids delimiter ',\n'
-  			-- #if :id >= 8
+  		-- #if :id >= 8
         :_for.id
-  			-- #fi
+  		-- #fi
     -- #done
     )
 -- #fi

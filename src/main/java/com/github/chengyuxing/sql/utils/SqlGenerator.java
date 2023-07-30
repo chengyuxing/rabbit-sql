@@ -105,11 +105,11 @@ public class SqlGenerator {
         } else {
             while (matcher.find()) {
                 String name = matcher.group("name");
-                if (data.containsKey(name)) {
-                    String value = quoteFormatValue(data.get(name));
-                    noneStrSql = StringUtil.replaceFirst(noneStrSql, namedParamPrefix + name, value);
-                } else if (name.contains(".")) {
+                if (name.contains(".")) {
                     String value = quoteFormatValue(ObjectUtil.getDeepValue(data, name));
+                    noneStrSql = StringUtil.replaceFirst(noneStrSql, namedParamPrefix + name, value);
+                } else if (data.containsKey(name)) {
+                    String value = quoteFormatValue(data.get(name));
                     noneStrSql = StringUtil.replaceFirst(noneStrSql, namedParamPrefix + name, value);
                 }
             }

@@ -355,7 +355,7 @@ public class JdbcUtil {
     }
 
     /**
-     * 判断数据库表字段类型并对应注册预编译sql参数
+     * 注册预编译sql参数
      *
      * @param statement          sql声明
      * @param checkParameterType 是否检查数据库字段参数对应类型
@@ -363,20 +363,32 @@ public class JdbcUtil {
      * @param names              占位符参数名
      * @throws SQLException ex
      */
-    public static void setSqlTypedArgs(PreparedStatement statement, boolean checkParameterType, Map<String, ?> args, List<String> names) throws SQLException {
+    public static void setSqlArgs(PreparedStatement statement, boolean checkParameterType, Map<String, ?> args, List<String> names) throws SQLException {
         if (args != null && !args.isEmpty()) {
             if (checkParameterType) {
-                for (int i = 0; i < names.size(); i++) {
-                    int index = i + 1;
-                    String name = names.get(i);
-                    if (args.containsKey(name)) {
-                        setSpecialStatementValue(statement, index, args.get(name));
-                    } else if (name.contains(".")) {
-                        setSpecialStatementValue(statement, index, ObjectUtil.getDeepValue(args, name));
-                    }
-                }
+                setSqlTypedArgs(statement, args, names);
             } else {
-                setSqlPoolArgs(statement, args, names);
+                setSqlSimpleArgs(statement, args, names);
+            }
+        }
+    }
+
+    /**
+     * 判断数据库表字段类型并对应注册预编译sql参数
+     *
+     * @param statement sql声明
+     * @param args      参数
+     * @param names     占位符参数名
+     * @throws SQLException ex
+     */
+    public static void setSqlTypedArgs(PreparedStatement statement, Map<String, ?> args, List<String> names) throws SQLException {
+        for (int i = 0; i < names.size(); i++) {
+            int index = i + 1;
+            String name = names.get(i);
+            if (name.contains(".")) {
+                setSpecialStatementValue(statement, index, ObjectUtil.getDeepValue(args, name));
+            } else if (args.containsKey(name)) {
+                setSpecialStatementValue(statement, index, args.get(name));
             }
         }
     }
@@ -389,15 +401,15 @@ public class JdbcUtil {
      * @param names     占位符参数名
      * @throws SQLException ex
      */
-    public static void setSqlPoolArgs(PreparedStatement statement, Map<String, ?> args, List<String> names) throws SQLException {
+    public static void setSqlSimpleArgs(PreparedStatement statement, Map<String, ?> args, List<String> names) throws SQLException {
         for (int i = 0; i < names.size(); i++) {
             int index = i + 1;
             String name = names.get(i);
-            if (args.containsKey(name)) {
-                setStatementValue(statement, index, args.get(name));
-            } else if (name.contains(".")) {
+            if (name.contains(".")) {
                 // maybe path expression
                 setStatementValue(statement, index, ObjectUtil.getDeepValue(args, name));
+            } else if (args.containsKey(name)) {
+                setStatementValue(statement, index, args.get(name));
             }
         }
     }

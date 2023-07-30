@@ -114,7 +114,7 @@ public abstract class JdbcSupport extends SqlParser {
         final Map<String, Object> data = prepared.getItem3();
         try {
             return execute(preparedSql, sc -> {
-                JdbcUtil.setSqlTypedArgs(sc, checkParameterType(), data, argNames);
+                JdbcUtil.setSqlArgs(sc, checkParameterType(), data, argNames);
                 boolean isQuery = sc.execute();
                 printSqlConsole(sc);
                 DataRow result;
@@ -174,7 +174,7 @@ public abstract class JdbcSupport extends SqlParser {
             close = UncheckedCloseable.wrap(() -> releaseConnection(connection, getDataSource()));
             PreparedStatement statement = connection.prepareStatement(preparedSql);
             close = close.nest(statement);
-            JdbcUtil.setSqlTypedArgs(statement, checkParameterType(), data, argNames);
+            JdbcUtil.setSqlArgs(statement, checkParameterType(), data, argNames);
             ResultSet resultSet = statement.executeQuery();
             close = close.nest(resultSet);
             return StreamSupport.stream(new Spliterators.AbstractSpliterator<DataRow>(Long.MAX_VALUE, Spliterator.ORDERED) {
@@ -276,7 +276,7 @@ public abstract class JdbcSupport extends SqlParser {
                 if (data.isEmpty()) {
                     return sc.executeUpdate();
                 }
-                JdbcUtil.setSqlTypedArgs(sc, checkParameterType(), data, argNames);
+                JdbcUtil.setSqlArgs(sc, checkParameterType(), data, argNames);
                 return sc.executeUpdate();
             });
         } catch (Exception e) {

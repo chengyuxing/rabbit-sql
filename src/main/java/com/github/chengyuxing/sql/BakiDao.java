@@ -164,19 +164,19 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
      */
     protected int fastInsert(String tableName, Collection<? extends Map<String, ?>> data, boolean safe, boolean ignoreNull) {
-        if (data.size() > 0) {
-            List<String> sqls = new ArrayList<>(data.size());
-            List<String> tableFields = safe ? getTableFields(tableName) : new ArrayList<>();
-            for (Map<String, ?> item : data) {
-                String sql = sqlGenerator.generateInsert(tableName, item, tableFields, ignoreNull);
-                sqls.add(sql);
-            }
-            log.debug("preview sql: {}\nmore...", SqlUtil.buildConsoleSql(sqls.get(0)));
-            int count = super.executeBatch(sqls).length;
-            log.debug("{} rows inserted!", count);
-            return count;
+        if (data.isEmpty()) {
+            return 0;
         }
-        return 0;
+        List<String> sqls = new ArrayList<>(data.size());
+        List<String> tableFields = safe ? getTableFields(tableName) : new ArrayList<>();
+        for (Map<String, ?> item : data) {
+            String sql = sqlGenerator.generateInsert(tableName, item, tableFields, ignoreNull);
+            sqls.add(sql);
+        }
+        log.debug("preview sql: {}\nmore...", SqlUtil.buildConsoleSql(sqls.get(0)));
+        int count = super.executeBatch(sqls).length;
+        log.debug("{} rows inserted!", count);
+        return count;
     }
 
     /**

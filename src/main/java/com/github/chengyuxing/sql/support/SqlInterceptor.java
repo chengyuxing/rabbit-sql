@@ -31,7 +31,7 @@ public interface SqlInterceptor {
         private final Pattern CRITERIA = Pattern.compile("(?<a>[\\w._]+)\\s*=\\s*(?<b>[\\w._]+)");
 
         @Override
-        public boolean prevHandle(String sql, Map<String, ?> args, DatabaseMetaData metaData) throws Throwable {
+        public boolean prevHandle(String sql, Map<String, ?> args, DatabaseMetaData metaData) {
             if (StringUtil.isEmpty(sql)) {
                 return false;
             }

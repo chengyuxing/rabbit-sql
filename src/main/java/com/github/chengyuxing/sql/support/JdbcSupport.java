@@ -324,7 +324,7 @@ public abstract class JdbcSupport extends SqlParser {
             }
             statement.execute();
             printSqlConsole(statement);
-            if (outNames.size() > 0) {
+            if (!outNames.isEmpty()) {
                 Object[] values = new Object[outNames.size()];
                 int resultIndex = 0;
                 for (int i = 0; i < argNames.size(); i++) {

@@ -244,7 +244,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                 }
                 // exclude single line annotation except expression keywords
                 if (!trimLine.startsWith("--") || (StringUtil.startsWithsIgnoreCase(trimAnnotation(trimLine), TAGS))) {
-                    if (!blockName.equals("")) {
+                    if (!blockName.isEmpty()) {
                         sqlBodyBuffer.add(line);
                         if (trimLine.endsWith(delimiter)) {
                             String naSql = removeAnnotationBlock(String.join(NEW_LINE, sqlBodyBuffer));
@@ -257,7 +257,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                 }
             }
             // if last part of sql is not ends with delimiter symbol
-            if (!blockName.equals("")) {
+            if (!blockName.isEmpty()) {
                 String lastSql = String.join(NEW_LINE, sqlBodyBuffer);
                 entry.put(blockName, removeAnnotationBlock(lastSql));
                 log.debug("scan {} to get sql({}) [{}.{}]：{}", filename, delimiter, alias, blockName, SqlUtil.buildConsoleSql(lastSql));
@@ -357,7 +357,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             throw new RuntimeException("init pipe error: ", e);
         }
         if (log.isDebugEnabled()) {
-            if (pipeInstances.size() > 0)
+            if (!pipeInstances.isEmpty())
                 log.debug("loaded pipes {}", pipeInstances);
         }
     }

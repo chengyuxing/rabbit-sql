@@ -10,6 +10,8 @@ import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.Keywords;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -22,6 +24,7 @@ import java.util.regex.Pattern;
  * SQL工具类
  */
 public class SqlUtil {
+    private static final Logger log = LoggerFactory.getLogger(SqlUtil.class);
     //language=RegExp
     public static final Pattern STR_PATTERN = Pattern.compile("'[^']*'", Pattern.MULTILINE);
     //language=RegExp
@@ -365,7 +368,7 @@ public class SqlUtil {
             StringBuilder sb = new StringBuilder();
             for (int i = 0; i < maybeKeywords.size(); i++) {
                 String key = maybeKeywords.get(i);
-                if (!key.trim().equals("")) {
+                if (!key.trim().isEmpty()) {
                     // keywords highlight
                     if (StringUtil.equalsAnyIgnoreCase(key, Keywords.STANDARD) || StringUtil.equalsAnyIgnoreCase(key, Keywords.POSTGRESQL)) {
                         maybeKeywords.set(i, Printer.colorful(key, Color.DARK_PURPLE));
@@ -417,7 +420,7 @@ public class SqlUtil {
             }
             return colorfulSql;
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error("highlight sql error.", e);
             return sql;
         }
     }

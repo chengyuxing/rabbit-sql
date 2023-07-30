@@ -95,7 +95,7 @@ public class XQLFileManagerConfig {
             properties.forEach((k, s) -> {
                 String p = k.toString().trim();
                 String v = s.toString().trim();
-                if (!p.equals("") && !v.equals("")) {
+                if (!p.isEmpty() && !v.isEmpty()) {
                     if (p.startsWith("files.")) {
                         localFiles.put(p.substring(6), v);
                     } else if (p.startsWith("constants.")) {
@@ -307,7 +307,7 @@ public class XQLFileManagerConfig {
      * @param delimiter sql块分隔符
      */
     public void setDelimiter(String delimiter) {
-        if (delimiter == null || delimiter.trim().equals("")) {
+        if (delimiter == null || delimiter.trim().isEmpty()) {
             return;
         }
         checkLoading();

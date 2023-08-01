@@ -68,6 +68,7 @@ public abstract class JdbcSupport extends SqlParser {
         Connection connection = null;
         try {
             connection = getConnection();
+            //noinspection SqlSourceToSinkFlow
             statement = connection.prepareStatement(sql);
             return callback.doInStatement(statement);
         } catch (SQLException e) {
@@ -165,6 +166,7 @@ public abstract class JdbcSupport extends SqlParser {
             // if this query is not in transaction, it's connection managed by Stream
             // if transaction is active connection will not be close when read stream to the end in 'try-with-resource' block
             close = UncheckedCloseable.wrap(() -> releaseConnection(connection, getDataSource()));
+            //noinspection SqlSourceToSinkFlow
             PreparedStatement statement = connection.prepareStatement(preparedSql);
             close = close.nest(statement);
             JdbcUtil.setSqlArgs(statement, data, argNames);
@@ -222,6 +224,7 @@ public abstract class JdbcSupport extends SqlParser {
                 Map<String, ?> empty = Collections.emptyMap();
                 for (String sql : sqls) {
                     if (!StringUtil.isEmpty(sql)) {
+                        //noinspection SqlSourceToSinkFlow
                         statement.addBatch(parseSql(sql, empty).getItem1());
                     }
                 }
@@ -302,6 +305,7 @@ public abstract class JdbcSupport extends SqlParser {
         CallableStatement statement = null;
         Connection connection = getConnection();
         try {
+            //noinspection SqlSourceToSinkFlow
             statement = connection.prepareCall(executeSql);
             List<String> outNames = new ArrayList<>();
             if (!args.isEmpty()) {

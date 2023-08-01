@@ -13,7 +13,6 @@ import org.junit.Test;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -122,7 +121,7 @@ public class NewBakiTests {
 
         int i = baki.insert("test.user")
                 .ignoreNull()
-                .save(Collections.emptyMap());
+                .saveEntities(users);
         System.out.println(i);
 
     }

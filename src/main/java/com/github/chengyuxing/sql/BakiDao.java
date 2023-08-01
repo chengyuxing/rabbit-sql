@@ -15,6 +15,7 @@ import com.github.chengyuxing.sql.page.impl.Db2PageHelper;
 import com.github.chengyuxing.sql.page.impl.MysqlPageHelper;
 import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
+import com.github.chengyuxing.sql.support.executor.SaveExecutor;
 import com.github.chengyuxing.sql.support.JdbcSupport;
 import com.github.chengyuxing.sql.support.SqlInterceptor;
 import com.github.chengyuxing.sql.support.executor.*;
@@ -359,8 +360,8 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public UpdateExecutor update(String tableName, String where) {
-        return new UpdateExecutor(tableName, where) {
+    public SaveExecutor update(String tableName, String where) {
+        return new SaveExecutor() {
             @Override
             public int save(Map<String, ?> data) {
                 return save(Collections.singletonList(data));
@@ -377,8 +378,8 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public InsertExecutor insert(String tableName) {
-        return new InsertExecutor(tableName) {
+    public SaveExecutor insert(String tableName) {
+        return new SaveExecutor() {
             @Override
             public int save(Map<String, ?> data) {
                 return save(Collections.singletonList(data));

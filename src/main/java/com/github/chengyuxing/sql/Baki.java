@@ -1,10 +1,9 @@
 package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.sql.support.executor.SaveExecutor;
 import com.github.chengyuxing.sql.support.executor.DeleteExecutor;
-import com.github.chengyuxing.sql.support.executor.InsertExecutor;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
-import com.github.chengyuxing.sql.support.executor.UpdateExecutor;
 import com.github.chengyuxing.sql.types.Param;
 
 import java.sql.Connection;
@@ -26,13 +25,23 @@ public interface Baki {
     QueryExecutor query(String sql);
 
     /**
-     * 更新执行器
+     * 更新执行器<br>
+     * 关于此方法的说明举例：
+     * <blockquote>
+     * <pre>
+     *  参数： {id:14, name:'cyx', address:'kunming'},{...}...
+     *  条件："id = :id"
+     *  生成：update{@code <table>} set name = :name, address = :address
+     *       where id = :id
+     *  </pre>
+     * 解释：where中至少指定一个传名参数，数据中必须包含where条件中的所有传名参数
+     * </blockquote>
      *
-     * @param tableName 表名
+     * @param tableName 数据
      * @param where     条件
-     * @return 更新执行器
+     * @return 受影响的行数
      */
-    UpdateExecutor update(String tableName, String where);
+    SaveExecutor update(String tableName, String where);
 
     /**
      * 插入执行器
@@ -40,7 +49,7 @@ public interface Baki {
      * @param tableName 表名
      * @return 插入执行器
      */
-    InsertExecutor insert(String tableName);
+    SaveExecutor insert(String tableName);
 
     /**
      * 删除执行器

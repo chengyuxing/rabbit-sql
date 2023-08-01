@@ -12,6 +12,8 @@ import org.junit.Test;
 
 import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -90,9 +92,9 @@ public class NewBakiTests {
         Args<Object> args = Args.create(
                 "id", 11,
                 "data", Args.create(
-                        "name", "abc",
-                        "age", 89,
-                        "address", "bbc"
+                        "name", "cyx",
+                        "age", 23,
+                        "address", "abc"
                 )
         );
         baki.execute("&new.update", args);
@@ -120,7 +122,7 @@ public class NewBakiTests {
 
         int i = baki.insert("test.user")
                 .ignoreNull()
-                .saveEntities(users);
+                .save(Collections.emptyMap());
         System.out.println(i);
 
     }

@@ -10,7 +10,11 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.time.LocalDateTime;
 import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class NewBakiTests {
     private static BakiDao bakiDao;
@@ -99,5 +103,25 @@ public class NewBakiTests {
         baki.query("&new.var")
                 .stream()
                 .forEach(System.out::println);
+    }
+
+    @Test
+    public void testInsertEntity() {
+        List<User> users = Stream.iterate(0, i -> i + 1)
+                .limit(10)
+                .map(i -> {
+                    User user = new User();
+                    user.setAddress("昆明" + i);
+                    user.setDt(LocalDateTime.now());
+                    user.setName("cyx");
+                    user.setAge(i);
+                    return user;
+                }).collect(Collectors.toList());
+
+        int i = baki.insert("test.user")
+                .ignoreNull()
+                .saveEntities(users);
+        System.out.println(i);
+
     }
 }

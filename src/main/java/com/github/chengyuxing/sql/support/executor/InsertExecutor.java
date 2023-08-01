@@ -88,7 +88,7 @@ public abstract class InsertExecutor {
      * @param entities 一组标准java bean实体类
      * @return 受影响的行数
      */
-    public int saveEntities(Collection<Object> entities) {
+    public int saveEntities(Collection<?> entities) {
         return save(entities.stream().map(DataRow::fromEntity).collect(Collectors.toList()));
     }
 }

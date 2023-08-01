@@ -57,6 +57,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     private SqlInterceptor sqlInterceptor;
     private XQLFileManager xqlFileManager;
     private char namedParamPrefix = ':';
+    @Deprecated
     private boolean checkParameterType = false;
 
     /**
@@ -77,6 +78,24 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     public static BakiDao of(DataSource dataSource) {
         return new BakiDao(dataSource);
+    }
+
+    /**
+     * 设置全局自定义的分页帮助提供程序
+     *
+     * @param globalPageHelperProvider 全局分页帮助提供程序
+     */
+    public void setGlobalPageHelperProvider(PageHelperProvider globalPageHelperProvider) {
+        this.globalPageHelperProvider = globalPageHelperProvider;
+    }
+
+    /**
+     * 设置sql预处理拦截器
+     *
+     * @param sqlInterceptor sql预处理拦截器
+     */
+    public void setSqlInterceptor(SqlInterceptor sqlInterceptor) {
+        this.sqlInterceptor = sqlInterceptor;
     }
 
     /**
@@ -408,21 +427,65 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * 设置全局自定义的分页帮助提供程序
+     * {@inheritDoc}<br>
+     * e.g. PostgreSQL执行获取一个游标类型的结果：
+     * <blockquote>
+     * <pre>
+     *      {@link List}&lt;{@link DataRow}&gt; rows = {@link Tx}.using(() -&gt;
+     *         baki.call("{call test.func(:c::refcursor)}",
+     *             Args.create("c",Param.IN_OUT("result", OUTParamType.REF_CURSOR))
+     *             ).get(0));
+     * </pre>
+     * </blockquote>
      *
-     * @param globalPageHelperProvider 全局分页帮助提供程序
+     * @param name 过程名
+     * @param args 参数 （占位符名字，参数对象）
+     * @return DataRow
+     * @throws UncheckedSqlException 存储过程或函数执行过程中出现错误
      */
-    public void setGlobalPageHelperProvider(PageHelperProvider globalPageHelperProvider) {
-        this.globalPageHelperProvider = globalPageHelperProvider;
+    @Override
+    public DataRow call(String name, Map<String, Param> args) {
+        return executeCallStatement(name, args);
     }
 
     /**
-     * 设置sql预处理拦截器
+     * {@inheritDoc}<br>
+     * 执行完成后自动关闭连接对象，不需要手动关闭
      *
-     * @param sqlInterceptor sql预处理拦截器
+     * @param func 函数体
+     * @param <T>  类型参数
+     * @return 执行结果
+     * @throws ConnectionStatusException 如果数据库错误或连接对象已关闭
      */
-    public void setSqlInterceptor(SqlInterceptor sqlInterceptor) {
-        this.sqlInterceptor = sqlInterceptor;
+    @Override
+    public <T> T using(Function<Connection, T> func) {
+        Connection connection = null;
+        try {
+            connection = getConnection();
+            return func.apply(connection);
+        } finally {
+            releaseConnection(connection, getDataSource());
+        }
+    }
+
+    /**
+     * {@inheritDoc}
+     *
+     * @return 获取当前数据库元数据对象（连接为关闭状态）
+     */
+    @Override
+    public DatabaseMetaData metaData() {
+        if (currentMetaData != null) {
+            return currentMetaData;
+        }
+        return using(c -> {
+            try {
+                currentMetaData = c.getMetaData();
+                return currentMetaData;
+            } catch (SQLException e) {
+                throw new UncheckedSqlException("get metadata error: ", e);
+            }
+        });
     }
 
     /**
@@ -483,68 +546,6 @@ public class BakiDao extends JdbcSupport implements Baki {
                 return PagedResource.of(pageHelper, list);
             }
         }
-    }
-
-    /**
-     * {@inheritDoc}<br>
-     * e.g. PostgreSQL执行获取一个游标类型的结果：
-     * <blockquote>
-     * <pre>
-     *      {@link List}&lt;{@link DataRow}&gt; rows = {@link Tx}.using(() -&gt;
-     *         baki.call("{call test.func(:c::refcursor)}",
-     *             Args.create("c",Param.IN_OUT("result", OUTParamType.REF_CURSOR))
-     *             ).get(0));
-     * </pre>
-     * </blockquote>
-     *
-     * @param name 过程名
-     * @param args 参数 （占位符名字，参数对象）
-     * @return DataRow
-     * @throws UncheckedSqlException 存储过程或函数执行过程中出现错误
-     */
-    @Override
-    public DataRow call(String name, Map<String, Param> args) {
-        return executeCallStatement(name, args);
-    }
-
-    /**
-     * {@inheritDoc}<br>
-     * 执行完成后自动关闭连接对象，不需要手动关闭
-     *
-     * @param func 函数体
-     * @param <T>  类型参数
-     * @return 执行结果
-     * @throws ConnectionStatusException 如果数据库错误或连接对象已关闭
-     */
-    @Override
-    public <T> T using(Function<Connection, T> func) {
-        Connection connection = null;
-        try {
-            connection = getConnection();
-            return func.apply(connection);
-        } finally {
-            releaseConnection(connection, getDataSource());
-        }
-    }
-
-    /**
-     * {@inheritDoc}
-     *
-     * @return 获取当前数据库元数据对象（连接为关闭状态）
-     */
-    @Override
-    public DatabaseMetaData metaData() {
-        if (currentMetaData != null) {
-            return currentMetaData;
-        }
-        return using(c -> {
-            try {
-                currentMetaData = c.getMetaData();
-                return currentMetaData;
-            } catch (SQLException e) {
-                throw new UncheckedSqlException("get metadata error: ", e);
-            }
-        });
     }
 
     /**
@@ -697,11 +698,6 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    protected boolean checkParameterType() {
-        return checkParameterType;
-    }
-
-    @Override
     protected DataSource getDataSource() {
         return dataSource;
     }
@@ -730,7 +726,9 @@ public class BakiDao extends JdbcSupport implements Baki {
      * 是否检查预编译sql对应的参数类型
      *
      * @return 是否检查
+     * @deprecated
      */
+    @Deprecated
     public boolean isCheckParameterType() {
         return checkParameterType;
     }
@@ -739,7 +737,9 @@ public class BakiDao extends JdbcSupport implements Baki {
      * 设置是否检查预编译sql对应的参数类型
      *
      * @param checkParameterType 是否检查标志
+     * @deprecated
      */
+    @Deprecated
     public void setCheckParameterType(boolean checkParameterType) {
         this.checkParameterType = checkParameterType;
     }

@@ -55,13 +55,6 @@ public abstract class JdbcSupport extends SqlParser {
     protected abstract void releaseConnection(Connection connection, DataSource dataSource);
 
     /**
-     * 是否检查预编译sql对应的参数类型
-     *
-     * @return 是否检查
-     */
-    protected abstract boolean checkParameterType();
-
-    /**
      * 执行一句预编译的sql
      *
      * @param sql      sql
@@ -114,7 +107,7 @@ public abstract class JdbcSupport extends SqlParser {
         final Map<String, Object> data = prepared.getItem3();
         try {
             return execute(preparedSql, sc -> {
-                JdbcUtil.setSqlArgs(sc, checkParameterType(), data, argNames);
+                JdbcUtil.setSqlArgs(sc, data, argNames);
                 boolean isQuery = sc.execute();
                 printSqlConsole(sc);
                 DataRow result;
@@ -174,7 +167,7 @@ public abstract class JdbcSupport extends SqlParser {
             close = UncheckedCloseable.wrap(() -> releaseConnection(connection, getDataSource()));
             PreparedStatement statement = connection.prepareStatement(preparedSql);
             close = close.nest(statement);
-            JdbcUtil.setSqlArgs(statement, checkParameterType(), data, argNames);
+            JdbcUtil.setSqlArgs(statement, data, argNames);
             ResultSet resultSet = statement.executeQuery();
             close = close.nest(resultSet);
             return StreamSupport.stream(new Spliterators.AbstractSpliterator<DataRow>(Long.MAX_VALUE, Spliterator.ORDERED) {
@@ -276,7 +269,7 @@ public abstract class JdbcSupport extends SqlParser {
                 if (data.isEmpty()) {
                     return sc.executeUpdate();
                 }
-                JdbcUtil.setSqlArgs(sc, checkParameterType(), data, argNames);
+                JdbcUtil.setSqlArgs(sc, data, argNames);
                 return sc.executeUpdate();
             });
         } catch (Exception e) {

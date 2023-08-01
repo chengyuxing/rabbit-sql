@@ -417,7 +417,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public int[] executeBatch(String namedSql, Collection<Map<String, ?>> data) {
+    public int[] executeBatch(String namedSql, Collection<? extends Map<String, ?>> data) {
         List<String> list = new ArrayList<>();
         for (Map<String, ?> item : data) {
             String sql = sqlGenerator.generateSql(namedSql, item);

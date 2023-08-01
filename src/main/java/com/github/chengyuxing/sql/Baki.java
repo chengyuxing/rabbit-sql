@@ -82,7 +82,7 @@ public interface Baki {
      * @param data     数据
      * @return 每条sql的执行结果
      */
-    int[] executeBatch(String namedSql, Collection<Map<String, ?>> data);
+    int[] executeBatch(String namedSql, Collection<? extends Map<String, ?>> data);
 
     /**
      * 执行存储过程或函数

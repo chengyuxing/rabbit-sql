@@ -190,17 +190,20 @@ public class SqlUtil {
      * @return 替换字符串后带有特殊占位符的sql和占位符与字符串的映射
      */
     public static Pair<String, Map<String, String>> replaceSqlSubstr(final String sql) {
+        //noinspection UnnecessaryUnicodeEscape
+        String symbol = "\u02de";
         if (!sql.contains("'")) {
             return Pair.of(sql, Collections.emptyMap());
         }
         String noneStrSql = sql;
         Map<String, String> mapper = new HashMap<>();
         Matcher m = STR_PATTERN.matcher(sql);
+        int i = 0;
         while (m.find()) {
             // sql part of substr
             String str = m.group();
             // mapping placeholder
-            String placeHolder = "\u02de" + (str.hashCode()) + "\u02de";
+            String placeHolder = symbol + (i++) + symbol;
             noneStrSql = noneStrSql.replace(str, placeHolder);
             mapper.put(placeHolder, str);
         }
@@ -276,6 +279,8 @@ public class SqlUtil {
      * @return 块注释
      */
     public static List<String> getAnnotationBlock(final String sql) {
+        //noinspection UnnecessaryUnicodeEscape
+        String splitter = "\u02ac";
         Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSqlSubstr(sql);
         String noneStrSql = noneStrSqlAndHolder.getItem1();
         Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
@@ -300,7 +305,7 @@ public class SqlUtil {
             } else if (count == 0) {
                 if (chars[prev] == '*') {
                     if (chars[i] == '/') {
-                        annotations.append("/").append("\u02ac");
+                        annotations.append("/").append(splitter);
                     }
                 }
             } else {
@@ -313,7 +318,7 @@ public class SqlUtil {
                 annotationStr = annotationStr.replace(key, placeholderMapper.get(key));
             }
         }
-        return Arrays.asList(annotationStr.split("\u02ac"));
+        return Arrays.asList(annotationStr.split(splitter));
     }
 
     /**

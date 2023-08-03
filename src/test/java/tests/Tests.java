@@ -306,7 +306,6 @@ public class Tests {
                 "dt", LocalDateTime.now());
 
         System.out.println(new SqlGenerator('?').generateNamedParamInsert("t.user", args, Arrays.asList("id", "name", "asx"), true));
-        System.out.println(new SqlGenerator('?').generateInsert("t.user", args, Collections.emptyList(), true));
 
     }
 

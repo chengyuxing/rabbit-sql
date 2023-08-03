@@ -17,6 +17,7 @@ import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -107,13 +108,13 @@ public abstract class JdbcSupport extends SqlParser {
         final String preparedSql = prepared.getItem1();
         final Map<String, Object> data = prepared.getItem3();
         try {
-            return execute(preparedSql, sc -> {
-                JdbcUtil.setSqlArgs(sc, data, argNames);
-                boolean isQuery = sc.execute();
-                printSqlConsole(sc);
+            return execute(preparedSql, ps -> {
+                JdbcUtil.setSqlArgs(ps, data, argNames);
+                boolean isQuery = ps.execute();
+                printSqlConsole(ps);
                 DataRow result;
                 if (isQuery) {
-                    ResultSet resultSet = sc.getResultSet();
+                    ResultSet resultSet = ps.getResultSet();
                     List<DataRow> rows = JdbcUtil.createDataRows(resultSet, preparedSql, -1);
                     JdbcUtil.closeResultSet(resultSet);
                     if (rows.size() == 1) {
@@ -122,7 +123,7 @@ public abstract class JdbcSupport extends SqlParser {
                         result = DataRow.fromPair("result", rows, "type", "QUERY");
                     }
                 } else {
-                    int count = sc.getUpdateCount();
+                    int count = ps.getUpdateCount();
                     result = DataRow.fromPair("result", count, "type", "DD(M)L");
                 }
                 return result;
@@ -167,10 +168,10 @@ public abstract class JdbcSupport extends SqlParser {
             // if transaction is active connection will not be close when read stream to the end in 'try-with-resource' block
             close = UncheckedCloseable.wrap(() -> releaseConnection(connection, getDataSource()));
             //noinspection SqlSourceToSinkFlow
-            PreparedStatement statement = connection.prepareStatement(preparedSql);
-            close = close.nest(statement);
-            JdbcUtil.setSqlArgs(statement, data, argNames);
-            ResultSet resultSet = statement.executeQuery();
+            PreparedStatement ps = connection.prepareStatement(preparedSql);
+            close = close.nest(ps);
+            JdbcUtil.setSqlArgs(ps, data, argNames);
+            ResultSet resultSet = ps.executeQuery();
             close = close.nest(resultSet);
             return StreamSupport.stream(new Spliterators.AbstractSpliterator<DataRow>(Long.MAX_VALUE, Spliterator.ORDERED) {
                 String[] names = null;
@@ -204,54 +205,102 @@ public abstract class JdbcSupport extends SqlParser {
     }
 
     /**
-     * 批量执行非查询(ddl,dml)语句
+     * 批量执行非查询(ddl,dml)语句（非预编译）
      *
-     * @param sqls 一组sql
+     * @param sqls      一组sql
+     * @param batchSize 批量执行的数据大小
      * @return 每条sql的执行结果
      * @throws UncheckedSqlException         执行批量操作时发生错误
      * @throws UnsupportedOperationException 数据库或驱动版本不支持批量操作
      * @throws IllegalArgumentException      如果执行的sql条数少1条
      */
-    public int[] executeBatch(final List<String> sqls) {
+    public int executeBatch(final List<String> sqls, int batchSize) {
+        if (batchSize < 1) {
+            throw new IllegalArgumentException("batchSize must greater than 1.");
+        }
         if (sqls.isEmpty()) {
-            return new int[0];
+            return 0;
         }
-        Statement statement = null;
+        Statement s = null;
         Connection connection = getConnection();
-        if (JdbcUtil.supportsBatchUpdates(connection)) {
-            try {
-                statement = connection.createStatement();
-                Map<String, ?> empty = Collections.emptyMap();
-                for (String sql : sqls) {
-                    if (!StringUtil.isEmpty(sql)) {
-                        //noinspection SqlSourceToSinkFlow
-                        statement.addBatch(parseSql(sql, empty).getItem1());
-                    }
+        try {
+            s = connection.createStatement();
+            final Map<String, ?> empty = Collections.emptyMap();
+            final Stream.Builder<int[]> result = Stream.builder();
+            int i = 1;
+            for (String sql : sqls) {
+                if (StringUtil.isEmpty(sql)) {
+                    continue;
                 }
-                return statement.executeBatch();
-            } catch (SQLException e) {
-                try {
-                    JdbcUtil.closeStatement(statement);
-                } catch (SQLException ex) {
-                    e.addSuppressed(ex);
+                //noinspection SqlSourceToSinkFlow
+                s.addBatch(parseSql(sql, empty).getItem1());
+                if (i % batchSize == 0) {
+                    result.add(s.executeBatch());
+                    s.clearBatch();
                 }
-                statement = null;
-                releaseConnection(connection, getDataSource());
-                throw new UncheckedSqlException("execute batch error: ", e);
-            } finally {
-                try {
-                    JdbcUtil.closeStatement(statement);
-                } catch (SQLException e) {
-                    log.error("close statement error: ", e);
-                }
-                releaseConnection(connection, getDataSource());
+                i++;
             }
+            result.add(s.executeBatch());
+            s.clearBatch();
+            return result.build().flatMapToInt(IntStream::of).sum();
+        } catch (SQLException e) {
+            try {
+                JdbcUtil.closeStatement(s);
+            } catch (SQLException ex) {
+                e.addSuppressed(ex);
+            }
+            s = null;
+            releaseConnection(connection, getDataSource());
+            throw new UncheckedSqlException("execute batch error: ", e);
+        } finally {
+            try {
+                JdbcUtil.closeStatement(s);
+            } catch (SQLException e) {
+                log.error("close statement error: ", e);
+            }
+            releaseConnection(connection, getDataSource());
         }
-        throw new UnsupportedOperationException("your database or jdbc driver not support batch execute currently!");
     }
 
     /**
-     * <p>批量执行非查询语句 (insert，update，delete)</p>
+     * 批量执行非查询语句
+     *
+     * @param sql  sql
+     * @param args 数据
+     * @return 受影响的行数
+     */
+    public int executeBatchUpdate(final String sql, Collection<? extends Map<String, ?>> args, int batchSize) {
+        if (batchSize < 1) {
+            throw new IllegalArgumentException("batchSize must greater than 1.");
+        }
+        Map<String, ?> first = args.iterator().next();
+        Triple<String, List<String>, Map<String, Object>> prepared = prepare(sql, first);
+        final List<String> argNames = prepared.getItem2();
+        final String preparedSql = prepared.getItem1();
+        try {
+            return execute(preparedSql, ps -> {
+                final Stream.Builder<int[]> result = Stream.builder();
+                int i = 1;
+                for (Map<String, ?> item : args) {
+                    JdbcUtil.setSqlArgs(ps, item, argNames);
+                    ps.addBatch();
+                    if (i % batchSize == 0) {
+                        result.add(ps.executeBatch());
+                        ps.clearBatch();
+                    }
+                    i++;
+                }
+                result.add(ps.executeBatch());
+                ps.clearBatch();
+                return result.build().flatMapToInt(IntStream::of).sum();
+            });
+        } catch (Exception e) {
+            throw new RuntimeException("prepare sql error:\n[" + sql + "]\n", e);
+        }
+    }
+
+    /**
+     * 执行非查询语句 (insert，update，delete)<br>
      * e.g.
      * <blockquote>
      * <pre>insert into table (a,b,c) values (:v1,:v2,:v3)</pre>
@@ -262,7 +311,7 @@ public abstract class JdbcSupport extends SqlParser {
      * @param args 一组数据
      * @return 受影响的行数
      */
-    public int executeNonQuery(final String sql, Map<String, ?> args) {
+    public int executeUpdate(final String sql, Map<String, ?> args) {
         Triple<String, List<String>, Map<String, Object>> prepared = prepare(sql, args);
         final List<String> argNames = prepared.getItem2();
         final String preparedSql = prepared.getItem1();

@@ -5,7 +5,6 @@ import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.datasource.DataSourceUtil;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
-import com.github.chengyuxing.sql.exceptions.DuplicateException;
 import com.github.chengyuxing.sql.exceptions.IllegalSqlException;
 import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 import com.github.chengyuxing.sql.page.IPageable;
@@ -15,10 +14,11 @@ import com.github.chengyuxing.sql.page.impl.Db2PageHelper;
 import com.github.chengyuxing.sql.page.impl.MysqlPageHelper;
 import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
-import com.github.chengyuxing.sql.support.executor.SaveExecutor;
 import com.github.chengyuxing.sql.support.JdbcSupport;
 import com.github.chengyuxing.sql.support.SqlInterceptor;
-import com.github.chengyuxing.sql.support.executor.*;
+import com.github.chengyuxing.sql.support.executor.DeleteExecutor;
+import com.github.chengyuxing.sql.support.executor.QueryExecutor;
+import com.github.chengyuxing.sql.support.executor.SaveExecutor;
 import com.github.chengyuxing.sql.transaction.Tx;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.utils.JdbcUtil;
@@ -54,12 +54,26 @@ public class BakiDao extends JdbcSupport implements Baki {
     private String databaseId;
     private SqlGenerator sqlGenerator;
     //---------optional properties------
+    /**
+     * 全局自定义的分页帮助提供程序
+     */
     private PageHelperProvider globalPageHelperProvider;
+    /**
+     * sql预处理拦截器
+     */
     private SqlInterceptor sqlInterceptor;
+    /**
+     * sql文件解析管理器
+     */
     private XQLFileManager xqlFileManager;
+    /**
+     * 批量执行大小
+     */
+    private int batchSize = 1000;
+    /**
+     * 命名参数前缀
+     */
     private char namedParamPrefix = ':';
-    @Deprecated
-    private boolean checkParameterType = false;
 
     /**
      * 构造函数
@@ -79,217 +93,6 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     public static BakiDao of(DataSource dataSource) {
         return new BakiDao(dataSource);
-    }
-
-    /**
-     * 设置全局自定义的分页帮助提供程序
-     *
-     * @param globalPageHelperProvider 全局分页帮助提供程序
-     */
-    public void setGlobalPageHelperProvider(PageHelperProvider globalPageHelperProvider) {
-        this.globalPageHelperProvider = globalPageHelperProvider;
-    }
-
-    /**
-     * 设置sql预处理拦截器
-     *
-     * @param sqlInterceptor sql预处理拦截器
-     */
-    public void setSqlInterceptor(SqlInterceptor sqlInterceptor) {
-        this.sqlInterceptor = sqlInterceptor;
-    }
-
-    /**
-     * 指定sql文件解析管理器
-     *
-     * @param xqlFileManager sql文件解析管理器
-     * @throws java.io.UncheckedIOException 如果文件读取错误
-     * @throws RuntimeException             如果文件uri地址语法错误
-     * @throws DuplicateException           如果同一个文件出现同名sql
-     */
-    public void setXqlFileManager(XQLFileManager xqlFileManager) {
-        this.xqlFileManager = xqlFileManager;
-        if (!xqlFileManager.isInitialized()) {
-            xqlFileManager.init();
-        }
-    }
-
-    /**
-     * 获取当前sql文件解析管理器
-     *
-     * @return sql文件解析管理器
-     */
-    public XQLFileManager getXqlFileManager() {
-        return xqlFileManager;
-    }
-
-    /**
-     * 获取命名参数前缀
-     *
-     * @return 命名参数前缀
-     */
-    public char getNamedParamPrefix() {
-        return namedParamPrefix;
-    }
-
-    /**
-     * 设置命名参数前缀
-     *
-     * @param namedParamPrefix 命名参数前缀
-     */
-    public void setNamedParamPrefix(char namedParamPrefix) {
-        this.namedParamPrefix = namedParamPrefix;
-        this.sqlGenerator = new SqlGenerator(namedParamPrefix);
-    }
-
-    /**
-     * 插入
-     *
-     * @param tableName  表名
-     * @param data       数据
-     * @param safe       <ul>
-     *                   <li>true: 根据数据库表字段名排除数据中不存在的key，安全的插入</li>
-     *                   <li>false: 根据数据原封不动完全插入，如果有不存在的字段则抛出异常</li>
-     *                   </ul>
-     * @param ignoreNull 忽略null值
-     * @return 受影响的行数
-     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
-     * @see #fastInsert(String, Collection, boolean, boolean)
-     */
-    protected int insert(String tableName, Collection<? extends Map<String, ?>> data, boolean safe, boolean ignoreNull) {
-        if (data.isEmpty()) {
-            return 0;
-        }
-        List<String> tableFields = safe ? getTableFields(tableName) : new ArrayList<>();
-        int i = 0;
-        for (Map<String, ?> item : data) {
-            String sql = sqlGenerator.generateNamedParamInsert(tableName, item, tableFields, ignoreNull);
-            i += executeNonQuery(sql, item);
-        }
-        return i;
-    }
-
-    /**
-     * 插入（非预编译SQL）<br>
-     * 注：不支持插入二进制对象
-     *
-     * @param tableName  表名
-     * @param data       数据
-     * @param safe       <ul>
-     *                   <li>true: 根据数据库表字段名排除数据中不存在的key，安全的插入</li>
-     *                   <li>false: 根据数据原封不动完全插入，如果有不存在的字段则抛出异常</li>
-     *                   </ul>
-     * @param ignoreNull 忽略null值
-     * @return 受影响的行数
-     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误
-     */
-    protected int fastInsert(String tableName, Collection<? extends Map<String, ?>> data, boolean safe, boolean ignoreNull) {
-        if (data.isEmpty()) {
-            return 0;
-        }
-        List<String> sqls = new ArrayList<>(data.size());
-        List<String> tableFields = safe ? getTableFields(tableName) : new ArrayList<>();
-        for (Map<String, ?> item : data) {
-            String sql = sqlGenerator.generateInsert(tableName, item, tableFields, ignoreNull);
-            sqls.add(sql);
-        }
-        log.debug("preview sql: {}\nmore...", SqlUtil.buildConsoleSql(sqls.get(0)));
-        int count = super.executeBatch(sqls).length;
-        log.debug("{} rows inserted!", count);
-        return count;
-    }
-
-    /**
-     * 更新<br>
-     * e.g. {@code update(<table>, "id = :id", <List>)}<br>
-     * 关于此方法的说明举例：
-     * <blockquote>
-     * 根据第一条数据生成预编译SQL
-     * <pre>
-     *  参数： {id:14, name:'cyx', address:'kunming'},{...}...
-     *  条件："id = :id"
-     *  生成：update{@code <table>} set name = :name, address = :address
-     *       where id = :id
-     *  </pre>
-     * 解释：where中至少指定一个传名参数，数据中必须包含where条件中的所有传名参数
-     * </blockquote>
-     *
-     * @param tableName  表名
-     * @param where      条件：条件中需要有传名参数作为更新的条件依据
-     * @param data       数据：需要更新的数据和条件参数
-     * @param safe       <ul>
-     *                   <li>true: 根据数据库表字段名排除数据中不存在的key，安全的更新</li>
-     *                   <li>false: 根据数据原封不动进行更新，如果有不存在的字段则抛出异常</li>
-     *                   </ul>
-     * @param ignoreNull 忽略null值
-     * @return 受影响的行数
-     * @throws UncheckedSqlException sql执行过程中出现错误
-     */
-    protected int update(String tableName, String where, Collection<? extends Map<String, ?>> data, boolean safe, boolean ignoreNull) {
-        if (data.isEmpty()) {
-            return 0;
-        }
-        String whereStatement = parseSql(where, Collections.emptyMap()).getItem1();
-        List<String> tableFields = safe ? getTableFields(tableName) : new ArrayList<>();
-        int i = 0;
-        for (Map<String, ?> item : data) {
-            String updateStatement = sqlGenerator.generateNamedParamUpdate(tableName,
-                    whereStatement,
-                    item,
-                    tableFields,
-                    ignoreNull);
-            i += executeNonQuery(updateStatement, item);
-        }
-        return i;
-    }
-
-    /**
-     * 更新（非预编译SQL）<br>
-     * 注：不支持更新二进制对象<br>
-     * e.g. {@code fastUpdate(<table>, "id = :id", <List<Map>>)}
-     * 关于此方法的说明举例：
-     * <blockquote>
-     * <pre>
-     *  参数： [{id:14, name:'cyx', address:'kunming'},...]
-     *  条件："id = :id"
-     *  生成：update{@code <table>} set name = 'cyx', address = 'kunming'
-     *       where id = 14, update...
-     *  </pre>
-     * 解释：where中至少指定一个传名参数，数据中必须包含where条件中的所有传名参数
-     * </blockquote>
-     *
-     * @param tableName  表名
-     * @param where      条件：条件中需要有传名参数作为更新的条件依据
-     * @param data       参数：需要更新的数据和条件参数
-     * @param safe       <ul>
-     *                   <li>true: 根据数据库表字段名排除数据中不存在的key，安全的更新</li>
-     *                   <li>false: 根据数据原封不动进行更新，如果有不存在的字段则抛出异常</li>
-     *                   </ul>
-     * @param ignoreNull 忽略null值
-     * @return 受影响的行数
-     * @throws UncheckedSqlException         执行批量操作时发生错误
-     * @throws UnsupportedOperationException 数据库或驱动版本不支持批量操作
-     * @throws IllegalArgumentException      数据条数少于一条
-     */
-    protected int fastUpdate(String tableName, String where, Collection<? extends Map<String, ?>> data, boolean safe, boolean ignoreNull) {
-        if (data.isEmpty()) {
-            return 0;
-        }
-        String whereStatement = parseSql(where, Collections.emptyMap()).getItem1();
-        List<String> tableFields = safe ? getTableFields(tableName) : new ArrayList<>();
-        List<String> sqls = new ArrayList<>(data.size());
-        for (Map<String, ?> item : data) {
-            String updateStatement = sqlGenerator.generateUpdate(tableName,
-                    whereStatement,
-                    item,
-                    tableFields,
-                    ignoreNull);
-            sqls.add(updateStatement);
-        }
-        log.debug("preview sql: {}\nmore...", SqlUtil.buildConsoleSql(sqls.get(0)));
-        int count = Arrays.stream(super.executeBatch(sqls)).sum();
-        log.debug("{} rows updated!", count);
-        return count;
     }
 
     @Override
@@ -329,7 +132,7 @@ public class BakiDao extends JdbcSupport implements Baki {
 
             @Override
             public DataRow findFirstRow() {
-                return findFirst().orElseGet(DataRow::new);
+                return findFirst().orElseGet(DataRow::empty);
             }
 
             @Override
@@ -369,10 +172,29 @@ public class BakiDao extends JdbcSupport implements Baki {
 
             @Override
             public int save(Collection<? extends Map<String, ?>> data) {
-                if (fast) {
-                    return fastUpdate(tableName, where, data, safe, ignoreNull);
+                if (data.isEmpty()) {
+                    return 0;
                 }
-                return update(tableName, where, data, safe, ignoreNull);
+                String whereStatement = parseSql(where, Collections.emptyMap()).getItem1();
+                List<String> tableFields = safe ? getTableFields(tableName) : new ArrayList<>();
+                if (fast) {
+                    String update = sqlGenerator.generateNamedParamUpdate(tableName,
+                            whereStatement,
+                            data.iterator().next(),
+                            tableFields,
+                            ignoreNull);
+                    return executeBatchUpdate(update, data, batchSize);
+                }
+                int i = 0;
+                for (Map<String, ?> item : data) {
+                    String update = sqlGenerator.generateNamedParamUpdate(tableName,
+                            whereStatement,
+                            item,
+                            tableFields,
+                            ignoreNull);
+                    i += executeUpdate(update, item);
+                }
+                return i;
             }
         };
     }
@@ -387,10 +209,20 @@ public class BakiDao extends JdbcSupport implements Baki {
 
             @Override
             public int save(Collection<? extends Map<String, ?>> data) {
-                if (fast) {
-                    return fastInsert(tableName, data, safe, ignoreNull);
+                if (data.isEmpty()) {
+                    return 0;
                 }
-                return insert(tableName, data, safe, ignoreNull);
+                List<String> tableFields = safe ? getTableFields(tableName) : new ArrayList<>();
+                if (fast) {
+                    String insert = sqlGenerator.generateNamedParamInsert(tableName, data.iterator().next(), tableFields, ignoreNull);
+                    return executeBatchUpdate(insert, data, batchSize);
+                }
+                int i = 0;
+                for (Map<String, ?> item : data) {
+                    String sql = sqlGenerator.generateNamedParamInsert(tableName, item, tableFields, ignoreNull);
+                    i += executeUpdate(sql, item);
+                }
+                return i;
             }
         };
     }
@@ -402,7 +234,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             public int execute(String where) {
                 String whereSql = parseSql(where, Collections.emptyMap()).getItem1();
                 String w = StringUtil.startsWithIgnoreCase(whereSql.trim(), "where") ? whereSql : "\nwhere " + whereSql;
-                return executeNonQuery("delete from " + tableName + w, args);
+                return executeUpdate("delete from " + tableName + w, args);
             }
         };
     }
@@ -413,18 +245,26 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public int[] executeBatch(String... sqls) {
-        return executeBatch(Arrays.asList(sqls));
+    public int executeBatch(String... sqls) {
+        return executeBatch(Arrays.asList(sqls), batchSize);
     }
 
     @Override
-    public int[] executeBatch(String namedSql, Collection<? extends Map<String, ?>> data) {
-        List<String> list = new ArrayList<>();
-        for (Map<String, ?> item : data) {
-            String sql = sqlGenerator.generateSql(namedSql, item);
-            list.add(sql);
+    public int executeBatch(String sql, Collection<? extends Map<String, ?>> data) {
+        Map<String, ?> arg = data.isEmpty() ? new HashMap<>() : data.iterator().next();
+        Pair<String, Map<String, Object>> parsed = parseSql(sql, arg);
+        Collection<? extends Map<String, ?>> newData;
+        if (parsed.getItem2().containsKey(XQLFileManager.DynamicSqlParser.FOR_VARS_KEY) &&
+                parsed.getItem1().contains(XQLFileManager.DynamicSqlParser.VAR_PREFIX)) {
+            List<Map<String, Object>> list = new ArrayList<>();
+            for (Map<String, ?> item : data) {
+                list.add(parseSql(sql, item).getItem2());
+            }
+            newData = list;
+        } else {
+            newData = data;
         }
-        return executeBatch(list);
+        return executeBatchUpdate(parsed.getItem1(), newData, batchSize);
     }
 
     /**
@@ -615,7 +455,6 @@ public class BakiDao extends JdbcSupport implements Baki {
             ResultSet fieldsResultSet = sc.executeQuery();
             List<String> fields = Arrays.asList(JdbcUtil.createNames(fieldsResultSet, ""));
             JdbcUtil.closeResultSet(fieldsResultSet);
-            log.debug("all fields of table: {} {}", tableName, fields);
             return fields;
         });
     }
@@ -703,12 +542,6 @@ public class BakiDao extends JdbcSupport implements Baki {
         return dataSource;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @return 连接对象
-     * @throws ConnectionStatusException 如果连接对象异常
-     */
     @Override
     protected Connection getConnection() {
         try {
@@ -723,25 +556,39 @@ public class BakiDao extends JdbcSupport implements Baki {
         DataSourceUtil.releaseConnection(connection, dataSource);
     }
 
-    /**
-     * 是否检查预编译sql对应的参数类型
-     *
-     * @return 是否检查
-     * @deprecated
-     */
-    @Deprecated
-    public boolean isCheckParameterType() {
-        return checkParameterType;
+    public void setGlobalPageHelperProvider(PageHelperProvider globalPageHelperProvider) {
+        this.globalPageHelperProvider = globalPageHelperProvider;
     }
 
-    /**
-     * 设置是否检查预编译sql对应的参数类型
-     *
-     * @param checkParameterType 是否检查标志
-     * @deprecated
-     */
-    @Deprecated
-    public void setCheckParameterType(boolean checkParameterType) {
-        this.checkParameterType = checkParameterType;
+    public void setSqlInterceptor(SqlInterceptor sqlInterceptor) {
+        this.sqlInterceptor = sqlInterceptor;
+    }
+
+    public void setXqlFileManager(XQLFileManager xqlFileManager) {
+        this.xqlFileManager = xqlFileManager;
+        if (!xqlFileManager.isInitialized()) {
+            xqlFileManager.init();
+        }
+    }
+
+    public XQLFileManager getXqlFileManager() {
+        return xqlFileManager;
+    }
+
+    public int getBatchSize() {
+        return batchSize;
+    }
+
+    public void setBatchSize(int batchSize) {
+        this.batchSize = batchSize;
+    }
+
+    public char getNamedParamPrefix() {
+        return namedParamPrefix;
+    }
+
+    public void setNamedParamPrefix(char namedParamPrefix) {
+        this.namedParamPrefix = namedParamPrefix;
+        this.sqlGenerator = new SqlGenerator(namedParamPrefix);
     }
 }

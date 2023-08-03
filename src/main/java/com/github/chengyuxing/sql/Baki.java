@@ -77,21 +77,21 @@ public interface Baki {
     DataRow execute(String sql);
 
     /**
-     * 批量执行非查询sql（非预编译）
+     * 批量执行非查询sql
      *
      * @param sqls sql或sql名
-     * @return 每条sql的执行结果
+     * @return 受影响的行数
      */
-    int[] executeBatch(String... sqls);
+    int executeBatch(String... sqls);
 
     /**
-     * 批量执行非查询sql（非预编译）
+     * 批量执行dml语句
      *
-     * @param namedSql 命名参数的sql
-     * @param data     数据
-     * @return 每条sql的执行结果
+     * @param sql  命名参数的sql
+     * @param data 数据
+     * @return 受影响的行数
      */
-    int[] executeBatch(String namedSql, Collection<? extends Map<String, ?>> data);
+    int executeBatch(String sql, Collection<? extends Map<String, ?>> data);
 
     /**
      * 执行存储过程或函数

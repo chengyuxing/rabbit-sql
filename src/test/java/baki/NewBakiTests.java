@@ -11,9 +11,10 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -93,10 +94,18 @@ public class NewBakiTests {
                 "data", Args.create(
                         "name", "cyx",
                         "age", 23,
-                        "address", "abc"
+                        "address", "kunming"
                 )
         );
-        baki.execute("&new.update", args);
+//        baki.execute("&new.update", args);
+        int i = baki.update("test.user", "id = :id")
+                .save(Args.create(
+                        "name", "cyx",
+                        "age", 23,
+                        "address", "kunming",
+                        "id", 11
+                ));
+        System.out.println(i);
     }
 
     @Test
@@ -104,6 +113,29 @@ public class NewBakiTests {
         baki.query("&new.var")
                 .stream()
                 .forEach(System.out::println);
+    }
+
+    @Test
+    public void testInsertScript() {
+        List<Args<Object>> args = new ArrayList<>();
+        for (int i = 0; i < 100000; i++) {
+            args.add(Args.create("users", Arrays.asList("chengyuxing", i, "昆明市", LocalDateTime.now())));
+        }
+        int i = baki.executeBatch("&new.insert", args);
+        System.out.println(i);
+    }
+
+    @Test
+    public void insertBatch() {
+        List<Args<Object>> rows = new ArrayList<>();
+        for (int i = 0; i < 100000; i++) {
+            rows.add(Args.create("age", i, "name", "chengyuxing", "dt", LocalDateTime.now(), "address", "昆明市" + i));
+        }
+
+        int i;
+        i = baki.insert("test.user").fast().save(rows);
+
+        System.out.println(i);
     }
 
     @Test

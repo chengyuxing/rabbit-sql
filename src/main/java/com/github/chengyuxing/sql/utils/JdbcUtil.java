@@ -5,8 +5,6 @@ import com.github.chengyuxing.common.utils.Jackson;
 import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.types.ParamMode;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -20,7 +18,6 @@ import java.util.*;
  * JDBC工具类
  */
 public class JdbcUtil {
-    private final static Logger log = LoggerFactory.getLogger(JdbcUtil.class);
 
     /**
      * 获取result结果
@@ -82,29 +79,6 @@ public class JdbcUtil {
             }
         }
         return bytes;
-    }
-
-    /**
-     * 判断是否支持批量执行修改操作
-     *
-     * @param con 连接对象
-     * @return 是否支持
-     */
-    public static boolean supportsBatchUpdates(Connection con) {
-        try {
-            DatabaseMetaData dbmd = con.getMetaData();
-            if (dbmd != null) {
-                if (dbmd.supportsBatchUpdates()) {
-                    log.debug("JDBC driver supports batch updates");
-                    return true;
-                } else {
-                    log.debug("JDBC driver does not dao batch updates");
-                }
-            }
-        } catch (SQLException ex) {
-            log.error("JDBC driver 'supportsBatchUpdates' method threw exception", ex);
-        }
-        return false;
     }
 
     /**
@@ -230,10 +204,8 @@ public class JdbcUtil {
         } else if (value instanceof UUID) {
             statement.setObject(index, value.toString().replace("-", ""));
         } else if (value instanceof Map || value instanceof Collection) {
-            log.warn("you try to set a Map or Collection data, auto convert to json string!");
             statement.setObject(index, Jackson.toJson(value));
         } else if (!value.getClass().getTypeName().startsWith("java.")) {
-            log.warn("you try to set an unknown class instance(maybe your java bean) data, auto convert to json string!");
             statement.setObject(index, Jackson.toJson(value));
         } else if (value instanceof InputStream) {
             statement.setBinaryStream(index, (InputStream) value);

@@ -501,7 +501,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             return Pair.of(sql, Collections.emptyMap());
         }
         try {
-            DynamicSqlParser parser = new DynamicSqlParser();
+            DynamicSqlParser parser = newDynamicSqlParser();
             sql = SqlUtil.repairSyntaxError(parser.parse(sql, args));
             return Pair.of(sql, parser.getForVars());
         } catch (Exception e) {
@@ -563,12 +563,21 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
+     * 获取一个新的动态sql解析器
+     *
+     * @return 动态sql解析器
+     */
+    public DynamicSqlParser newDynamicSqlParser() {
+        return new DynamicSqlParser();
+    }
+
+    /**
      * 动态sql解析器
      * {@inheritDoc}
      */
     public class DynamicSqlParser extends SimpleScriptParser {
         public static final String FOR_VARS_KEY = "_for";
-        private static final String VAR_PREFIX = FOR_VARS_KEY + ".";
+        public static final String VAR_PREFIX = FOR_VARS_KEY + ".";
 
         @Override
         protected IExpression expression(String expression) {
@@ -579,6 +588,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
 
         /**
          * 去除for循环内的多余注释，为符合格式的命名参数进行编号
+         *
          * @param forIndex 每个for循环语句的序号
          * @param varIndex for变量的序号
          * @param varName  for变量名

@@ -121,7 +121,7 @@ public class NewBakiTests {
         for (int i = 0; i < 100000; i++) {
             args.add(Args.create("users", Arrays.asList("chengyuxing", i, "昆明市", LocalDateTime.now())));
         }
-        int i = baki.executeBatch("&new.insert", args);
+        int i = baki.of("&new.insert").executeBatch(args);
         System.out.println(i);
     }
 

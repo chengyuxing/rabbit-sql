@@ -17,7 +17,7 @@ public class ErrorTests {
         dataSource2.setPassword("system");
         dataSource2.setDriverClassName("oracle.jdbc.OracleDriver");
         dataSource2.setConnectionTimeout(250);
-        BakiDao baki = BakiDao.of(dataSource2);
+        BakiDao baki = new BakiDao(dataSource2);
 
         for (int i = 0; i < 5; i++) {
             new Thread(() -> {

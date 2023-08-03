@@ -15,7 +15,7 @@ public class OracleTest {
         dataSource2.setUsername("system");
         dataSource2.setPassword("system");
         dataSource2.setDriverClassName("oracle.jdbc.OracleDriver");
-        baki = BakiDao.of(dataSource2);
+        baki = new BakiDao(dataSource2);
     }
 
     @Test

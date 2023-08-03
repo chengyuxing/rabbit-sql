@@ -9,7 +9,7 @@ import java.util.stream.Stream;
 public class EntityTests {
     @Test
     public void test1() {
-        EntityManager<User> entityManager = new EntityManager<>(BakiDao.of(null), User.class);
+        EntityManager<User> entityManager = new EntityManager<>(new BakiDao(null), User.class);
 
 //        Stream<User> userStream = entityManager.query(User.class)
 //                .fields(User::getName, User::getAge)

@@ -66,7 +66,7 @@ public class Tests {
         dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
         dataSource.setUsername("chengyuxing");
 
-        BakiDao bakiDao = BakiDao.of(dataSource);
+        BakiDao bakiDao = new BakiDao(dataSource);
     }
 
     @Test

@@ -17,6 +17,7 @@ import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.github.chengyuxing.sql.support.JdbcSupport;
 import com.github.chengyuxing.sql.support.SqlInterceptor;
 import com.github.chengyuxing.sql.support.executor.DeleteExecutor;
+import com.github.chengyuxing.sql.support.executor.Executor;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
 import com.github.chengyuxing.sql.support.executor.SaveExecutor;
 import com.github.chengyuxing.sql.transaction.Tx;
@@ -83,16 +84,6 @@ public class BakiDao extends JdbcSupport implements Baki {
     public BakiDao(DataSource dataSource) {
         this.dataSource = dataSource;
         this.sqlGenerator = new SqlGenerator(namedParamPrefix);
-    }
-
-    /**
-     * 实例化一个BakiDao对象
-     *
-     * @param dataSource 数据源
-     * @return BakiDao实例
-     */
-    public static BakiDao of(DataSource dataSource) {
-        return new BakiDao(dataSource);
     }
 
     @Override
@@ -240,31 +231,43 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public DataRow execute(String sql) {
-        return execute(sql, Collections.emptyMap());
-    }
-
-    @Override
-    public int executeBatch(String... sqls) {
-        return executeBatch(Arrays.asList(sqls), batchSize);
-    }
-
-    @Override
-    public int executeBatch(String sql, Collection<? extends Map<String, ?>> data) {
-        Map<String, ?> arg = data.isEmpty() ? new HashMap<>() : data.iterator().next();
-        Pair<String, Map<String, Object>> parsed = parseSql(sql, arg);
-        Collection<? extends Map<String, ?>> newData;
-        if (parsed.getItem2().containsKey(XQLFileManager.DynamicSqlParser.FOR_VARS_KEY) &&
-                parsed.getItem1().contains(XQLFileManager.DynamicSqlParser.VAR_PREFIX)) {
-            List<Map<String, Object>> list = new ArrayList<>();
-            for (Map<String, ?> item : data) {
-                list.add(parseSql(sql, item).getItem2());
+    public Executor of(String sql) {
+        return new Executor() {
+            @Override
+            public DataRow execute() {
+                return BakiDao.super.execute(sql, Collections.emptyMap());
             }
-            newData = list;
-        } else {
-            newData = data;
-        }
-        return executeBatchUpdate(parsed.getItem1(), newData, batchSize);
+
+            @Override
+            public DataRow execute(Map<String, ?> args) {
+                return BakiDao.super.execute(sql, args);
+            }
+
+            @Override
+            public int executeBatch(String... moreSql) {
+                List<String> sqlList = new ArrayList<>(Arrays.asList(moreSql));
+                sqlList.add(0, sql);
+                return BakiDao.super.executeBatch(sqlList, batchSize);
+            }
+
+            @Override
+            public int executeBatch(Collection<? extends Map<String, ?>> data) {
+                Map<String, ?> arg = data.isEmpty() ? new HashMap<>() : data.iterator().next();
+                Pair<String, Map<String, Object>> parsed = parseSql(sql, arg);
+                Collection<? extends Map<String, ?>> newData;
+                if (parsed.getItem2().containsKey(XQLFileManager.DynamicSqlParser.FOR_VARS_KEY) &&
+                        parsed.getItem1().contains(XQLFileManager.DynamicSqlParser.VAR_PREFIX)) {
+                    List<Map<String, Object>> list = new ArrayList<>();
+                    for (Map<String, ?> item : data) {
+                        list.add(parseSql(sql, item).getItem2());
+                    }
+                    newData = list;
+                } else {
+                    newData = data;
+                }
+                return executeBatchUpdate(parsed.getItem1(), newData, batchSize);
+            }
+        };
     }
 
     /**

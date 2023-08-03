@@ -47,10 +47,10 @@ public class MyTest {
 
         XQLFileManager manager = new XQLFileManager(Args.of("data", "pgsql/data.sql"));
 
-        BakiDao bakiDao = BakiDao.of(dataSource);
+        BakiDao bakiDao = new BakiDao(dataSource);
         bakiDao.setXqlFileManager(manager);
         baki = bakiDao;
-        baki2 = BakiDao.of(dataSource);
+        baki2 = new BakiDao(dataSource);
 //        bakiDao.setSqlPath("pgsql");
 //        baki2 = new BakiDao(dataSource2);
     }
@@ -251,7 +251,7 @@ public class MyTest {
 
     @Test
     public void line() throws Exception {
-        DataRow row = baki.execute("do\n" +
+        DataRow row = baki.of("do\n" +
                 "$$\n" +
                 "    declare\n" +
                 "        x    integer[];\n" +
@@ -263,7 +263,7 @@ public class MyTest {
                 "            end loop;\n" +
                 "    end;\n" +
                 "\n" +
-                "$$;");
+                "$$;").execute();
         System.out.println(row);
     }
 
@@ -310,7 +310,7 @@ public class MyTest {
 
     @Test
     public void loadData() throws Exception {
-        baki.execute("copy test.fruit from '/Users/chengyuxing/test/fruit2.txt' with delimiter ','");
+        baki.of("copy test.fruit from '/Users/chengyuxing/test/fruit2.txt' with delimiter ','");
 //        baki.execute("copy test.fruit from '/Users/chengyuxing/test/fruit2.txt' with delimiter ','");
     }
 

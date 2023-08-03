@@ -24,7 +24,7 @@ public class TestInserts {
         dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
         dataSource.setUsername("chengyuxing");
         dataSource.setDriverClassName("org.postgresql.Driver");
-        baki = BakiDao.of(dataSource);
+        baki = new BakiDao(dataSource);
 
 //        for (int i = 0; i < 10000; i++) {
 //            DataRow row = DataRow.fromPair("id", i,

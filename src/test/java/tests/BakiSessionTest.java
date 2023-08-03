@@ -33,7 +33,7 @@ public class BakiSessionTest {
         dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
         dataSource.setUsername("chengyuxing");
         dataSource.setDriverClassName("org.postgresql.Driver");
-        baki = BakiDao.of(dataSource);
+        baki = new BakiDao(dataSource);
         XQLFileManager sqlFileManager = new XQLFileManager(Args.of("nest", "pgsql/nest.sql"));
         sqlFileManager.setConstants(Args.of("db", "test"));
         baki.setXqlFileManager(sqlFileManager);
@@ -251,22 +251,22 @@ public class BakiSessionTest {
 
     @Test
     public void batchExe() throws Exception {
-        int res = baki.executeBatch(
-                "insert into test.big (name, address, age) values ('cyx', '昆明', 28)",
-                "insert into test.big (name, address, age) values ('cyx', now(), 'abc')",
+        int res = baki.of(
                 "insert into test.big (name, address, age) values ('cyx', '昆明', 28)"
-        );
+        ).executeBatch("insert into test.big (name, address, age) values ('cyx', now(), 'abc')",
+                "insert into test.big (name, address, age) values ('cyx', '昆明', 28)");
         System.out.println(res);
     }
 
     @Test
     public void testExeP() {
-        int i = baki.executeBatch("insert into public.user (name) values (?name)",
-                Arrays.asList(
-                        Args.create("name", "aaa"),
-                        Args.create("name", "bbb"),
-                        Args.create("name", "ccc")
-                ));
+        int i = baki.of("insert into public.user (name) values (?name)")
+                .executeBatch(
+                        Arrays.asList(
+                                Args.create("name", "aaa"),
+                                Args.create("name", "bbb"),
+                                Args.create("name", "ccc")
+                        ));
         System.out.println(i);
     }
 

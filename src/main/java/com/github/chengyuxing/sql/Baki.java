@@ -1,14 +1,14 @@
 package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.DataRow;
-import com.github.chengyuxing.sql.support.executor.SaveExecutor;
 import com.github.chengyuxing.sql.support.executor.DeleteExecutor;
+import com.github.chengyuxing.sql.support.executor.Executor;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
+import com.github.chengyuxing.sql.support.executor.SaveExecutor;
 import com.github.chengyuxing.sql.types.Param;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
-import java.util.Collection;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -60,38 +60,12 @@ public interface Baki {
     DeleteExecutor delete(String tableName);
 
     /**
-     * 执行一条sql（ddl、dml、query、plsql）
+     * 通用执行器
      *
-     * @param sql  sql或sql名
-     * @param args 参数
-     * @return 执行结果
+     * @param sql sql
+     * @return 通用执行器
      */
-    DataRow execute(String sql, Map<String, ?> args);
-
-    /**
-     * 执行一条sql（ddl、dml、query、plsql）
-     *
-     * @param sql sql或sql名
-     * @return 执行结果
-     */
-    DataRow execute(String sql);
-
-    /**
-     * 批量执行非查询sql
-     *
-     * @param sqls sql或sql名
-     * @return 受影响的行数
-     */
-    int executeBatch(String... sqls);
-
-    /**
-     * 批量执行dml语句
-     *
-     * @param sql  命名参数的sql
-     * @param data 数据
-     * @return 受影响的行数
-     */
-    int executeBatch(String sql, Collection<? extends Map<String, ?>> data);
+    Executor of(String sql);
 
     /**
      * 执行存储过程或函数

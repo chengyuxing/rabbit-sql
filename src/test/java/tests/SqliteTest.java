@@ -27,7 +27,7 @@ public class SqliteTest {
         ds.setDriverClassName("org.sqlite.JDBC");
         ds.setJdbcUrl("jdbc:sqlite:" + dsPath);
 
-        baki = BakiDao.of(ds);
+        baki = new BakiDao(ds);
     }
 
 

@@ -265,8 +265,9 @@ public abstract class JdbcSupport extends SqlParser {
     /**
      * 批量执行非查询语句
      *
-     * @param sql  sql
-     * @param args 数据
+     * @param sql       sql
+     * @param args      数据
+     * @param batchSize 批量大小
      * @return 受影响的行数
      */
     public int executeBatchUpdate(final String sql, Collection<? extends Map<String, ?>> args, int batchSize) {

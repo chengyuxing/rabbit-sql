@@ -2,6 +2,8 @@ package baki;
 
 import baki.entity.User;
 import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.common.DateTimes;
+import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.Baki;
 import com.github.chengyuxing.sql.BakiDao;
 import com.github.chengyuxing.sql.XQLFileManager;
@@ -11,7 +13,9 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class NewBakiTests {
     private static BakiDao bakiDao;
@@ -23,11 +27,8 @@ public class NewBakiTests {
         dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
         dataSource.setUsername("chengyuxing");
 
-        XQLFileManager xqlFileManager = new XQLFileManager();
-        xqlFileManager.add("new", "pgsql/new_for.sql");
-        Map<String, String> pipes = new HashMap<>();
-        pipes.put("isOdd", "baki.pipes.IsOdd");
-        xqlFileManager.setPipes(pipes);
+        XQLFileManager xqlFileManager = new XQLFileManager(Args.of("new", "pgsql/new_for.sql"));
+        xqlFileManager.setPipes(Args.of("isOdd", "baki.pipes.IsOdd"));
 
         bakiDao = new BakiDao(dataSource);
         bakiDao.setXqlFileManager(xqlFileManager);
@@ -86,9 +87,9 @@ public class NewBakiTests {
 
     @Test
     public void testDynamicSql2() {
-        DataRow args = DataRow.of(
+        Args<Object> args = Args.of(
                 "id", 11,
-                "data", DataRow.of(
+                "data", Args.of(
                         "name", "cyx",
                         "age", 23,
                         "address", "kunming"
@@ -96,7 +97,7 @@ public class NewBakiTests {
         );
 //        baki.execute("&new.update", args);
         int i = baki.update("test.user", "id = :id")
-                .save(DataRow.of(
+                .save(Args.of(
                         "name", "cyx",
                         "age", 23,
                         "address", "kunming",
@@ -114,9 +115,9 @@ public class NewBakiTests {
 
     @Test
     public void testInsertScript() {
-        List<DataRow> args = new ArrayList<>();
+        List<Args<Object>> args = new ArrayList<>();
         for (int i = 0; i < 100000; i++) {
-            args.add(DataRow.of("users", Arrays.asList("chengyuxing", i, "昆明市", LocalDateTime.now())));
+            args.add(Args.of("users", Arrays.asList("chengyuxing", i, "昆明市", LocalDateTime.now())));
         }
         int i = baki.of("&new.insert").executeBatch(args);
         System.out.println(i);
@@ -124,9 +125,9 @@ public class NewBakiTests {
 
     @Test
     public void insertBatch() {
-        List<DataRow> rows = new ArrayList<>();
+        List<Args<Object>> rows = new ArrayList<>();
         for (int i = 0; i < 100000; i++) {
-            rows.add(DataRow.of("age", i, "name", "chengyuxing", "dt", LocalDateTime.now(), "address", "昆明市" + i));
+            rows.add(Args.of("age", i, "name", "chengyuxing", "dt", LocalDateTime.now(), "address", "昆明市" + i));
         }
 
         int i;
@@ -134,5 +135,15 @@ public class NewBakiTests {
 
         System.out.println(i);
 
+    }
+
+    @Test
+    public void testArgs() {
+        Args<Object> args = Args.of("name", "cyx", "age", 30, "date", "2023-8-4 22:45", "info", Args.of("address", "kunming"));
+        args.updateValue("date", v -> DateTimes.toLocalDateTime(v.toString()));
+        args.updateKey("name", "NAME");
+        args.updateKeys(String::toUpperCase);
+        System.out.println(args);
+        System.out.println(DataRow.of());
     }
 }

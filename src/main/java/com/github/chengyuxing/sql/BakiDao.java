@@ -123,7 +123,7 @@ public class BakiDao extends JdbcSupport implements Baki {
 
             @Override
             public DataRow findFirstRow() {
-                return findFirst().orElseGet(DataRow::of);
+                return findFirst().orElseGet(() -> new DataRow(0));
             }
 
             @Override

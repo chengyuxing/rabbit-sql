@@ -393,7 +393,7 @@ public abstract class JdbcSupport extends SqlParser {
                 }
                 return DataRow.of(outNames.toArray(new String[0]), values);
             }
-            return DataRow.of();
+            return new DataRow(0);
         } catch (SQLException e) {
             try {
                 JdbcUtil.closeStatement(statement);

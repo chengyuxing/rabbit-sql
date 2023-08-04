@@ -116,7 +116,7 @@ public abstract class SaveExecutor {
      * @return 受影响的行数
      */
     public int saveEntity(Object entity) {
-        return save(DataRow.of(entity));
+        return save(DataRow.ofEntity(entity));
     }
 
     /**
@@ -126,6 +126,6 @@ public abstract class SaveExecutor {
      * @return 受影响的行数
      */
     public int saveEntities(Collection<?> entities) {
-        return save(entities.stream().map(DataRow::of).collect(Collectors.toList()));
+        return save(entities.stream().map(DataRow::ofEntity).collect(Collectors.toList()));
     }
 }

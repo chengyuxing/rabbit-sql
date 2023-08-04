@@ -131,7 +131,7 @@ public final class Args<V> extends HashMap<String, V> implements MapExtends<V> {
      * 更新一个值
      *
      * @param key     键
-     * @param updater 值更新器（旧值 -> 新值）
+     * @param updater 值更新器（{@code 旧值 -> 新值}）
      * @return 是否更新成功
      */
     public boolean updateValue(String key, Function<V, V> updater) {
@@ -160,7 +160,7 @@ public final class Args<V> extends HashMap<String, V> implements MapExtends<V> {
     /**
      * 更新全部键名
      *
-     * @param updater 键名更新器（旧键名 -> 新键名）
+     * @param updater 键名更新器（{@code 旧键名 -> 新键名}）
      */
     public void updateKeys(Function<String, String> updater) {
         Object[] keys = keySet().toArray();

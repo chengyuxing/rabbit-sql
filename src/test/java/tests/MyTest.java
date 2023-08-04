@@ -169,7 +169,7 @@ public class MyTest {
 
     @Test
     public void insert() throws Exception {
-        DataRow args = DataRow.create()
+        DataRow args = DataRow.of()
                 .add("ts", "2020年2月12日 11:22:33")
                 .add("dtm", "")
                 .add("tm", "23时55分13秒")
@@ -245,7 +245,7 @@ public class MyTest {
     @Test
     public void dynamicSqlTest() throws Exception {
         try (Stream<DataRow> s = baki.query("&pgsql.data.logical")
-                .args(DataRow.create().add("age", 91).add("name", "小"))
+                .args(DataRow.of().add("age", 91).add("name", "小"))
                 .stream()) {
             s.forEach(System.out::println);
         }
@@ -364,7 +364,7 @@ public class MyTest {
     @Test
     public void testSqlFile() throws InterruptedException {
         try (Stream<DataRow> s = baki.query("select * from current_date,now()")
-                .args(DataRow.create().add("id", 4)).stream()) {
+                .args(DataRow.of().add("id", 4)).stream()) {
             s.map(DataRow::toMap)
                     .forEach(System.out::println);
         }

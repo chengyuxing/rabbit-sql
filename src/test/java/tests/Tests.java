@@ -293,6 +293,13 @@ public class Tests {
     }
 
     @Test
+    public void testPage2() {
+        PGPageHelper pageHelper = new PGPageHelper();
+        pageHelper.init(5, 10, 150);
+        System.out.println(pageHelper);
+    }
+
+    @Test
     public void inseertSql() throws Exception {
         DataRow row = DataRow.fromPair("id", 15,
                 "name", "chengyuxing",

@@ -11,6 +11,7 @@ public abstract class PageHelper {
     protected int pageSize;
     protected int pageCount;
     protected int recordCount;
+    protected int recordIndex;
 
     /**
      * 包裹分页的sql
@@ -74,6 +75,7 @@ public abstract class PageHelper {
         pageNumber = page;
         pageSize = size;
         recordCount = count;
+        recordIndex = (pageNumber - 1) * pageSize;
         pageCount = recordCount / pageSize;
         if (recordCount % pageSize != 0) {
             pageCount += 1;
@@ -87,6 +89,7 @@ public abstract class PageHelper {
                 ", pageSize=" + pageSize +
                 ", pageCount=" + pageCount +
                 ", recordCount=" + recordCount +
+                ", recordIndex=" + recordIndex +
                 '}';
     }
 }

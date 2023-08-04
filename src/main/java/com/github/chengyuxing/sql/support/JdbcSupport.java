@@ -216,7 +216,7 @@ public abstract class JdbcSupport extends SqlParser {
      */
     public int executeBatch(final List<String> sqls, int batchSize) {
         if (batchSize < 1) {
-            throw new IllegalArgumentException("batchSize must greater than 1.");
+            throw new IllegalArgumentException("batchSize must greater than 0.");
         }
         if (sqls.isEmpty()) {
             return 0;
@@ -225,7 +225,6 @@ public abstract class JdbcSupport extends SqlParser {
         Connection connection = getConnection();
         try {
             s = connection.createStatement();
-            final Map<String, ?> empty = Collections.emptyMap();
             final Stream.Builder<int[]> result = Stream.builder();
             int i = 1;
             for (String sql : sqls) {
@@ -233,7 +232,7 @@ public abstract class JdbcSupport extends SqlParser {
                     continue;
                 }
                 //noinspection SqlSourceToSinkFlow
-                s.addBatch(parseSql(sql, empty).getItem1());
+                s.addBatch(parseSql(sql, Collections.emptyMap()).getItem1());
                 if (i % batchSize == 0) {
                     result.add(s.executeBatch());
                     s.clearBatch();
@@ -272,7 +271,7 @@ public abstract class JdbcSupport extends SqlParser {
      */
     public int executeBatchUpdate(final String sql, Collection<? extends Map<String, ?>> args, int batchSize) {
         if (batchSize < 1) {
-            throw new IllegalArgumentException("batchSize must greater than 1.");
+            throw new IllegalArgumentException("batchSize must greater than 0.");
         }
         Map<String, ?> first = args.iterator().next();
         Triple<String, List<String>, Map<String, Object>> prepared = prepare(sql, first);

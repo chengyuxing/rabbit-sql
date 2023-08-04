@@ -1,13 +1,11 @@
 package tests;
 
+import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.XQLFileManager;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.yaml.JoinConstructor;
-import io.reactivex.rxjava3.subjects.BehaviorSubject;
-import io.reactivex.rxjava3.subjects.PublishSubject;
 import org.junit.Test;
 import org.yaml.snakeyaml.Yaml;
 
@@ -16,7 +14,6 @@ import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 public class XQLFileManagerTests {
     @Test
@@ -77,16 +74,16 @@ public class XQLFileManagerTests {
 
         SqlGenerator generator = new SqlGenerator(':');
 
-        Pair<String, Map<String, Object>> result1 = xqlFileManager.get("new.query", Args.create("ids", Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
+        Pair<String, Map<String, Object>> result1 = xqlFileManager.get("new.query", DataRow.of("ids", Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10)));
 
-        System.out.println(generator.generateSql(result1.getItem1(), Args.create("_for", result1.getItem2())));
+        System.out.println(generator.generateSql(result1.getItem1(), DataRow.of("_for", result1.getItem2())));
 
-        Pair<String, Map<String, Object>> result2 = xqlFileManager.get("new.update", Args.create(
+        Pair<String, Map<String, Object>> result2 = xqlFileManager.get("new.update", DataRow.of(
                 "id", 12,
-                "data", Args.create("id", 1, "name", "cyx", "age", 30, "address", "kunming")
+                "data", DataRow.of("id", 1, "name", "cyx", "age", 30, "address", "kunming")
         ));
 
-        System.out.println(generator.generateSql(result2.getItem1(), Args.create("_for", result2.getItem2(), "id", 12)));
+        System.out.println(generator.generateSql(result2.getItem1(), DataRow.of("_for", result2.getItem2(), "id", 12)));
     }
 
     @Test

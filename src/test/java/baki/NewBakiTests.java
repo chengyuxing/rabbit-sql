@@ -1,7 +1,7 @@
 package baki;
 
 import baki.entity.User;
-import com.github.chengyuxing.sql.Args;
+import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.Baki;
 import com.github.chengyuxing.sql.BakiDao;
 import com.github.chengyuxing.sql.XQLFileManager;
@@ -11,12 +11,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+import java.util.*;
 
 public class NewBakiTests {
     private static BakiDao bakiDao;
@@ -30,7 +25,9 @@ public class NewBakiTests {
 
         XQLFileManager xqlFileManager = new XQLFileManager();
         xqlFileManager.add("new", "pgsql/new_for.sql");
-        xqlFileManager.setPipes(Args.of("isOdd", "baki.pipes.IsOdd"));
+        Map<String, String> pipes = new HashMap<>();
+        pipes.put("isOdd", "baki.pipes.IsOdd");
+        xqlFileManager.setPipes(pipes);
 
         bakiDao = new BakiDao(dataSource);
         bakiDao.setXqlFileManager(xqlFileManager);
@@ -89,9 +86,9 @@ public class NewBakiTests {
 
     @Test
     public void testDynamicSql2() {
-        Args<Object> args = Args.create(
+        DataRow args = DataRow.of(
                 "id", 11,
-                "data", Args.create(
+                "data", DataRow.of(
                         "name", "cyx",
                         "age", 23,
                         "address", "kunming"
@@ -99,7 +96,7 @@ public class NewBakiTests {
         );
 //        baki.execute("&new.update", args);
         int i = baki.update("test.user", "id = :id")
-                .save(Args.create(
+                .save(DataRow.of(
                         "name", "cyx",
                         "age", 23,
                         "address", "kunming",
@@ -117,9 +114,9 @@ public class NewBakiTests {
 
     @Test
     public void testInsertScript() {
-        List<Args<Object>> args = new ArrayList<>();
+        List<DataRow> args = new ArrayList<>();
         for (int i = 0; i < 100000; i++) {
-            args.add(Args.create("users", Arrays.asList("chengyuxing", i, "昆明市", LocalDateTime.now())));
+            args.add(DataRow.of("users", Arrays.asList("chengyuxing", i, "昆明市", LocalDateTime.now())));
         }
         int i = baki.of("&new.insert").executeBatch(args);
         System.out.println(i);
@@ -127,33 +124,14 @@ public class NewBakiTests {
 
     @Test
     public void insertBatch() {
-        List<Args<Object>> rows = new ArrayList<>();
+        List<DataRow> rows = new ArrayList<>();
         for (int i = 0; i < 100000; i++) {
-            rows.add(Args.create("age", i, "name", "chengyuxing", "dt", LocalDateTime.now(), "address", "昆明市" + i));
+            rows.add(DataRow.of("age", i, "name", "chengyuxing", "dt", LocalDateTime.now(), "address", "昆明市" + i));
         }
 
         int i;
         i = baki.insert("test.user").fast().save(rows);
 
-        System.out.println(i);
-    }
-
-    @Test
-    public void testInsertEntity() {
-        List<User> users = Stream.iterate(0, i -> i + 1)
-                .limit(10)
-                .map(i -> {
-                    User user = new User();
-                    user.setAddress("昆明" + i);
-                    user.setDt(LocalDateTime.now());
-                    user.setName("cyx");
-                    user.setAge(i);
-                    return user;
-                }).collect(Collectors.toList());
-
-        int i = baki.insert("test.user")
-                .ignoreNull()
-                .saveEntities(users);
         System.out.println(i);
 
     }

@@ -123,7 +123,7 @@ public class BakiDao extends JdbcSupport implements Baki {
 
             @Override
             public DataRow findFirstRow() {
-                return findFirst().orElseGet(DataRow::empty);
+                return findFirst().orElseGet(DataRow::of);
             }
 
             @Override
@@ -136,7 +136,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 PageHelper pageHelper = defaultPager();
                 pageHelper.init(1, 1, 1);
                 Map<String, Integer> pagedArgs = pageHelper.pagedArgs();
-                if (pagedArgs != null) {
+                if (Objects.nonNull(pagedArgs)) {
                     args.putAll(pagedArgs);
                 }
                 Pair<String, Map<String, Object>> result = parseSql(sql, args);

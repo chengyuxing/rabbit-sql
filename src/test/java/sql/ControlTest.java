@@ -1,7 +1,7 @@
 package sql;
 
+import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.utils.StringUtil;
-import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.XQLFileManager;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.utils.SqlUtil;
@@ -29,7 +29,7 @@ public class ControlTest {
         String sql = "insert into user (x, xm ,xb) values (:xx,:x, :xm, :xb)";
         System.out.println(sql.length());
         SqlGenerator sqlGenerator = new SqlGenerator(':');
-        System.out.println(sqlGenerator.generateSql(sql, Args.create()));
+        System.out.println(sqlGenerator.generateSql(sql, DataRow.create()));
     }
 
     @Test
@@ -66,7 +66,7 @@ public class ControlTest {
     public void sqlPart() throws Exception {
         String sql = "select ${ fields } from test.user where ${cnd}";
         System.out.println(sql.length());
-        Args<Object> args = Args.<Object>of("ids", Arrays.asList("I'm Ok!", "b", "c"))
+        DataRow args = DataRow.<Object>of("ids", Arrays.asList("I'm Ok!", "b", "c"))
                 .add("fields", "id, name, age")
                 .add("id", Math.random())
                 .add("ids", Arrays.asList("a", "b", "c"))

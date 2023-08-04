@@ -118,13 +118,13 @@ public abstract class JdbcSupport extends SqlParser {
                     List<DataRow> rows = JdbcUtil.createDataRows(resultSet, preparedSql, -1);
                     JdbcUtil.closeResultSet(resultSet);
                     if (rows.size() == 1) {
-                        result = DataRow.fromPair("result", rows.get(0), "type", "QUERY");
+                        result = DataRow.of("result", rows.get(0), "type", "QUERY");
                     } else {
-                        result = DataRow.fromPair("result", rows, "type", "QUERY");
+                        result = DataRow.of("result", rows, "type", "QUERY");
                     }
                 } else {
                     int count = ps.getUpdateCount();
-                    result = DataRow.fromPair("result", count, "type", "DD(M)L");
+                    result = DataRow.of("result", count, "type", "DD(M)L");
                 }
                 return result;
             });
@@ -393,7 +393,7 @@ public abstract class JdbcSupport extends SqlParser {
                 }
                 return DataRow.of(outNames.toArray(new String[0]), values);
             }
-            return new DataRow(0);
+            return DataRow.of();
         } catch (SQLException e) {
             try {
                 JdbcUtil.closeStatement(statement);

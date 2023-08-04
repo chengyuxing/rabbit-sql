@@ -1,8 +1,8 @@
 package com.github.chengyuxing.sql.page.impl;
 
-import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.page.PageHelper;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -46,6 +46,9 @@ public class MysqlPageHelper extends PageHelper {
      */
     @Override
     public Map<String, Integer> pagedArgs() {
-        return Args.of("limit", start()).add("size", size());
+        Map<String, Integer> args = new HashMap<>();
+        args.put("limit", start());
+        args.put("size", size());
+        return args;
     }
 }

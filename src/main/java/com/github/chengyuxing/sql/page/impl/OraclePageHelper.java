@@ -1,8 +1,8 @@
 package com.github.chengyuxing.sql.page.impl;
 
-import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.page.PageHelper;
 
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -53,6 +53,9 @@ public class OraclePageHelper extends PageHelper {
      */
     @Override
     public Map<String, Integer> pagedArgs() {
-        return Args.of("start", start()).add("end", end());
+        Map<String, Integer> args = new HashMap<>();
+        args.put("start", start());
+        args.put("end", end());
+        return args;
     }
 }

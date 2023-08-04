@@ -5,11 +5,9 @@ import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.DateTimes;
 import com.github.chengyuxing.common.ImmutableList;
 import com.github.chengyuxing.common.io.FileResource;
-import com.github.chengyuxing.common.script.IPipe;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.Jackson;
 import com.github.chengyuxing.common.utils.ReflectUtil;
-import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.BakiDao;
 import com.github.chengyuxing.sql.PagedResource;
 import com.github.chengyuxing.sql.XQLFileManager;
@@ -140,7 +138,7 @@ public class Tests {
     @Test
     public void sqlPlaceHolder() throws Exception {
         String query = "select * from test where id = ?_i.d and id = ?id and idCard = '5301111' or name = ?na-me ${cnd}";
-        Pair<String, List<String>> sql = new SqlGenerator('?').generatePreparedSql(query, Args.of("cnd", "and date <= '${date}'")
+        Pair<String, List<String>> sql = new SqlGenerator('?').generatePreparedSql(query, DataRow.of("cnd", "and date <= '${date}'")
                 .add("date", "2020-12-23 ${time}")
                 .add("time", "11:23:44"));
         System.out.println(sql.getItem1());
@@ -181,21 +179,6 @@ public class Tests {
     }
 
     @Test
-    public void generateSql() throws Exception {
-        Args<Object> paramMap = Args.create()
-                .add("a", "cyx")
-                .add("b", "v")
-                .add("c", "")
-                .add("d", null)
-                .add("e", "1");
-
-//        String sql = SqlUtil.generateInsert("test.user", paramMap, Ignore.BLANK, Arrays.asList("c", "d", "a"));
-
-//        String upd = new SqlGenerator(':').generateNamedParamUpdate("test.user", paramMap);
-//        System.out.println(upd);
-    }
-
-    @Test
     public void recordTest() throws Exception {
         Map<String, Object> map = new HashMap<>();
         map.put("a", 1);
@@ -231,14 +214,6 @@ public class Tests {
         System.out.println(sql.replaceAll(pattern.pattern(), ""));
     }
 
-    @Test
-    public void SqlFileTest() throws IOException, URISyntaxException {
-        XQLFileManager manager = new XQLFileManager();
-        manager.add("pg", "pgsql/test.sql");
-        manager.setConstants(Args.of("db", "test").add("fields", "name, address, enable"));
-        manager.init();
-        System.out.println("-------------");
-    }
 
     @Test
     public void LambdaTest() throws InstantiationException, IllegalAccessException, NoSuchMethodException, InvocationTargetException {
@@ -297,31 +272,6 @@ public class Tests {
         PGPageHelper pageHelper = new PGPageHelper();
         pageHelper.init(5, 10, 150);
         System.out.println(pageHelper);
-    }
-
-    @Test
-    public void inseertSql() throws Exception {
-        DataRow row = DataRow.fromPair("id", 15,
-                "name", "chengyuxing",
-                "words", "it's my time!",
-                "dt", LocalDateTime.now());
-        System.out.println(row);
-
-        Args<Object> args = Args.create("id", 15,
-                "name", "chengyuxing",
-                "words", "it's my time!",
-                "dt", LocalDateTime.now());
-
-        System.out.println(new SqlGenerator('?').generateNamedParamInsert("t.user", args, Arrays.asList("id", "name", "asx"), true));
-
-    }
-
-    @Test
-    public void testInserGenerate() {
-        SqlGenerator sqlGenerator = new SqlGenerator(':');
-        String[] allFields = new String[]{"a", "b", "c", "d", "e", "f"};
-        Args<Object> args = Args.create("A", 1, "B", 2, "C", 3, "D", 4);
-        System.out.println(sqlGenerator.generateNamedParamInsert("user", args, Arrays.asList(allFields), true));
     }
 
     @Test
@@ -410,27 +360,5 @@ public class Tests {
         map1.put("a", "1");
 
         System.out.println(Collections.unmodifiableMap(map1));
-    }
-
-    @Test
-    public void test3() throws IOException {
-        XQLFileManager xqlFileManager = new XQLFileManager();
-        xqlFileManager.add("cyx", "pgsql/data.sql");
-        xqlFileManager.add("abc", "pgsql/nest.sql");
-        xqlFileManager.setPipeInstances(Args.of("km2null", (IPipe<String>) value -> {
-            if (Objects.equals("kunming", value)) {
-                return null;
-            }
-            return value.toString();
-        }));
-        xqlFileManager.init();
-//        Map<String, String> map = xqlFileManager.sqlFileStructured(new FileResource("pgsql/data.sql"));
-        System.out.println(xqlFileManager);
-
-        System.out.println(xqlFileManager.get("cyx.query", Args.create(
-                "name", "cyx",
-                "address", "kunming",
-                "age", 103
-        )));
     }
 }

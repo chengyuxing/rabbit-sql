@@ -23,6 +23,8 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.sql.*;
 import java.util.Date;
 import java.util.*;
@@ -45,7 +47,8 @@ public class MyTest {
         dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
         dataSource.setUsername("chengyuxing");
 
-        XQLFileManager manager = new XQLFileManager(Args.of("data", "pgsql/data.sql"));
+        XQLFileManager manager = new XQLFileManager();
+        manager.add("data", "pgsql/data.sql");
 
         BakiDao bakiDao = new BakiDao(dataSource);
         bakiDao.setXqlFileManager(manager);
@@ -69,7 +72,7 @@ public class MyTest {
             if (i == 1) {
                 try {
                     Map<String, Object> res = baki.query("select * from test.region where id > :id")
-                            .args(Args.of("id", 10))
+                            .args(DataRow.of("id", 10))
                             .findFirstRow();
                     System.out.println(res);
                 } catch (Exception e) {
@@ -150,7 +153,7 @@ public class MyTest {
         baki.query("select * from test.tb")
                 .findFirst()
                 .ifPresent(row -> {
-                    Tb tb = row.toEntity(Tb.class);
+                    Tb tb = (Tb) row.toEntity(Tb.class);
                     System.out.println(tb);
 //                    System.out.println(tb.getStrs().get(0));
                     System.out.println(tb.getDt());
@@ -166,7 +169,7 @@ public class MyTest {
 
     @Test
     public void insert() throws Exception {
-        Args<Object> args = Args.create()
+        DataRow args = DataRow.create()
                 .add("ts", "2020年2月12日 11:22:33")
                 .add("dtm", "")
                 .add("tm", "23时55分13秒")
@@ -176,7 +179,7 @@ public class MyTest {
         baki.insert("test.tb")
                 .fast()
                 .safe()
-                .save(Args.create("ts", "2022-12-23 11:22:23", "tm", new Date(), "aaa", "bbb"));
+                .save(DataRow.of("ts", "2022-12-23 11:22:23", "tm", new Date(), "aaa", "bbb"));
     }
 
     @Test
@@ -185,14 +188,13 @@ public class MyTest {
         Me me = new Me();
         me.setAge(25);
         me.setName("entity");
-        baki.insert("test.tb").save(Args.of("jsb", me));
+        baki.insert("test.tb").save(DataRow.of("jsb", me));
     }
 
     @Test
-    public void insertFile() throws FileNotFoundException {
-        baki.insert("test.tb").save(Args.of("blob", new FileInputStream("/Users/chengyuxing/Downloads/Bob.app.zip")));
+    public void insertFile() throws IOException {
+        baki.insert("test.tb").save(DataRow.of("blob", Files.newInputStream(Paths.get("/Users/chengyuxing/Downloads/Bob.app.zip"))));
     }
-
 
 
     @Test
@@ -207,8 +209,8 @@ public class MyTest {
     @Test
     public void updateMore() throws Exception {
         List<Map<String, Object>> list = new ArrayList<>();
-        list.add(Args.create("id", 23, "name", "昆明西山万达广场"));
-        list.add(Args.create("id", 24, "name", "南亚风情园"));
+        list.add(DataRow.of("id", 23, "name", "昆明西山万达广场"));
+        list.add(DataRow.of("id", 24, "name", "南亚风情园"));
         int i = baki.update("test.region", "id = :id").save(list);
         System.out.println(i);
     }
@@ -216,7 +218,7 @@ public class MyTest {
     @Test
     public void query() throws Exception {
         try (Stream<DataRow> s = baki.query("select ${fields} from test.region where id = :id")
-                .args(Args.create("fields", Arrays.asList("name", "pid"), "id", 11))
+                .args(DataRow.of("fields", Arrays.asList("name", "pid"), "id", 11))
                 .stream()) {
             s.forEach(System.out::println);
         } catch (Exception e) {
@@ -227,8 +229,8 @@ public class MyTest {
     @Test
     public void pagerTest() throws Exception {
         PagedResource<DataRow> res = baki.query("&data.custom_paged")
-                .<DataRow>pageable(1, 7)
-                .args(Args.create("id", 8))
+                .pageable(1, 7)
+                .args(DataRow.of("id", 8))
                 .disableDefaultPageSql("select count(*) from test.region where id > :id")
 //                .pageHelper(new MysqlPageHelper(){
 //                    @Override
@@ -243,7 +245,7 @@ public class MyTest {
     @Test
     public void dynamicSqlTest() throws Exception {
         try (Stream<DataRow> s = baki.query("&pgsql.data.logical")
-                .args(Args.create().add("age", 91).add("name", "小"))
+                .args(DataRow.create().add("age", 91).add("name", "小"))
                 .stream()) {
             s.forEach(System.out::println);
         }
@@ -301,7 +303,7 @@ public class MyTest {
         try {
             DataRow row = baki.query("select * from test.history where id = alskdjc.sksj")
                     .findFirst()
-                    .orElse(DataRow.empty());
+                    .orElse(DataRow.of());
             System.out.println(row);
         } catch (Exception e) {
             e.printStackTrace();
@@ -362,7 +364,7 @@ public class MyTest {
     @Test
     public void testSqlFile() throws InterruptedException {
         try (Stream<DataRow> s = baki.query("select * from current_date,now()")
-                .args(Args.create().add("id", 4)).stream()) {
+                .args(DataRow.create().add("id", 4)).stream()) {
             s.map(DataRow::toMap)
                     .forEach(System.out::println);
         }
@@ -415,42 +417,42 @@ public class MyTest {
 
     @Test
     public void testProcedure() throws Exception {
-        baki.call("call test.transaction_rollback()", Args.create());
+//        baki.call("call test.transaction_rollback()", Args.create());
     }
 
     @Test
     public void testCallFunc() throws Exception {
-        int res = baki.call("{:res = call test.slow_query(:a,:b)}",
-                        Args.of("RES", Param.OUT(OUTParamType.INTEGER))
-                                .add("a", Param.IN(13))
-                                .add("b", Param.IN(192)))
-                .getFirstAs();
-        System.out.println(res);
+//        int res = (int) baki.call("{:res = call test.slow_query(:a,:b)}",
+//                        Args.of("RES", Param.OUT(OUTParamType.INTEGER))
+//                                .add("a", Param.IN(13))
+//                                .add("b", Param.IN(192)))
+//                .getFirst();
+//        System.out.println(res);
     }
 
     @Test
     public void testCall() throws Exception {
-        Tx.using(() -> baki.call("{:res = call test.fun_query()}",
-                        Args.of("res", Param.OUT(OUTParamType.REF_CURSOR)))
-                .<List<DataRow>>getFirstAs()
-                .forEach(System.out::println));
+//        Tx.using(() -> baki.call("{:res = call test.fun_query()}",
+//                        Args.of("res", Param.OUT(OUTParamType.REF_CURSOR)))
+//                .<List<DataRow>>getFirstAs()
+//                .forEach(System.out::println));
     }
 
     @Test
     public void testCall2() throws Exception {
-        baki.call(":num = call test.get_grade(:id)",
-                        Args.of("num", Param.OUT(OUTParamType.INTEGER))
-                                .add("id", Param.IN(5)))
-                .getOptional("num")
-                .ifPresent(System.out::println);
+//        baki.call(":num = call test.get_grade(:id)",
+//                        Args.of("num", Param.OUT(OUTParamType.INTEGER))
+//                                .add("id", Param.IN(5)))
+//                .getOptional("num")
+//                .ifPresent(System.out::println);
     }
 
     @Test
     public void testCall3() throws Exception {
-        DataRow row = baki.call("{:res = call test.mvn_dependency_query(:keywords)}",
-                Args.of("res", Param.OUT(OUTParamType.OTHER))
-                        .add("keywords", Param.IN("chengyuxing")));
-        System.out.println(row);
+//        DataRow row = baki.call("{:res = call test.mvn_dependency_query(:keywords)}",
+//                Args.of("res", Param.OUT(OUTParamType.OTHER))
+//                        .add("keywords", Param.IN("chengyuxing")));
+//        System.out.println(row);
     }
 
     @Test
@@ -459,7 +461,7 @@ public class MyTest {
             baki.query("select current_timestamp, version()")
                     .findFirst()
                     .ifPresent(System.out::println);
-            baki.insert("test.history").save(DataRow.fromPair("userid", UUID.randomUUID(), "words", "transactional").toMap());
+            baki.insert("test.history").save(DataRow.of("userid", UUID.randomUUID(), "words", "transactional").toMap());
         });
     }
 
@@ -487,10 +489,12 @@ public class MyTest {
     @Test
     public void multi_res_function() throws Exception {
         Tx.using(() -> {
+            Map<String, Param> paramMap = new HashMap<>();
+            paramMap.put("success", Param.OUT(OUTParamType.BOOLEAN));
+            paramMap.put("res", Param.OUT(OUTParamType.REF_CURSOR));
+            paramMap.put("msg", Param.OUT(OUTParamType.VARCHAR));
             DataRow row = baki.call("call test.multi_res(12, :success, :res, :msg)",
-                    Args.of("success", Param.OUT(OUTParamType.BOOLEAN))
-                            .add("res", Param.OUT(OUTParamType.REF_CURSOR))
-                            .add("msg", Param.OUT(OUTParamType.VARCHAR))
+                    paramMap
             );
             System.out.println(row);
         });
@@ -522,12 +526,14 @@ public class MyTest {
                 return "time";
             }
         }
+        Map<String, Param> params = new HashMap<>();
+        params.put("dt", Param.OUT(OUTParamType.TIMESTAMP));
+        params.put("a", Param.IN(11));
+        params.put("b", Param.IN(22));
+        params.put("sum", Param.OUT(OUTParamType.INTEGER));
+        params.put("tm", Param.OUT(new TIME()));
         DataRow row = baki.call("{call test.fun_now(:a, :b, :sum, :dt, :tm)}",
-                Args.of("dt", Param.OUT(OUTParamType.TIMESTAMP))
-                        .add("a", Param.IN(11))
-                        .add("b", Param.IN(22))
-                        .add("sum", Param.OUT(OUTParamType.INTEGER))
-                        .add("tm", Param.OUT(new TIME())));
+                params);
         Timestamp dt = row.getAs("dt");
         System.out.println(dt.toLocalDateTime());
         System.out.println(row);

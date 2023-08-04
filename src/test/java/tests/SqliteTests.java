@@ -1,22 +1,15 @@
 package tests;
 
 import com.github.chengyuxing.common.DataRow;
-import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.Baki;
 import com.github.chengyuxing.sql.BakiDao;
 import com.github.chengyuxing.sql.PagedResource;
-import com.github.chengyuxing.sql.page.PageHelper;
-import com.github.chengyuxing.sql.page.PageHelperProvider;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.sql.DatabaseMetaData;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -79,7 +72,7 @@ public class SqliteTests {
     @Test
     public void test35() {
         baki.update("test.user", "id = :id")
-                .save(Args.create("id", 10, "name", "cyx"));
+                .save(DataRow.of("id", 10, "name", "cyx"));
     }
 
     @Test

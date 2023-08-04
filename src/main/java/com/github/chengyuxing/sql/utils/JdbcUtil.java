@@ -181,7 +181,7 @@ public class JdbcUtil {
     }
 
     /**
-     * 设置常规的参数占位符的参数值
+     * 设置参数占位符的参数值
      *
      * @param statement statement
      * @param index     序号
@@ -199,6 +199,12 @@ public class JdbcUtil {
             statement.setObject(index, new Date(((LocalDate) value).atStartOfDay(ZoneOffset.systemDefault()).toInstant().toEpochMilli()));
         } else if (value instanceof LocalTime) {
             statement.setObject(index, new Time(((LocalTime) value).atDate(LocalDate.now()).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
+        } else if (value instanceof OffsetDateTime) {
+            statement.setObject(index, new Timestamp(((OffsetDateTime) value).toInstant().toEpochMilli()));
+        } else if (value instanceof OffsetTime) {
+            statement.setObject(index, new Time(((OffsetTime) value).atDate(LocalDate.now()).toInstant().toEpochMilli()));
+        } else if (value instanceof ZonedDateTime) {
+            statement.setObject(index, new Timestamp(((ZonedDateTime) value).toInstant().toEpochMilli()));
         } else if (value instanceof Instant) {
             statement.setObject(index, new Timestamp(((Instant) value).toEpochMilli()));
         } else if (value instanceof UUID) {

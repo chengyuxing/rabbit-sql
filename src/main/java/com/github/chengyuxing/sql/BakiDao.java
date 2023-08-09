@@ -39,7 +39,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * <h2>数据库DAO对象实现</h2>
+ * <h2>Baki接口默认实现</h2>
  * <p>如果配置了{@link XQLFileManager }，则接口所有方法都可以通过取地址符号来获取sql文件内的sql</p>
  * 指定sql名执行：
  * <blockquote>

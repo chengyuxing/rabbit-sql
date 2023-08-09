@@ -73,6 +73,7 @@ public interface Baki {
      * @param name 过程名
      * @param args 参数 （占位符名字，参数对象）
      * @return 一个或多个结果或空对象
+     * @see Args Args&lt;Param&gt;
      */
     DataRow call(String name, Map<String, Param> args);
 

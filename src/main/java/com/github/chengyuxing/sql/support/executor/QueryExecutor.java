@@ -31,6 +31,7 @@ public abstract class QueryExecutor {
      *
      * @param args 参数字典
      * @return 查询执行器
+     * @see com.github.chengyuxing.sql.Args Args&lt;Object&gt;
      */
     public QueryExecutor args(Map<String, Object> args) {
         if (args != null) {

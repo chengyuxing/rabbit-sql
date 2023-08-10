@@ -39,7 +39,7 @@ public abstract class IPageable {
      * 设置sql参数
      *
      * @param args 参数
-     * @return 分页对象
+     * @return 分页构建器
      */
     public IPageable args(Map<String, Object> args) {
         if (args != null) {
@@ -52,7 +52,7 @@ public abstract class IPageable {
      * 设置sql查询条数
      *
      * @param countQuery count查询语句
-     * @return 分页对象
+     * @return 分页构建器
      */
     public IPageable count(String countQuery) {
         this.countQuery = countQuery;
@@ -63,7 +63,7 @@ public abstract class IPageable {
      * 设置sql查询条数
      *
      * @param count 总数据条数
-     * @return 分页对象
+     * @return 分页构建器
      */
     public IPageable count(Integer count) {
         this.count = count;
@@ -75,7 +75,7 @@ public abstract class IPageable {
      * 意味着需要自己实现个性化的分页sql
      *
      * @param countQuery count查询语句
-     * @return 分页对象
+     * @return 分页构建器
      */
     public IPageable disableDefaultPageSql(String countQuery) {
         this.disablePageSql = true;
@@ -97,7 +97,7 @@ public abstract class IPageable {
      * </blockquote>
      *
      * @param func 分页参数重写函数
-     * @return 自定义的分页参数
+     * @return 分页构建器
      */
     public IPageable rewriteDefaultPageArgs(Function<Args<Integer>, Args<Integer>> func) {
         this.rewriteArgsFunc = func;

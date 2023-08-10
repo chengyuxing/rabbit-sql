@@ -28,7 +28,7 @@ public class XQLFileManagerConfig {
 
     // ----------------optional properties------------------
     protected Map<String, String> files = new HashMap<>();
-    protected Map<String, String> constants = new HashMap<>();
+    protected Map<String, Object> constants = new HashMap<>();
     protected Map<String, IPipe<?>> pipeInstances = new HashMap<>();
     protected Map<String, String> pipes = new HashMap<>();
     protected String charset = "UTF-8";
@@ -90,7 +90,7 @@ public class XQLFileManagerConfig {
         try {
             properties.load(propertiesLocation.getInputStream());
             Map<String, String> localFiles = new HashMap<>();
-            Map<String, String> localConstants = new HashMap<>();
+            Map<String, Object> localConstants = new HashMap<>();
             Map<String, String> localPipes = new HashMap<>();
             properties.forEach((k, s) -> {
                 String p = k.toString().trim();
@@ -183,7 +183,7 @@ public class XQLFileManagerConfig {
      *
      * @return 常量集合
      */
-    public Map<String, String> getConstants() {
+    public Map<String, Object> getConstants() {
         return constants;
     }
 
@@ -199,7 +199,7 @@ public class XQLFileManagerConfig {
      *
      * @param constants 常量集合
      */
-    public void setConstants(Map<String, String> constants) {
+    public void setConstants(Map<String, Object> constants) {
         if (constants == null) {
             return;
         }

@@ -515,7 +515,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @param key 常量名
      * @return 常量值
      */
-    public String getConstant(String key) {
+    public Object getConstant(String key) {
         return constants.get(key);
     }
 

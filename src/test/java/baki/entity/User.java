@@ -1,12 +1,21 @@
 package baki.entity;
 
+import baki.entityExecutor.annotation.Col;
+import baki.entityExecutor.annotation.Table;
+
 import java.time.LocalDateTime;
 
+@Table(schema = "test", value = "user")
 public class User {
+    @Col
     private Integer id;
+    @Col
     private String name;
+    @Col
     private Integer age;
+    @Col
     private String address;
+    @Col("create_time")
     private LocalDateTime dt;
 
     @Override

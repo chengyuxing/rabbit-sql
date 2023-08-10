@@ -1,6 +1,8 @@
 package tests;
 
 import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.common.DateTimes;
+import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.Baki;
 import com.github.chengyuxing.sql.BakiDao;
 import com.github.chengyuxing.sql.PagedResource;
@@ -50,6 +52,11 @@ public class SqliteTests {
     public void test1() {
         PagedResource<DataRow> resource = baki.query("select 1 union select 2")
                 .pageable(1, 10)
+                .rewriteDefaultPageArgs(a -> {
+                    a.updateKey("limit", "l");
+                    a.updateKey("offset", "o");
+                    return a;
+                })
                 .pageHelper((databaseMetaData, dbName, namedParamPrefix) -> new PGPageHelper())
                 .collect();
 
@@ -73,6 +80,10 @@ public class SqliteTests {
     public void test35() {
         baki.update("test.user", "id = :id")
                 .save(DataRow.of("id", 10, "name", "cyx"));
+
+        Args<Object> args = Args.of("dt", "2022-1-2");
+        args.updateValue("dt", v -> DateTimes.toLocalDateTime(v.toString()));
+        args.updateKey("dt", "date");
     }
 
     @Test

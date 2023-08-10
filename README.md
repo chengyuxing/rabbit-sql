@@ -443,9 +443,9 @@ select * from test.user where id = 1
 
 For a few special places to explain:
 
-- If for loop result is not empty, `open` means `or id in(` will be prepend to result, `close` means `)` will be append to result;
-- Variable starts with `:` in sql means it's a named parameter which will be prepare compile;
-- Prefix `_for.` is special variable name in for loop body, it's necessary to following the rule when use for-variable for named parameter, for auto generate named parameter with unique index correctly.
+- If for loop result is not empty, `open` means `or id in(` will prepend to result, `close` means `)` will append to result;
+- Variable starts with `:` in sql means it's a named parameter which will prepare compile;
+- Prefix `_for.` is special variable name in for loop body, it's necessary to follow the rule when use for-variable for named parameter, for auto generate named parameter with unique index correctly.
 
 **for** work with `update` statement sets part:
 

@@ -35,7 +35,7 @@ Maven central
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.6.0</version>
+    <version>7.6.1</version>
 </dependency>
 ```
 
@@ -382,7 +382,7 @@ Here is about dynamic generate **named parameter sql**,  **named parameter** wil
 ```sql
 /*[query]*/
 select * from test.user where id = 1
--- #for id of :ids delimiter ', \n' open ' or id in (' close ')'
+-- #for id of :ids delimiter ', ' open ' or id in (' close ')'
     -- #if :id >= 8
     :_for.id
     -- #fi
@@ -395,7 +395,7 @@ To maintain sql syntax integrity, highlighting syntax errors does not occur in i
 select * from test.user where id = 1
 -- #if :ids != blank
 or id in (
-    -- #for id of :ids delimiter ',\n'
+    -- #for id of :ids delimiter ', '
         -- #if :id >= 8
         :_for.id
         -- #fi
@@ -453,8 +453,8 @@ For a few special places to explain:
 /*[update]*/
 update test.user
 set
--- #for pair of :data | pairs delimiter ',\n'
-    ${pair.item1} = :_for.pair.item2
+-- #for set of :sets | kv delimiter ', '
+    ${set.key} = :_for.set.value
 -- #done
 where id = :id;
 ```
@@ -475,9 +475,9 @@ example above will generate sql and variables:
 ```sql
 update test.user
 set
-    address = :_for.pair_0_0.item2,
-    name = :_for.pair_0_1.item2,
-    age = :_for.pair_0_2.item2
+  address = :_for.set_0_0.value,
+  name = :_for.set_0_1.value,
+  age = :_for.set_0_2.value
 where id = :id
 ```
 
@@ -485,17 +485,17 @@ where id = :id
 {
   "id": 10,
   "_for": {
-    "pair_0_2": {
-      "item1": "age",
-      "item2": 30
+    "set_0_2": {
+      "key": "age",
+      "value": 30
     },
-    "pair_0_1": {
-      "item1": "name",
-      "item2": "abc"
+    "set_0_1": {
+      "key": "name",
+      "value": "abc"
     },
-    "pair_0_0": {
-      "item1": "address",
-      "item2": "kunming"
+    "set_0_0": {
+      "key": "address",
+      "value": "kunming"
     }
   }
 }

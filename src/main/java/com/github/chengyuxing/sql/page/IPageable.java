@@ -1,6 +1,7 @@
 package com.github.chengyuxing.sql.page;
 
 import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.PagedResource;
 
 import java.util.HashMap;
@@ -18,7 +19,7 @@ public abstract class IPageable {
     protected final int size;
     protected Integer count;
     protected boolean disablePageSql;
-    protected Function<Map<String, Integer>, Map<String, Integer>> rewriteArgsFunc;
+    protected Function<Args<Integer>, Args<Integer>> rewriteArgsFunc;
     protected PageHelperProvider pageHelperProvider;
 
     /**
@@ -83,12 +84,22 @@ public abstract class IPageable {
     }
 
     /**
-     * 重写默认（{@link PageHelper#pagedArgs()}）的分页参数
+     * 重写默认（{@link PageHelper#pagedArgs()}）的分页参数<br>
+     * 例如PostgreSQL:
+     * <blockquote>
+     * <pre>
+     * args -> {
+     *      args.updateKey("limit", "my_limit");
+     *      args.updateKey("offset", "my_offset");
+     *      return args;
+     * }
+     * </pre>
+     * </blockquote>
      *
      * @param func 分页参数重写函数
      * @return 自定义的分页参数
      */
-    public IPageable rewriteDefaultPageArgs(Function<Map<String, Integer>, Map<String, Integer>> func) {
+    public IPageable rewriteDefaultPageArgs(Function<Args<Integer>, Args<Integer>> func) {
         this.rewriteArgsFunc = func;
         return this;
     }
@@ -116,7 +127,7 @@ public abstract class IPageable {
     public abstract <T> PagedResource<T> collect(Function<DataRow, T> mapper);
 
     /**
-     * 收集结果集操作
+     * 收集结果集
      *
      * @return 已分页的资源
      */

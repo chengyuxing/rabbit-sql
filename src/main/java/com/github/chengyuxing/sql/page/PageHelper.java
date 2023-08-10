@@ -1,6 +1,6 @@
 package com.github.chengyuxing.sql.page;
 
-import java.util.Map;
+import com.github.chengyuxing.sql.Args;
 
 /**
  * 抽象分页工具
@@ -25,7 +25,7 @@ public abstract class PageHelper {
      *
      * @return 分页的参数集合
      */
-    public abstract Map<String, Integer> pagedArgs();
+    public abstract Args<Integer> pagedArgs();
 
     /**
      * 获取总页数

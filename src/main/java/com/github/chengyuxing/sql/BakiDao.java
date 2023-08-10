@@ -377,9 +377,9 @@ public class BakiDao extends JdbcSupport implements Baki {
                 pageHelper = defaultPager();
             }
             pageHelper.init(page, size, count);
-            Map<String, Integer> pagedArgs = pageHelper.pagedArgs();
+            Args<Integer> pagedArgs = pageHelper.pagedArgs();
             if (pagedArgs == null) {
-                pagedArgs = new HashMap<>();
+                pagedArgs = Args.of();
             }
             data.putAll(rewriteArgsFunc == null ? pagedArgs : rewriteArgsFunc.apply(pagedArgs));
             String executeQuery = disablePageSql ? query : pageHelper.pagedSql(query);

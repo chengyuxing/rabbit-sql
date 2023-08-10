@@ -1,9 +1,7 @@
 package com.github.chengyuxing.sql.page.impl;
 
+import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.page.PageHelper;
-
-import java.util.HashMap;
-import java.util.Map;
 
 /**
  * <p>PostgreSQL分页工具</p>
@@ -45,10 +43,7 @@ public class PGPageHelper extends PageHelper {
      * @return 分页参数
      */
     @Override
-    public Map<String, Integer> pagedArgs() {
-        Map<String, Integer> args = new HashMap<>();
-        args.put("limit", limit());
-        args.put("offset", offset());
-        return args;
+    public Args<Integer> pagedArgs() {
+        return Args.of("limit", limit()).add("offset", offset());
     }
 }

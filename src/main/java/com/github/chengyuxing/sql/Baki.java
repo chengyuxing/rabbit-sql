@@ -1,15 +1,12 @@
 package com.github.chengyuxing.sql;
 
-import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.support.executor.DeleteExecutor;
 import com.github.chengyuxing.sql.support.executor.Executor;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
 import com.github.chengyuxing.sql.support.executor.SaveExecutor;
-import com.github.chengyuxing.sql.types.Param;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
-import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -62,20 +59,18 @@ public interface Baki {
     /**
      * 通用执行器
      *
-     * @param sql sql
+     * @param sql <blockquote>
+     *                <ul>
+     *                    <li>ddl</li>
+     *                    <li>dml</li>
+     *                    <li>query</li>
+     *                    <li>function/procedure</li>
+     *                    <li>plsql</li>
+     *                </ul>
+     *            </blockquote>
      * @return 通用执行器
      */
     Executor of(String sql);
-
-    /**
-     * 执行存储过程或函数
-     *
-     * @param name 过程名
-     * @param args 参数 （占位符名字，参数对象）
-     * @return 一个或多个结果或空对象
-     * @see Args Args&lt;Param&gt;
-     */
-    DataRow call(String name, Map<String, Param> args);
 
     /**
      * 从内部获取一个连接对象

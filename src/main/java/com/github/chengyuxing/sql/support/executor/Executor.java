@@ -1,6 +1,7 @@
 package com.github.chengyuxing.sql.support.executor;
 
 import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.sql.types.Param;
 
 import java.util.Collection;
 import java.util.Map;
@@ -41,4 +42,13 @@ public interface Executor {
      * @return 受影响的行数
      */
     int executeBatch(Collection<? extends Map<String, ?>> data);
+
+    /**
+     * 执行存储过程或函数
+     *
+     * @param params 参数：{@link com.github.chengyuxing.sql.types.OUTParamType Args&lt;Param&gt;}
+     * @return DataRow
+     * @see com.github.chengyuxing.sql.support.JdbcSupport#executeCallStatement(String, Map) executeCallStatement(String, Map)
+     */
+    DataRow call(Map<String, Param> params);
 }

@@ -20,7 +20,6 @@ import com.github.chengyuxing.sql.support.executor.DeleteExecutor;
 import com.github.chengyuxing.sql.support.executor.Executor;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
 import com.github.chengyuxing.sql.support.executor.SaveExecutor;
-import com.github.chengyuxing.sql.transaction.Tx;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.utils.JdbcUtil;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
@@ -267,29 +266,12 @@ public class BakiDao extends JdbcSupport implements Baki {
                 }
                 return executeBatchUpdate(parsed.getItem1(), newData, batchSize);
             }
-        };
-    }
 
-    /**
-     * {@inheritDoc}<br>
-     * e.g. PostgreSQL执行获取一个游标类型的结果：
-     * <blockquote>
-     * <pre>
-     *      {@link List}&lt;{@link DataRow}&gt; rows = {@link Tx}.using(() -&gt;
-     *         baki.call("{call test.func(:c::refcursor)}",
-     *             Args.create("c",Param.IN_OUT("result", OUTParamType.REF_CURSOR))
-     *             ).get(0));
-     * </pre>
-     * </blockquote>
-     *
-     * @param name 过程名
-     * @param args 参数 （占位符名字，参数对象）
-     * @return DataRow
-     * @throws UncheckedSqlException 存储过程或函数执行过程中出现错误
-     */
-    @Override
-    public DataRow call(String name, Map<String, Param> args) {
-        return executeCallStatement(name, args);
+            @Override
+            public DataRow call(Map<String, Param> params) {
+                return executeCallStatement(sql, params);
+            }
+        };
     }
 
     /**
@@ -358,8 +340,8 @@ public class BakiDao extends JdbcSupport implements Baki {
                 if (cq == null) {
                     cq = sqlGenerator.generateCountQuery(query);
                 }
-                DataRow cnRow = execute(cq, data).getFirstAs();
-                Object cn = cnRow.getFirst();
+                List<DataRow> cnRows = execute(cq, data).getFirstAs();
+                Object cn = cnRows.get(0).getFirst();
                 if (cn instanceof Integer) {
                     count = (Integer) cn;
                 } else {

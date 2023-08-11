@@ -493,9 +493,8 @@ public class MyTest {
             paramMap.put("success", Param.OUT(OUTParamType.BOOLEAN));
             paramMap.put("res", Param.OUT(OUTParamType.REF_CURSOR));
             paramMap.put("msg", Param.OUT(OUTParamType.VARCHAR));
-            DataRow row = baki.call("call test.multi_res(12, :success, :res, :msg)",
-                    paramMap
-            );
+            DataRow row = baki.of("call test.multi_res(12, :success, :res, :msg)")
+                    .call(paramMap);
             System.out.println(row);
         });
     }
@@ -517,11 +516,10 @@ public class MyTest {
         class TIME implements IOutParam {
 
             @Override
-            public int getTypeNumber() {
+            public int typeNumber() {
                 return Types.TIME;
             }
 
-            @Override
             public String getName() {
                 return "time";
             }
@@ -532,8 +530,7 @@ public class MyTest {
         params.put("b", Param.IN(22));
         params.put("sum", Param.OUT(OUTParamType.INTEGER));
         params.put("tm", Param.OUT(new TIME()));
-        DataRow row = baki.call("{call test.fun_now(:a, :b, :sum, :dt, :tm)}",
-                params);
+        DataRow row = baki.of("{call test.fun_now(:a, :b, :sum, :dt, :tm)}").call(params);
         Timestamp dt = row.getAs("dt");
         System.out.println(dt.toLocalDateTime());
         System.out.println(row);

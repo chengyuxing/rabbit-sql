@@ -35,7 +35,7 @@ Maven central
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.6.1</version>
+    <version>7.6.2</version>
 </dependency>
 ```
 
@@ -138,8 +138,8 @@ PagedResource<DataRow> res = baki.query("&data.custom_paged")
 ##### Procedure
 
 ```java
-baki.call("{call test.fun_query(:c::refcursor)}",
-        Args.of("c",Param.IN_OUT("result",OUTParamType.REF_CURSOR)))
+baki.of("{call test.fun_query(:c::refcursor)}")
+        .call(Args.of("c", Param.IN_OUT("result",OUTParamType.REF_CURSOR)))
         .<List<DataRow>>getFirstAs()
         .stream()
         .forEach(System.out::println);

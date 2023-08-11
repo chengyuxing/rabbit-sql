@@ -117,11 +117,7 @@ public abstract class JdbcSupport extends SqlParser {
                     ResultSet resultSet = ps.getResultSet();
                     List<DataRow> rows = JdbcUtil.createDataRows(resultSet, preparedSql, -1);
                     JdbcUtil.closeResultSet(resultSet);
-                    if (rows.size() == 1) {
-                        result = DataRow.of("result", rows.get(0), "type", "QUERY");
-                    } else {
-                        result = DataRow.of("result", rows, "type", "QUERY");
-                    }
+                    result = DataRow.of("result", rows, "type", "QUERY");
                 } else {
                     int count = ps.getUpdateCount();
                     result = DataRow.of("result", count, "type", "DD(M)L");
@@ -331,15 +327,21 @@ public abstract class JdbcSupport extends SqlParser {
 
     /**
      * 执行存储过程或函数<br>
-     * 所有出参结果都放入到{@link DataRow}中，可通过命名参数名来取得。<br>
-     * 语句形如原生jdbc，只是将?号改为命名参数（:参数名）：
      * <blockquote>
      * <pre>
-     *         {call test.func1(:arg1, :arg2, :result1, :result2)};
-     *         {call test.func2(:result::refcursor)}; //PostgreSQL
-     *         {:result = call test.func3()};
-     *         call test.procedure(); //PostgreSQL 13版+ 存储过程不需要加大括号(非函数)
+     *         { call func1(:in1, :in2, :out1, :out2) };
+     *         { call func2(:out::refcursor) }; //PostgreSQL
+     *         { :out = call func3() };
+     *         { call func_returns_table() } //PostgreSQL
+     *         call procedure(); //PostgreSQL 13版+ 存储过程不需要加大括号(非函数)
      *     </pre>
+     * </blockquote>
+     * 根据不同的存储过程返回结果定义，获取结果有两种形式：
+     * <blockquote>
+     * <ul>
+     *     <li>没有出参：{@link DataRow#getFirst()} 或 {@link DataRow#getFirstAs()}</li>
+     *     <li>有出参：{@link DataRow#getAs(String)} 或 {@link DataRow#get(Object)} (通过出参名获取)</li>
+     * </ul>
      * </blockquote>
      *
      * @param procedure 存储过程名
@@ -370,30 +372,34 @@ public abstract class JdbcSupport extends SqlParser {
             }
             statement.execute();
             printSqlConsole(statement);
-            if (!outNames.isEmpty()) {
-                Object[] values = new Object[outNames.size()];
-                int resultIndex = 0;
-                for (int i = 0; i < argNames.size(); i++) {
-                    String name = argNames.get(i);
-                    if (outNames.contains(name)) {
-                        Object result = statement.getObject(i + 1);
-                        if (null == result) {
-                            values[resultIndex] = null;
-                        } else if (result instanceof ResultSet) {
-                            List<DataRow> rows = JdbcUtil.createDataRows((ResultSet) result, executeSql, -1);
-                            JdbcUtil.closeResultSet((ResultSet) result);
-                            values[resultIndex] = rows;
-                            log.debug("boxing a result with type: cursor, convert to ArrayList<DataRow>, get result by name:{}!", outNames.get(resultIndex));
-                        } else {
-                            values[resultIndex] = result;
-                            log.debug("boxing a result, get result by name:{}!", outNames.get(resultIndex));
-                        }
-                        resultIndex++;
-                    }
+            if (outNames.isEmpty()) {
+                ResultSet resultSet = statement.getResultSet();
+                List<DataRow> dataRows = JdbcUtil.createDataRows(resultSet, "", -1);
+                JdbcUtil.closeResultSet(resultSet);
+                if (dataRows.isEmpty()) {
+                    return DataRow.of();
                 }
-                return DataRow.of(outNames.toArray(new String[0]), values);
+                return DataRow.of("result", dataRows);
             }
-            return new DataRow(0);
+            Object[] values = new Object[outNames.size()];
+            int resultIndex = 0;
+            for (int i = 0; i < argNames.size(); i++) {
+                String name = argNames.get(i);
+                if (outNames.contains(name)) {
+                    Object result = statement.getObject(i + 1);
+                    if (null == result) {
+                        values[resultIndex] = null;
+                    } else if (result instanceof ResultSet) {
+                        List<DataRow> rows = JdbcUtil.createDataRows((ResultSet) result, "", -1);
+                        JdbcUtil.closeResultSet((ResultSet) result);
+                        values[resultIndex] = rows;
+                    } else {
+                        values[resultIndex] = result;
+                    }
+                    resultIndex++;
+                }
+            }
+            return DataRow.of(outNames.toArray(new String[0]), values);
         } catch (SQLException e) {
             try {
                 JdbcUtil.closeStatement(statement);

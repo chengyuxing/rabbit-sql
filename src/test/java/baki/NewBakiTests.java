@@ -8,10 +8,13 @@ import com.github.chengyuxing.sql.Baki;
 import com.github.chengyuxing.sql.BakiDao;
 import com.github.chengyuxing.sql.XQLFileManager;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
+import com.github.chengyuxing.sql.types.OUTParamType;
+import com.github.chengyuxing.sql.types.Param;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.sql.*;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -135,6 +138,33 @@ public class NewBakiTests {
 
         System.out.println(i);
 
+    }
+
+    @Test
+    public void testCall() {
+        baki.of("{call test.mvn_dependencies_query(:keyword)}")
+                .call(Args.of("keyword", Param.IN("chengyuxing")))
+                .<List<DataRow>>getFirstAs()
+                .forEach(System.out::println);
+    }
+
+    @Test
+    public void testCall3() {
+        baki.query("select * from test.user")
+                .pageable(1, 3)
+                .collect()
+                .getData()
+                .forEach(System.out::println);
+    }
+
+    @Test
+    public void testCall2() {
+        baki.of("{:res = call test.sum(:a, :b)}")
+                .call(Args.of("res", Param.OUT(OUTParamType.INTEGER))
+                        .add("a", Param.IN(34))
+                        .add("b", Param.IN(56)))
+                .getOptional("res")
+                .ifPresent(System.out::println);
     }
 
     @Test

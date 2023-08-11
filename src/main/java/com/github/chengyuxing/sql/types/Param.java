@@ -73,7 +73,7 @@ public final class Param {
                     .append(", ");
         if (type != null)
             sb.append("type=")
-                    .append(type.getName())
+                    .append(type)
                     .append(", ");
         sb.append("mode=")
                 .append(paramMode)

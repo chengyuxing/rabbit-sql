@@ -28,19 +28,16 @@ public enum OUTParamType implements IOutParam {
     }
 
     @Override
-    public int getTypeNumber() {
+    public int typeNumber() {
         return typeNumber;
     }
 
-    @Override
     public String getName() {
         return name;
     }
 
     @Override
     public String toString() {
-        return "OUTParamType{" +
-                "name='" + name + '\'' +
-                '}';
+        return name;
     }
 }

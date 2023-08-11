@@ -271,7 +271,7 @@ public class JdbcUtil {
                     Param param = args.get(name);
                     if (param != null) {
                         if (param.getParamMode() == ParamMode.OUT || param.getParamMode() == ParamMode.IN_OUT) {
-                            statement.registerOutParameter(index, param.getType().getTypeNumber());
+                            statement.registerOutParameter(index, param.getType().typeNumber());
                         }
                     }
                 }

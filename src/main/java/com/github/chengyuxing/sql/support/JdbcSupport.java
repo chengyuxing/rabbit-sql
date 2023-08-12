@@ -329,12 +329,12 @@ public abstract class JdbcSupport extends SqlParser {
      * 执行存储过程或函数<br>
      * <blockquote>
      * <pre>
-     *         { call func1(:in1, :in2, :out1, :out2) };
-     *         { call func2(:out::refcursor) }; //PostgreSQL
-     *         { :out = call func3() };
-     *         { call func_returns_table() } //PostgreSQL
-     *         call procedure(); //PostgreSQL 13版+ 存储过程不需要加大括号(非函数)
-     *     </pre>
+     * { call func1(:in1, :in2, :out1, :out2) };
+     * { call func2(:out::refcursor) }; //PostgreSQL
+     * { :out = call func3() };
+     * { call func_returns_table() } //PostgreSQL
+     * call procedure(); //PostgreSQL 13版+ 存储过程不需要加大括号(非函数)
+     * </pre>
      * </blockquote>
      * 根据不同的存储过程返回结果定义，获取结果有两种形式：
      * <blockquote>

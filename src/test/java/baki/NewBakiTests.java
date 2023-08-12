@@ -176,4 +176,9 @@ public class NewBakiTests {
         System.out.println(args);
         System.out.println(DataRow.of());
     }
+
+    @Test
+    public void testArgs2() {
+
+    }
 }

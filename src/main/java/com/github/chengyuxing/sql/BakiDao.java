@@ -74,6 +74,10 @@ public class BakiDao extends JdbcSupport implements Baki {
      * 命名参数前缀
      */
     private char namedParamPrefix = ':';
+    /**
+     * 在获取sql时如果xql文件有变更则重新加载xql文件管理器
+     */
+    private boolean reloadXqlOnGet = false;
 
     /**
      * 构造函数
@@ -464,6 +468,10 @@ public class BakiDao extends JdbcSupport implements Baki {
         String trimSql = SqlUtil.trimEnd(sql.trim());
         if (trimSql.startsWith("&")) {
             if (xqlFileManager != null) {
+                if (reloadXqlOnGet) {
+                    log.warn("please set 'reloadXqlOnGet' to false in production environment for improve concurrency.");
+                    xqlFileManager.init();
+                }
                 Pair<String, Map<String, Object>> result = xqlFileManager.get(trimSql.substring(1), data);
                 trimSql = result.getItem1();
                 // #for表达式的临时变量存储在 _for 变量中
@@ -575,5 +583,13 @@ public class BakiDao extends JdbcSupport implements Baki {
     public void setNamedParamPrefix(char namedParamPrefix) {
         this.namedParamPrefix = namedParamPrefix;
         this.sqlGenerator = new SqlGenerator(namedParamPrefix);
+    }
+
+    public boolean isReloadXqlOnGet() {
+        return reloadXqlOnGet;
+    }
+
+    public void setReloadXqlOnGet(boolean reloadXqlOnGet) {
+        this.reloadXqlOnGet = reloadXqlOnGet;
     }
 }

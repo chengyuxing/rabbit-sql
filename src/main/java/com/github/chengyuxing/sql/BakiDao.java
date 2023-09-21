@@ -463,8 +463,6 @@ public class BakiDao extends JdbcSupport implements Baki {
         if (args != null) {
             data.putAll(args);
         }
-        data.putIfAbsent("_databaseId", databaseId());
-
         String trimSql = SqlUtil.trimEnd(sql.trim());
         if (trimSql.startsWith("&")) {
             if (xqlFileManager != null) {
@@ -559,6 +557,7 @@ public class BakiDao extends JdbcSupport implements Baki {
 
     public void setXqlFileManager(XQLFileManager xqlFileManager) {
         this.xqlFileManager = xqlFileManager;
+        this.xqlFileManager.setDatabaseId(databaseId());
         if (!xqlFileManager.isInitialized()) {
             xqlFileManager.init();
         }

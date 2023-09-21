@@ -6,7 +6,7 @@ filenames:
   - system.xql
 
 files:
-  dt: !join [ *basePath, other.xql ]
+  dt: !path [ *basePath, other.xql ]
   other: another.xql
 
 delimiter: ;

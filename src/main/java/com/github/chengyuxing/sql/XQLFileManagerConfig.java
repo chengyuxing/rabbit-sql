@@ -34,6 +34,7 @@ public class XQLFileManagerConfig {
     protected String charset = "UTF-8";
     protected String delimiter = ";";
     protected Character namedParamPrefix = ':';
+    protected String databaseId;
     // ----------------optional properties------------------
 
     /**
@@ -333,5 +334,24 @@ public class XQLFileManagerConfig {
             return;
         }
         this.namedParamPrefix = namedParamPrefix;
+    }
+
+    /**
+     * 获取数据库名
+     *
+     * @return 数据库名
+     */
+    public String getDatabaseId() {
+        return databaseId;
+    }
+
+    /**
+     * 设置数据库名
+     *
+     * @param databaseId 数据库名
+     */
+    public void setDatabaseId(String databaseId) {
+        checkLoading();
+        this.databaseId = databaseId;
     }
 }

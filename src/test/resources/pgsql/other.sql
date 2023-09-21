@@ -12,7 +12,9 @@
 /*xxxxxxxxxxxxxx*/
 update test."user"
 set name     = 'cyx', --姓名
+    -- #if :_parameter.name != blank
     password = '123456' --密码
+    -- #fi
 where id = 5;
 
 /*ddddddd
@@ -26,6 +28,8 @@ a.id, a.name, a.date;
 /*[ooooooooo]*/
 select count(*),
        count(*) filter ( where grade > 90 )               greate,
-       count(*) filter ( where grade < 90 and grade > 60) good,
+       -- #if :_databaseId != blank
+        count(*) filter ( where grade < 90 and grade > 60) good,
+       -- #fi
        count(*) filter ( where grade < 60 )               bad
 from test.score;

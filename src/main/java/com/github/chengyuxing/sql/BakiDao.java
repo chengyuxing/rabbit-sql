@@ -526,6 +526,10 @@ public class BakiDao extends JdbcSupport implements Baki {
         return dataSource;
     }
 
+    protected void setDataSource(DataSource dataSource) {
+        this.dataSource = dataSource;
+    }
+
     @Override
     protected Connection getConnection() {
         try {
@@ -538,10 +542,6 @@ public class BakiDao extends JdbcSupport implements Baki {
     @Override
     protected void releaseConnection(Connection connection, DataSource dataSource) {
         DataSourceUtil.releaseConnection(connection, dataSource);
-    }
-
-    protected void setDataSource(DataSource dataSource) {
-        this.dataSource = dataSource;
     }
 
     public void setGlobalPageHelperProvider(PageHelperProvider globalPageHelperProvider) {

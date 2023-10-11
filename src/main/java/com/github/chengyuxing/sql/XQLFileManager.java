@@ -60,7 +60,7 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
  * </blockquote>
  * <p>{@link #get(String, Map)}</p>
  * 动态sql脚本表达式写在行注释中 以 -- 开头，
- * 具体参考classpath下的文件：data.xql.template
+ * 具体参考classpath下的文件：template.xql
  *
  * @see SimpleScriptParser
  */

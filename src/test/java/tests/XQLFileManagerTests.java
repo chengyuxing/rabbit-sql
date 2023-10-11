@@ -47,7 +47,7 @@ public class XQLFileManagerTests {
     @Test
     public void test11() throws URISyntaxException, IOException {
         System.out.println(new FileResource("b.json").getLastModified());
-        System.out.println(new FileResource("data.xql.template").getLastModified());
+        System.out.println(new FileResource("template.xql").getLastModified());
         System.out.println("---");
         System.out.println(new FileResource("file:/Users/chengyuxing/IdeaProjects/rabbit-sql/src/test/resources/pgsql/data.sql").getLastModified());
         System.out.println(new FileResource("file:/Users/chengyuxing/IdeaProjects/rabbit-sql/src/test/resources/pgsql/nest.sql").getLastModified());

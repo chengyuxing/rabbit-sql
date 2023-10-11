@@ -513,29 +513,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 throw new IllegalSqlException(error);
             }
         }
-        debugSql(trimSql, data);
         return Pair.of(trimSql, data);
-    }
-
-    /**
-     * debug模式下打印sql
-     *
-     * @param sql  sql
-     * @param data 数据
-     */
-    protected void debugSql(String sql, Map<String, Object> data) {
-        if (log.isDebugEnabled()) {
-            log.debug("SQL: {}", SqlUtil.buildConsoleSql(sql));
-            StringJoiner sb = new StringJoiner(", ", "{", "}");
-            data.forEach((k, v) -> {
-                if (v == null) {
-                    sb.add(k + " -> null");
-                } else {
-                    sb.add(k + " -> " + v + "(" + v.getClass().getSimpleName() + ")");
-                }
-            });
-            log.debug("Args: {}", sb);
-        }
     }
 
     @Override

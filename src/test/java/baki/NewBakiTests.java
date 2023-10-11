@@ -78,8 +78,8 @@ public class NewBakiTests {
         int i = baki.delete("test.user", "id = :id")
                 .fast()
                 .save(Arrays.asList(
-                        Args.of("id", 2100032),
-                        Args.of("id", 2100033))
+                        Args.of("id", 2100037),
+                        Args.of("id", 2100038))
                 );
         System.out.println(i);
     }
@@ -123,7 +123,7 @@ public class NewBakiTests {
     @Test
     public void testInsertScript() {
         List<Args<Object>> args = new ArrayList<>();
-        for (int i = 0; i < 100000; i++) {
+        for (int i = 0; i < 10000; i++) {
             args.add(Args.of("users", Arrays.asList("chengyuxing", i, "昆明市", LocalDateTime.now())));
         }
         int i = baki.of("&new.insert").executeBatch(args);

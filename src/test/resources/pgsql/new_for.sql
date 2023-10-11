@@ -12,7 +12,7 @@ where id = 1
 /*[insert]*/
 insert into test.user (name, age, address, dt)
 values (
-        -- #for item of :users delimiter ', \n'
+        -- #for item of :users delimiter ', '
             -- #if :item <> blank
             :_for.item
             -- #fi

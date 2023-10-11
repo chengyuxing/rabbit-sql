@@ -2,13 +2,13 @@ package com.github.chengyuxing.sql.support;
 
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.UncheckedCloseable;
-import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.common.tuple.Triple;
+import com.github.chengyuxing.common.tuple.Quadruple;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.types.ParamMode;
 import com.github.chengyuxing.sql.utils.JdbcUtil;
+import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -103,11 +103,12 @@ public abstract class JdbcSupport extends SqlParser {
      * @throws UncheckedSqlException sql执行过程中出现错误
      */
     public DataRow execute(final String sql, Map<String, ?> args) {
-        Triple<String, List<String>, Map<String, Object>> prepared = prepare(sql, args);
+        Quadruple<String, List<String>, Map<String, Object>, String> prepared = prepare(sql, args);
         final List<String> argNames = prepared.getItem2();
         final String preparedSql = prepared.getItem1();
         final Map<String, Object> data = prepared.getItem3();
         try {
+            debugSql(prepared.getItem4(), Collections.singletonList(args));
             return execute(preparedSql, ps -> {
                 JdbcUtil.setSqlArgs(ps, data, argNames);
                 boolean isQuery = ps.execute();
@@ -153,7 +154,7 @@ public abstract class JdbcSupport extends SqlParser {
      * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误.
      */
     public Stream<DataRow> executeQueryStream(final String sql, Map<String, ?> args) {
-        Triple<String, List<String>, Map<String, Object>> prepared = prepare(sql, args);
+        Quadruple<String, List<String>, Map<String, Object>, String> prepared = prepare(sql, args);
         final List<String> argNames = prepared.getItem2();
         final String preparedSql = prepared.getItem1();
         final Map<String, Object> data = prepared.getItem3();
@@ -163,6 +164,7 @@ public abstract class JdbcSupport extends SqlParser {
             // if this query is not in transaction, it's connection managed by Stream
             // if transaction is active connection will not be close when read stream to the end in 'try-with-resource' block
             close = UncheckedCloseable.wrap(() -> releaseConnection(connection, getDataSource()));
+            debugSql(prepared.getItem4(), Collections.singletonList(args));
             //noinspection SqlSourceToSinkFlow
             PreparedStatement ps = connection.prepareStatement(preparedSql);
             close = close.nest(ps);
@@ -227,8 +229,10 @@ public abstract class JdbcSupport extends SqlParser {
                 if (StringUtil.isEmpty(sql)) {
                     continue;
                 }
+                String parsedSql = parseSql(sql, Collections.emptyMap()).getItem1();
+                debugSql(parsedSql, Collections.emptyList());
                 //noinspection SqlSourceToSinkFlow
-                s.addBatch(parseSql(sql, Collections.emptyMap()).getItem1());
+                s.addBatch(parsedSql);
                 if (i % batchSize == 0) {
                     result.add(s.executeBatch());
                     s.clearBatch();
@@ -270,10 +274,11 @@ public abstract class JdbcSupport extends SqlParser {
             throw new IllegalArgumentException("batchSize must greater than 0.");
         }
         Map<String, ?> first = args.iterator().next();
-        Triple<String, List<String>, Map<String, Object>> prepared = prepare(sql, first);
+        Quadruple<String, List<String>, Map<String, Object>, String> prepared = prepare(sql, first);
         final List<String> argNames = prepared.getItem2();
         final String preparedSql = prepared.getItem1();
         try {
+            debugSql(prepared.getItem4(), args);
             return execute(preparedSql, ps -> {
                 final Stream.Builder<int[]> result = Stream.builder();
                 int i = 1;
@@ -308,11 +313,12 @@ public abstract class JdbcSupport extends SqlParser {
      * @return 受影响的行数
      */
     public int executeUpdate(final String sql, Map<String, ?> args) {
-        Triple<String, List<String>, Map<String, Object>> prepared = prepare(sql, args);
+        Quadruple<String, List<String>, Map<String, Object>, String> prepared = prepare(sql, args);
         final List<String> argNames = prepared.getItem2();
         final String preparedSql = prepared.getItem1();
         final Map<String, Object> data = prepared.getItem3();
         try {
+            debugSql(prepared.getItem4(), Collections.singletonList(args));
             return execute(preparedSql, sc -> {
                 if (data.isEmpty()) {
                     return sc.executeUpdate();
@@ -350,12 +356,13 @@ public abstract class JdbcSupport extends SqlParser {
      * @throws UncheckedSqlException 存储过程或函数执行过程中出现错误
      */
     public DataRow executeCallStatement(final String procedure, Map<String, Param> args) {
-        Pair<String, List<String>> preparedSqlAndArgNames = prepare(procedure, args);
-        final String executeSql = preparedSqlAndArgNames.getItem1();
-        final List<String> argNames = preparedSqlAndArgNames.getItem2();
+        Quadruple<String, List<String>, Map<String, Object>, String> prepared = prepare(procedure, args);
+        final String executeSql = prepared.getItem1();
+        final List<String> argNames = prepared.getItem2();
         CallableStatement statement = null;
         Connection connection = getConnection();
         try {
+            debugSql(prepared.getItem4(), Collections.singletonList(args));
             //noinspection SqlSourceToSinkFlow
             statement = connection.prepareCall(executeSql);
             List<String> outNames = new ArrayList<>();
@@ -416,6 +423,29 @@ public abstract class JdbcSupport extends SqlParser {
                 log.error("close statement error: ", e);
             }
             releaseConnection(connection, getDataSource());
+        }
+    }
+
+    /**
+     * debug模式打印sql和参数
+     *
+     * @param sql  sql
+     * @param args 参数
+     */
+    protected void debugSql(String sql, Collection<? extends Map<String, ?>> args) {
+        if (log.isDebugEnabled()) {
+            log.debug("SQL: {}", SqlUtil.buildConsoleSql(sql));
+            for (Map<String, ?> arg : args) {
+                StringJoiner sb = new StringJoiner(", ", "{", "}");
+                arg.forEach((k, v) -> {
+                    if (v == null) {
+                        sb.add(k + " -> null");
+                    } else {
+                        sb.add(k + " -> " + v + "(" + v.getClass().getSimpleName() + ")");
+                    }
+                });
+                log.debug("Args: {}", sb);
+            }
         }
     }
 

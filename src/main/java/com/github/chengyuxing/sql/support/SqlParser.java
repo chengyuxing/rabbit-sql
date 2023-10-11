@@ -1,7 +1,8 @@
 package com.github.chengyuxing.sql.support;
 
 import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.common.tuple.Triple;
+import com.github.chengyuxing.common.tuple.Quadruple;
+import com.github.chengyuxing.common.tuple.Tuples;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
 
 import java.util.Collections;
@@ -62,14 +63,14 @@ public abstract class SqlParser {
      *
      * @param sql  传名参数sql
      * @param args 参数字典
-     * @return 预编译sql和参数名和参数字典
+     * @return 预编译sql，参数名，参数字典，命名参数sql
      */
-    protected Triple<String, List<String>, Map<String, Object>> prepare(String sql, Map<String, ?> args) {
+    protected Quadruple<String, List<String>, Map<String, Object>, String> prepare(String sql, Map<String, ?> args) {
         Map<String, ?> data = args == null ? Collections.emptyMap() : args;
         Pair<String, Map<String, Object>> result = parseSql(sql, data);
         String parsedSql = result.getItem1();
         Map<String, Object> parsedData = result.getItem2();
         Pair<String, List<String>> p = sqlGenerator().generatePreparedSql(parsedSql, parsedData);
-        return Triple.of(p.getItem1(), p.getItem2(), parsedData);
+        return Tuples.quadruple(p.getItem1(), p.getItem2(), parsedData, parsedSql);
     }
 }

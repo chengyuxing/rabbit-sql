@@ -48,7 +48,7 @@ import java.util.stream.Stream;
  */
 public class BakiDao extends JdbcSupport implements Baki {
     private final static Logger log = LoggerFactory.getLogger(BakiDao.class);
-    private final DataSource dataSource;
+    private DataSource dataSource;
     private DatabaseMetaData currentMetaData;
     private String databaseId;
     private SqlGenerator sqlGenerator;
@@ -212,8 +212,8 @@ public class BakiDao extends JdbcSupport implements Baki {
                 }
                 int i = 0;
                 for (Map<String, ?> item : data) {
-                    String sql = sqlGenerator.generateNamedParamInsert(tableName, item, tableFields, ignoreNull);
-                    i += executeUpdate(sql, item);
+                    String insert = sqlGenerator.generateNamedParamInsert(tableName, item, tableFields, ignoreNull);
+                    i += executeUpdate(insert, item);
                 }
                 return i;
             }
@@ -538,6 +538,10 @@ public class BakiDao extends JdbcSupport implements Baki {
     @Override
     protected void releaseConnection(Connection connection, DataSource dataSource) {
         DataSourceUtil.releaseConnection(connection, dataSource);
+    }
+
+    protected void setDataSource(DataSource dataSource) {
+        this.dataSource = dataSource;
     }
 
     public void setGlobalPageHelperProvider(PageHelperProvider globalPageHelperProvider) {

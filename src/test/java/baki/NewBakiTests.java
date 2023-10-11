@@ -75,9 +75,13 @@ public class NewBakiTests {
 
     @Test
     public void testDel() {
-        baki.delete("test.user")
-                .arg("id", 10)
-                .execute("id = :id");
+        int i = baki.delete("test.user", "id = :id")
+                .fast()
+                .save(Arrays.asList(
+                        Args.of("id", 2100032),
+                        Args.of("id", 2100033))
+                );
+        System.out.println(i);
     }
 
     @Test

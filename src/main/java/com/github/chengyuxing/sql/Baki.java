@@ -1,6 +1,5 @@
 package com.github.chengyuxing.sql;
 
-import com.github.chengyuxing.sql.support.executor.DeleteExecutor;
 import com.github.chengyuxing.sql.support.executor.Executor;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
 import com.github.chengyuxing.sql.support.executor.SaveExecutor;
@@ -49,12 +48,14 @@ public interface Baki {
     SaveExecutor insert(String tableName);
 
     /**
-     * 删除执行器
+     * 删除执行器<br>
+     * 其中方法 {@link SaveExecutor#safe() safe(boolean?)} 和 {@link SaveExecutor#ignoreNull() ignoreNull(boolean?)}
+     * 不产生作用，请忽略
      *
      * @param tableName 表名
      * @return 删除执行器
      */
-    DeleteExecutor delete(String tableName);
+    SaveExecutor delete(String tableName, String where);
 
     /**
      * 通用执行器

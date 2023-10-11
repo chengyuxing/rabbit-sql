@@ -16,7 +16,6 @@ import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.github.chengyuxing.sql.support.JdbcSupport;
 import com.github.chengyuxing.sql.support.SqlInterceptor;
-import com.github.chengyuxing.sql.support.executor.DeleteExecutor;
 import com.github.chengyuxing.sql.support.executor.Executor;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
 import com.github.chengyuxing.sql.support.executor.SaveExecutor;
@@ -222,13 +221,29 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public DeleteExecutor delete(String tableName) {
-        return new DeleteExecutor(tableName) {
+    public SaveExecutor delete(String tableName, String where) {
+        return new SaveExecutor() {
             @Override
-            public int execute(String where) {
+            public int save(Map<String, ?> data) {
+                return save(Collections.singletonList(data));
+            }
+
+            @Override
+            public int save(Collection<? extends Map<String, ?>> data) {
                 String whereSql = parseSql(where, Collections.emptyMap()).getItem1();
                 String w = StringUtil.startsWithIgnoreCase(whereSql.trim(), "where") ? whereSql : "\nwhere " + whereSql;
-                return executeUpdate("delete from " + tableName + w, args);
+                String delete = "delete from " + tableName + w;
+                if (data.isEmpty()) {
+                    return executeUpdate(delete, Collections.emptyMap());
+                }
+                if (fast) {
+                    return executeBatchUpdate(delete, data, batchSize);
+                }
+                int i = 0;
+                for (Map<String, ?> item : data) {
+                    i += executeUpdate(delete, item);
+                }
+                return i;
             }
         };
     }

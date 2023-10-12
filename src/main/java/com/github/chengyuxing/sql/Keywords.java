@@ -73,6 +73,6 @@ public class Keywords {
             "percent_rank", "quote_ident", "format", "pg_get_userbyid", "array_upper", "array_lower", "upper", "lower",
             "uuid_generate_v1mc", "trim", "regexp_matches", "regexp_match", "string_agg", "arraycontains", "array_remove",
             "to_number", "array_prepend", "array_append", "lpad", "rpad", "regexp_replace", "regexp_split_to_array",
-            "regexp_split_to_table", "ceil", "concat", "decode"
+            "regexp_split_to_table", "ceil", "concat", "decode","jsonb_agg","json_agg"
     };
 }

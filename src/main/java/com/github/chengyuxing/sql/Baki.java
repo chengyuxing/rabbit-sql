@@ -53,6 +53,7 @@ public interface Baki {
      * 不产生作用，请忽略
      *
      * @param tableName 表名
+     * @param where     条件
      * @return 删除执行器
      */
     SaveExecutor delete(String tableName, String where);

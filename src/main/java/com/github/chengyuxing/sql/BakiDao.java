@@ -502,7 +502,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
         }
         if (sqlInterceptor != null) {
-            String error = "reject to execute invalid sql.\nSQL: " + trimSql + "\nArgs: " + data;
+            String error = "permission denied: reject to execute invalid sql.\nSQL: " + trimSql + "\nArgs: " + data;
             boolean request;
             try {
                 request = sqlInterceptor.prevHandle(trimSql, data, metaData());

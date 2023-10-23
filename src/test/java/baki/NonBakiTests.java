@@ -1,6 +1,7 @@
 package baki;
 
 import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.common.DateTimes;
 import com.github.chengyuxing.common.utils.Jackson;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.PagedResource;
@@ -31,5 +32,15 @@ public class NonBakiTests {
         PagedResource<DataRow> pagedResource = PagedResource.of(pageHelper, Collections.singletonList(DataRow.of("a", 1, "b", 2)));
         String j = Jackson.toJson(pagedResource);
         System.out.println(j);
+    }
+
+    @Test
+    public void testArgs() {
+        Args<Object> args = Args.of("name", "cyx", "age", 30, "date", "2023-8-4 22:45", "info", Args.of("address", "kunming"));
+        args.updateValue("date", DateTimes::toLocalDateTime);
+        args.updateKey("name", "NAME");
+        args.updateKeys(String::toUpperCase);
+        System.out.println(args);
+        System.out.println(DataRow.of());
     }
 }

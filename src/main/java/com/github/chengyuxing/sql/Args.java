@@ -134,9 +134,10 @@ public final class Args<V> extends HashMap<String, V> implements MapExtends<V> {
      * @param updater 值更新器（{@code 旧值 -> 新值}）
      * @return 是否更新成功
      */
-    public boolean updateValue(String key, Function<V, V> updater) {
+    @SuppressWarnings("unchecked")
+    public <T> boolean updateValue(String key, Function<T, V> updater) {
         if (containsKey(key)) {
-            put(key, updater.apply(get(key)));
+            put(key, updater.apply((T) get(key)));
             return true;
         }
         return false;

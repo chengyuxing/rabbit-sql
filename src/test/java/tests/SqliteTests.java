@@ -82,7 +82,6 @@ public class SqliteTests {
                 .save(DataRow.of("id", 10, "name", "cyx"));
 
         Args<Object> args = Args.of("dt", "2022-1-2");
-        args.updateValue("dt", v -> DateTimes.toLocalDateTime(v.toString()));
         args.updateKey("dt", "date");
     }
 

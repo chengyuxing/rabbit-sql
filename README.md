@@ -35,7 +35,7 @@ Maven central
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.7.3</version>
+    <version>7.7.5</version>
 </dependency>
 ```
 
@@ -147,9 +147,9 @@ baki.of("{call test.fun_query(:c::refcursor)}")
 
 > If **postgresql**, you must use transaction when returns cursor.
 
-### Update & Insert
+### Update & Insert & Delete
 
-I'm going to focus here on the update operation, use [baki](#BakiDao)'s  `update` operation, `update` returns a **update executor**，some details following:
+I'm going to focus here on the update operation, use [baki](#BakiDao)'s  `update` operation, `update` returns an **update executor**，some details following:
 
 - **safe** property: get all table fields before execute update, and remove updated data fields which not exist in table fields;
 

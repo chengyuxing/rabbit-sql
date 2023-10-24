@@ -35,7 +35,7 @@ Maven 中央仓库
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.7.3</version>
+    <version>7.7.5</version>
 </dependency>
 ```
 
@@ -147,7 +147,7 @@ baki.of("{call test.fun_query(:c::refcursor)}")
 
 > 如果是**postgresql**数据库，返回值有游标需要使用[事务](#事务)进行包裹。
 
-### 更新&插入
+### 更新&插入&删除
 
 这里主要着重讲一下更新操作，更新一般使用[baki](#BakiDao)提供的 `update` 方法，`update` 返回一个**更新执行器**，具体说下几个细节：
 

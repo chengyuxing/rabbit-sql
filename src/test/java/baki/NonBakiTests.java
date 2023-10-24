@@ -37,7 +37,6 @@ public class NonBakiTests {
     @Test
     public void testArgs() {
         Args<Object> args = Args.of("name", "cyx", "age", 30, "date", "2023-8-4 22:45", "info", Args.of("address", "kunming"));
-        args.updateValue("date", DateTimes::toLocalDateTime);
         args.updateKey("name", "NAME");
         args.updateKeys(String::toUpperCase);
         System.out.println(args);

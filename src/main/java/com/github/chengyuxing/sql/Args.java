@@ -128,22 +128,6 @@ public final class Args<V> extends HashMap<String, V> implements MapExtends<V> {
     }
 
     /**
-     * 更新一个值
-     *
-     * @param key     键
-     * @param updater 值更新器（{@code 旧值 -> 新值}）
-     * @return 是否更新成功
-     */
-    @SuppressWarnings("unchecked")
-    public <T> boolean updateValue(String key, Function<T, V> updater) {
-        if (containsKey(key)) {
-            put(key, updater.apply((T) get(key)));
-            return true;
-        }
-        return false;
-    }
-
-    /**
      * 更新一个键名
      *
      * @param oldKey 旧键名

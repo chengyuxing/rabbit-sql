@@ -23,7 +23,7 @@ import java.util.stream.StreamSupport;
 
 /**
  * <h2>jdbc基本操作支持</h2>
- * 提供基本的通用接口，支持流查询、批量更新、ddl、dml、存储过程、函数、过程语句的执行，支持执行传名参数sql<br>
+ * 提供基本的通用接口，支持流查询、ddl、dml、存储过程、函数、过程语句的执行，支持执行传名参数sql<br>
  * 例如：
  * <blockquote>
  * <pre>select * from ... where name = :name or id in (${!idList}) ${cnd};</pre>
@@ -262,7 +262,7 @@ public abstract class JdbcSupport extends SqlParser {
     }
 
     /**
-     * 批量执行非查询语句
+     * 批量执行非查询语句 (insert，update，delete)
      *
      * @param sql       sql
      * @param args      数据

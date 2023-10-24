@@ -497,23 +497,34 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     public Pair<String, Map<String, Object>> get(String name, Map<String, ?> args) {
         String sql = get(name);
-        if (!containsAnyIgnoreCase(sql, TAGS)) {
-            return Pair.of(sql, Collections.emptyMap());
-        }
         try {
-            DynamicSqlParser parser = newDynamicSqlParser();
-            Map<String, Object> newArgs = new HashMap<>();
-            if (Objects.nonNull(args)) {
-                newArgs.putAll(args);
-            }
-            newArgs.put("_parameter", args);
-            newArgs.put("_databaseId", databaseId);
-            String parsedSql = parser.parse(sql, newArgs);
-            parsedSql = SqlUtil.repairSyntaxError(parsedSql);
-            return Pair.of(parsedSql, parser.getForVars());
+            return parseDynamicSql(sql, args);
         } catch (Exception e) {
             throw new ScriptSyntaxException("an error occurred when getting dynamic sql of name: " + name, e);
         }
+    }
+
+    /**
+     * 解析动态sql
+     *
+     * @param sql  动态sql
+     * @param args 参数
+     * @return 解析后的sql和#for表达式中的临时变量（如果有）
+     */
+    public Pair<String, Map<String, Object>> parseDynamicSql(String sql, Map<String, ?> args) {
+        if (!containsAnyIgnoreCase(sql, TAGS)) {
+            return Pair.of(sql, Collections.emptyMap());
+        }
+        DynamicSqlParser parser = newDynamicSqlParser();
+        Map<String, Object> newArgs = new HashMap<>();
+        if (Objects.nonNull(args)) {
+            newArgs.putAll(args);
+        }
+        newArgs.put("_parameter", args);
+        newArgs.put("_databaseId", databaseId);
+        String parsedSql = parser.parse(sql, newArgs);
+        parsedSql = SqlUtil.repairSyntaxError(parsedSql);
+        return Pair.of(parsedSql, parser.getForVars());
     }
 
     /**

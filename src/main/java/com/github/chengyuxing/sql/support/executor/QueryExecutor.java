@@ -1,6 +1,7 @@
 package com.github.chengyuxing.sql.support.executor;
 
 import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.page.IPageable;
 
 import java.util.HashMap;
@@ -35,7 +36,20 @@ public abstract class QueryExecutor {
      */
     public QueryExecutor args(Map<String, Object> args) {
         if (args != null) {
-            this.args = args;
+            this.args = new HashMap<>(args);
+        }
+        return this;
+    }
+
+    /**
+     * 设置sql中的参数字典
+     *
+     * @param keyValues 多组 key-value 结构参数
+     * @return 查询执行器
+     */
+    public QueryExecutor args(Object... keyValues) {
+        if (keyValues.length > 0) {
+            this.args = Args.of(keyValues);
         }
         return this;
     }

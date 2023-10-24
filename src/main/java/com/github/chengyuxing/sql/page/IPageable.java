@@ -43,7 +43,7 @@ public abstract class IPageable {
      */
     public IPageable args(Map<String, Object> args) {
         if (args != null) {
-            this.args = args;
+            this.args = new HashMap<>(args);
         }
         return this;
     }

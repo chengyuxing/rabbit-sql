@@ -460,7 +460,7 @@ public class MyTest {
             baki.query("select current_timestamp, version()")
                     .findFirst()
                     .ifPresent(System.out::println);
-            baki.insert("test.history").save(DataRow.of("userid", UUID.randomUUID(), "words", "transactional").toMap());
+            baki.insert("test.history").save(DataRow.of("userid", UUID.randomUUID(), "words", "transactional"));
         });
     }
 

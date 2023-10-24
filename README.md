@@ -157,7 +157,7 @@ I'm going to focus here on the update operation, use [baki](#BakiDao)'s  `update
   >
   > Same as **insert** operation.
 
-- **fast** property: in fact, is invoke jdbc batch execute, it's not prepared sql, so not support blob file.
+- **fast** property: in fact, `jdbc batch execute` is invoked.
 
   > It's not  recommend unless you need to batch execute more than 1000 rows of data.
   >

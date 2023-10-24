@@ -291,7 +291,7 @@ Similar to Mybatis's `foreach`, and more features:
 ```sql
 --#for item,idx of :list delimiter ',' open '' close ''
 	...
---#end
+--#done
 ```
 
 **For expression** syntax:

@@ -291,7 +291,7 @@ select id, name, address, email, enable from ... where id in ('I''m Ok!', 'book'
 ```sql
 --#for item,idx of :list delimiter ',' open '' close ''
 	...
---#end
+--#done
 ```
 
 **for表达式**语法说明：

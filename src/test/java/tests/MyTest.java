@@ -365,8 +365,7 @@ public class MyTest {
     public void testSqlFile() throws InterruptedException {
         try (Stream<DataRow> s = baki.query("select * from current_date,now()")
                 .args(DataRow.of().add("id", 4)).stream()) {
-            s.map(DataRow::toMap)
-                    .forEach(System.out::println);
+            s.forEach(System.out::println);
         }
         try (Stream<DataRow> s = baki.query("select * from test.message --用户ID\n" +
                 ";").stream()) {

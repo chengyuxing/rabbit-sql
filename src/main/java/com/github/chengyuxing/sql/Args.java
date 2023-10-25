@@ -75,7 +75,12 @@ public final class Args<V> extends HashMap<String, V> implements MapExtends<V> {
             Args<Object> args = of();
             Class<?> clazz = entity.getClass();
             for (Method method : ReflectUtil.getRWMethods(entity.getClass()).getItem1()) {
-                Field classField = ReflectUtil.getGetterField(clazz, method);
+                Field classField;
+                try {
+                    classField = ReflectUtil.getGetterField(clazz, method);
+                } catch (NoSuchFieldException e) {
+                    continue;
+                }
                 if (Objects.isNull(classField)) {
                     continue;
                 }
@@ -83,8 +88,8 @@ public final class Args<V> extends HashMap<String, V> implements MapExtends<V> {
                 args.put(classField.getName(), value);
             }
             return args;
-        } catch (IllegalAccessException | IntrospectionException | InvocationTargetException | NoSuchFieldException e) {
-            throw new RuntimeException("convert to DataRow error: ", e);
+        } catch (IllegalAccessException | IntrospectionException | InvocationTargetException e) {
+            throw new RuntimeException("convert to DataRow error.", e);
         }
     }
 

@@ -16,7 +16,7 @@ import com.github.chengyuxing.sql.page.PageHelper;
 public class PGPageHelper extends PageHelper {
 
     public int limit() {
-        return Math.min(recordCount, pageSize);
+        return pageSize;
     }
 
     public int offset() {

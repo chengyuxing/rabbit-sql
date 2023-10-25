@@ -328,7 +328,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 currentMetaData = c.getMetaData();
                 return currentMetaData;
             } catch (SQLException e) {
-                throw new UncheckedSqlException("get metadata error: ", e);
+                throw new UncheckedSqlException("get metadata error.", e);
             }
         });
     }
@@ -404,7 +404,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             try {
                 databaseId = metaData.getDatabaseProductName().toLowerCase();
             } catch (SQLException e) {
-                throw new UncheckedSqlException("get database id error: ", e);
+                throw new UncheckedSqlException("get database id error.", e);
             }
         }
         return databaseId;

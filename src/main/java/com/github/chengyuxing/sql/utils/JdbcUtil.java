@@ -219,13 +219,13 @@ public class JdbcUtil {
             try {
                 statement.setBinaryStream(index, Files.newInputStream((Path) value));
             } catch (IOException e) {
-                throw new SQLException("set binary value failed: ", e);
+                throw new SQLException("set binary value failed.", e);
             }
         } else if (value instanceof File) {
             try {
                 statement.setBinaryStream(index, new FileInputStream((File) value));
             } catch (FileNotFoundException e) {
-                throw new SQLException("set binary value failed: ", e);
+                throw new SQLException("set binary value failed.", e);
             }
         } else {
             statement.setObject(index, value);

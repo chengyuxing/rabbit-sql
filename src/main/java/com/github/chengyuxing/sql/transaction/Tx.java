@@ -169,7 +169,7 @@ public final class Tx {
                 try {
                     holder.getConnection().commit();
                 } catch (SQLException e) {
-                    throw new TransactionException("transaction commit failed: ", e);
+                    throw new TransactionException("transaction commit failed.", e);
                 }
             }
         });
@@ -188,7 +188,7 @@ public final class Tx {
                 try {
                     holder.getConnection().rollback();
                 } catch (SQLException e) {
-                    throw new TransactionException("transaction rollback failed: ", e);
+                    throw new TransactionException("transaction rollback failed.", e);
                 }
             }
         });

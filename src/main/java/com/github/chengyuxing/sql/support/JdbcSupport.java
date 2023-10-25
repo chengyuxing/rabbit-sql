@@ -250,12 +250,12 @@ public abstract class JdbcSupport extends SqlParser {
             }
             s = null;
             releaseConnection(connection, getDataSource());
-            throw new UncheckedSqlException("execute batch error: ", e);
+            throw new UncheckedSqlException("execute batch error.", e);
         } finally {
             try {
                 JdbcUtil.closeStatement(s);
             } catch (SQLException e) {
-                log.error("close statement error: ", e);
+                log.error("close statement error.", e);
             }
             releaseConnection(connection, getDataSource());
         }
@@ -420,7 +420,7 @@ public abstract class JdbcSupport extends SqlParser {
             try {
                 JdbcUtil.closeStatement(statement);
             } catch (SQLException e) {
-                log.error("close statement error: ", e);
+                log.error("close statement error.", e);
             }
             releaseConnection(connection, getDataSource());
         }
@@ -467,7 +467,7 @@ public abstract class JdbcSupport extends SqlParser {
                     sc.getWarnings().forEach(r -> log.warn("[{}] [{}] {}", LocalDateTime.now(), state, r.getMessage()));
                 }
             } catch (SQLException e) {
-                log.error("get sql warning error: ", e);
+                log.error("get sql warning error.", e);
             }
         }
     }

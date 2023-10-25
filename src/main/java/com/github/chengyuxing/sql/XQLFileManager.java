@@ -337,9 +337,9 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                 }
             }
         } catch (IOException e) {
-            throw new UncheckedIOException("load sql file error: ", e);
+            throw new UncheckedIOException("load sql file error.", e);
         } catch (URISyntaxException e) {
-            throw new RuntimeException("sql file uri syntax error: ", e);
+            throw new RuntimeException("sql file uri syntax error.", e);
         }
     }
 
@@ -354,7 +354,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             }
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
                  InvocationTargetException | NoSuchMethodException e) {
-            throw new RuntimeException("init pipe error: ", e);
+            throw new RuntimeException("init pipe error.", e);
         }
         if (log.isDebugEnabled()) {
             if (!pipeInstances.isEmpty())

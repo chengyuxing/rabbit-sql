@@ -77,7 +77,7 @@ public class XQLFileManagerConfig {
             }
             config.copyStateTo(this);
         } catch (Exception e) {
-            throw new YamlDeserializeException("load yaml config error: ", e);
+            throw new YamlDeserializeException("load yaml config error.", e);
         }
     }
 

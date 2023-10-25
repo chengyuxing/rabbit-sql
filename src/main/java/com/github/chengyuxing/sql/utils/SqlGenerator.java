@@ -55,9 +55,9 @@ public class SqlGenerator {
     }
 
     /**
-     * 解析传名参数sql处理为预编译的sql
+     * 解析命名参数sql处理为预编译的sql
      *
-     * @param sql  带参数占位符的sql
+     * @param sql  命名参数占位符sql
      * @param args 参数
      * @return 预编译SQL和顺序的参数名集合
      */
@@ -66,9 +66,9 @@ public class SqlGenerator {
     }
 
     /**
-     * 解析传名参数sql处理为普通sql
+     * 解析命名参数sql处理为普通sql
      *
-     * @param sql  带参数占位符的sql
+     * @param sql  命名参数占位符sql
      * @param args 参数
      * @return 普通sql
      */
@@ -84,7 +84,7 @@ public class SqlGenerator {
      * @param prepare 是否生成预编译sql
      * @return 预编译/普通sql和顺序的参数名集合
      */
-    private Pair<String, List<String>> _generateSql(final String sql, Map<String, ?> args, boolean prepare) {
+    protected Pair<String, List<String>> _generateSql(final String sql, Map<String, ?> args, boolean prepare) {
         Map<String, ?> data = args == null ? new HashMap<>() : args;
         // resolve the sql string template first
         String fullSql = SqlUtil.formatSql(sql, data);
@@ -145,36 +145,6 @@ public class SqlGenerator {
     }
 
     /**
-     * 构建一个普通插入语句
-     *
-     * @param tableName   表名
-     * @param row         数据
-     * @param fieldsScope 只允许数据行key存在的字段范围
-     * @param ignoreNull  忽略null值
-     * @return 插入语句
-     * @throws IllegalArgumentException 如果参数为空
-     */
-    public String generateInsert(final String tableName, final Map<String, ?> row, List<String> fieldsScope, boolean ignoreNull) {
-        Set<String> keys = filterKeys(row, fieldsScope);
-        if (keys.isEmpty()) {
-            throw new IllegalArgumentException("empty field set, generate insert sql error.");
-        }
-        StringJoiner f = new StringJoiner(", ");
-        StringJoiner v = new StringJoiner(", ");
-        for (String key : keys) {
-            if (row.containsKey(key)) {
-                Object value = row.get(key);
-                if (ignoreNull && Objects.isNull(value)) {
-                    continue;
-                }
-                f.add(key);
-                v.add(quoteFormatValue(value));
-            }
-        }
-        return "insert into " + tableName + "(" + f + ") \nvalues (" + v + ")";
-    }
-
-    /**
      * 构建一个传名参数占位符的插入语句
      *
      * @param tableName   表名
@@ -200,7 +170,7 @@ public class SqlGenerator {
                 h.add(namedParamPrefix + key);
             }
         }
-        return "insert into " + tableName + "(" + f + ") \nvalues (" + h + ")";
+        return "insert into " + tableName + "(" + f + ") values (" + h + ")";
     }
 
     /**
@@ -231,42 +201,7 @@ public class SqlGenerator {
                 sb.add(key + " = " + namedParamPrefix + key);
             }
         }
-        return "update " + tableName + " \nset " + sb + "\nwhere " + where;
-    }
-
-    /**
-     * 构建一个更新语句
-     *
-     * @param tableName   表名
-     * @param where       where条件
-     * @param data        数据
-     * @param fieldsScope 只允许数据行key存在的字段范围
-     * @param ignoreNull  忽略null值
-     * @return 传名参数占位符的sql或普通sql
-     */
-    public String generateUpdate(String tableName, String where, Map<String, ?> data, List<String> fieldsScope, boolean ignoreNull) {
-        String whereStatement = where;
-        Map<String, ?> updateSets = getUpdateSets(whereStatement, data);
-        if (updateSets.isEmpty()) {
-            throw new IllegalArgumentException("empty field set, generate update sql error.");
-        }
-        Set<String> keys = filterKeys(updateSets, fieldsScope);
-        if (keys.isEmpty()) {
-            throw new IllegalArgumentException("empty field set, generate update sql error.");
-        }
-        StringJoiner sb = new StringJoiner(",\n\t");
-        for (String key : keys) {
-            if (updateSets.containsKey(key)) {
-                Object value = updateSets.get(key);
-                if (ignoreNull && Objects.isNull(value)) {
-                    continue;
-                }
-                String v = quoteFormatValue(value);
-                sb.add(key + " = " + v);
-            }
-        }
-        whereStatement = generateSql(whereStatement, data);
-        return "update " + tableName + " \nset " + sb + "\nwhere " + whereStatement;
+        return "update " + tableName + "\nset " + sb + "\nwhere " + where;
     }
 
     /**
@@ -277,7 +212,7 @@ public class SqlGenerator {
      * @return set参数字典
      */
     public Map<String, ?> getUpdateSets(String where, Map<String, ?> args) {
-        if (args == null || args.isEmpty()) {
+        if (Objects.isNull(args) || args.isEmpty()) {
             return new HashMap<>();
         }
         Map<String, Object> sets = new HashMap<>();
@@ -301,7 +236,7 @@ public class SqlGenerator {
      */
     public String generateCountQuery(final String recordQuery) {
         if (StringUtil.startsWithIgnoreCase(recordQuery.trim(), "with")) {
-
+            // TODO: 2023/10/25 考虑是否需要特殊处理下with查询的count语句
         }
         return "select count(*) from (" + recordQuery + ") r_data";
     }

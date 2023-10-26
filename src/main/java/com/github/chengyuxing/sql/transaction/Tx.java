@@ -88,7 +88,7 @@ public final class Tx {
             commit();
         } catch (Exception e) {
             rollback();
-            throw new TransactionException("transaction will rollback cause:", e);
+            throw new TransactionException("transaction is rollback.", e);
         }
     }
 
@@ -113,7 +113,7 @@ public final class Tx {
             return result;
         } catch (Exception e) {
             rollback();
-            throw new TransactionException("transaction will rollback cause:", e);
+            throw new TransactionException("transaction is rollback.", e);
         }
     }
 

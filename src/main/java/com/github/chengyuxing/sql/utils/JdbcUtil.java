@@ -75,7 +75,7 @@ public class JdbcUtil {
                 //noinspection ResultOfMethodCallIgnored
                 ins.read(bytes);
             } catch (IOException e) {
-                throw new UncheckedIOException("read blob catch an error:", e);
+                throw new UncheckedIOException("read blob catch an error.", e);
             }
         }
         return bytes;

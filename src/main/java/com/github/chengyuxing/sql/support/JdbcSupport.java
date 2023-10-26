@@ -85,7 +85,7 @@ public abstract class JdbcSupport extends SqlParser {
             try {
                 JdbcUtil.closeStatement(statement);
             } catch (SQLException e) {
-                log.error("close statement error:", e);
+                log.error("close statement error.", e);
             }
             releaseConnection(connection, getDataSource());
         }

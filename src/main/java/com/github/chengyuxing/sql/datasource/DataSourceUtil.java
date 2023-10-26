@@ -146,7 +146,7 @@ public abstract class DataSourceUtil {
     private static Connection fetchConnection(DataSource dataSource) throws SQLException {
         Connection connection = dataSource.getConnection();
         if (connection == null) {
-            throw new ConnectionStatusException("DataSource returned null from DataSource:" + dataSource);
+            throw new ConnectionStatusException("DataSource returned null from DataSource: " + dataSource);
         }
         return connection;
     }

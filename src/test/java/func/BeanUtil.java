@@ -19,7 +19,7 @@ public class BeanUtil {
         } else if (methodName.startsWith("is")) {
             prefix = "is";
         } else {
-            throw new NoSuchMethodException("无效的Getter方法:" + methodName);
+            throw new NoSuchMethodException("无效的Getter方法: " + methodName);
         }
         return toLowerCaseFirstOne(methodName.replace(prefix, ""));
     }

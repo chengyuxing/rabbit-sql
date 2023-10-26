@@ -535,7 +535,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         try {
             return DataSourceUtil.getConnection(dataSource);
         } catch (SQLException e) {
-            throw new ConnectionStatusException("fetch connection failed:", e);
+            throw new ConnectionStatusException("fetch connection failed.", e);
         }
     }
 

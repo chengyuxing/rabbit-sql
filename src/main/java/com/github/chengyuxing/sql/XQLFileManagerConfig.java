@@ -193,7 +193,7 @@ public class XQLFileManagerConfig {
      * 初始化扫描sql时，如果sql文件中没有找到匹配的字符串模版，则从全局常量中寻找
      * 格式为：
      * <blockquote>
-     * <pre>constants: {db:"test"}</pre>
+     * <pre>constants: {db: "test"}</pre>
      * <pre>sql: {@code select ${db}.user from table;}</pre>
      * <pre>result: select test.user from table.</pre>
      * </blockquote>

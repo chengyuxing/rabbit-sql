@@ -2,13 +2,12 @@ package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.MapExtends;
 import com.github.chengyuxing.common.utils.Jackson;
-import com.github.chengyuxing.common.utils.ReflectUtil;
+import com.github.chengyuxing.common.utils.ObjectUtil;
 
-import java.beans.IntrospectionException;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -51,16 +50,7 @@ public final class Args<V> extends HashMap<String, V> implements MapExtends<V> {
      * @return 参数对象
      */
     public static Args<Object> of(Object... input) {
-        if ((input.length & 1) != 0) {
-            throw new IllegalArgumentException("key value are not a pair.");
-        }
-        int capacity = input.length >> 1;
-        Args<Object> args = of();
-        for (int i = 0; i < capacity; i++) {
-            int idx = i << 1;
-            args.put(input[idx].toString(), input[idx + 1]);
-        }
-        return args;
+        return ObjectUtil.pairs2map(i -> Args.of(), input);
     }
 
     /**
@@ -70,27 +60,7 @@ public final class Args<V> extends HashMap<String, V> implements MapExtends<V> {
      * @return 参数对象
      */
     public static Args<Object> ofEntity(Object entity) {
-        if (Objects.isNull(entity)) return of();
-        try {
-            Args<Object> args = of();
-            Class<?> clazz = entity.getClass();
-            for (Method method : ReflectUtil.getRWMethods(entity.getClass()).getItem1()) {
-                Field classField;
-                try {
-                    classField = ReflectUtil.getGetterField(clazz, method);
-                } catch (NoSuchFieldException e) {
-                    continue;
-                }
-                if (Objects.isNull(classField)) {
-                    continue;
-                }
-                Object value = method.invoke(entity);
-                args.put(classField.getName(), value);
-            }
-            return args;
-        } catch (IllegalAccessException | IntrospectionException | InvocationTargetException e) {
-            throw new RuntimeException("convert to DataRow error.", e);
-        }
+        return ObjectUtil.entity2map(entity, i -> Args.of());
     }
 
     /**

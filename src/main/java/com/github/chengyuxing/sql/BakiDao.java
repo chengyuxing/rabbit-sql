@@ -316,9 +316,8 @@ public class BakiDao extends JdbcSupport implements Baki {
     /**
      * {@inheritDoc}
      *
-     * @return 获取当前数据库元数据对象（连接为关闭状态）
+     * @return 获取当前数据库元数据对象
      */
-    @Override
     public DatabaseMetaData metaData() {
         if (currentMetaData != null) {
             return currentMetaData;

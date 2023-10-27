@@ -2,7 +2,6 @@ package baki;
 
 import baki.entity.User;
 import com.github.chengyuxing.common.DataRow;
-import com.github.chengyuxing.common.DateTimes;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.Baki;
 import com.github.chengyuxing.sql.BakiDao;
@@ -14,7 +13,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.sql.*;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -172,7 +171,6 @@ public class NewBakiTests {
     }
 
     @Test
-    public void testArgs2() {
-
+    public void testMetaData() throws SQLException {
     }
 }

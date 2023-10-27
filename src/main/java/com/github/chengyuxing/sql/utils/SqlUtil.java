@@ -437,7 +437,7 @@ public class SqlUtil {
      * @return 普通sql或语法高亮的sql
      */
     public static String buildConsoleSql(String sql) {
-        if (System.console() != null) {
+        if (System.console() != null && System.getenv().get("TERM") != null) {
             return highlightSql(sql);
         }
         return sql;

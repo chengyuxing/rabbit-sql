@@ -375,13 +375,11 @@ public class SqlUtil {
                 String key = maybeKeywords.get(i);
                 if (!key.trim().isEmpty()) {
                     // keywords highlight
-                    if (StringUtil.equalsAnyIgnoreCase(key, Keywords.STANDARD) || StringUtil.equalsAnyIgnoreCase(key, Keywords.POSTGRESQL)) {
+                    if (StringUtil.equalsAnyIgnoreCase(key, Keywords.STANDARD)) {
                         maybeKeywords.set(i, Printer.colorful(key, Color.DARK_PURPLE));
                         // functions highlight
-                    } else if (StringUtil.containsAnyIgnoreCase(key, Keywords.FUNCTIONS)) {
-                        if (rSql.contains(key + "(")) {
-                            maybeKeywords.set(i, Printer.colorful(key, Color.YELLOW));
-                        }
+                    } else if (rSql.contains(key + "(")) {
+                        maybeKeywords.set(i, Printer.colorful(key, Color.BLUE));
                         // number highlight
                     } else if (StringUtil.isNumeric(key)) {
                         maybeKeywords.set(i, Printer.colorful(key, Color.DARK_CYAN));
@@ -389,7 +387,7 @@ public class SqlUtil {
                     } else if (key.equals("$$")) {
                         maybeKeywords.set(i, Printer.colorful(key, Color.DARK_GREEN));
                         // symbol '*' highlight
-                    } else if (key.contains("*") && !key.contains("/*") && !key.contains("*/")) {
+                    } else if (key.equals("*")) {
                         maybeKeywords.set(i, key.replace("*", Printer.colorful("*", Color.YELLOW)));
                     }
                 }

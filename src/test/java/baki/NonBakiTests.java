@@ -8,6 +8,7 @@ import com.github.chengyuxing.sql.PagedResource;
 import com.github.chengyuxing.sql.XQLFileManager;
 import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
+import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
 
 import java.util.Collections;
@@ -41,5 +42,19 @@ public class NonBakiTests {
         args.updateKeys(String::toUpperCase);
         System.out.println(args);
         System.out.println(DataRow.of());
+    }
+
+    @Test
+    public void highlightSqlTest() {
+        // language=SQL
+        String sql = "select count(*),\n" +
+                "       count(*) filter ( where grade > 90 )               greate,\n" +
+                "       -- #if :_databaseId != blank\n" +
+                "        count(*) filter ( where grade < 90 and grade > 60) good,\n" +
+                "       -- #fi\n" +
+                "       count(*) filter ( where grade < 60 )               bad\n" +
+                "from test.score;";
+
+        System.out.println(SqlUtil.highlightSql(sql));
     }
 }

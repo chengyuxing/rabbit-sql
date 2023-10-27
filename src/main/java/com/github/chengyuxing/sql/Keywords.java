@@ -57,22 +57,9 @@ public class Keywords {
             "verbose", "version", "view", "views", "volatile", "when", "where", "whitespace", "window",
             "with", "within", "without", "work", "wrapper", "write", "xml", "xmlattributes", "xmlconcat",
             "xmlelement", "xmlexists", "xmlforest", "xmlnamespaces", "xmlparse", "xmlpi", "xmlroot",
-            "xmlserialize", "xmltable", "year", "yes", "zone"
-    };
-
-    public static String[] POSTGRESQL = new String[]{
-            "raise", "notice", "slice", "loop", "json", "jsonb", "record", "elsif", "minutes", "days", "hours",
-            "seconds", "foreach", "exception", "return", "internal", "bytea"
-    };
-
-    public static String[] FUNCTIONS = new String[]{
-            "sum", "count", "round", "row_number", "rank", "unnest", "date_trunc", "trunc", "string_to_array", "substr",
-            "substring", "length", "array_agg", "to_char", "to_date", "to_timestamp", "quote_literal", "jsonb_build_object",
-            "jsonb_path_query", "gen_random_uuid", "version", "generate_series", "jsonb_build_array", "max", "greatest",
-            "extract", "age", "array_positions", "array_cat", "jsonb_pretty", "array_length", "avg", "min", "dense_rank",
-            "percent_rank", "quote_ident", "format", "pg_get_userbyid", "array_upper", "array_lower", "upper", "lower",
-            "uuid_generate_v1mc", "trim", "regexp_matches", "regexp_match", "string_agg", "arraycontains", "array_remove",
-            "to_number", "array_prepend", "array_append", "lpad", "rpad", "regexp_replace", "regexp_split_to_array",
-            "regexp_split_to_table", "ceil", "concat", "decode","jsonb_agg","json_agg"
+            "xmlserialize", "xmltable", "year", "yes", "zone", "loop", "json", "return",
+            // postgresql
+            "raise", "notice", "slice", "jsonb", "record", "elsif", "minutes", "days", "hours",
+            "seconds", "foreach", "exception", "internal", "bytea"
     };
 }

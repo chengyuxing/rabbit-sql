@@ -61,15 +61,13 @@ public interface Baki {
     /**
      * 通用执行器
      *
-     * @param sql <blockquote>
-     *                <ul>
-     *                    <li>ddl</li>
-     *                    <li>dml</li>
-     *                    <li>query</li>
-     *                    <li>function/procedure</li>
-     *                    <li>plsql</li>
-     *                </ul>
-     *            </blockquote>
+     * @param sql 支持：<ul>
+     *            <li>ddl</li>
+     *            <li>dml</li>
+     *            <li>query</li>
+     *            <li>function/procedure</li>
+     *            <li>plsql</li>
+     *            </ul>
      * @return 通用执行器
      */
     Executor of(String sql);

@@ -6,6 +6,7 @@ import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.Baki;
 import com.github.chengyuxing.sql.BakiDao;
 import com.github.chengyuxing.sql.XQLFileManager;
+import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
 import com.github.chengyuxing.sql.types.OUTParamType;
 import com.github.chengyuxing.sql.types.Param;
@@ -158,6 +159,18 @@ public class NewBakiTests {
                 .collect()
                 .getData()
                 .forEach(System.out::println);
+    }
+
+    @Test
+    public void testPageTo() {
+        DataRow row = baki.query("select * from test.user")
+                .pageable(1, 4)
+                .collect()
+                .to((pager, data) -> DataRow.of(
+                        "length", pager.getRecordCount(),
+                        "data", data)
+                );
+        System.out.println(row);
     }
 
     @Test

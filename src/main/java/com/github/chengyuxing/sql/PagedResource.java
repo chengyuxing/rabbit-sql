@@ -2,8 +2,8 @@ package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.sql.page.PageHelper;
 
-import java.util.Collections;
 import java.util.List;
+import java.util.function.BiFunction;
 
 /**
  * 分页资源
@@ -32,13 +32,22 @@ public final class PagedResource<T> {
     }
 
     /**
-     * 创建一个空的分页资源对象
+     * 对已分页的资源进一步转换为符合预期的数据结构，例如：
+     * <blockquote>
+     * <pre>
+     * (pager, data) -> {@link com.github.chengyuxing.common.DataRow DataRow}.of(
+     *                    "length", pager.getRecordCount(),
+     *                    "data", data)
+     *                  );
+     * </pre>
+     * </blockquote>
      *
-     * @param <T> 类型参数
-     * @return 空的分页
+     * @param converter 转换器 [分页对象，已分页数据]
+     * @param <R>       结果类型参数
+     * @return 新的数据结构
      */
-    public static <T> PagedResource<T> empty() {
-        return new PagedResource<>(null, Collections.emptyList());
+    public <R> R to(BiFunction<PageHelper, List<T>, R> converter) {
+        return converter.apply(pager, data);
     }
 
     void setData(List<T> data) {

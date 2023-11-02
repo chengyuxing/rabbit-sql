@@ -28,7 +28,7 @@ public abstract class QueryExecutor {
     }
 
     /**
-     * 设置sql中的参数字典
+     * 覆盖并设置sql中新的参数字典
      *
      * @param args 参数字典
      * @return 查询执行器
@@ -42,7 +42,7 @@ public abstract class QueryExecutor {
     }
 
     /**
-     * 设置sql中的参数字典
+     * 覆盖并设置sql中新的参数字典
      *
      * @param keyValues 多组 key-value 结构参数
      * @return 查询执行器

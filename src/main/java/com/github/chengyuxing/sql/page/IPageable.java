@@ -74,7 +74,7 @@ public abstract class IPageable {
      * 禁用默认生成（{@link PageHelper#pagedSql(String)}）的分页sql，将不进行内部的分页sql构建，
      * 意味着需要自己实现个性化的分页sql
      *
-     * @param countQuery count查询语句
+     * @param countQuery count查询语句，将覆盖方法{@link #count(String)}传入的语句
      * @return 分页构建器
      */
     public IPageable disableDefaultPageSql(String countQuery) {

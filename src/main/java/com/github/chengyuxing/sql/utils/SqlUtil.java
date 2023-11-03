@@ -35,6 +35,8 @@ public class SqlUtil {
     public static final Pattern SQL_ERR_WHERE_ORDER = Pattern.compile("where(\\s+order|\\s+limit|\\s+group|\\s+union|\\s*\\))\\s+", Pattern.CASE_INSENSITIVE);
     //language=RegExp
     public static final Pattern SQL_ERR_WHERE_END = Pattern.compile("where\\s*$", Pattern.CASE_INSENSITIVE);
+    @SuppressWarnings("UnnecessaryUnicodeEscape")
+    public static final String SYMBOL = "\u02de";
 
     public static final StringFormatter FMT = new StringFormatter() {
         @Override
@@ -191,23 +193,20 @@ public class SqlUtil {
      */
     public static Pair<String, Map<String, String>> replaceSqlSubstr(final String sql) {
         //noinspection UnnecessaryUnicodeEscape
-        String symbol = "\u02de";
         if (!sql.contains("'")) {
             return Pair.of(sql, Collections.emptyMap());
         }
-        String noneStrSql = sql;
+        String noStrSql = sql;
         Map<String, String> mapper = new HashMap<>();
         Matcher m = STR_PATTERN.matcher(sql);
         int i = 0;
         while (m.find()) {
-            // sql part of substr
             String str = m.group();
-            // mapping placeholder
-            String placeHolder = symbol + (i++) + symbol;
-            noneStrSql = noneStrSql.replace(str, placeHolder);
-            mapper.put(placeHolder, str);
+            String holder = SYMBOL + (i++) + SYMBOL;
+            noStrSql = noStrSql.replace(str, holder);
+            mapper.put(holder, str);
         }
-        return Pair.of(noneStrSql, mapper);
+        return Pair.of(noStrSql, mapper);
     }
 
     /**
@@ -233,9 +232,9 @@ public class SqlUtil {
      */
     public static String removeAnnotationBlock(final String sql) {
         Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSqlSubstr(sql);
-        String noneStrSql = noneStrSqlAndHolder.getItem1();
+        String noStrSql = noneStrSqlAndHolder.getItem1();
         Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
-        char[] chars = noneStrSql.toCharArray();
+        char[] chars = noStrSql.toCharArray();
         List<Character> characters = new ArrayList<>();
         int count = 0;
         for (int i = 0; i < chars.length; i++) {
@@ -265,11 +264,11 @@ public class SqlUtil {
         for (Character c : characters) {
             sb.append(c);
         }
-        String noneBSql = sb.toString().replaceAll("\n\\s*\n", "\n");
+        String noBSql = sb.toString().replaceAll("\n\\s*\n", "\n");
         for (String key : placeholderMapper.keySet()) {
-            noneBSql = noneBSql.replace(key, placeholderMapper.get(key));
+            noBSql = noBSql.replace(key, placeholderMapper.get(key));
         }
-        return noneBSql;
+        return noBSql;
     }
 
     /**
@@ -333,29 +332,13 @@ public class SqlUtil {
      * @param sql sql语句
      * @return 修复后的sql
      */
-    public static String repairSyntaxError(String sql) {
-        Matcher m;
-        // e.g: update user set id = :id, where ...
-        m = SQL_ERR_COMMA_WHERE.matcher(sql);
-        while (m.find()) {
-            sql = sql.substring(0, m.start()).concat(sql.substring(m.start() + 1));
-        }
-        // "where and|or" statement
-        m = SQL_ERR_WHERE_AND_OR.matcher(sql);
-        while (m.find()) {
-            sql = sql.substring(0, m.start() + 6).concat(sql.substring(m.end()));
-        }
-        // if "where order by ..." statement
-        m = SQL_ERR_WHERE_ORDER.matcher(sql);
-        while (m.find()) {
-            sql = sql.substring(0, m.start()).concat(sql.substring(m.start() + 6));
-        }
-        // if "where" at end
-        m = SQL_ERR_WHERE_END.matcher(sql);
-        while (m.find()) {
-            sql = sql.substring(0, m.start());
-        }
-        return sql;
+    public static String repairSyntaxError(final String sql) {
+        String result = sql;
+        result = SQL_ERR_COMMA_WHERE.matcher(result).replaceAll(" where");
+        result = SQL_ERR_WHERE_AND_OR.matcher(result).replaceAll("where ");
+        result = SQL_ERR_WHERE_ORDER.matcher(result).replaceAll("$1");
+        result = SQL_ERR_WHERE_END.matcher(result).replaceAll("");
+        return result;
     }
 
     /**

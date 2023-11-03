@@ -120,12 +120,7 @@ public class Tests {
     @Test
     public void sqlReplace() throws Exception {
         String str = "select t.id || 'number' || 'age:age,name:cyx', '{\"name\":\"user\"}'::jsonb from test.user where id =:id::integer and id >:idc and name=text :username";
-        String upd = "update test.score set grade =  :grade::integer" +
-                " where id =   :id_˞0::integer::integer or id >   :id_˞1::integer::integer";
-
         String sql = "insert into test.user(idd,name,id,age,address) values (:id,:name::integer,:idd::float,integer :age,date :address)";
-//        String sql2 = "select * from test.user where id = '1' and tag = '1' and num = '1' and name = :name";
-//        String jsonSql = "select '{\"a\":[1,2,3],\"b\":[4,5,6]}'::json #>> '{b,1}'";
         Pair<String, List<String>> pair = new SqlGenerator(':').generatePreparedSql(str, Collections.emptyMap());
         System.out.println(pair.getItem1());
         System.out.println(pair.getItem2());

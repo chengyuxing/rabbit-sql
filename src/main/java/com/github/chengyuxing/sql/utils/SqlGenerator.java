@@ -26,14 +26,14 @@ public class SqlGenerator {
     /**
      * sql翻译帮助实例
      *
-     * @param _namedParamPrefix 命名参数前缀符号
+     * @param namedParamPrefix 命名参数前缀符号
      */
-    public SqlGenerator(char _namedParamPrefix) {
-        if (_namedParamPrefix == ' ') {
+    public SqlGenerator(char namedParamPrefix) {
+        if (namedParamPrefix == ' ') {
             throw new IllegalArgumentException("prefix char cannot be empty.");
         }
-        this.PARAM_PATTERN = Pattern.compile("(^\\" + _namedParamPrefix + "|[^\\" + _namedParamPrefix + "]\\" + _namedParamPrefix + ")(?<name>" + Patterns.VAR_KEY_PATTERN + ")");
-        this.namedParamPrefix = String.valueOf(_namedParamPrefix);
+        this.PARAM_PATTERN = Pattern.compile("(^\\" + namedParamPrefix + "|[^\\" + namedParamPrefix + "]\\" + namedParamPrefix + ")(?<name>" + Patterns.VAR_KEY_PATTERN + ")");
+        this.namedParamPrefix = String.valueOf(namedParamPrefix);
     }
 
     /**
@@ -93,32 +93,33 @@ public class SqlGenerator {
         }
         // exclude substr next
         Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSqlSubstr(fullSql);
-        String noneStrSql = noneStrSqlAndHolder.getItem1();
-        Matcher matcher = PARAM_PATTERN.matcher(noneStrSql);
+        String noStrSql = noneStrSqlAndHolder.getItem1();
+        Matcher matcher = PARAM_PATTERN.matcher(noStrSql);
         List<String> names = new ArrayList<>();
-        if (prepare) {
-            while (matcher.find()) {
-                String name = matcher.group("name");
-                names.add(name);
-                noneStrSql = StringUtil.replaceFirst(noneStrSql, namedParamPrefix + name, "?");
-            }
-        } else {
-            while (matcher.find()) {
-                String name = matcher.group("name");
+        StringBuilder sb = new StringBuilder();
+        int pos = 0;
+        while (matcher.find()) {
+            int start = matcher.start("name");
+            int end = matcher.end("name");
+            String name = matcher.group("name");
+            String value = "?";
+            if (!prepare) {
                 if (name.contains(".")) {
-                    String value = quoteFormatValue(ObjectUtil.getDeepValue(data, name));
-                    noneStrSql = StringUtil.replaceFirst(noneStrSql, namedParamPrefix + name, value);
-                } else if (data.containsKey(name)) {
-                    String value = quoteFormatValue(data.get(name));
-                    noneStrSql = StringUtil.replaceFirst(noneStrSql, namedParamPrefix + name, value);
+                    value = quoteFormatValue(ObjectUtil.getDeepValue(data, name));
+                } else {
+                    value = quoteFormatValue(data.get(name));
                 }
             }
+            names.add(name);
+            sb.append(noStrSql, pos, start - 1).append(value);
+            pos = end;
         }
-        // finally, set placeholder into none-string-part sql
+        sb.append(noStrSql, pos, noStrSql.length());
+        String result = sb.toString();
         for (Map.Entry<String, String> e : noneStrSqlAndHolder.getItem2().entrySet()) {
-            noneStrSql = noneStrSql.replace(e.getKey(), e.getValue());
+            result = result.replace(e.getKey(), e.getValue());
         }
-        return Pair.of(noneStrSql, names);
+        return Pair.of(result, names);
     }
 
     /**

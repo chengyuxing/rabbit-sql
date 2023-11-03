@@ -2,16 +2,20 @@ package baki;
 
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.DateTimes;
+import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.Jackson;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.PagedResource;
 import com.github.chengyuxing.sql.XQLFileManager;
 import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
+import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
 
+import java.time.LocalDateTime;
 import java.util.Collections;
+import java.util.List;
 
 public class NonBakiTests {
     @Test
@@ -57,4 +61,32 @@ public class NonBakiTests {
 
         System.out.println(SqlUtil.highlightSql(sql));
     }
+
+    static final String query = "select t.id || 'number' || 'age:age,name:cyx', '{\"name\":\"user\"}'::jsonb from test.user where id =:id::integer and id >:idc and name=text :username";
+    static final String insert = "insert into test.user(idd,name,id,age,address) values (:id,:name::integer,:idd::float,integer :age,date :address)";
+
+    @Test
+    public void testSqlParamResolve2() {
+        SqlGenerator sqlGenerator = new SqlGenerator(':');
+        System.out.println("--old---");
+        Pair<String, List<String>> pairQ = sqlGenerator.generatePreparedSql(query, Collections.emptyMap());
+        System.out.println(pairQ.getItem1());
+        System.out.println(pairQ.getItem2());
+
+        System.out.println("--old---");
+        Pair<String, List<String>> pairI = sqlGenerator.generatePreparedSql(insert, Collections.emptyMap());
+        System.out.println(pairI.getItem1());
+        System.out.println(pairI.getItem2());
+
+//        System.out.println("--old---");
+//        String sqla = sqlGenerator.generateSql(insert, Args.of("id", 12,
+//                "name", "chengyuxing",
+//                "idd", 16,
+//                "age", 30,
+//                "address", LocalDateTime.now()));
+//        System.out.println(sqla);
+
+
+    }
+
 }

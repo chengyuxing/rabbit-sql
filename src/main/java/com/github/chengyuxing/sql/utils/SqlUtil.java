@@ -182,7 +182,7 @@ public class SqlUtil {
                     res[i] = o.toString();
                 }
         }
-        return quote("{" + String.join(",", res) + "}");
+        return quote("{" + String.join(", ", res) + "}");
     }
 
     /**

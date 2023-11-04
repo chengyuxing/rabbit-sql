@@ -4,10 +4,7 @@ import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.page.IPageable;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -97,6 +94,14 @@ public abstract class QueryExecutor {
      * @return 一组实体
      */
     public abstract <T> List<T> entities(Class<T> entityClass);
+
+    /**
+     * 将所有查询结果行转为列
+     *
+     * @return 列数据结构
+     * @see DataRow#zip(Collection)
+     */
+    public abstract DataRow zip();
 
     /**
      * 分页查询<br>

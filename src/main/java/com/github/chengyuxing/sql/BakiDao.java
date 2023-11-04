@@ -16,6 +16,7 @@ import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.github.chengyuxing.sql.support.JdbcSupport;
 import com.github.chengyuxing.sql.support.SqlInterceptor;
+import com.github.chengyuxing.sql.support.StatementValueHandler;
 import com.github.chengyuxing.sql.support.executor.Executor;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
 import com.github.chengyuxing.sql.support.executor.SaveExecutor;
@@ -27,10 +28,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.DatabaseMetaData;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.sql.*;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -38,7 +36,7 @@ import java.util.stream.Stream;
 
 /**
  * <h2>Baki接口默认实现</h2>
- * <p>如果配置了{@link XQLFileManager }，则接口所有方法都可以通过取地址符号来获取sql文件内的sql</p>
+ * <p>如果配置了{@link XQLFileManager }，则接口所有方法都可以通过取地址符号来获取sql文件内的sql。</p>
  * 指定sql名执行：
  * <blockquote>
  * <pre>try ({@link Stream}&lt;{@link DataRow}&gt; s = baki.query("&amp;sys.getUser").stream()) {
@@ -54,38 +52,44 @@ public class BakiDao extends JdbcSupport implements Baki {
     private SqlGenerator sqlGenerator;
     //---------optional properties------
     /**
-     * 全局自定义的分页帮助提供程序
+     * 全局自定义的分页帮助提供程序。
      */
     private PageHelperProvider globalPageHelperProvider;
     /**
-     * sql预处理拦截器
+     * sql预处理拦截器。
      */
     private SqlInterceptor sqlInterceptor;
     /**
-     * sql文件解析管理器
+     * 预编译sql参数值处理器。
+     */
+    private StatementValueHandler statementValueHandler;
+    /**
+     * sql文件解析管理器。
      */
     private XQLFileManager xqlFileManager;
     /**
-     * 批量执行大小
+     * 批量执行大小。
      */
     private int batchSize = 1000;
     /**
-     * 命名参数前缀
+     * 命名参数前缀。
      */
     private char namedParamPrefix = ':';
     /**
-     * 在获取sql时如果xql文件有变更则重新加载xql文件管理器
+     * 在获取sql时如果xql文件有变更则重新加载xql文件管理器。
      */
     private boolean reloadXqlOnGet = false;
 
     /**
-     * 构造函数
+     * 构造一个新的BakiDao实例。
      *
      * @param dataSource 数据源
      */
     public BakiDao(DataSource dataSource) {
         this.dataSource = dataSource;
         this.sqlGenerator = new SqlGenerator(namedParamPrefix);
+        this.statementValueHandler = (ps, index, value, metaData) -> JdbcUtil.setStatementValue(ps, index, value);
+        this.sqlInterceptor = (sql, args, metaData) -> true;
     }
 
     @Override
@@ -115,6 +119,11 @@ public class BakiDao extends JdbcSupport implements Baki {
                 try (Stream<DataRow> s = stream()) {
                     return s.map(d -> d.toEntity(entityClass)).collect(Collectors.toList());
                 }
+            }
+
+            @Override
+            public DataRow zip() {
+                return DataRow.zip(rows());
             }
 
             @Override
@@ -295,7 +304,7 @@ public class BakiDao extends JdbcSupport implements Baki {
 
     /**
      * {@inheritDoc}<br>
-     * 执行完成后自动关闭连接对象，不需要手动关闭
+     * 执行完成后自动关闭连接对象，不需要手动关闭。
      *
      * @param func 函数体
      * @param <T>  类型参数
@@ -333,12 +342,12 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * 简单的分页构建器实现
+     * 简单的分页构建器实现。
      */
     class SimplePageable extends IPageable {
 
         /**
-         * 简单分页构建器构造函数
+         * 简单分页构建器构造函数。
          *
          * @param recordQuery 查询sql
          * @param page        当前页
@@ -358,6 +367,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 if (cq == null) {
                     cq = sqlGenerator.generateCountQuery(query);
                 }
+                //noinspection unchecked
                 List<DataRow> cnRows = execute(cq, data).getFirstAs();
                 Object cn = cnRows.get(0).getFirst();
                 if (cn instanceof Integer) {
@@ -393,7 +403,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * 当前数据库的名称
+     * 当前数据库的名称。
      *
      * @return 数据库的名称
      */
@@ -410,7 +420,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * 根据数据库名字自动选择合适的默认分页帮助类
+     * 根据数据库名字自动选择合适的默认分页帮助类。
      *
      * @return 分页帮助类
      * @throws UnsupportedOperationException 如果没有自定分页，而默认分页不支持当前数据库
@@ -418,9 +428,9 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     protected PageHelper defaultPager() {
         String dbName = databaseId();
-        if (globalPageHelperProvider != null) {
+        if (Objects.nonNull(globalPageHelperProvider)) {
             PageHelper pageHelper = globalPageHelperProvider.customPageHelper(metaData(), dbName, namedParamPrefix);
-            if (pageHelper != null) {
+            if (Objects.nonNull(pageHelper)) {
                 return pageHelper;
             }
         }
@@ -446,7 +456,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * 根据严格模式获取表字段
+     * 根据严格模式获取表字段。
      *
      * @param tableName 表名
      * @return 表字段
@@ -463,23 +473,24 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * 如果使用取地址符 {@code &sql文件别名.sql名} 则获取sql文件中已缓存的sql
+     * 如果使用取地址符 {@code &sql文件别名.sql名} 则获取sql文件中已缓存的sql。
      *
      * @param sql  sql或sql名
      * @param args 参数
      * @return sql
      * @throws NullPointerException     如果没有设置sql文件解析器或初始化，使用{@code &}引用用外部sql文件片段
      * @throws IllegalArgumentException 如果严格模式下动态sql参数为null或空
+     * @throws IllegalSqlException      sql拦截器拒绝执行
      */
     @Override
     protected Pair<String, Map<String, Object>> parseSql(String sql, Map<String, ?> args) {
         Map<String, Object> data = new HashMap<>();
-        if (args != null) {
+        if (Objects.nonNull(args)) {
             data.putAll(args);
         }
         String trimSql = SqlUtil.trimEnd(sql.trim());
         if (trimSql.startsWith("&")) {
-            if (xqlFileManager != null) {
+            if (Objects.nonNull(xqlFileManager)) {
                 if (reloadXqlOnGet) {
                     log.warn("please set 'reloadXqlOnGet' to false in production environment for improve concurrency.");
                     xqlFileManager.init();
@@ -496,21 +507,13 @@ public class BakiDao extends JdbcSupport implements Baki {
         }
         if (trimSql.contains("${")) {
             trimSql = SqlUtil.formatSql(trimSql, data);
-            if (xqlFileManager != null) {
+            if (Objects.nonNull(xqlFileManager)) {
                 trimSql = SqlUtil.formatSql(trimSql, xqlFileManager.getConstants());
             }
         }
-        if (sqlInterceptor != null) {
-            String error = "permission denied: reject to execute invalid sql.\nSQL: " + trimSql + "\nArgs: " + data;
-            boolean request;
-            try {
-                request = sqlInterceptor.prevHandle(trimSql, data, metaData());
-            } catch (Throwable e) {
-                throw new IllegalSqlException(error, e);
-            }
-            if (!request) {
-                throw new IllegalSqlException(error);
-            }
+        boolean request = sqlInterceptor.preHandle(trimSql, data, metaData());
+        if (!request) {
+            throw new IllegalSqlException("permission denied, reject to execute invalid sql.\nSQL: " + trimSql + "\nArgs: " + data);
         }
         return Pair.of(trimSql, data);
     }
@@ -543,19 +546,33 @@ public class BakiDao extends JdbcSupport implements Baki {
         DataSourceUtil.releaseConnection(connection, dataSource);
     }
 
+    @Override
+    protected void doHandleStatementValue(PreparedStatement ps, int index, Object value) throws SQLException {
+        statementValueHandler.preHandle(ps, index, value, metaData());
+    }
+
     public void setGlobalPageHelperProvider(PageHelperProvider globalPageHelperProvider) {
-        this.globalPageHelperProvider = globalPageHelperProvider;
+        if (Objects.nonNull(globalPageHelperProvider))
+            this.globalPageHelperProvider = globalPageHelperProvider;
     }
 
     public void setSqlInterceptor(SqlInterceptor sqlInterceptor) {
-        this.sqlInterceptor = sqlInterceptor;
+        if (Objects.nonNull(sqlInterceptor))
+            this.sqlInterceptor = sqlInterceptor;
+    }
+
+    public void setStatementValueHandler(StatementValueHandler statementValueHandler) {
+        if (Objects.nonNull(statementValueHandler))
+            this.statementValueHandler = statementValueHandler;
     }
 
     public void setXqlFileManager(XQLFileManager xqlFileManager) {
-        this.xqlFileManager = xqlFileManager;
-        this.xqlFileManager.setDatabaseId(databaseId());
-        if (!xqlFileManager.isInitialized()) {
-            xqlFileManager.init();
+        if (Objects.nonNull(xqlFileManager)) {
+            this.xqlFileManager = xqlFileManager;
+            this.xqlFileManager.setDatabaseId(databaseId());
+            if (!xqlFileManager.isInitialized()) {
+                xqlFileManager.init();
+            }
         }
     }
 

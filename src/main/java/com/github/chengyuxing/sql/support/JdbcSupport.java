@@ -3,6 +3,7 @@ package com.github.chengyuxing.sql.support;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.UncheckedCloseable;
 import com.github.chengyuxing.common.tuple.Quadruple;
+import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 import com.github.chengyuxing.sql.types.Param;
@@ -56,6 +57,16 @@ public abstract class JdbcSupport extends SqlParser {
     protected abstract void releaseConnection(Connection connection, DataSource dataSource);
 
     /**
+     * 处理预编译sql参数值
+     *
+     * @param ps    预编译对象
+     * @param index 参数序号
+     * @param value 参数值
+     * @throws SQLException ex
+     */
+    protected abstract void doHandleStatementValue(PreparedStatement ps, int index, Object value) throws SQLException;
+
+    /**
      * 执行一句预编译的sql
      *
      * @param sql      sql
@@ -80,7 +91,7 @@ public abstract class JdbcSupport extends SqlParser {
             }
             statement = null;
             releaseConnection(connection, getDataSource());
-            throw new UncheckedSqlException("execute sql:\n[" + sql + "]", e);
+            throw new UncheckedSqlException("execute sql: [" + sql + "]", e);
         } finally {
             try {
                 JdbcUtil.closeStatement(statement);
@@ -88,6 +99,55 @@ public abstract class JdbcSupport extends SqlParser {
                 log.error("close statement error.", e);
             }
             releaseConnection(connection, getDataSource());
+        }
+    }
+
+    /**
+     * 设置预编译sql参数
+     *
+     * @param ps    预编译对象
+     * @param args  参数字典
+     * @param names 顺序的参数名
+     * @throws SQLException ex
+     */
+    protected void setPreparedSqlArgs(PreparedStatement ps, Map<String, ?> args, List<String> names) throws SQLException {
+        for (int i = 0; i < names.size(); i++) {
+            int index = i + 1;
+            String name = names.get(i);
+            Object value = name.contains(".") ? ObjectUtil.getDeepValue(args, name) : args.get(name);
+            doHandleStatementValue(ps, index, value);
+        }
+    }
+
+    /**
+     * 设置预编译存储过程/函数参数
+     *
+     * @param cs    预编译对象
+     * @param args  参数字典
+     * @param names 顺序的参数名
+     * @throws SQLException ex
+     */
+    protected void setPreparedStoreArgs(CallableStatement cs, Map<String, Param> args, List<String> names) throws SQLException {
+        if (args != null && !args.isEmpty()) {
+            // adapt postgresql
+            // out and inout param first
+            for (int i = 0; i < names.size(); i++) {
+                int index = i + 1;
+                String name = names.get(i);
+                Param param = args.get(name);
+                if (param.getParamMode() == ParamMode.OUT || param.getParamMode() == ParamMode.IN_OUT) {
+                    cs.registerOutParameter(index, param.getType().typeNumber());
+                }
+            }
+            // in param next
+            for (int i = 0; i < names.size(); i++) {
+                int index = i + 1;
+                String name = names.get(i);
+                Param param = args.get(name);
+                if (param.getParamMode() == ParamMode.IN || param.getParamMode() == ParamMode.IN_OUT) {
+                    doHandleStatementValue(cs, index, param.getValue());
+                }
+            }
         }
     }
 
@@ -108,9 +168,9 @@ public abstract class JdbcSupport extends SqlParser {
         final String preparedSql = prepared.getItem1();
         final Map<String, Object> data = prepared.getItem3();
         try {
-            debugSql(prepared.getItem4(), Collections.singletonList(args));
+            debugSql(prepared.getItem4(), Collections.singletonList(data));
             return execute(preparedSql, ps -> {
-                JdbcUtil.setSqlArgs(ps, data, argNames);
+                setPreparedSqlArgs(ps, data, argNames);
                 boolean isQuery = ps.execute();
                 printSqlConsole(ps);
                 DataRow result;
@@ -164,11 +224,11 @@ public abstract class JdbcSupport extends SqlParser {
             // if this query is not in transaction, it's connection managed by Stream
             // if transaction is active connection will not be close when read stream to the end in 'try-with-resource' block
             close = UncheckedCloseable.wrap(() -> releaseConnection(connection, getDataSource()));
-            debugSql(prepared.getItem4(), Collections.singletonList(args));
+            debugSql(prepared.getItem4(), Collections.singletonList(data));
             //noinspection SqlSourceToSinkFlow
             PreparedStatement ps = connection.prepareStatement(preparedSql);
             close = close.nest(ps);
-            JdbcUtil.setSqlArgs(ps, data, argNames);
+            setPreparedSqlArgs(ps, data, argNames);
             ResultSet resultSet = ps.executeQuery();
             close = close.nest(resultSet);
             return StreamSupport.stream(new Spliterators.AbstractSpliterator<DataRow>(Long.MAX_VALUE, Spliterator.ORDERED) {
@@ -283,7 +343,7 @@ public abstract class JdbcSupport extends SqlParser {
                 final Stream.Builder<int[]> result = Stream.builder();
                 int i = 1;
                 for (Map<String, ?> item : args) {
-                    JdbcUtil.setSqlArgs(ps, item, argNames);
+                    setPreparedSqlArgs(ps, item, argNames);
                     ps.addBatch();
                     if (i % batchSize == 0) {
                         result.add(ps.executeBatch());
@@ -318,12 +378,12 @@ public abstract class JdbcSupport extends SqlParser {
         final String preparedSql = prepared.getItem1();
         final Map<String, Object> data = prepared.getItem3();
         try {
-            debugSql(prepared.getItem4(), Collections.singletonList(args));
+            debugSql(prepared.getItem4(), Collections.singletonList(data));
             return execute(preparedSql, sc -> {
                 if (data.isEmpty()) {
                     return sc.executeUpdate();
                 }
-                JdbcUtil.setSqlArgs(sc, data, argNames);
+                setPreparedSqlArgs(sc, data, argNames);
                 return sc.executeUpdate();
             });
         } catch (Exception e) {
@@ -345,8 +405,8 @@ public abstract class JdbcSupport extends SqlParser {
      * 根据不同的存储过程返回结果定义，获取结果有两种形式：
      * <blockquote>
      * <ul>
-     *     <li>没有出参：{@link DataRow#getFirst()} 或 {@link DataRow#getFirstAs()}</li>
-     *     <li>有出参：{@link DataRow#getAs(String)} 或 {@link DataRow#get(Object)} (通过出参名获取)</li>
+     *     <li>没有出参：{@link DataRow#getFirst(Object...) getFirst()} 或 {@link DataRow#getFirstAs(Object...) getFirstAs()}</li>
+     *     <li>有出参：{@link DataRow#getAs(String, Object...) getAs(String)} 或 {@link DataRow#get(Object) get(String)} (通过出参名获取)</li>
      * </ul>
      * </blockquote>
      *
@@ -367,7 +427,7 @@ public abstract class JdbcSupport extends SqlParser {
             statement = connection.prepareCall(executeSql);
             List<String> outNames = new ArrayList<>();
             if (!args.isEmpty()) {
-                JdbcUtil.setStoreArgs(statement, args, argNames);
+                setPreparedStoreArgs(statement, args, argNames);
                 for (String name : argNames) {
                     if (args.containsKey(name)) {
                         ParamMode mode = args.get(name).getParamMode();
@@ -394,7 +454,7 @@ public abstract class JdbcSupport extends SqlParser {
                 String name = argNames.get(i);
                 if (outNames.contains(name)) {
                     Object result = statement.getObject(i + 1);
-                    if (null == result) {
+                    if (Objects.isNull(result)) {
                         values[resultIndex] = null;
                     } else if (result instanceof ResultSet) {
                         List<DataRow> rows = JdbcUtil.createDataRows((ResultSet) result, "", -1);

@@ -6,14 +6,19 @@ import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.Baki;
 import com.github.chengyuxing.sql.BakiDao;
 import com.github.chengyuxing.sql.XQLFileManager;
-import com.github.chengyuxing.sql.page.PageHelper;
+import com.github.chengyuxing.sql.support.SqlInterceptor;
+import com.github.chengyuxing.sql.support.StatementValueHandler;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
 import com.github.chengyuxing.sql.types.OUTParamType;
 import com.github.chengyuxing.sql.types.Param;
+import com.github.chengyuxing.sql.utils.JdbcUtil;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.sql.CallableStatement;
+import java.sql.DatabaseMetaData;
+import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -35,6 +40,21 @@ public class NewBakiTests {
 
         bakiDao = new BakiDao(dataSource);
         bakiDao.setXqlFileManager(xqlFileManager);
+
+        bakiDao.setStatementValueHandler(new StatementValueHandler() {
+            @Override
+            public void preHandle(PreparedStatement ps, int index, Object value, DatabaseMetaData metaData) throws SQLException {
+                if (ps instanceof CallableStatement) {
+                    System.out.println("Procedure calling.");
+                }
+                if (metaData.getDatabaseProductName().equals("PostgreSQL")) {
+                    // .....
+                }
+                JdbcUtil.setStatementValue(ps, index, value);
+            }
+        });
+
+//        bakiDao.setSqlInterceptor(new SqlInterceptor.DefaultSqlInterceptor());
         baki = bakiDao;
     }
 
@@ -47,6 +67,13 @@ public class NewBakiTests {
         System.out.println("-----");
         User user = executor.findFirstEntity(User.class);
         System.out.println(user);
+    }
+
+    @Test
+    public void testInterceptor() {
+        DataRow res = baki.of("create table test.temp(id int,content text,file bytea,dt timestamp)")
+                .execute();
+        System.out.println(res);
     }
 
     @Test
@@ -102,7 +129,8 @@ public class NewBakiTests {
                         "address", "kunming"
                 )
         );
-//        baki.execute("&new.update", args);
+//        DataRow row = baki.of("&new.update").execute(args);
+
         int i = baki.update("test.user", "id = :id")
                 .save(Args.of(
                         "name", "cyx",
@@ -184,6 +212,9 @@ public class NewBakiTests {
     }
 
     @Test
-    public void testMetaData() throws SQLException {
+    public void testQ() throws SQLException {
+        baki.query("select * from test.user").zip()
+                .forEach((k, v) -> System.out.println(k + " -> " + v));
+
     }
 }

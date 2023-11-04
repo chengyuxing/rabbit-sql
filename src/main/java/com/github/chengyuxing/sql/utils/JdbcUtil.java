@@ -2,9 +2,6 @@ package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.utils.Jackson;
-import com.github.chengyuxing.common.utils.ObjectUtil;
-import com.github.chengyuxing.sql.types.Param;
-import com.github.chengyuxing.sql.types.ParamMode;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -31,7 +28,7 @@ public class JdbcUtil {
     public static Object getResultValue(ResultSet resultSet, int index) throws SQLException {
         Object obj = resultSet.getObject(index);
         String className = null;
-        if (obj != null) {
+        if (Objects.nonNull(obj)) {
             className = obj.getClass().getName();
         }
         if (obj instanceof Blob) {
@@ -69,7 +66,7 @@ public class JdbcUtil {
      */
     public static byte[] getBytes(Blob blob) throws SQLException {
         byte[] bytes = new byte[0];
-        if (blob != null) {
+        if (Objects.nonNull(blob)) {
             try (InputStream ins = blob.getBinaryStream()) {
                 bytes = new byte[(int) blob.length()];
                 //noinspection ResultOfMethodCallIgnored
@@ -88,7 +85,7 @@ public class JdbcUtil {
      * @throws SQLException sqlEx
      */
     public static void closeResultSet(ResultSet resultSet) throws SQLException {
-        if (resultSet != null) {
+        if (Objects.nonNull(resultSet)) {
             if (!resultSet.isClosed()) {
                 resultSet.close();
             }
@@ -102,7 +99,7 @@ public class JdbcUtil {
      * @throws SQLException sqlEx
      */
     public static void closeStatement(Statement statement) throws SQLException {
-        if (statement != null) {
+        if (Objects.nonNull(statement)) {
             if (!statement.isClosed()) {
                 statement.close();
             }
@@ -162,7 +159,7 @@ public class JdbcUtil {
      * @throws SQLException ex
      */
     public static List<DataRow> createDataRows(final ResultSet resultSet, final String executedSql, final long fetchSize) throws SQLException {
-        if (resultSet == null) {
+        if (Objects.isNull(resultSet)) {
             return Collections.emptyList();
         }
         List<DataRow> list = new ArrayList<>();
@@ -171,7 +168,7 @@ public class JdbcUtil {
         while (resultSet.next()) {
             if (size == 0)
                 break;
-            if (names == null) {
+            if (Objects.isNull(names)) {
                 names = createNames(resultSet, executedSql);
             }
             list.add(createDataRow(names, resultSet));
@@ -183,112 +180,52 @@ public class JdbcUtil {
     /**
      * 设置参数占位符的参数值
      *
-     * @param statement statement
-     * @param index     序号
-     * @param value     值
-     * @throws SQLException sqlExp
+     * @param ps    预编译对象
+     * @param index 序号
+     * @param value 值
+     * @throws SQLException sqlEx
      */
-    public static void setStatementValue(PreparedStatement statement, int index, Object value) throws SQLException {
-        if (null == value) {
-            statement.setNull(index, Types.NULL);
+    public static void setStatementValue(PreparedStatement ps, int index, Object value) throws SQLException {
+        if (Objects.isNull(value)) {
+            ps.setNull(index, Types.NULL);
         } else if (value instanceof java.util.Date) {
-            statement.setObject(index, new Timestamp(((java.util.Date) value).getTime()));
+            ps.setObject(index, new Timestamp(((java.util.Date) value).getTime()));
         } else if (value instanceof LocalDateTime) {
-            statement.setObject(index, new Timestamp(((LocalDateTime) value).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
+            ps.setObject(index, new Timestamp(((LocalDateTime) value).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
         } else if (value instanceof LocalDate) {
-            statement.setObject(index, new Date(((LocalDate) value).atStartOfDay(ZoneOffset.systemDefault()).toInstant().toEpochMilli()));
+            ps.setObject(index, new Date(((LocalDate) value).atStartOfDay(ZoneOffset.systemDefault()).toInstant().toEpochMilli()));
         } else if (value instanceof LocalTime) {
-            statement.setObject(index, new Time(((LocalTime) value).atDate(LocalDate.now()).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
+            ps.setObject(index, new Time(((LocalTime) value).atDate(LocalDate.now()).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
         } else if (value instanceof OffsetDateTime) {
-            statement.setObject(index, new Timestamp(((OffsetDateTime) value).toInstant().toEpochMilli()));
+            ps.setObject(index, new Timestamp(((OffsetDateTime) value).toInstant().toEpochMilli()));
         } else if (value instanceof OffsetTime) {
-            statement.setObject(index, new Time(((OffsetTime) value).atDate(LocalDate.now()).toInstant().toEpochMilli()));
+            ps.setObject(index, new Time(((OffsetTime) value).atDate(LocalDate.now()).toInstant().toEpochMilli()));
         } else if (value instanceof ZonedDateTime) {
-            statement.setObject(index, new Timestamp(((ZonedDateTime) value).toInstant().toEpochMilli()));
+            ps.setObject(index, new Timestamp(((ZonedDateTime) value).toInstant().toEpochMilli()));
         } else if (value instanceof Instant) {
-            statement.setObject(index, new Timestamp(((Instant) value).toEpochMilli()));
+            ps.setObject(index, new Timestamp(((Instant) value).toEpochMilli()));
         } else if (value instanceof UUID) {
-            statement.setObject(index, value.toString().replace("-", ""));
+            ps.setObject(index, value.toString().replace("-", ""));
         } else if (value instanceof Map || value instanceof Collection) {
-            statement.setObject(index, Jackson.toJson(value));
+            ps.setObject(index, Jackson.toJson(value));
         } else if (!value.getClass().getTypeName().startsWith("java.")) {
-            statement.setObject(index, Jackson.toJson(value));
+            ps.setObject(index, Jackson.toJson(value));
         } else if (value instanceof InputStream) {
-            statement.setBinaryStream(index, (InputStream) value);
+            ps.setBinaryStream(index, (InputStream) value);
         } else if (value instanceof Path) {
             try {
-                statement.setBinaryStream(index, Files.newInputStream((Path) value));
+                ps.setBinaryStream(index, Files.newInputStream((Path) value));
             } catch (IOException e) {
                 throw new SQLException("set binary value failed.", e);
             }
         } else if (value instanceof File) {
             try {
-                statement.setBinaryStream(index, new FileInputStream((File) value));
+                ps.setBinaryStream(index, new FileInputStream((File) value));
             } catch (FileNotFoundException e) {
                 throw new SQLException("set binary value failed.", e);
             }
         } else {
-            statement.setObject(index, value);
-        }
-    }
-
-    /**
-     * 注册预编译sql参数
-     *
-     * @param statement sql声明
-     * @param args      参数
-     * @param names     占位符参数名
-     * @throws SQLException ex
-     */
-    public static void setSqlArgs(PreparedStatement statement, Map<String, ?> args, List<String> names) throws SQLException {
-        for (int i = 0; i < names.size(); i++) {
-            int index = i + 1;
-            String name = names.get(i);
-            if (name.contains(".")) {
-                setStatementValue(statement, index, ObjectUtil.getDeepValue(args, name));
-            } else if (args.containsKey(name)) {
-                setStatementValue(statement, index, args.get(name));
-            }
-        }
-    }
-
-    /**
-     * 注册预编译存储过程参数
-     *
-     * @param statement 声明
-     * @param args      参数
-     * @param names     占位符参数名
-     * @throws SQLException ex
-     */
-    public static void setStoreArgs(CallableStatement statement, Map<String, Param> args, List<String> names) throws SQLException {
-        if (args != null && !args.isEmpty()) {
-            // adapt postgresql
-            // out and inout param first
-            for (int i = 0; i < names.size(); i++) {
-                int index = i + 1;
-                String name = names.get(i);
-                if (args.containsKey(name)) {
-                    Param param = args.get(name);
-                    if (param != null) {
-                        if (param.getParamMode() == ParamMode.OUT || param.getParamMode() == ParamMode.IN_OUT) {
-                            statement.registerOutParameter(index, param.getType().typeNumber());
-                        }
-                    }
-                }
-            }
-            // in param next
-            for (int i = 0; i < names.size(); i++) {
-                int index = i + 1;
-                String name = names.get(i);
-                if (args.containsKey(name)) {
-                    Param param = args.get(name);
-                    if (param != null) {
-                        if (param.getParamMode() == ParamMode.IN || param.getParamMode() == ParamMode.IN_OUT) {
-                            setStatementValue(statement, index, param.getValue());
-                        }
-                    }
-                }
-            }
+            ps.setObject(index, value);
         }
     }
 }

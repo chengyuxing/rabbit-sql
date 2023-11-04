@@ -2,6 +2,7 @@ package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.script.Patterns;
 import com.github.chengyuxing.common.tuple.Pair;
+import com.github.chengyuxing.common.tuple.Triple;
 import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 
@@ -21,7 +22,7 @@ public class SqlGenerator {
     /**
      * 匹配命名参数
      */
-    private final Pattern PARAM_PATTERN;
+    private final Pattern namedParamPattern;
 
     /**
      * sql翻译帮助实例
@@ -32,7 +33,7 @@ public class SqlGenerator {
         if (namedParamPrefix == ' ') {
             throw new IllegalArgumentException("prefix char cannot be empty.");
         }
-        this.PARAM_PATTERN = Pattern.compile("(^\\" + namedParamPrefix + "|[^\\" + namedParamPrefix + "]\\" + namedParamPrefix + ")(?<name>" + Patterns.VAR_KEY_PATTERN + ")");
+        this.namedParamPattern = Pattern.compile("(^\\" + namedParamPrefix + "|[^\\" + namedParamPrefix + "]\\" + namedParamPrefix + ")(?<name>" + Patterns.VAR_KEY_PATTERN + ")");
         this.namedParamPrefix = String.valueOf(namedParamPrefix);
     }
 
@@ -41,8 +42,8 @@ public class SqlGenerator {
      *
      * @return 命名参数解析正则表达式
      */
-    public Pattern getPARAM_PATTERN() {
-        return PARAM_PATTERN;
+    public Pattern getNamedParamPattern() {
+        return namedParamPattern;
     }
 
     /**
@@ -59,7 +60,7 @@ public class SqlGenerator {
      *
      * @param sql  命名参数占位符sql
      * @param args 参数
-     * @return 预编译SQL和顺序的参数名集合
+     * @return [预编译sql，顺序的参数名集合]
      */
     public Pair<String, List<String>> generatePreparedSql(final String sql, Map<String, ?> args) {
         return _generateSql(sql, args, true);
@@ -82,19 +83,18 @@ public class SqlGenerator {
      * @param sql     命名参数的sql字符串
      * @param args    参数
      * @param prepare 是否生成预编译sql
-     * @return 预编译/普通sql和顺序的参数名集合
+     * @return [预编译/普通sql，顺序的参数名集合]
      */
     protected Pair<String, List<String>> _generateSql(final String sql, Map<String, ?> args, boolean prepare) {
-        Map<String, ?> data = args == null ? new HashMap<>() : args;
         // resolve the sql string template first
-        String fullSql = SqlUtil.formatSql(sql, data);
+        String fullSql = SqlUtil.formatSql(sql, args);
         if (!fullSql.contains(namedParamPrefix)) {
-            return Pair.of(fullSql, Collections.emptyList());
+            return Triple.of(fullSql, Collections.emptyList(), Collections.emptyList());
         }
         // exclude substr next
         Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSqlSubstr(fullSql);
         String noStrSql = noneStrSqlAndHolder.getItem1();
-        Matcher matcher = PARAM_PATTERN.matcher(noStrSql);
+        Matcher matcher = namedParamPattern.matcher(noStrSql);
         List<String> names = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
         int pos = 0;
@@ -102,16 +102,14 @@ public class SqlGenerator {
             int start = matcher.start("name");
             int end = matcher.end("name");
             String name = matcher.group("name");
-            String value = "?";
-            if (!prepare) {
-                if (name.contains(".")) {
-                    value = quoteFormatValue(ObjectUtil.getDeepValue(data, name));
-                } else {
-                    value = quoteFormatValue(data.get(name));
-                }
+            String replaced = "?";
+            if (prepare) {
+                names.add(name);
+            } else {
+                Object value = name.contains(".") ? ObjectUtil.getDeepValue(args, name) : args.get(name);
+                replaced = quoteFormatValue(value);
             }
-            names.add(name);
-            sb.append(noStrSql, pos, start - 1).append(value);
+            sb.append(noStrSql, pos, start - 1).append(replaced);
             pos = end;
         }
         sb.append(noStrSql, pos, noStrSql.length());
@@ -239,6 +237,6 @@ public class SqlGenerator {
         if (StringUtil.startsWithIgnoreCase(recordQuery.trim(), "with")) {
             // TODO: 2023/10/25 考虑是否需要特殊处理下with查询的count语句
         }
-        return "select count(*) from (" + recordQuery + ") r_data";
+        return "select count(*) from (" + recordQuery + ") t_4_rabbit";
     }
 }

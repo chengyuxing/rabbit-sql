@@ -5,7 +5,6 @@ import com.github.chengyuxing.common.tuple.Quadruple;
 import com.github.chengyuxing.common.tuple.Tuples;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -63,13 +62,15 @@ public abstract class SqlParser {
      *
      * @param sql  传名参数sql
      * @param args 参数字典
-     * @return 预编译sql，参数名，参数字典，命名参数sql
+     * @return [预编译sql，参数名，参数字典，命名参数sql]
      */
     protected Quadruple<String, List<String>, Map<String, Object>, String> prepare(String sql, Map<String, ?> args) {
-        Map<String, ?> data = args == null ? Collections.emptyMap() : args;
-        Pair<String, Map<String, Object>> result = parseSql(sql, data);
+        // try to generate full named parameter sql.
+        Pair<String, Map<String, Object>> result = parseSql(sql, args);
         String parsedSql = result.getItem1();
         Map<String, Object> parsedData = result.getItem2();
+
+        // convert named parameter sql to prepared sql.
         Pair<String, List<String>> p = sqlGenerator().generatePreparedSql(parsedSql, parsedData);
         return Tuples.quadruple(p.getItem1(), p.getItem2(), parsedData, parsedSql);
     }

@@ -18,9 +18,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.ConcurrentModificationException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 /**
- * 支持扩展脚本解析动态SQL的文件管理器配置项
+ * 支持扩展脚本解析动态SQL的文件管理器配置项。
  */
 public class XQLFileManagerConfig {
     private static final Logger log = LoggerFactory.getLogger(XQLFileManagerConfig.class);
@@ -63,7 +64,7 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * 加载yml配置文件初始化配置项
+     * 加载yml配置文件初始化配置项。
      *
      * @param yamlLocation yml文件资源
      */
@@ -71,7 +72,7 @@ public class XQLFileManagerConfig {
         Yaml yaml = new Yaml(new JoinConstructor());
         try {
             XQLFileManagerConfig config = yaml.loadAs(yamlLocation.getInputStream(), XQLFileManagerConfig.class);
-            if (config == null) {
+            if (Objects.isNull(config)) {
                 log.warn("yaml loaded nothing, resource length is " + yamlLocation.getInputStream().available());
                 return;
             }
@@ -82,7 +83,7 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * 加载properties配置文件初始化配置项
+     * 加载properties配置文件初始化配置项。
      *
      * @param propertiesLocation properties文件资源
      */
@@ -119,7 +120,7 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * 拷贝所有配置项到另一个配置对象
+     * 拷贝所有配置项到另一个配置对象。
      *
      * @param other 另一个配置对象
      */
@@ -130,7 +131,7 @@ public class XQLFileManagerConfig {
                 field.setAccessible(true);
                 try {
                     Object v = field.get(this);
-                    if (v != null) {
+                    if (Objects.nonNull(v)) {
                         field.set(other, v);
                     }
                 } catch (IllegalAccessException e) {
@@ -141,7 +142,7 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * 如果在多线程情况下进行非法操作，抛出异常
+     * 如果在多线程情况下进行非法操作，抛出异常。
      */
     protected void checkLoading() {
         if (loading) {
@@ -150,7 +151,7 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * 检查是否正在加载sql文件
+     * 检查是否正在加载sql文件。
      *
      * @return 是否正在加载sql文件
      */
@@ -159,7 +160,7 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * 命名的sql文件
+     * 命名的sql文件。
      *
      * @return 文件字典 [别名，文件名]
      */
@@ -168,19 +169,18 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * 设置命名的sql文件
+     * 设置命名的sql文件。
      *
      * @param files 文件字典 [别名，文件名]
      */
     public void setFiles(Map<String, String> files) {
-        if (files == null) {
-            return;
+        if (Objects.nonNull(files)) {
+            this.files = new HashMap<>(files);
         }
-        this.files = new HashMap<>(files);
     }
 
     /**
-     * 获取常量集合
+     * 获取常量集合。
      *
      * @return 常量集合
      */
@@ -189,8 +189,8 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * 设置全局常量集合<br>
-     * 初始化扫描sql时，如果sql文件中没有找到匹配的字符串模版，则从全局常量中寻找
+     * 设置全局常量集合。<br>
+     * 初始化扫描sql时，如果sql文件中没有找到匹配的字符串模版，则从全局常量中寻找，
      * 格式为：
      * <blockquote>
      * <pre>constants: {db: "test"}</pre>
@@ -201,15 +201,14 @@ public class XQLFileManagerConfig {
      * @param constants 常量集合
      */
     public void setConstants(Map<String, Object> constants) {
-        if (constants == null) {
-            return;
+        if (Objects.nonNull(constants)) {
+            checkLoading();
+            this.constants = new HashMap<>(constants);
         }
-        checkLoading();
-        this.constants = new HashMap<>(constants);
     }
 
     /**
-     * 获取动态sql脚本自定义管道字典
+     * 获取动态sql脚本自定义管道字典。
      *
      * @return 自定义管道字典
      */
@@ -218,19 +217,18 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * 配置动态sql脚本自定义管道字典
+     * 配置动态sql脚本自定义管道字典。
      *
      * @param pipeInstances 自定义管道字典 [管道名, 管道类实例]
      */
     public void setPipeInstances(Map<String, IPipe<?>> pipeInstances) {
-        if (pipeInstances == null) {
-            return;
+        if (Objects.nonNull(pipeInstances)) {
+            this.pipeInstances = new HashMap<>(pipeInstances);
         }
-        this.pipeInstances = new HashMap<>(pipeInstances);
     }
 
     /**
-     * 获取动态sql脚本自定义管道字典
+     * 获取动态sql脚本自定义管道字典。
      *
      * @return 自定义管道字典
      */
@@ -239,20 +237,19 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * 配置动态sql脚本自定义管道字典
+     * 配置动态sql脚本自定义管道字典。
      *
      * @param pipes 自定义管道字典 [管道名, 管道类全名]
      * @see IPipe
      */
     public void setPipes(Map<String, String> pipes) {
-        if (pipes == null) {
-            return;
+        if (Objects.nonNull(pipes)) {
+            this.pipes = new HashMap<>(pipes);
         }
-        this.pipes = new HashMap<>(pipes);
     }
 
     /**
-     * 获取当前解析sql文件使用的编码格式，默认为UTF-8
+     * 获取当前解析sql文件使用的编码格式，默认为UTF-8。
      *
      * @return 当前解析sql文件使用的编码格式
      */
@@ -261,35 +258,33 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * 设置解析sql文件使用的编码格式，默认为UTF-8
+     * 设置解析sql文件使用的编码格式，默认为UTF-8。
      *
      * @param charset 编码
      * @see StandardCharsets
      */
     public void setCharset(String charset) {
-        if (charset == null) {
-            return;
+        if (Objects.nonNull(charset)) {
+            this.checkLoading();
+            this.charset = charset;
         }
-        this.checkLoading();
-        this.charset = charset;
     }
 
     /**
-     * 设置解析sql文件使用的编码格式，默认为UTF-8
+     * 设置解析sql文件使用的编码格式，默认为UTF-8。
      *
      * @param charset 编码
      * @see StandardCharsets
      */
     public void setCharset(Charset charset) {
-        if (charset == null) {
-            return;
+        if (Objects.nonNull(charset)) {
+            checkLoading();
+            this.charset = charset.name();
         }
-        checkLoading();
-        this.charset = charset.name();
     }
 
     /**
-     * 获取当前的每个文件的sql片段块解析分隔符，默认是单个分号（{@code ;}）
+     * 获取当前的每个文件的sql片段块解析分隔符，默认是单个分号（{@code ;}）。
      *
      * @return sql块分隔符
      */
@@ -308,15 +303,14 @@ public class XQLFileManagerConfig {
      * @param delimiter sql块分隔符
      */
     public void setDelimiter(String delimiter) {
-        if (delimiter == null || delimiter.trim().isEmpty()) {
-            return;
+        if (Objects.nonNull(delimiter) && !delimiter.trim().isEmpty()) {
+            checkLoading();
+            this.delimiter = delimiter;
         }
-        checkLoading();
-        this.delimiter = delimiter;
     }
 
     /**
-     * 获取命名参数前缀（用于支持插件识别）
+     * 获取命名参数前缀（用于支持插件识别）。
      *
      * @return 命名参数前缀
      */
@@ -325,19 +319,18 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * 设置命名参数前缀（用于支持插件识别）
+     * 设置命名参数前缀（用于支持插件识别）。
      *
      * @param namedParamPrefix 命名参数前缀
      */
     public void setNamedParamPrefix(Character namedParamPrefix) {
-        if (namedParamPrefix == null || namedParamPrefix == ' ') {
-            return;
+        if (Objects.nonNull(namedParamPrefix) && namedParamPrefix != ' ') {
+            this.namedParamPrefix = namedParamPrefix;
         }
-        this.namedParamPrefix = namedParamPrefix;
     }
 
     /**
-     * 获取数据库名
+     * 获取数据库名。
      *
      * @return 数据库名
      */
@@ -346,7 +339,7 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * 设置数据库名
+     * 设置数据库名。
      *
      * @param databaseId 数据库名
      */

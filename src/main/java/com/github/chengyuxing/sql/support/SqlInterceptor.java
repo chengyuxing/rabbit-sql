@@ -1,6 +1,7 @@
 package com.github.chengyuxing.sql.support;
 
 import com.github.chengyuxing.common.utils.StringUtil;
+import com.github.chengyuxing.sql.exceptions.IllegalSqlException;
 
 import java.sql.DatabaseMetaData;
 import java.util.Map;
@@ -19,9 +20,9 @@ public interface SqlInterceptor {
      * @param args     sql参数
      * @param metaData 当前数据库元数据
      * @return true：执行sql，false：拒绝执行
-     * @throws Throwable 抛出异常信息达到拒绝执行
+     * @throws IllegalSqlException 抛出异常信息达到拒绝执行
      */
-    boolean prevHandle(String sql, Map<String, ?> args, DatabaseMetaData metaData) throws Throwable;
+    boolean preHandle(String sql, Map<String, ?> args, DatabaseMetaData metaData) throws IllegalSqlException;
 
     /**
      * 默认的sql拦截器，拦截DDL语句和无效条件的delete语句
@@ -31,7 +32,7 @@ public interface SqlInterceptor {
         private final Pattern CRITERIA = Pattern.compile("(?<a>[\\w._]+)\\s*=\\s*(?<b>[\\w._]+)");
 
         @Override
-        public boolean prevHandle(String sql, Map<String, ?> args, DatabaseMetaData metaData) {
+        public boolean preHandle(String sql, Map<String, ?> args, DatabaseMetaData metaData) {
             if (StringUtil.isEmpty(sql)) {
                 return false;
             }

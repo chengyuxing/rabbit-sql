@@ -7,11 +7,11 @@ import com.github.chengyuxing.sql.datasource.DataSourceUtil.TransactionSynchroni
 import java.util.*;
 
 /**
- * 抽象事务同步管理器
+ * Abstract transaction sync manager.
  */
 public abstract class AbstractTransactionSyncManager {
     /**
-     * 连接对象(数据源，连接对象)
+     * [datasource, connection]
      */
     public static final ThreadLocal<Map<Object, ConnectionHolder>> resources = new NamedThreadLocal<>("Connection resource");
 
@@ -25,12 +25,6 @@ public abstract class AbstractTransactionSyncManager {
 
     private static final ThreadLocal<String> currentTransactionName = new NamedThreadLocal<>("Current transaction name");
 
-    /**
-     * 获取资源
-     *
-     * @param key 键
-     * @return 连接对象
-     */
     public static ConnectionHolder getResource(Object key) {
         Map<Object, ConnectionHolder> map = resources.get();
         if (map == null) {
@@ -39,12 +33,6 @@ public abstract class AbstractTransactionSyncManager {
         return map.get(key);
     }
 
-    /**
-     * 绑定资源
-     *
-     * @param key   数据源
-     * @param value 连接对象
-     */
     public static void bindResource(Object key, ConnectionHolder value) {
         Map<Object, ConnectionHolder> map = resources.get();
         if (map == null) {
@@ -54,11 +42,6 @@ public abstract class AbstractTransactionSyncManager {
         map.put(key, value);
     }
 
-    /**
-     * 解绑资源
-     *
-     * @param key 数据源
-     */
     public static void unbindResource(Object key) {
         ConnectionHolder value = doUnbindResource(key);
         if (value == null) {
@@ -78,29 +61,16 @@ public abstract class AbstractTransactionSyncManager {
         return value;
     }
 
-    /**
-     * 事务同步是否活动
-     *
-     * @return 激活状态
-     */
     public static boolean isSynchronizationActive() {
         return synchronizations.get() != null;
     }
 
-    /**
-     * 初始化事务同步
-     */
     public static void initSynchronization() {
         if (!isSynchronizationActive()) {
             synchronizations.set(new LinkedHashSet<>());
         }
     }
 
-    /**
-     * 注册事务同步
-     *
-     * @param synchronization 事务同步
-     */
     public static void registerSynchronization(TransactionSynchronization synchronization) {
         if (!isSynchronizationActive()) {
             throw new IllegalStateException("transaction synchronization not active");
@@ -108,11 +78,6 @@ public abstract class AbstractTransactionSyncManager {
         synchronizations.get().add(synchronization);
     }
 
-    /**
-     * 获取全部同步的事务
-     *
-     * @return 事务对象序列
-     */
     public static List<TransactionSynchronization> getSynchronizations() {
         Set<TransactionSynchronization> synchs = synchronizations.get();
         if (synchs == null || synchs.isEmpty())
@@ -121,83 +86,38 @@ public abstract class AbstractTransactionSyncManager {
         return Collections.unmodifiableList(newSynchs);
     }
 
-    /**
-     * 设置当前事务的名字
-     *
-     * @param name 事务名
-     */
     public static void setCurrentTransactionName(String name) {
         currentTransactionName.set(name);
     }
 
-    /**
-     * 获取事务同步名字
-     *
-     * @return 事务名
-     */
     public static String getCurrentTransactionName() {
         return currentTransactionName.get();
     }
 
-    /**
-     * 设置事务是否只读
-     *
-     * @param readOnly 是否只读
-     */
     public static void setCurrentTransactionReadOnly(boolean readOnly) {
         currentTransactionReadOnly.set(readOnly ? Boolean.TRUE : null);
     }
 
-    /**
-     * 获取当前事务是否只读
-     *
-     * @return 只读标记
-     */
     public static boolean isCurrentTransactionReadOnly() {
         return currentTransactionReadOnly.get() != null;
     }
 
-    /**
-     * 设置当前事务是否活动
-     *
-     * @param active 是否活动
-     */
     public static void setTransactionActive(boolean active) {
         actualTransactionActive.set(active ? Boolean.TRUE : null);
     }
 
-    /**
-     * 事务是否活动
-     *
-     * @return 是否活动
-     */
     public static boolean isTransactionActive() {
         return actualTransactionActive.get() != null;
     }
 
-    /**
-     * 设置当前事务级别
-     *
-     * @param isolationLevel 事务级别
-     */
     public static void setCurrentTransactionIsolationLevel(Integer isolationLevel) {
         currentTransactionIsolationLevel.set(isolationLevel);
     }
 
-    /**
-     * 获取当前事务级别
-     *
-     * @return 事务级别
-     */
     public static Integer getCurrentTransactionIsolationLevel() {
         return currentTransactionIsolationLevel.get();
     }
 
-    /**
-     * 初始化事务信息
-     *
-     * @param definition 事务定义
-     */
     public static void initTransaction(Definition definition) {
         setTransactionActive(true);
         setCurrentTransactionName(definition.getName());
@@ -205,9 +125,6 @@ public abstract class AbstractTransactionSyncManager {
         setCurrentTransactionIsolationLevel(definition.getLevel());
     }
 
-    /**
-     * 清理事务资源
-     */
     public static void clear() {
         synchronizations.remove();
         currentTransactionIsolationLevel.remove();

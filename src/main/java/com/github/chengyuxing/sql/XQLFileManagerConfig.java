@@ -21,7 +21,7 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * 支持扩展脚本解析动态SQL的文件管理器配置项。
+ * Dynamic SQL parse file manager config.
  */
 public class XQLFileManagerConfig {
     private static final Logger log = LoggerFactory.getLogger(XQLFileManagerConfig.class);
@@ -45,9 +45,9 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * 配置项构造器
+     * Constructed a XQLFileManagerConfig with config location.
      *
-     * @param configLocation 配置文件路径名
+     * @param configLocation config location path
      */
     public XQLFileManagerConfig(String configLocation) {
         this();
@@ -64,9 +64,9 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * 加载yml配置文件初始化配置项。
+     * Load yml config.
      *
-     * @param yamlLocation yml文件资源
+     * @param yamlLocation yml resource
      */
     public void loadYaml(FileResource yamlLocation) {
         Yaml yaml = new Yaml(new JoinConstructor());
@@ -83,9 +83,9 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * 加载properties配置文件初始化配置项。
+     * Load properties config.
      *
-     * @param propertiesLocation properties文件资源
+     * @param propertiesLocation properties resource
      */
     public void loadProperties(FileResource propertiesLocation) {
         TypedProperties properties = new TypedProperties();
@@ -120,11 +120,11 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * 拷贝所有配置项到另一个配置对象。
+     * Copy config state to another.
      *
-     * @param other 另一个配置对象
+     * @param another another XQLFileManagerConfig
      */
-    public void copyStateTo(XQLFileManagerConfig other) {
+    public void copyStateTo(XQLFileManagerConfig another) {
         Field[] fields = XQLFileManagerConfig.class.getDeclaredFields();
         for (Field field : fields) {
             if (!Modifier.isFinal(field.getModifiers())) {
@@ -132,7 +132,7 @@ public class XQLFileManagerConfig {
                 try {
                     Object v = field.get(this);
                     if (Objects.nonNull(v)) {
-                        field.set(other, v);
+                        field.set(another, v);
                     }
                 } catch (IllegalAccessException e) {
                     throw new RuntimeException("Failed to copy XQLFileManagerConfig state: " + e.getMessage(), e);
@@ -142,7 +142,7 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * 如果在多线程情况下进行非法操作，抛出异常。
+     * If XQL file manager on loading while config state changing by another thread, throws exception.
      */
     protected void checkLoading() {
         if (loading) {
@@ -151,27 +151,27 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * 检查是否正在加载sql文件。
+     * Loading state.
      *
-     * @return 是否正在加载sql文件
+     * @return true if loading or false
      */
     public boolean isLoading() {
         return loading;
     }
 
     /**
-     * 命名的sql文件。
+     * Get sql files map.
      *
-     * @return 文件字典 [别名，文件名]
+     * @return file map [alias, file name]
      */
     public Map<String, String> getFiles() {
         return files;
     }
 
     /**
-     * 设置命名的sql文件。
+     * Set sql files map.
      *
-     * @param files 文件字典 [别名，文件名]
+     * @param files files map [alias, file name]
      */
     public void setFiles(Map<String, String> files) {
         if (Objects.nonNull(files)) {
@@ -180,25 +180,24 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * 获取常量集合。
+     * Get constants map.
      *
-     * @return 常量集合
+     * @return constants map
      */
     public Map<String, Object> getConstants() {
         return constants;
     }
 
     /**
-     * 设置全局常量集合。<br>
-     * 初始化扫描sql时，如果sql文件中没有找到匹配的字符串模版，则从全局常量中寻找，
-     * 格式为：
+     * Set constants map.<br>
+     * Example：
      * <blockquote>
      * <pre>constants: {db: "test"}</pre>
      * <pre>sql: {@code select ${db}.user from table;}</pre>
      * <pre>result: select test.user from table.</pre>
      * </blockquote>
      *
-     * @param constants 常量集合
+     * @param constants constants map
      */
     public void setConstants(Map<String, Object> constants) {
         if (Objects.nonNull(constants)) {
@@ -208,18 +207,18 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * 获取动态sql脚本自定义管道字典。
+     * Get custom pipe instances map.
      *
-     * @return 自定义管道字典
+     * @return custom pipe instances map
      */
     public Map<String, IPipe<?>> getPipeInstances() {
         return pipeInstances;
     }
 
     /**
-     * 配置动态sql脚本自定义管道字典。
+     * Set custom pipe instances map.
      *
-     * @param pipeInstances 自定义管道字典 [管道名, 管道类实例]
+     * @param pipeInstances custom pipe instances map [pipe name, pipe instance]
      */
     public void setPipeInstances(Map<String, IPipe<?>> pipeInstances) {
         if (Objects.nonNull(pipeInstances)) {
@@ -228,18 +227,18 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * 获取动态sql脚本自定义管道字典。
+     * Get custom pipe class name map.
      *
-     * @return 自定义管道字典
+     * @return custom pipe class name map
      */
     public Map<String, String> getPipes() {
         return pipes;
     }
 
     /**
-     * 配置动态sql脚本自定义管道字典。
+     * Set custom pipe class name map.
      *
-     * @param pipes 自定义管道字典 [管道名, 管道类全名]
+     * @param pipes custom pipe class name map [pipe name, pipe class name]
      * @see IPipe
      */
     public void setPipes(Map<String, String> pipes) {
@@ -249,18 +248,18 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * 获取当前解析sql文件使用的编码格式，默认为UTF-8。
+     * Get sql file parsing charset.
      *
-     * @return 当前解析sql文件使用的编码格式
+     * @return charset name
      */
     public String getCharset() {
         return charset;
     }
 
     /**
-     * 设置解析sql文件使用的编码格式，默认为UTF-8。
+     * Set sql file parsing charset, UTF-8 is default.
      *
-     * @param charset 编码
+     * @param charset charset
      * @see StandardCharsets
      */
     public void setCharset(String charset) {
@@ -271,9 +270,9 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * 设置解析sql文件使用的编码格式，默认为UTF-8。
+     * Set sql file parsing charset, UTF-8 is default.
      *
-     * @param charset 编码
+     * @param charset charset
      * @see StandardCharsets
      */
     public void setCharset(Charset charset) {
@@ -284,23 +283,20 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * 获取当前的每个文件的sql片段块解析分隔符，默认是单个分号（{@code ;}）。
+     * Get delimiter of multi sql fragment/template, symbol ({@code ;}) is default.
      *
-     * @return sql块分隔符
+     * @return delimiter
      */
     public String getDelimiter() {
         return delimiter;
     }
 
     /**
-     * 每个文件的sql片段块解析分隔符，每一段完整的sql根据此设置来进行区分，
-     * 默认是单个分号（{@code ;}）遵循标准sql文件多段sql分隔符。<br>但是有一种情况，如果sql文件内有<b>psql</b>：{@code create function...} 或 {@code create procedure...}等，
-     * 内部会包含多段sql多个分号，为防止解析异常，单独设置自定义的分隔符：
-     * <ul>
-     *     <li>例如（{@code ;;}）双分号，也是标准sql所支持的, <b>并且支持仅扫描已命名的sql</b>；</li>
-     * </ul>
+     * Set delimiter of multi sql fragment/template, symbol ({@code ;}) is default.<br>
+     * Sometimes default delimiter is not enough, such as one procedure body or plsql maybe contains
+     * more than one {@code ;}, set to other is necessary, like {@code ;;} .
      *
-     * @param delimiter sql块分隔符
+     * @param delimiter multi sql fragment/template delimiter
      */
     public void setDelimiter(String delimiter) {
         if (Objects.nonNull(delimiter) && !delimiter.trim().isEmpty()) {
@@ -310,18 +306,18 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * 获取命名参数前缀（用于支持插件识别）。
+     * Get named parameter prefix.
      *
-     * @return 命名参数前缀
+     * @return named parameter prefix
      */
     public Character getNamedParamPrefix() {
         return namedParamPrefix;
     }
 
     /**
-     * 设置命名参数前缀（用于支持插件识别）。
+     * Set named parameter prefix. (for IDEA Rabbit-SQL plugin)
      *
-     * @param namedParamPrefix 命名参数前缀
+     * @param namedParamPrefix named parameter prefix
      */
     public void setNamedParamPrefix(Character namedParamPrefix) {
         if (Objects.nonNull(namedParamPrefix) && namedParamPrefix != ' ') {
@@ -330,18 +326,18 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * 获取数据库名。
+     * Get database name.
      *
-     * @return 数据库名
+     * @return database name
      */
     public String getDatabaseId() {
         return databaseId;
     }
 
     /**
-     * 设置数据库名。
+     * Set database name.
      *
-     * @param databaseId 数据库名
+     * @param databaseId database name
      */
     public void setDatabaseId(String databaseId) {
         checkLoading();

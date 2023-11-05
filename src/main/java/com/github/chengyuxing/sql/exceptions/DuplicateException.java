@@ -1,8 +1,5 @@
 package com.github.chengyuxing.sql.exceptions;
 
-/**
- * 重复运行时异常
- */
 public class DuplicateException extends RuntimeException {
     public DuplicateException(String message) {
         super(message);

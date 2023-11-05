@@ -15,19 +15,19 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.quoteFormatValue;
 import static com.github.chengyuxing.sql.utils.SqlUtil.replaceSqlSubstr;
 
 /**
- * sql构建工具帮助类
+ * Sql generate tool.
  */
 public class SqlGenerator {
     private final String namedParamPrefix;
     /**
-     * 匹配命名参数
+     * Named parameter pattern.
      */
     private final Pattern namedParamPattern;
 
     /**
-     * sql翻译帮助实例
+     * Constructed a SqlGenerator with named parameter prefix.
      *
-     * @param namedParamPrefix 命名参数前缀符号
+     * @param namedParamPrefix named parameter prefix
      */
     public SqlGenerator(char namedParamPrefix) {
         if (namedParamPrefix == ' ') {
@@ -37,53 +37,48 @@ public class SqlGenerator {
         this.namedParamPrefix = String.valueOf(namedParamPrefix);
     }
 
-    /**
-     * 获取命名参数解析正则表达式
-     *
-     * @return 命名参数解析正则表达式
-     */
     public Pattern getNamedParamPattern() {
         return namedParamPattern;
     }
 
-    /**
-     * 获取命名参数前缀符号
-     *
-     * @return 命名参数前缀符号
-     */
     public String getNamedParamPrefix() {
         return namedParamPrefix;
     }
 
     /**
-     * 解析命名参数sql处理为预编译的sql
+     * Generate prepared sql by named parameter sql.<br>
+     *  e.g.
+     * <blockquote>
+     * <pre>before: select * from table where id = :id</pre>
+     * <pre>after: select * from table where id = ?</pre>
+     * </blockquote>
      *
-     * @param sql  命名参数占位符sql
-     * @param args 参数
-     * @return [预编译sql，顺序的参数名集合]
+     * @param sql  named parameter sql
+     * @param args data of named parameter
+     * @return [prepared sql, sorted arg names]
      */
     public Pair<String, List<String>> generatePreparedSql(final String sql, Map<String, ?> args) {
         return _generateSql(sql, args, true);
     }
 
     /**
-     * 解析命名参数sql处理为普通sql
+     * Generate normal sql by named parameter sql.
      *
-     * @param sql  命名参数占位符sql
-     * @param args 参数
-     * @return 普通sql
+     * @param sql  named parameter sql
+     * @param args data of named parameter
+     * @return normal sql
      */
     public String generateSql(final String sql, Map<String, ?> args) {
         return _generateSql(sql, args, false).getItem1();
     }
 
     /**
-     * 构建一条可执行的sql
+     * Generate sql by named parameter sql.
      *
-     * @param sql     命名参数的sql字符串
-     * @param args    参数
-     * @param prepare 是否生成预编译sql
-     * @return [预编译/普通sql，顺序的参数名集合]
+     * @param sql     named parameter sql
+     * @param args    data of named parameter
+     * @param prepare prepare or not
+     * @return [prepare/normal sql，sorted arg names]
      */
     protected Pair<String, List<String>> _generateSql(final String sql, Map<String, ?> args, boolean prepare) {
         // resolve the sql string template first
@@ -121,19 +116,19 @@ public class SqlGenerator {
     }
 
     /**
-     * 忽略大小写过滤筛选掉不满足条件的字段
+     * Filter keys ignore case of data map if key not in custom keys scope.
      *
-     * @param row         数据行
-     * @param fieldsScope 只允许数据行key存在的字段范围
-     * @return 满足条件的字段
+     * @param data       data map
+     * @param keysScope keys scope
+     * @return scoped key set
      */
-    public Set<String> filterKeys(final Map<String, ?> row, List<String> fieldsScope) {
-        if (fieldsScope == null || fieldsScope.isEmpty()) {
-            return row.keySet();
+    public Set<String> filterKeys(final Map<String, ?> data, List<String> keysScope) {
+        if (keysScope == null || keysScope.isEmpty()) {
+            return data.keySet();
         }
-        String[] fieldArr = fieldsScope.toArray(new String[0]);
+        String[] fieldArr = keysScope.toArray(new String[0]);
         Set<String> set = new HashSet<>();
-        for (String k : row.keySet()) {
+        for (String k : data.keySet()) {
             if (StringUtil.equalsAnyIgnoreCase(k, fieldArr)) {
                 if (!containsIgnoreCase(set, k)) {
                     set.add(k);
@@ -144,25 +139,25 @@ public class SqlGenerator {
     }
 
     /**
-     * 构建一个传名参数占位符的插入语句
+     * Generate named parameter insert statement.
      *
-     * @param tableName   表名
-     * @param row         数据
-     * @param fieldsScope 只允许数据行key存在的字段范围
-     * @param ignoreNull  忽略null值
-     * @return 传名参数占位符的插入语句
-     * @throws IllegalArgumentException 如果参数为空
+     * @param tableName  table name
+     * @param data       data
+     * @param keysScope  keys scope
+     * @param ignoreNull ignore null value or not
+     * @return named parameter insert statement
+     * @throws IllegalArgumentException if all data keys not in scope
      */
-    public String generateNamedParamInsert(final String tableName, final Map<String, ?> row, List<String> fieldsScope, boolean ignoreNull) {
-        Set<String> keys = filterKeys(row, fieldsScope);
+    public String generateNamedParamInsert(final String tableName, final Map<String, ?> data, List<String> keysScope, boolean ignoreNull) {
+        Set<String> keys = filterKeys(data, keysScope);
         if (keys.isEmpty()) {
-            throw new IllegalArgumentException("empty field set, generate insert sql error.");
+            throw new IllegalArgumentException("empty key set, generate insert sql error.");
         }
         StringJoiner f = new StringJoiner(", ");
         StringJoiner h = new StringJoiner(", ");
         for (String key : keys) {
-            if (row.containsKey(key)) {
-                if (ignoreNull && Objects.isNull(row.get(key))) {
+            if (data.containsKey(key)) {
+                if (ignoreNull && Objects.isNull(data.get(key))) {
                     continue;
                 }
                 f.add(key);
@@ -173,21 +168,21 @@ public class SqlGenerator {
     }
 
     /**
-     * 构建一个更新语句
+     * Generate named parameter update statement.
      *
-     * @param tableName   表名
-     * @param where       where条件
-     * @param data        数据
-     * @param fieldsScope 只允许数据行key存在的字段范围
-     * @param ignoreNull  忽略null值
-     * @return 传名参数占位符的sql或普通sql
+     * @param tableName  table name
+     * @param where      condition
+     * @param data       data
+     * @param keysScope  keys scope
+     * @param ignoreNull ignore null value or not
+     * @return named parameter update statement
      */
-    public String generateNamedParamUpdate(String tableName, String where, Map<String, ?> data, List<String> fieldsScope, boolean ignoreNull) {
+    public String generateNamedParamUpdate(String tableName, String where, Map<String, ?> data, List<String> keysScope, boolean ignoreNull) {
         Map<String, ?> updateSets = getUpdateSets(where, data);
         if (updateSets.isEmpty()) {
             throw new IllegalArgumentException("empty field set, generate update sql error.");
         }
-        Set<String> keys = filterKeys(updateSets, fieldsScope);
+        Set<String> keys = filterKeys(updateSets, keysScope);
         if (keys.isEmpty()) {
             throw new IllegalArgumentException("empty field set, generate update sql error.");
         }
@@ -204,11 +199,11 @@ public class SqlGenerator {
     }
 
     /**
-     * 获取update语句中set需要的参数字典
+     * Get update statement sets data from data map exclude keys in condition.
      *
-     * @param where 可包含参数的where条件
-     * @param args  参数字典
-     * @return set参数字典
+     * @param where condition
+     * @param args  args
+     * @return update sets data
      */
     public Map<String, ?> getUpdateSets(String where, Map<String, ?> args) {
         if (Objects.isNull(args) || args.isEmpty()) {
@@ -228,15 +223,12 @@ public class SqlGenerator {
     }
 
     /**
-     * 通过查询sql大致的构建出查询条数的sql
+     * Generate count query by record query.
      *
-     * @param recordQuery 查询sql
-     * @return 条数查询sql
+     * @param recordQuery record query
+     * @return count query
      */
     public String generateCountQuery(final String recordQuery) {
-        if (StringUtil.startsWithIgnoreCase(recordQuery.trim(), "with")) {
-            // TODO: 2023/10/25 考虑是否需要特殊处理下with查询的count语句
-        }
         return "select count(*) from (" + recordQuery + ") t_4_rabbit";
     }
 }

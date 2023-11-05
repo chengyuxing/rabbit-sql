@@ -4,18 +4,18 @@ import java.sql.PreparedStatement;
 import java.sql.SQLException;
 
 /**
- * 预编译执行声明回调函数，通过这个特殊的函数可以在一个执行器中完成所有操作
+ * Prepared statement callback function.
  *
- * @param <T>返回类型参数
+ * @param <T> result type
  */
 @FunctionalInterface
 public interface StatementCallback<T> {
     /**
-     * 预编译声明对象中执行一个操作
+     * Do something with prepared statement object.
      *
-     * @param statement statement
-     * @return 任何想返回的类型
-     * @throws SQLException sqlExp
+     * @param statement statement object
+     * @return any
+     * @throws SQLException if execute sql error
      */
     T doInStatement(PreparedStatement statement) throws SQLException;
 }

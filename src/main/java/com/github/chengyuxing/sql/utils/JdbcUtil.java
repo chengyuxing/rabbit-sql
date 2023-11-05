@@ -12,19 +12,10 @@ import java.time.*;
 import java.util.*;
 
 /**
- * JDBC工具类
+ * JDBC util.
  */
 public class JdbcUtil {
 
-    /**
-     * 获取result结果
-     *
-     * @param resultSet resultSet
-     * @param index     序号
-     * @return java类型值
-     * @throws SQLException     ex
-     * @throws RuntimeException 如果通过反射获取PgArray对象出现错误
-     */
     public static Object getResultValue(ResultSet resultSet, int index) throws SQLException {
         Object obj = resultSet.getObject(index);
         String className = null;
@@ -57,134 +48,6 @@ public class JdbcUtil {
         return obj;
     }
 
-    /**
-     * Blob对象转换为字节数组
-     *
-     * @param blob 二进制对象
-     * @return 字节数组
-     * @throws SQLException SqlExp
-     */
-    public static byte[] getBytes(Blob blob) throws SQLException {
-        byte[] bytes = new byte[0];
-        if (Objects.nonNull(blob)) {
-            try (InputStream ins = blob.getBinaryStream()) {
-                bytes = new byte[(int) blob.length()];
-                //noinspection ResultOfMethodCallIgnored
-                ins.read(bytes);
-            } catch (IOException e) {
-                throw new UncheckedIOException("read blob catch an error.", e);
-            }
-        }
-        return bytes;
-    }
-
-    /**
-     * 关闭结果集
-     *
-     * @param resultSet 结果集
-     * @throws SQLException sqlEx
-     */
-    public static void closeResultSet(ResultSet resultSet) throws SQLException {
-        if (Objects.nonNull(resultSet)) {
-            if (!resultSet.isClosed()) {
-                resultSet.close();
-            }
-        }
-    }
-
-    /**
-     * 关闭connection声明对象
-     *
-     * @param statement 声明对象
-     * @throws SQLException sqlEx
-     */
-    public static void closeStatement(Statement statement) throws SQLException {
-        if (Objects.nonNull(statement)) {
-            if (!statement.isClosed()) {
-                statement.close();
-            }
-        }
-    }
-
-    /**
-     * 创建数据行表头
-     *
-     * @param resultSet   结果集
-     * @param executedSql 将要执行的原生sql，用于识别双引号包含的字段不进行转小写操作
-     * @return 一组表头
-     * @throws SQLException 数据库异常
-     */
-    public static String[] createNames(ResultSet resultSet, final String executedSql) throws SQLException {
-        ResultSetMetaData metaData = resultSet.getMetaData();
-        int columnCount = metaData.getColumnCount();
-        String[] names = new String[columnCount];
-        for (int i = 0; i < columnCount; i++) {
-            String columnName = metaData.getColumnName(i + 1);
-            if (executedSql.contains("\"" + columnName + "\"")) {
-                names[i] = columnName;
-            } else {
-                names[i] = columnName.toLowerCase();
-            }
-        }
-        return names;
-    }
-
-    /**
-     * 创建数据行
-     *
-     * @param names     表头名
-     * @param resultSet 结果集
-     * @return 数据化载体
-     * @throws SQLException sqlEx
-     */
-    public static DataRow createDataRow(String[] names, ResultSet resultSet) throws SQLException {
-        DataRow row = new DataRow(names.length);
-        for (int i = 0; i < names.length; i++) {
-            String name = names[i];
-            if (name.equals("?column?")) {
-                name = "column" + i;
-            }
-            row.put(name, JdbcUtil.getResultValue(resultSet, i + 1));
-        }
-        return row;
-    }
-
-    /**
-     * 解析ResultSet
-     *
-     * @param resultSet   结果集
-     * @param executedSql 将要执行的原生sql
-     * @param fetchSize   请求数据大小
-     * @return 以流包装的结果集
-     * @throws SQLException ex
-     */
-    public static List<DataRow> createDataRows(final ResultSet resultSet, final String executedSql, final long fetchSize) throws SQLException {
-        if (Objects.isNull(resultSet)) {
-            return Collections.emptyList();
-        }
-        List<DataRow> list = new ArrayList<>();
-        String[] names = null;
-        long size = fetchSize;
-        while (resultSet.next()) {
-            if (size == 0)
-                break;
-            if (Objects.isNull(names)) {
-                names = createNames(resultSet, executedSql);
-            }
-            list.add(createDataRow(names, resultSet));
-            size--;
-        }
-        return list;
-    }
-
-    /**
-     * 设置参数占位符的参数值
-     *
-     * @param ps    预编译对象
-     * @param index 序号
-     * @param value 值
-     * @throws SQLException sqlEx
-     */
     public static void setStatementValue(PreparedStatement ps, int index, Object value) throws SQLException {
         if (Objects.isNull(value)) {
             ps.setNull(index, Types.NULL);
@@ -227,5 +90,106 @@ public class JdbcUtil {
         } else {
             ps.setObject(index, value);
         }
+    }
+
+    public static byte[] getBytes(Blob blob) throws SQLException {
+        byte[] bytes = new byte[0];
+        if (Objects.nonNull(blob)) {
+            try (InputStream ins = blob.getBinaryStream()) {
+                bytes = new byte[(int) blob.length()];
+                //noinspection ResultOfMethodCallIgnored
+                ins.read(bytes);
+            } catch (IOException e) {
+                throw new UncheckedIOException("read blob catch an error.", e);
+            }
+        }
+        return bytes;
+    }
+
+    public static void closeResultSet(ResultSet resultSet) throws SQLException {
+        if (Objects.nonNull(resultSet)) {
+            if (!resultSet.isClosed()) {
+                resultSet.close();
+            }
+        }
+    }
+
+    public static void closeStatement(Statement statement) throws SQLException {
+        if (Objects.nonNull(statement)) {
+            if (!statement.isClosed()) {
+                statement.close();
+            }
+        }
+    }
+
+    /**
+     * Create fields array by query result set.
+     *
+     * @param resultSet   query result set
+     * @param executedSql executed query sql, check column which be double-quoted for exclude case-sensitive column
+     * @return fields array
+     * @throws SQLException ex
+     */
+    public static String[] createNames(ResultSet resultSet, final String executedSql) throws SQLException {
+        ResultSetMetaData metaData = resultSet.getMetaData();
+        int columnCount = metaData.getColumnCount();
+        String[] names = new String[columnCount];
+        for (int i = 0; i < columnCount; i++) {
+            String columnName = metaData.getColumnName(i + 1);
+            if (executedSql.contains("\"" + columnName + "\"")) {
+                names[i] = columnName;
+            } else {
+                names[i] = columnName.toLowerCase();
+            }
+        }
+        return names;
+    }
+
+    /**
+     * Create DataRow from result set.
+     *
+     * @param names     fields array
+     * @param resultSet result set
+     * @return DataRow
+     * @throws SQLException ex
+     */
+    public static DataRow createDataRow(String[] names, ResultSet resultSet) throws SQLException {
+        DataRow row = new DataRow(names.length);
+        for (int i = 0; i < names.length; i++) {
+            String name = names[i];
+            if (name.equals("?column?")) {
+                name = "column" + i;
+            }
+            row.put(name, JdbcUtil.getResultValue(resultSet, i + 1));
+        }
+        return row;
+    }
+
+    /**
+     * Create DataRows from result set.
+     *
+     * @param resultSet   result set
+     * @param executedSql executed query sql, check column which be double-quoted for exclude case-sensitive column
+     * @param fetchSize   request result set size
+     * @return DataRows
+     * @throws SQLException ex
+     */
+    public static List<DataRow> createDataRows(final ResultSet resultSet, final String executedSql, final long fetchSize) throws SQLException {
+        if (Objects.isNull(resultSet)) {
+            return Collections.emptyList();
+        }
+        List<DataRow> list = new ArrayList<>();
+        String[] names = null;
+        long size = fetchSize;
+        while (resultSet.next()) {
+            if (size == 0)
+                break;
+            if (Objects.isNull(names)) {
+                names = createNames(resultSet, executedSql);
+            }
+            list.add(createDataRow(names, resultSet));
+            size--;
+        }
+        return list;
     }
 }

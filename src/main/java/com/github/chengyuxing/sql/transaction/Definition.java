@@ -1,7 +1,7 @@
 package com.github.chengyuxing.sql.transaction;
 
 /**
- * 事务定义
+ * Transaction definition.
  */
 public final class Definition {
     private String name;
@@ -32,11 +32,6 @@ public final class Definition {
         return level.getValue();
     }
 
-    /**
-     * 默认的事务级别
-     *
-     * @return 事务级别
-     */
     public static Definition defaultDefinition() {
         Definition definition = new Definition();
         definition.setReadOnly(false);

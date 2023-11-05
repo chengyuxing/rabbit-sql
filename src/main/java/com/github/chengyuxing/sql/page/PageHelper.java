@@ -3,7 +3,7 @@ package com.github.chengyuxing.sql.page;
 import com.github.chengyuxing.sql.Args;
 
 /**
- * 抽象分页工具
+ * Abstract page helper.
  */
 public abstract class PageHelper {
     public static final String ROW_NUM_KEY = "rn_4_rabbit";
@@ -13,62 +13,42 @@ public abstract class PageHelper {
     protected int recordCount;
 
     /**
-     * 包裹分页的sql
+     * Create paged sql.
      *
      * @param sql sql
-     * @return 分页的sql
+     * @return paged sql
      */
     public abstract String pagedSql(String sql);
 
     /**
-     * 包裹分页的必要参数
+     * Paged args.
      *
-     * @return 分页的参数集合
+     * @return paged args
      */
     public abstract Args<Integer> pagedArgs();
 
-    /**
-     * 获取总页数
-     *
-     * @return 总页数
-     */
     public int getPageCount() {
         return pageCount;
     }
 
-    /**
-     * 获取当前页码
-     *
-     * @return 当前页码
-     */
     public int getPageNumber() {
         return pageNumber;
     }
 
-    /**
-     * 获取每页记录条数
-     *
-     * @return 每页记录条数
-     */
     public int getPageSize() {
         return pageSize;
     }
 
-    /**
-     * 获取数据总条数
-     *
-     * @return 总条数
-     */
     public int getRecordCount() {
         return recordCount;
     }
 
     /**
-     * 初始化
+     * Initial page helper with page, size and record count.
      *
-     * @param page  当前页
-     * @param size  页大小
-     * @param count 记录条数
+     * @param page  current page
+     * @param size  page size
+     * @param count record count
      */
     public void init(int page, int size, int count) {
         pageNumber = page;

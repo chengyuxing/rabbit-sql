@@ -194,7 +194,7 @@ Tx.using(() -> {
 
 ### Prepare-SQL
 
-Prepare sql support named parameter style, e.g: 
+Prepare sql support named parameter style, e.g. 
 
 `:name` (jdbc standard named parameter syntax, sql will be prepare saftly, parameter name is `name` )
 
@@ -348,7 +348,7 @@ Data's key is starts with `:`.
 
 #### Pipe
 
-Syntax look like `:id | upper | is_id_card | ...` e.g: 
+Syntax look like `:id | upper | is_id_card | ...` e.g. 
 
 ```mermaid
 flowchart LR;
@@ -533,7 +533,7 @@ Default implement of interface **Baki**, support some basic operation.
 
 - If [XQLFileManager](#XQLFileManager) configured ,  you can manage sql in file and support [dynamic sql](#Dynamic-SQL);
 
-- Default named parameter start with `:` , it can be customized by specific property `namedParamPrefix`, e.g:
+- Default named parameter start with `:` , it can be customized by specific property `namedParamPrefix`, e.g.
 
   ```sql
   where id = ?id
@@ -551,7 +551,7 @@ Supported file extension with `.sql` or `.xql`, you can write any standard sql a
 
 :bulb: Recommend use `.xql` file to get [plugin](#IDEA-plugin-support) supports.
 
-Every managed sql file must follows **"k-v"** structure, e.g:
+Every managed sql file must follows **"k-v"** structure, e.g.
 
 `my.sql`
 
@@ -611,7 +611,7 @@ order by id;
    `sql-file-manager.properties` 
   
   ```properties
-  # Format: multi xql file configure the custom alias, e.g:
+  # Format: multi xql file configure the custom alias,  e.g.
   files.dt=data.sql
   files.sys=system.sql
   
@@ -642,7 +642,7 @@ order by id;
 
 - **delimiter**
 
-  Sql file **"k-v"** structure delimiter **default `;`**, follows standard multi sql structure delimiter by `;`, but there is a condition, if you have plsql in file e.g: `create function...` or `create procedure...`, it will be multi sql statement in one sql object, you need specific custom delimiter for resolve correctly:
+  Sql file **"k-v"** structure delimiter **default `;`**, follows standard multi sql structure delimiter by `;`, but there is a condition, if you have plsql in file  e.g. `create function...` or `create procedure...`, it will be multi sql statement in one sql object, you need specific custom delimiter for resolve correctly:
 
   - e.g ( `;;`) double semicolon.
 

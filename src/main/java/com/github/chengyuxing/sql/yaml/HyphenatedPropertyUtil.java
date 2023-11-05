@@ -4,7 +4,7 @@ import org.yaml.snakeyaml.introspector.Property;
 import org.yaml.snakeyaml.introspector.PropertyUtils;
 
 /**
- * 连字符属性工具
+ * Yaml hyphen properties tool.
  */
 public class HyphenatedPropertyUtil extends PropertyUtils {
     @Override

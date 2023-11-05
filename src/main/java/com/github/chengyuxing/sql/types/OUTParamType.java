@@ -5,7 +5,7 @@ import com.github.chengyuxing.sql.support.IOutParam;
 import java.sql.Types;
 
 /**
- * 出参枚举类型
+ * Store procedure/function OUT parameter type.
  */
 public enum OUTParamType implements IOutParam {
     REF_CURSOR(Types.REF_CURSOR, "ref_cursor"),

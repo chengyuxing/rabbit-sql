@@ -609,7 +609,7 @@ order by id;
   `xql-file-manager.properties`
   
   ```properties
-  # Format: multi xql file configure the custom alias, e.g:
+  # Format: multi xql file configure the custom alias, e.g.
   files.dt=data.sql
   files.sys=system.sql
   

@@ -11,7 +11,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
- * yaml文件自定标签字符串合并构造器
+ * Yaml custom tag for string join constructor.
  */
 public class JoinConstructor extends Constructor {
 

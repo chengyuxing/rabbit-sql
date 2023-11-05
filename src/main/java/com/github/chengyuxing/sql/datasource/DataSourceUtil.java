@@ -10,15 +10,15 @@ import java.sql.SQLException;
 import static com.github.chengyuxing.sql.datasource.AbstractTransactionSyncManager.*;
 
 /**
- * 数据源工具
+ * Datasource util.
  */
 public abstract class DataSourceUtil {
     /**
-     * 获取一个连接对象
+     * Get 1 connection.
      *
-     * @param dataSource 数据源
-     * @return 连接
-     * @throws SQLException ex
+     * @param dataSource datasource
+     * @return connection
+     * @throws SQLException if datasource states error
      */
     public static Connection getConnection(DataSource dataSource) throws SQLException {
         return doGetConnection(dataSource);
@@ -26,7 +26,7 @@ public abstract class DataSourceUtil {
 
     private static Connection doGetConnection(DataSource dataSource) throws SQLException {
         ConnectionHolder connectionHolder = getResource(dataSource);
-        // 当执行此分之时，说明当前是在一个事务中，事务还没有结束，新的请求将沿用带有事务的此连接对象
+        // It means current connection not released, maybe in transaction, reuse this connection for same state.
         if (connectionHolder != null && (connectionHolder.hasConnection() || connectionHolder.isSyncWithTransaction())) {
             connectionHolder.requested();
             if (!connectionHolder.hasConnection()) {
@@ -34,10 +34,9 @@ public abstract class DataSourceUtil {
             }
             return connectionHolder.getConnection();
         }
-        // 一般情况这是首次获取一个不绑定线程的连接对象
-        // 或者是从另一个数据源首次获取连接对象
+        // Get a new connection, maybe from another datasource.
         Connection connection = fetchConnection(dataSource);
-        // 如果当前有正在活动的事务，则将连接绑定到当前的事务中，否则直接返回一个不绑定事务的连接
+        // If transaction is active, bind new connection to transaction in current thread.
         if (isTransactionActive()) {
             ConnectionHolder holderToUse = connectionHolder;
             if (holderToUse == null) {
@@ -60,20 +59,20 @@ public abstract class DataSourceUtil {
     }
 
     /**
-     * 关闭连接对象
+     * Close connection.
      *
-     * @param connection 连接对象
-     * @throws SQLException ex
+     * @param connection connection
+     * @throws SQLException if connection states error
      */
     private static void doCloseConnection(Connection connection) throws SQLException {
         connection.close();
     }
 
     /**
-     * 如果有必要，则释放连接对象
+     * Close connection or release connection reference.
      *
-     * @param connection 连接对象
-     * @param dataSource 数据源
+     * @param connection connection
+     * @param dataSource datasource
      */
     public static void releaseConnection(Connection connection, DataSource dataSource) {
         try {
@@ -84,11 +83,11 @@ public abstract class DataSourceUtil {
     }
 
     /**
-     * 如果事务结束或当前没有事务，则释放连接对象资源
+     * Close connection or release connection reference.
      *
-     * @param connection 连接对象
-     * @param dataSource 数据源
-     * @throws SQLException 释放连接对象失败
+     * @param connection connection
+     * @param dataSource datasource
+     * @throws SQLException if connection states error
      */
     private static void doReleaseConnection(Connection connection, DataSource dataSource) throws SQLException {
         if (connection == null) {
@@ -97,7 +96,7 @@ public abstract class DataSourceUtil {
         if (dataSource != null) {
             ConnectionHolder holder = getResource(dataSource);
             if (holder != null && connectionEquals(holder, connection)) {
-                // 此连接对象在事务中，不关闭，将引用计数减1
+                // Connection in transaction now, do not close, just release reference count.
                 holder.released();
                 return;
             }
@@ -106,26 +105,26 @@ public abstract class DataSourceUtil {
     }
 
     /**
-     * 判断传入的连接是否在以绑定的事务上下文中
+     * Check connection is in transaction or not.
      *
-     * @param con        连接对象
-     * @param dataSource 数据源
-     * @return 连接是否是事务的
+     * @param connection connection
+     * @param dataSource datasource
+     * @return connection is in transaction or not
      */
-    public static boolean isConnectionTransactional(Connection con, DataSource dataSource) {
+    public static boolean isConnectionTransactional(Connection connection, DataSource dataSource) {
         if (dataSource == null) {
             return false;
         }
         ConnectionHolder conHolder = getResource(dataSource);
-        return (conHolder != null && connectionEquals(conHolder, con));
+        return (conHolder != null && connectionEquals(conHolder, connection));
     }
 
     /**
-     * 比较连接对象句柄中的连接对象和当前传入的连接对象是否是同一个
+     * Check held connection is passed-in or not.
      *
-     * @param holder       事务绑定的连接对象
-     * @param passedInConn 传入的连接对象
-     * @return 是否相等
+     * @param holder       connection holder
+     * @param passedInConn passed in connection
+     * @return true if equal or false
      */
     private static boolean connectionEquals(ConnectionHolder holder, Connection passedInConn) {
         if (!holder.hasConnection()) {
@@ -136,12 +135,12 @@ public abstract class DataSourceUtil {
     }
 
     /**
-     * 抓取一个新的连接对象
+     * Get a new connection.
      *
-     * @param dataSource 数据源
+     * @param dataSource datasource
      * @return new connection
-     * @throws SQLException              ex
-     * @throws ConnectionStatusException 如果连接对象为null
+     * @throws SQLException              if connection states error
+     * @throws ConnectionStatusException if datasource state error
      */
     private static Connection fetchConnection(DataSource dataSource) throws SQLException {
         Connection connection = dataSource.getConnection();
@@ -152,7 +151,7 @@ public abstract class DataSourceUtil {
     }
 
     /**
-     * 事务同步
+     * Transaction synchronization object.
      */
     public static class TransactionSynchronization {
         private final ConnectionHolder connectionHolder;
@@ -163,17 +162,12 @@ public abstract class DataSourceUtil {
             this.dataSource = dataSource;
         }
 
-        /**
-         * 获取连接对象
-         *
-         * @return 连接对象
-         */
         public ConnectionHolder getConnectionHolder() {
             return connectionHolder;
         }
 
         /**
-         * 事务完成后执行此操作，关闭连接对象并解除资源绑定
+         * Close connection and clear connection state after transaction complete.
          */
         public void afterCompletion() {
             unbindResource(dataSource);

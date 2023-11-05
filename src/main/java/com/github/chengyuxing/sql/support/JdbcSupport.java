@@ -23,9 +23,9 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 /**
- * <h2>jdbc基本操作支持</h2>
- * 提供基本的通用接口，支持流查询、ddl、dml、存储过程、函数、过程语句的执行，支持执行传名参数sql<br>
- * 例如：
+ * <h2>JDBC support</h2>
+ * Provide basic support: stream query, ddl, dml, store procedure/function, plsql.<br>
+ *  e.g.
  * <blockquote>
  * <pre>select * from ... where name = :name or id in (${!idList}) ${cnd};</pre>
  * </blockquote>
@@ -34,46 +34,45 @@ public abstract class JdbcSupport extends SqlParser {
     private final static Logger log = LoggerFactory.getLogger(JdbcSupport.class);
 
     /**
-     * 获取数据源
+     * Get datasource.
      *
-     * @return 数据源
+     * @return datasource
      */
     protected abstract DataSource getDataSource();
 
     /**
-     * 获取连接对象
+     * Get connection.
      *
-     * @return 连接对象
+     * @return connection
      */
     protected abstract Connection getConnection();
 
     /**
-     * 释放连接的实现逻辑，比如在开启事务同步时，应保持连接，
-     * 而不应该释放，在执行其他非事务操作完成时应立即释放
+     * Release connection when execute finished.
      *
-     * @param connection 连接对象
-     * @param dataSource 数据源
+     * @param connection connection
+     * @param dataSource datasource
      */
     protected abstract void releaseConnection(Connection connection, DataSource dataSource);
 
     /**
-     * 处理预编译sql参数值
+     * Handle prepared statement value.
      *
-     * @param ps    预编译对象
-     * @param index 参数序号
-     * @param value 参数值
+     * @param ps    PreparedStatement
+     * @param index parameter index
+     * @param value parameter value
      * @throws SQLException ex
      */
     protected abstract void doHandleStatementValue(PreparedStatement ps, int index, Object value) throws SQLException;
 
     /**
-     * 执行一句预编译的sql
+     * Execute any prepared sql.
      *
      * @param sql      sql
-     * @param callback 执行声明回调函数
-     * @param <T>      结果类型参数
-     * @return 任意类型
-     * @throws UncheckedSqlException sql执行过程中出现异常
+     * @param callback statement callback
+     * @param <T>      result type
+     * @return any result
+     * @throws UncheckedSqlException if connection states error
      */
     protected <T> T execute(final String sql, StatementCallback<T> callback) {
         PreparedStatement statement = null;
@@ -103,12 +102,12 @@ public abstract class JdbcSupport extends SqlParser {
     }
 
     /**
-     * 设置预编译sql参数
+     * Set prepared sql statement args.
      *
-     * @param ps    预编译对象
-     * @param args  参数字典
-     * @param names 顺序的参数名
-     * @throws SQLException ex
+     * @param ps    sql statement object
+     * @param args  args
+     * @param names sorted arg names
+     * @throws SQLException if connection states error
      */
     protected void setPreparedSqlArgs(PreparedStatement ps, Map<String, ?> args, List<String> names) throws SQLException {
         for (int i = 0; i < names.size(); i++) {
@@ -120,47 +119,45 @@ public abstract class JdbcSupport extends SqlParser {
     }
 
     /**
-     * 设置预编译存储过程/函数参数
+     * Set callable statement args.
      *
-     * @param cs    预编译对象
-     * @param args  参数字典
-     * @param names 顺序的参数名
-     * @throws SQLException ex
+     * @param cs    store procedure/function statement object
+     * @param args  args
+     * @param names sorted arg names
+     * @throws SQLException if connection states error
      */
     protected void setPreparedStoreArgs(CallableStatement cs, Map<String, Param> args, List<String> names) throws SQLException {
         if (args != null && !args.isEmpty()) {
             // adapt postgresql
             // out and inout param first
             for (int i = 0; i < names.size(); i++) {
-                int index = i + 1;
-                String name = names.get(i);
-                Param param = args.get(name);
+                Param param = args.get(names.get(i));
                 if (param.getParamMode() == ParamMode.OUT || param.getParamMode() == ParamMode.IN_OUT) {
-                    cs.registerOutParameter(index, param.getType().typeNumber());
+                    cs.registerOutParameter(i + 1, param.getType().typeNumber());
                 }
             }
             // in param next
             for (int i = 0; i < names.size(); i++) {
-                int index = i + 1;
-                String name = names.get(i);
-                Param param = args.get(name);
+                Param param = args.get(names.get(i));
                 if (param.getParamMode() == ParamMode.IN || param.getParamMode() == ParamMode.IN_OUT) {
-                    doHandleStatementValue(cs, index, param.getValue());
+                    doHandleStatementValue(cs, i + 1, param.getValue());
                 }
             }
         }
     }
 
     /**
-     * 执行query、ddl、dml或plsql语句<br>
-     * 返回数据为:<br>
-     * 执行结果：{@code DataRow.get(0)} 或 {@code DataRow.get("result")}<br>
-     * 执行类型：{@code DataRow.get(1)} 或 {@code DataRow.getString("type")}
+     * Execute query, ddl, dml or plsql statement.<br>
+     * Execute result:<br>
+     * <ul>
+     *     <li>result: {@link DataRow#getFirst(Object...) getFirst()} or {@link DataRow#get(Object) get("result")}</li>
+     *     <li>type: {@link DataRow#getString(int, String...) getString(1)} 或 {@link DataRow#get(Object) get("type")}</li>
+     * </ul>
      *
-     * @param sql  原始sql
-     * @param args 参数
-     * @return 查询语句返回List，DML语句返回受影响的行数，DDL语句返回0
-     * @throws UncheckedSqlException sql执行过程中出现错误
+     * @param sql  named parameter sql
+     * @param args args
+     * @return Query: List{@code <DataRow>}, DML: affected row count, DDL: 0
+     * @throws UncheckedSqlException sql execute error
      */
     public DataRow execute(final String sql, Map<String, ?> args) {
         Quadruple<String, List<String>, Map<String, Object>, String> prepared = prepare(sql, args);
@@ -191,15 +188,17 @@ public abstract class JdbcSupport extends SqlParser {
     }
 
     /**
-     * 惰性执行一句查询，只有调用终端操作和短路操作才会真正开始执行，
-     * 使用完请务必关闭流，否则将一直占用连接对象直到连接池耗尽。<br>
-     * 使用{@code try-with-resource}进行包裹：
+     * Lazy execute query based on {@link Stream} support, real execute query when terminal
+     * operator called, every Stream query hold a connection, in case connection pool dead
+     * do must have to close this stream finally.<br>
+     *  e.g.<br>
+     * Auto close by {@code try-with-resource}:
      * <blockquote>
      * <pre>try ({@link Stream}&lt;{@link DataRow}&gt; stream = executeQueryStream(...)) {
      *       stream.limit(10).forEach(System.out::println);
      *         }</pre>
      * </blockquote>
-     * 或者使用完手动关闭流：
+     * Manual close by call {@link Stream#close()}:
      * <blockquote>
      * <pre>
      *     {@link Stream}&lt;{@link DataRow}&gt; stream = executeQueryStream(...);
@@ -208,10 +207,10 @@ public abstract class JdbcSupport extends SqlParser {
      *     </pre>
      * </blockquote>
      *
-     * @param sql  e.g. <code>select * from test.user where id = :id</code>
-     * @param args 参数 （占位符名字，参数对象）
-     * @return Stream数据流
-     * @throws UncheckedSqlException sql执行过程中出现错误或读取结果集是出现错误.
+     * @param sql  named parameter sql, e.g. <code>select * from test.user where id = :id</code>
+     * @param args args
+     * @return Stream query result
+     * @throws UncheckedSqlException sql execute error
      */
     public Stream<DataRow> executeQueryStream(final String sql, Map<String, ?> args) {
         Quadruple<String, List<String>, Map<String, Object>, String> prepared = prepare(sql, args);
@@ -263,14 +262,13 @@ public abstract class JdbcSupport extends SqlParser {
     }
 
     /**
-     * 批量执行非查询(ddl,dml)语句（非预编译）
+     * Batch execute not prepared sql (ddl or dml).
      *
-     * @param sqls      一组sql
-     * @param batchSize 批量执行的数据大小
-     * @return 每条sql的执行结果
-     * @throws UncheckedSqlException         执行批量操作时发生错误
-     * @throws UnsupportedOperationException 数据库或驱动版本不支持批量操作
-     * @throws IllegalArgumentException      如果执行的sql条数少1条
+     * @param sqls      more than 1 sql
+     * @param batchSize batch size
+     * @return affected row count
+     * @throws UncheckedSqlException    execute sql error
+     * @throws IllegalArgumentException if sqls count less than 1
      */
     public int executeBatch(final List<String> sqls, int batchSize) {
         if (batchSize < 1) {
@@ -322,12 +320,12 @@ public abstract class JdbcSupport extends SqlParser {
     }
 
     /**
-     * 批量执行非查询语句 (insert，update，delete)
+     * Batch execute prepared non-query sql (insert, update, delete).
      *
-     * @param sql       sql
-     * @param args      数据
-     * @param batchSize 批量大小
-     * @return 受影响的行数
+     * @param sql       named parameter sql
+     * @param args      args collection
+     * @param batchSize batch size
+     * @return affected row count
      */
     public int executeBatchUpdate(final String sql, Collection<? extends Map<String, ?>> args, int batchSize) {
         if (batchSize < 1) {
@@ -361,16 +359,16 @@ public abstract class JdbcSupport extends SqlParser {
     }
 
     /**
-     * 执行非查询语句 (insert，update，delete)<br>
-     * e.g.
+     * Execute prepared non-query sql (insert, update, delete)<br>
+     *  e.g.
      * <blockquote>
      * <pre>insert into table (a,b,c) values (:v1,:v2,:v3)</pre>
      * <pre>{v1:'a',v2:'b',v3:'c'}</pre>
      * </blockquote>
      *
-     * @param sql  sql
-     * @param args 一组数据
-     * @return 受影响的行数
+     * @param sql  named parameter sql
+     * @param args args
+     * @return affect row count
      */
     public int executeUpdate(final String sql, Map<String, ?> args) {
         Quadruple<String, List<String>, Map<String, Object>, String> prepared = prepare(sql, args);
@@ -392,28 +390,28 @@ public abstract class JdbcSupport extends SqlParser {
     }
 
     /**
-     * 执行存储过程或函数<br>
+     * Execute store procedure/function.<br>
      * <blockquote>
      * <pre>
-     * { call func1(:in1, :in2, :out1, :out2) };
-     * { call func2(:out::refcursor) }; //PostgreSQL
-     * { :out = call func3() };
-     * { call func_returns_table() } //PostgreSQL
-     * call procedure(); //PostgreSQL 13版+ 存储过程不需要加大括号(非函数)
+     * { call func1(:in1, :in2, :out1, :out2) }
+     * { call func2(:out::refcursor) } //postgresql
+     * { :out = call func3() }
+     * { call func_returns_table() } //postgresql
+     * call procedure() //postgresql v13+
      * </pre>
      * </blockquote>
-     * 根据不同的存储过程返回结果定义，获取结果有两种形式：
+     * Get result depends on have OUT parameter or not:
      * <blockquote>
      * <ul>
-     *     <li>没有出参：{@link DataRow#getFirst(Object...) getFirst()} 或 {@link DataRow#getFirstAs(Object...) getFirstAs()}</li>
-     *     <li>有出参：{@link DataRow#getAs(String, Object...) getAs(String)} 或 {@link DataRow#get(Object) get(String)} (通过出参名获取)</li>
+     *     <li>without OUT parameter: {@link DataRow#getFirst(Object...) getFirst()} or {@link DataRow#getFirstAs(Object...) getFirstAs()}</li>
+     *     <li>by OUT parameter name: {@link DataRow#getAs(String, Object...) getAs(String)} or {@link DataRow#get(Object) get(String)}</li>
      * </ul>
      * </blockquote>
      *
-     * @param procedure 存储过程名
-     * @param args      参数
+     * @param procedure procedure
+     * @param args      args
      * @return DataRow
-     * @throws UncheckedSqlException 存储过程或函数执行过程中出现错误
+     * @throws UncheckedSqlException execute procedure error
      */
     public DataRow executeCallStatement(final String procedure, Map<String, Param> args) {
         Quadruple<String, List<String>, Map<String, Object>, String> prepared = prepare(procedure, args);
@@ -487,14 +485,14 @@ public abstract class JdbcSupport extends SqlParser {
     }
 
     /**
-     * debug模式打印sql和参数
+     * Debug executed sql and args.
      *
      * @param sql  sql
-     * @param args 参数
+     * @param args args
      */
     protected void debugSql(String sql, Collection<? extends Map<String, ?>> args) {
         if (log.isDebugEnabled()) {
-            log.debug("SQL: {}", SqlUtil.buildConsoleSql(sql));
+            log.debug("SQL: {}", SqlUtil.highlightSqlIfConsole(sql));
             for (Map<String, ?> arg : args) {
                 StringJoiner sb = new StringJoiner(", ", "{", "}");
                 arg.forEach((k, v) -> {
@@ -510,13 +508,12 @@ public abstract class JdbcSupport extends SqlParser {
     }
 
     /**
-     * 打印sql内部执行中的日志打印<br>
-     * 例如 postgresql：
+     * Print sql log, e.g postgresql：
      * <blockquote>
      * raise notice 'my console.';
      * </blockquote>
      *
-     * @param sc sql执行声明对象
+     * @param sc sql statement object
      */
     private void printSqlConsole(Statement sc) {
         if (log.isWarnEnabled()) {

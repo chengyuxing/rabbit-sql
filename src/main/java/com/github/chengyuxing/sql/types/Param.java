@@ -3,7 +3,7 @@ package com.github.chengyuxing.sql.types;
 import com.github.chengyuxing.sql.support.IOutParam;
 
 /**
- * 参数对象
+ * Store procedure/function parameter object.
  */
 public final class Param {
     private Object value;
@@ -11,10 +11,10 @@ public final class Param {
     private ParamMode paramMode;
 
     /**
-     * 入参
+     * Constructed an IN parameter.
      *
-     * @param value 值 (可以是明确的值或包装值)
-     * @return param
+     * @param value value
+     * @return Param
      */
     public static Param IN(Object value) {
         Param param = new Param();
@@ -24,10 +24,10 @@ public final class Param {
     }
 
     /**
-     * 出参 （仅用于存储过程和函数）
+     * Constructed an OUT parameter.
      *
-     * @param type 出参类型
-     * @return param
+     * @param type OUT parameter type
+     * @return Param
      */
     public static Param OUT(IOutParam type) {
         Param param = new Param();
@@ -37,11 +37,11 @@ public final class Param {
     }
 
     /**
-     * 包含（出参和入参）
+     * Constructed an IN_OUT parameter.
      *
-     * @param value 入参值 (可以是明确的值或包装值)
-     * @param type  出参类型
-     * @return param
+     * @param value IN value
+     * @param type  OUT parameter type
+     * @return Param
      */
     public static Param IN_OUT(Object value, IOutParam type) {
         Param param = new Param();

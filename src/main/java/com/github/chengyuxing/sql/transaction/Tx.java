@@ -4,27 +4,23 @@ import com.github.chengyuxing.sql.datasource.AbstractTransactionSyncManager;
 import com.github.chengyuxing.sql.datasource.ConnectionHolder;
 import com.github.chengyuxing.sql.datasource.DataSourceUtil;
 import com.github.chengyuxing.sql.exceptions.TransactionException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.util.function.Supplier;
 
 /**
- * 同步事务管理器
+ * Transaction util.
  */
 public final class Tx {
-    private final static Logger log = LoggerFactory.getLogger(Tx.class);
 
     /**
-     * 开始事务
+     * Begin transaction.
      *
-     * @param definition 事务定义
+     * @param definition transaction definition
      * @see #using(Runnable, Definition)
      * @see #using(Supplier, Definition)
      */
     public static void begin(Definition definition) {
-        //记住事务的定义，以在后续其他操作中沿用此事务的定义
         AbstractTransactionSyncManager.initTransaction(definition);
         if (!AbstractTransactionSyncManager.isSynchronizationActive()) {
             AbstractTransactionSyncManager.initSynchronization();
@@ -32,7 +28,7 @@ public final class Tx {
     }
 
     /**
-     * 开始事务
+     * Begin transaction.
      *
      * @see #using(Runnable)
      * @see #using(Supplier)
@@ -42,9 +38,9 @@ public final class Tx {
     }
 
     /**
-     * 提交事务
+     * Commit transaction.
      *
-     * @throws TransactionException 如果数据库错误，或者连接被关闭，或者数据库事务为自动提交
+     * @throws TransactionException any exception
      * @see #begin(Definition)
      * @see #begin()
      */
@@ -57,9 +53,9 @@ public final class Tx {
     }
 
     /**
-     * 回滚事务
+     * Rollback transaction.
      *
-     * @throws TransactionException 如果数据库错误，或者连接被关闭，或者数据库事务为自动提交
+     * @throws TransactionException any exception
      * @see #begin(Definition)
      * @see #begin()
      */
@@ -72,11 +68,11 @@ public final class Tx {
     }
 
     /**
-     * 新建一个事务自动提交/回滚事务
+     * Begin and auto commit/rollback transaction.
      *
-     * @param runnable   sql执行操作
-     * @param definition 事务定义
-     * @throws TransactionException  如果在此事务中，sql执行错误则抛出异常
+     * @param runnable   runnable
+     * @param definition transaction definition
+     * @throws TransactionException any exception
      * @see #begin(Definition)
      * @see #commit()
      * @see #rollback()
@@ -93,13 +89,13 @@ public final class Tx {
     }
 
     /**
-     * 新建一个事务自动提交/回滚事务
+     * Begin and auto commit/rollback transaction.
      *
-     * @param supplier   sql执行操作
-     * @param definition 事务定义
-     * @param <T>        类型参数
-     * @return 回调结果
-     * @throws TransactionException  如果在此事务中，sql执行错误则抛出异常
+     * @param supplier   supplier
+     * @param definition transaction definition
+     * @param <T>        result type
+     * @return result
+     * @throws TransactionException any exception
      * @see #begin(Definition)
      * @see #commit()
      * @see #rollback()
@@ -118,10 +114,10 @@ public final class Tx {
     }
 
     /**
-     * 新建一个事务自动提交/回滚事务
+     * Begin and auto commit/rollback transaction.
      *
-     * @param runnable sql执行操作
-     * @throws TransactionException 如果事物过程中出现错误，或者数据库事务为自动提交
+     * @param runnable runnable
+     * @throws TransactionException any exception
      * @see #begin()
      * @see #commit()
      * @see #rollback()
@@ -131,12 +127,12 @@ public final class Tx {
     }
 
     /**
-     * 新建一个事务自动提交/回滚事务
+     * Begin and auto commit/rollback transaction.
      *
-     * @param supplier sql执行操作
-     * @param <T>      类型参数
-     * @return 回调结果
-     * @throws TransactionException 如果事物过程中出现错误，或者数据库事务为自动提交
+     * @param supplier supplier
+     * @param <T>      result type
+     * @return result
+     * @throws TransactionException any exception
      * @see #begin()
      * @see #commit()
      * @see #rollback()
@@ -145,24 +141,14 @@ public final class Tx {
         return using(supplier, Definition.defaultDefinition());
     }
 
-    /**
-     * 释放单前连接对象并清除事务资源
-     */
     private static void releaseTransaction() {
         if (AbstractTransactionSyncManager.isSynchronizationActive()) {
             AbstractTransactionSyncManager.getSynchronizations().forEach(DataSourceUtil.TransactionSynchronization::afterCompletion);
         }
-        //清除事务定义资源
         AbstractTransactionSyncManager.clear();
     }
 
-    /**
-     * 同步提交事务
-     *
-     * @throws TransactionException 如果数据库错误，或者连接被关闭，或者数据库事务为自动提交
-     */
     private static void commitTransaction() {
-        log.info("commit transaction!");
         AbstractTransactionSyncManager.getSynchronizations().forEach(s -> {
             ConnectionHolder holder = s.getConnectionHolder();
             if (holder.hasConnection()) {
@@ -175,13 +161,7 @@ public final class Tx {
         });
     }
 
-    /**
-     * 同步回滚事务
-     *
-     * @throws TransactionException 如果数据库错误，或者连接被关闭，或者数据库事务为自动提交
-     */
     private static void rollbackTransaction() {
-        log.info("rollback transaction!");
         AbstractTransactionSyncManager.getSynchronizations().forEach(s -> {
             ConnectionHolder holder = s.getConnectionHolder();
             if (holder.hasConnection()) {

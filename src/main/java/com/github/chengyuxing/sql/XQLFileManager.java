@@ -29,38 +29,43 @@ import java.util.regex.Pattern;
 
 import static com.github.chengyuxing.common.script.SimpleScriptParser.TAGS;
 import static com.github.chengyuxing.common.utils.StringUtil.*;
-import static com.github.chengyuxing.sql.utils.SqlUtil.removeAnnotationBlock;
+import static com.github.chengyuxing.sql.utils.SqlUtil.removeBlockAnnotation;
 
 /**
- * <h2>支持扩展脚本解析动态SQL的文件管理器</h2>
- * 合理利用sql所支持的块注释（{@code /**}{@code /}）、行注释（{@code --}）、传名参数（{@code :name}）和字符串模版占位符（{@code ${template}}），对其进行了语法结构扩展，几乎没有对sql文件标准进行过改动，各种支持sql的IDE依然可以工作。<br>
- * 识别的文件格式支持: {@code .xql .sql}，两种文件内容没区别，{@code .xql} 结尾用来表示此类型文件是 {@code XQLFileManager} 所支持的扩展的sql文件。<br>
- * {@link FileResource 支持外部sql(URI)和classpath下的sql}，例如：
+ * <h2>Dynamic SQL parse file manager</h2>
+ * <p>Use standard sql block annotation ({@code /**}{@code /}), line annotation ({@code --}),
+ * named parameter ({@code :name}) and string template variable ({@code ${template}}) to
+ * extends SQL file standard syntax with special content format, brings more features to
+ * SQL file and follow the strict SQL file syntax.</p>
+ * <p>File type supports: {@code .xql .sql}, suffix {@code .xql} means this file is
+ * {@code XQLFileManager} default file type.</p>
+ * {@link FileResource Support local sql file(URI) and classpath sql file},  e.g.
  * <ul>
- *     <li><pre>windows文件系统: file:/D:/rabbit.xql</pre></li>
- *     <li><pre>Linux/Unix文件系统: file:/root/rabbit.xql</pre></li>
+ *     <li><pre>windows file system: file:/D:/rabbit.xql</pre></li>
+ *     <li><pre>Linux/Unix file system: file:/root/rabbit.xql</pre></li>
  *     <li><pre>ClassPath: sql/rabbit.xql</pre></li>
  * </ul>
- * <h3>文件内容结构</h3>
- * <p>{@code key-value} 形式，key 为sql名，value为sql字符串，例如：</p>
+ * Notice: Rabbit-SQL IDEA Plugin only support detect {@code .xql} file type.
+ * <h3>File content structure</h3>
+ * <p>{@code key-value} format, key is sql name, value is sql statement,  e.g.</p>
  * <blockquote>
- *  /*[sq名1]*{@code /}<br>
+ *  /*[sqlName1]*{@code /}<br>
  *  <pre>select * from test.region where
  *  -- #if :id != blank
  *      id = :id
  *  -- #fi
  * ${order};</pre>
  *  ...<br>
- *  /*[sql名n]*{@code /}<br>
- *    <pre>sql字符串n;</pre>
+ *  /*[sqlNameN]*{@code /}<br>
+ *    <pre>{@code <sql statement;>}</pre>
  *    ...<br>
- *  /*{order}*{@code /}<br>
+ *  /*{order}<span>*</span>/<br>
  *    <pre>order by id desc;</pre>
  *    ...
  * </blockquote>
  * <p>{@link #get(String, Map)}</p>
- * 动态sql脚本表达式写在行注释中 以 -- 开头，
- * 具体参考classpath下的文件：template.xql
+ * Dynamic sql script write in line annotation where starts with --,
+ * check example following class path file: template.xql.
  *
  * @see SimpleScriptParser
  */
@@ -78,13 +83,13 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     private volatile boolean initialized;
 
     /**
-     * XQL文件管理器<br>
-     * 如果 <code>classpath</code> 下存在：
+     * Constructs a XQL file manager.<br>
+     * If <code>classpath</code> exists files：
      * <ol>
      *     <li><code>xql-file-manager.yml</code></li>
      *     <li><code>xql-file-manager.properties</code></li>
      * </ol>
-     * 则读取配置文件进行配置项初始化，如果文件同时存在，则读取yml。
+     * load {@code .yml} first otherwise {@code .properties}.
      *
      * @see XQLFileManagerConfig
      */
@@ -101,9 +106,9 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * XQL文件管理器
+     * Constructs a XQL file manager with config location.
      *
-     * @param configLocation {@link FileResource 配置文件}：支持 {@code yml} 和 {@code properties}
+     * @param configLocation {@link FileResource config file}: supports {@code .yml} and {@code .properties}
      * @see XQLFileManagerConfig
      */
     public XQLFileManager(String configLocation) {
@@ -111,18 +116,18 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * XQL文件管理器
+     * Constructs a XQL file manager with xql file manager config.
      *
-     * @param config 配置项
+     * @param config xql file manager config
      */
     public XQLFileManager(XQLFileManagerConfig config) {
         config.copyStateTo(this);
     }
 
     /**
-     * XQL文件管理器
+     * Constructs a XQL file manager with initial sql file map.
      *
-     * @param files 文件：[别名，文件名]
+     * @param files sql file: [alias, file path name]
      */
     public XQLFileManager(Map<String, String> files) {
         if (files == null) {
@@ -132,31 +137,31 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * 添加命名的sql文件
+     * Add a sql file.
      *
-     * @param alias    文件别名
-     * @param fileName 文件全路径名
+     * @param alias    file alias
+     * @param fileName file path name
      */
     public void add(String alias, String fileName) {
         files.put(alias, fileName);
     }
 
     /**
-     * 添加sql文件，别名默认为文件名（不包含后缀）
+     * Add a sql file with default alias(file name without extension).
      *
-     * @param fileName 文件路径全名
-     * @return 文件别名
+     * @param fileName file path name
+     * @return file alias
      */
     public String add(String fileName) {
-        String alias = StringUtil.getFileName(fileName, false);
+        String alias = FileResource.getFileName(fileName, false);
         add(alias, fileName);
         return alias;
     }
 
     /**
-     * 移除一个sql文件（sql资源也将被移除）
+     * Remove a sql file with associated sql resource.
      *
-     * @param alias 文件别名
+     * @param alias file alias
      */
     public void remove(String alias) {
         lock.lock();
@@ -169,9 +174,9 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * 根据文件名移除一个资源
+     * Remove sql file with associated sql resource by file name.
      *
-     * @param filename 文件名
+     * @param filename file name
      */
     public void removeByFilename(String filename) {
         lock.lock();
@@ -184,36 +189,36 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * 清空所有文件
+     * Clear all sql files.
      */
     public void clearFiles() {
         files.clear();
     }
 
     /**
-     * 更新sql文件资源
+     * Put sql resource.
      *
-     * @param alias        文件别名
-     * @param filename     文件名
-     * @param fileResource 文件资源
-     * @throws IOException        如果文件不存在或路径无效
-     * @throws DuplicateException 如果同一个文件中有重复的内容命名
-     * @throws URISyntaxException 如果文件URI格式错误
+     * @param alias        file alias
+     * @param filename     file name
+     * @param fileResource file resource
+     * @throws IOException        if file not exists
+     * @throws DuplicateException if duplicate sql fragment name found in same sql file
+     * @throws URISyntaxException if file uri syntax error
      */
     protected void putResource(String alias, String filename, FileResource fileResource) throws IOException, URISyntaxException {
         resources.put(alias, parse(alias, filename, fileResource));
     }
 
     /**
-     * 解析sql文件使之结构化
+     * Parse sql file to structured resource.
      *
-     * @param alias        文件别名
-     * @param filename     sql文件名
-     * @param fileResource sql文件资源
-     * @return 结构化的sql文件对象
-     * @throws IOException        如果文件不存在或路径无效
-     * @throws DuplicateException 如果同一个文件中有重复的内容命名
-     * @throws URISyntaxException 如果文件URI格式错误
+     * @param alias        file alias
+     * @param filename     file name
+     * @param fileResource file resource
+     * @return structured resource
+     * @throws IOException        if file not exists
+     * @throws DuplicateException if duplicate sql fragment name found in same sql file
+     * @throws URISyntaxException if file uri syntax error
      */
     public Resource parse(String alias, String filename, FileResource fileResource) throws IOException, URISyntaxException {
         Map<String, String> entry = new LinkedHashMap<>();
@@ -247,9 +252,9 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     if (!blockName.isEmpty()) {
                         sqlBodyBuffer.add(line);
                         if (trimLine.endsWith(delimiter)) {
-                            String naSql = removeAnnotationBlock(String.join(NEW_LINE, sqlBodyBuffer));
+                            String naSql = removeBlockAnnotation(String.join(NEW_LINE, sqlBodyBuffer));
                             entry.put(blockName, naSql.substring(0, naSql.lastIndexOf(delimiter)).trim());
-                            log.debug("scan {} to get sql({}) [{}.{}]：{}", filename, delimiter, alias, blockName, SqlUtil.buildConsoleSql(entry.get(blockName)));
+                            log.debug("scan {} to get sql({}) [{}.{}]：{}", filename, delimiter, alias, blockName, SqlUtil.highlightSqlIfConsole(entry.get(blockName)));
                             blockName = "";
                             sqlBodyBuffer.clear();
                         }
@@ -259,8 +264,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             // if last part of sql is not ends with delimiter symbol
             if (!blockName.isEmpty()) {
                 String lastSql = String.join(NEW_LINE, sqlBodyBuffer);
-                entry.put(blockName, removeAnnotationBlock(lastSql));
-                log.debug("scan {} to get sql({}) [{}.{}]：{}", filename, delimiter, alias, blockName, SqlUtil.buildConsoleSql(lastSql));
+                entry.put(blockName, removeBlockAnnotation(lastSql));
+                log.debug("scan {} to get sql({}) [{}.{}]：{}", filename, delimiter, alias, blockName, SqlUtil.highlightSqlIfConsole(lastSql));
             }
         }
         if (!entry.isEmpty()) {
@@ -273,9 +278,9 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * 合并SQL可复用片段到包含片段名的SQL中
+     * Merge and reuse sql template into sql fragment.
      *
-     * @param sqlResource sql字符串资源
+     * @param sqlResource sql resource
      */
     protected void mergeSqlTemplate(Map<String, String> sqlResource) {
         Map<String, String> templates = new HashMap<>();
@@ -299,20 +304,17 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * 如果有检测到文件修改过，则重新加载已修改过的sql文件
+     * Load all sql files and parse to structured resources.
      *
-     * @throws UncheckedIOException 如果sql文件读取错误
-     * @throws RuntimeException     uri格式错误
+     * @throws UncheckedIOException if file not exists or read error
+     * @throws RuntimeException     if uri syntax error
      */
     protected void loadResources() {
         try {
-            // 如果通过copyStateTo拷贝配置
-            // 这里每次都会拷贝到配置文件中的files和filenames
-            // 但解析的resources并不会同步更新
-            // 可能resources中会存在着早已经删了文件的解析结果
-            // 所以先进行删除没有对应的脏数据
+            // In case method copyStateTo invoked, files are updated but resource not,
+            // It's necessary to remove non-associated dirty resource.
             resources.entrySet().removeIf(e -> !files.containsKey(e.getKey()));
-            // 再完整的解析配置中的全部文件，确保文件和资源一一对应
+            // Reload and parse all sql file.
             for (Map.Entry<String, String> fileE : files.entrySet()) {
                 String alias = fileE.getKey();
                 String filename = fileE.getValue();
@@ -344,7 +346,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * 加载管道
+     * Load custom pipes.
      */
     protected void loadPipes() {
         if (pipes.isEmpty()) return;
@@ -363,11 +365,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * 初始化加载sql到缓存中
+     * Initialing XQL file manager.
      *
-     * @throws UncheckedIOException 如果sql文件读取错误或sql文件没有找到
-     * @throws RuntimeException     如果sql文件路径格式错误
-     * @throws DuplicateException   如果同一个sql文件中有重复的sql名
+     * @throws UncheckedIOException if file not exists or read error
+     * @throws RuntimeException     if sql uri syntax error or load pipes error
+     * @throws DuplicateException   if duplicate sql fragment name found in same sql file
      */
     public void init() {
         lock.lock();
@@ -383,18 +385,18 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * 遍历sql资源
+     * Foreach all sql resource.
      *
-     * @param krFunc 回调函数 [alias, resource]
+     * @param consumer consumer [alias, resource]
      */
-    public void foreach(BiConsumer<String, Resource> krFunc) {
-        resources.forEach(krFunc);
+    public void foreach(BiConsumer<String, Resource> consumer) {
+        resources.forEach(consumer);
     }
 
     /**
-     * 获取全部sql名集合
+     * Get all sql fragment name.
      *
-     * @return sql名集合
+     * @return sql fragment names set
      */
     public Set<String> names() {
         Set<String> names = new HashSet<>();
@@ -403,9 +405,9 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * 查看一共有多少条sql
+     * Get sql fragment count.
      *
-     * @return sql总条数
+     * @return sql fragment count
      */
     public int size() {
         int i = 0;
@@ -416,10 +418,10 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * 是否包含指定名称的sql
+     * Check resources contains sql fragment or not.
      *
-     * @param name sql名格式：别名.sql块命名<br>
-     * @return 是否存在
+     * @param name sql name ({@code <alias>.<sqlName>})
+     * @return true if exists or false
      */
     public boolean contains(String name) {
         String alias = name.substring(0, name.indexOf("."));
@@ -431,47 +433,47 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * 获取sql解析资源
+     * Get sql resource.
      *
-     * @param alias sql文件别名
-     * @return sql集
+     * @param alias sql file alias
+     * @return sql resource
      */
     public Resource getResource(String alias) {
         return resources.get(alias);
     }
 
     /**
-     * 获取所有已解析的sql资源
+     * Get all sql resources.
      *
-     * @return 不可修改的sql资源
+     * @return unmodifiable sql resources
      */
     public Map<String, Resource> getResources() {
         return Collections.unmodifiableMap(resources);
     }
 
     /**
-     * 是否存在资源
+     * Check resources contains resource or not.
      *
-     * @param alias 别名
-     * @return 是否存在
+     * @param alias file alias
+     * @return true if exists or false
      */
     public boolean containsResource(String alias) {
         return resources.containsKey(alias);
     }
 
     /**
-     * 清空所有已解析的sql资源
+     * CLear all sql resources.
      */
     public void clearResources() {
         resources.clear();
     }
 
     /**
-     * 获取一条sql
+     * Get a sql fragment.
      *
-     * @param name sql名
-     * @return sql
-     * @throws NoSuchElementException 如果没有找到相应名字的sql片段
+     * @param name sql name ({@code <alias>.<sqlName>})
+     * @return sql fragment
+     * @throws NoSuchElementException if sql fragment name not exists
      */
     public String get(String name) {
         String alias = name.substring(0, name.indexOf("."));
@@ -486,13 +488,13 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * 获取一条动态sql
+     * Get and calc a dynamic sql.
      *
-     * @param name sql名字
-     * @param args 动态sql逻辑表达式参数字典
-     * @return 解析后的sql和#for表达式中的临时变量（如果有）
-     * @throws NoSuchElementException 如果没有找到相应名字的sql片段
-     * @throws ScriptSyntaxException  动态sql表达式解析异常
+     * @param name sql name ({@code <alias>.<sqlName>})
+     * @param args dynamic sql script expression args
+     * @return parsed sql and extra args calculated by {@code #for} expression if exists
+     * @throws NoSuchElementException if sql fragment name not exists
+     * @throws ScriptSyntaxException  dynamic sql script syntax error
      * @see DynamicSqlParser
      */
     public Pair<String, Map<String, Object>> get(String name, Map<String, ?> args) {
@@ -505,11 +507,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * 解析动态sql
+     * Parse dynamic sql.
      *
-     * @param sql  动态sql
-     * @param args 参数
-     * @return 解析后的sql和#for表达式中的临时变量（如果有）
+     * @param sql  dynamic sql
+     * @param args dynamic sql script expression args
+     * @return parsed sql and extra args calculated by {@code #for} expression if exists
      */
     public Pair<String, Map<String, Object>> parseDynamicSql(String sql, Map<String, ?> args) {
         if (!containsAnyIgnoreCase(sql, TAGS)) {
@@ -528,26 +530,26 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * 根据键获取常量值
+     * Get a constant.
      *
-     * @param key 常量名
-     * @return 常量值
+     * @param key constant name
+     * @return constant value
      */
     public Object getConstant(String key) {
         return constants.get(key);
     }
 
     /**
-     * 获取是否已调用过初始化方法，此方法不影响重复初始化
+     * Check XQL file manager is initialized or not.
      *
-     * @return 是否已调用过初始化方法
+     * @return true if initialized or false
      */
     public boolean isInitialized() {
         return initialized;
     }
 
     /**
-     * 关闭sql文件管理器释放所有文件资源
+     * Close and cleanup XQL file manager.
      */
     @Override
     public void close() {
@@ -564,10 +566,10 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * 裁剪注释行以识别动态sql表达式前缀
+     * Trim line annotation for detect dynamic sql script expression.
      *
-     * @param line 当前行
-     * @return 注释行或表达式
+     * @param line current line
+     * @return script expression or line annotation
      */
     protected String trimAnnotation(String line) {
         String trimS = line.trim();
@@ -581,17 +583,16 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * 获取一个新的动态sql解析器
+     * Create a new dynamic sql parser.
      *
-     * @return 动态sql解析器
+     * @return dynamic sql parser
      */
     public DynamicSqlParser newDynamicSqlParser() {
         return new DynamicSqlParser();
     }
 
     /**
-     * 动态sql解析器
-     * {@inheritDoc}
+     * Dynamic sql parser.
      */
     public class DynamicSqlParser extends SimpleScriptParser {
         public static final String FOR_VARS_KEY = "_for";
@@ -605,15 +606,22 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         }
 
         /**
-         * 去除for循环内的多余注释，为符合格式的命名参数进行编号
+         * Cleanup annotation in for loop and create indexed arg for special format named arg.
+         * <blockquote>
+         * <pre>
+         * -- #for user,idx of :users delimiter ', '
+         *     :_for.user
+         * -- #done
+         *     </pre>
+         * </blockquote>
          *
-         * @param forIndex 每个for循环语句的序号
-         * @param varIndex for变量的序号
-         * @param varName  for变量名
-         * @param idxName  for变量序号名
-         * @param body     for循环里的内容主体
-         * @param args     用户参数和for循环每次迭代的参数（序号和值）
-         * @return 经过格式化处理的内容
+         * @param forIndex each for loop auto index
+         * @param varIndex for var auto index
+         * @param varName  for var name,  e.g. {@code <user>}
+         * @param idxName  for index name,  e.g. {@code <idx>}
+         * @param body     content in for loop
+         * @param args     each for loop args (index and value) which created by for expression
+         * @return formatted content
          */
         @Override
         protected String forLoopBodyFormatter(int forIndex, int varIndex, String varName, String idxName, List<String> body, Map<String, Object> args) {
@@ -640,7 +648,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * sql文件资源
+     * Sql file resource.
      */
     public static class Resource {
         private final String alias;

@@ -1,14 +1,14 @@
 package com.github.chengyuxing.sql.support;
 
 /**
- * 函数或存储过程出参类型通用接口
+ * Store procedure/function OUT parameter type interface.
  */
 @FunctionalInterface
 public interface IOutParam {
     /**
-     * 获取出参的类型数值
+     * OUT parameter type number.
      *
-     * @return 类型数值
+     * @return OUT parameter type number
      * @see java.sql.Types
      */
     int typeNumber();

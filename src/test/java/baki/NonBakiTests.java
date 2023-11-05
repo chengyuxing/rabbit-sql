@@ -3,6 +3,7 @@ package baki;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.DateTimes;
 import com.github.chengyuxing.common.tuple.Pair;
+import com.github.chengyuxing.common.tuple.Triple;
 import com.github.chengyuxing.common.utils.Jackson;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.PagedResource;
@@ -78,15 +79,18 @@ public class NonBakiTests {
         System.out.println(pairI.getItem1());
         System.out.println(pairI.getItem2());
 
-//        System.out.println("--old---");
-//        String sqla = sqlGenerator.generateSql(insert, Args.of("id", 12,
-//                "name", "chengyuxing",
-//                "idd", 16,
-//                "age", 30,
-//                "address", LocalDateTime.now()));
-//        System.out.println(sqla);
+    }
 
-
+    @Test
+    public void test23() {
+        SqlGenerator sqlGenerator = new SqlGenerator(':');
+        Pair<String, List<String>> sqla = sqlGenerator.generatePreparedSql(insert, Args.of("id", 12,
+                "name", "chengyuxing",
+                "idd", 16,
+                "age", 30,
+                "address", LocalDateTime.now()));
+        System.out.println(sqla.getItem1());
+        System.out.println(sqla.getItem2());
     }
 
 }

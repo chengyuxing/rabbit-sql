@@ -9,30 +9,31 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * <h2>提供对命名参数sql的预解析处理</h2>
- * <p>默认的命名参数前缀为 ':' 号，可通过实现 {@link #sqlGenerator()} 来进行自定义。</p>
- * 命名参数格式：
+ * <h2>Support parse named parameter sql</h2>
+ * <p>Named parameter prefix symbol depends on implementation of {@link #sqlGenerator()}.</p>
+ * Named parameter format e.g if named parameter prefix is '{@code :}' :
  * <blockquote>
- * :name (jdbc标准的传名参数写法，参数将被预编译安全处理)
+ * <ul>
+ *     <li>:name (jdbc standard named parameter format, it will parsed to '{@code ?}').</li>
+ * </ul>
  * </blockquote>
- * <br>
- * 字符串模版参数名格式：
+ * String template variable format:
  * <blockquote>
- * ${...} (通用的字符串模版占位符，不进行预编译，用于动态sql的拼接)
+ * ${...} (will not be prepared)
  *     <ul>
- *         <li>${part} 如果类型是装箱类型数组(String[], Integer[]...)或集合(Set, List...)，则先展开（逗号分割），再进行sql片段的替换；</li>
- *         <li>${!part} 名字前多了前缀符号(!)，如果类型是装箱类型数组(String[], Integer[]...)或集合(Set, List...)，则先展开（逗号分隔），并做一定的字符串安全处理，再进行sql片段的替换。</li>
+ *         <li>${var}: if boxed basic type array (String[], Integer[]...) or (Set, List...) detected, just expand and replace;</li>
+ *         <li>${!var}: starts with '{@code !}', if boxed basic type array (String[], Integer[]...) or (Set, List...) detected, expand and wrap safe single quotes, then replace.</li>
  *     </ul>
  * </blockquote>
- * <p>小提示：PostgreSQL中，带有问号的操作符(?,?|,?&amp;,@?)可以使用双问号(??,??|,??&amp;,@??)解决预编译sql参数未设定的报错，或者直接使用函数</p>
- * 可以被正确处理的SQL字符串例如：
+ * <p>Notice: in postgresql, some symbol operator such as (?, ?|, ?&amp;, @?) should be write double '{@code ?}' (??, ??|, ??&amp;, @??) to avoid prepare sql error or use function to replace.</p>
+ *  e.g.
  * <blockquote>
  * <pre>
  *       select t.id || 'number' || 'name:cyx','{"name": "user"}'::jsonb
  *       from test.user t
- *       where id = :id::integer --后缀类型转换
+ *       where id = :id::integer --suffix type convert
  *       and id {@code >} :idc
- *       and name = text :username --前缀类型转换
+ *       and name = text :username --prefix type convert
  *       and '["a","b","c"]'::jsonb{@code ??&} array ['a', 'b'] ${cnd};
  *     </pre>
  * </blockquote>
@@ -42,27 +43,27 @@ import java.util.Map;
 public abstract class SqlParser {
 
     /**
-     * 提供一个抽象方法供实现类对单前要执行的sql做一些准备操作
+     * Do some prepare work for parse source sql.
      *
      * @param sql  sql
-     * @param args 参数
-     * @return 处理后的sql和参数
+     * @param args args
+     * @return parsed sql and args
      */
     protected abstract Pair<String, Map<String, Object>> parseSql(String sql, Map<String, ?> args);
 
     /**
-     * sql翻译帮助
+     * Sql translator for support prepare sql.
      *
-     * @return sql翻译帮助实例
+     * @return Sql translator.
      */
     protected abstract SqlGenerator sqlGenerator();
 
     /**
-     * 将自定义的传名参数sql解析为数据库可执行的预编译sql
+     * Convert named parameter sql to prepared sql.
      *
-     * @param sql  传名参数sql
-     * @param args 参数字典
-     * @return [预编译sql，参数名，参数字典，命名参数sql]
+     * @param sql  named parameter sql
+     * @param args args
+     * @return [prepared sql, sorted arg names, args map，named parameter sql]
      */
     protected Quadruple<String, List<String>, Map<String, Object>, String> prepare(String sql, Map<String, ?> args) {
         // try to generate full named parameter sql.

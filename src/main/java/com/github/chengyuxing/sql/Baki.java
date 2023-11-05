@@ -9,82 +9,84 @@ import java.sql.DatabaseMetaData;
 import java.util.function.Function;
 
 /**
- * 数据库基本操作通用接口
+ * Basic database access interface.
  */
 public interface Baki {
     /**
-     * 查询执行器
+     * Query executor.
      *
-     * @param sql sql或sql名
-     * @return 查询执行器
+     * @param sql sql statement or sql name
+     * @return Query executor
      */
     QueryExecutor query(String sql);
 
     /**
-     * 更新执行器<br>
-     * 关于此方法的说明举例：
+     * Update executor.<br>
+     * About example:
      * <blockquote>
      * <pre>
-     *  参数： {id:14, name:'cyx', address:'kunming'},{...}...
-     *  条件："id = :id"
-     *  生成：update{@code <table>} set name = :name, address = :address
+     *  args： {id:14, name:'cyx', address:'kunming'},{...}...
+     *  where condition："id = :id"
+     *  generate：update{@code <table>} set name = :name, address = :address
      *       where id = :id
      *  </pre>
-     * 解释：where中至少指定一个传名参数，数据中必须包含where条件中的所有传名参数
+     * Notice: where condition must contains at least 1 named parameter and args must contains it's value.
      * </blockquote>
      *
-     * @param tableName 数据
-     * @param where     条件
-     * @return 受影响的行数
+     * @param tableName table name
+     * @param where     condition
+     * @return Update executor
      */
     SaveExecutor update(String tableName, String where);
 
     /**
-     * 插入执行器
+     * Insert executor.
      *
-     * @param tableName 表名
-     * @return 插入执行器
+     * @param tableName table name
+     * @return Insert executor
      */
     SaveExecutor insert(String tableName);
 
     /**
-     * 删除执行器<br>
-     * 其中方法 {@link SaveExecutor#safe() safe(boolean?)} 和 {@link SaveExecutor#ignoreNull() ignoreNull(boolean?)}
-     * 不产生作用，请忽略
+     * Delete executor.<br>
+     * Methods {@link SaveExecutor#safe() safe(boolean?)} and {@link SaveExecutor#ignoreNull() ignoreNull(boolean?)}
+     * were not implements, ignore please.
      *
-     * @param tableName 表名
-     * @param where     条件
-     * @return 删除执行器
+     * @param tableName table name
+     * @param where     condition
+     * @return Delete executor
      */
     SaveExecutor delete(String tableName, String where);
 
     /**
-     * 通用执行器
+     * Basic Executor.
      *
-     * @param sql 支持：<ul>
+     * @param sql Support：<ul>
      *            <li>ddl</li>
      *            <li>dml</li>
      *            <li>query</li>
      *            <li>function/procedure</li>
      *            <li>plsql</li>
      *            </ul>
-     * @return 通用执行器
+     * @return Basic executor
      */
     Executor of(String sql);
 
     /**
-     * 从内部获取一个连接对象
+     * Get an auto-closeable connection.
      *
-     * @param func 函数体
-     * @param <T>  结果类型参数
-     * @return 执行结果
+     * @param func connection provide callback
+     * @param <T>  result type
+     * @return any result
      */
     <T> T using(Function<Connection, T> func);
 
     /**
-     * 获取当前数据库元数据信息
+     * Get current database metadata.<br>
+     * Offline(which connection was closed) database metadata, maybe proxy databaseMetadata of
+     * some datasource has different implementation.
      *
-     * @return 数据库元数据信息
+     * @return current database metadata
      */
     DatabaseMetaData metaData();
 }

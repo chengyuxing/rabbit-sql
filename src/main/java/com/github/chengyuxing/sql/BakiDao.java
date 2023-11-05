@@ -35,9 +35,9 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
- * <h2>Baki接口默认实现</h2>
- * <p>如果配置了{@link XQLFileManager }，则接口所有方法都可以通过取地址符号来获取sql文件内的sql。</p>
- * 指定sql名执行：
+ * <h2>Default implementation of Baki interface</h2>
+ * <p>If {@link XQLFileManager } configured, all methods will be support replace sql statement to sql name ({@code &<alias>.<sqlName>}).</p>
+ * Example:
  * <blockquote>
  * <pre>try ({@link Stream}&lt;{@link DataRow}&gt; s = baki.query("&amp;sys.getUser").stream()) {
  *     s.forEach(System.out::println);
@@ -52,38 +52,38 @@ public class BakiDao extends JdbcSupport implements Baki {
     private SqlGenerator sqlGenerator;
     //---------optional properties------
     /**
-     * 全局自定义的分页帮助提供程序。
+     * Global custom page helper provider.
      */
     private PageHelperProvider globalPageHelperProvider;
     /**
-     * sql预处理拦截器。
+     * Custom sql interceptor.
      */
     private SqlInterceptor sqlInterceptor;
     /**
-     * 预编译sql参数值处理器。
+     * Custom prepared sql statement parameter value handler.
      */
     private StatementValueHandler statementValueHandler;
     /**
-     * sql文件解析管理器。
+     * XQL file manager.
      */
     private XQLFileManager xqlFileManager;
     /**
-     * 批量执行大小。
+     * Batch size for execute batch.
      */
     private int batchSize = 1000;
     /**
-     * 命名参数前缀。
+     * Named parameter prefix symbol.
      */
     private char namedParamPrefix = ':';
     /**
-     * 在获取sql时如果xql文件有变更则重新加载xql文件管理器。
+     * If XQL file changed, XQL file reloaded when {@link #parseSql(String, Map)} invoke always.
      */
     private boolean reloadXqlOnGet = false;
 
     /**
-     * 构造一个新的BakiDao实例。
+     * Constructs a BakiDao.
      *
-     * @param dataSource 数据源
+     * @param dataSource datasource
      */
     public BakiDao(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -302,15 +302,6 @@ public class BakiDao extends JdbcSupport implements Baki {
         };
     }
 
-    /**
-     * {@inheritDoc}<br>
-     * 执行完成后自动关闭连接对象，不需要手动关闭。
-     *
-     * @param func 函数体
-     * @param <T>  类型参数
-     * @return 执行结果
-     * @throws ConnectionStatusException 如果数据库错误或连接对象已关闭
-     */
     @Override
     public <T> T using(Function<Connection, T> func) {
         Connection connection = null;
@@ -322,11 +313,6 @@ public class BakiDao extends JdbcSupport implements Baki {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * @return 获取当前数据库元数据对象
-     */
     public DatabaseMetaData metaData() {
         if (currentMetaData != null) {
             return currentMetaData;
@@ -342,16 +328,16 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * 简单的分页构建器实现。
+     * Simple page helper implementation.
      */
     class SimplePageable extends IPageable {
 
         /**
-         * 简单分页构建器构造函数。
+         * Constructs a SimplePageable.
          *
-         * @param recordQuery 查询sql
-         * @param page        当前页
-         * @param size        页大小
+         * @param recordQuery record query statement
+         * @param page        current page
+         * @param size        page size
          */
         public SimplePageable(String recordQuery, int page, int size) {
             super(recordQuery, page, size);
@@ -403,9 +389,9 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * 当前数据库的名称。
+     * Current database name.
      *
-     * @return 数据库的名称
+     * @return database name
      */
     protected String databaseId() {
         if (databaseId == null) {
@@ -420,11 +406,11 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * 根据数据库名字自动选择合适的默认分页帮助类。
+     * Built-in default page helper.
      *
-     * @return 分页帮助类
-     * @throws UnsupportedOperationException 如果没有自定分页，而默认分页不支持当前数据库
-     * @throws ConnectionStatusException     如果连接对象异常
+     * @return PageHelper instance
+     * @throws UnsupportedOperationException there is no default implementation of your database
+     * @throws ConnectionStatusException     connection status exception
      */
     protected PageHelper defaultPager() {
         String dbName = databaseId();
@@ -456,11 +442,11 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * 根据严格模式获取表字段。
+     * Get all fields from target table.
      *
-     * @param tableName 表名
-     * @return 表字段
-     * @throws UncheckedSqlException 执行查询表字段出现异常
+     * @param tableName table name
+     * @return table fields
+     * @throws UncheckedSqlException query exception
      */
     protected List<String> getTableFields(String tableName) {
         String sql = parseSql("select * from " + tableName + " where 1 = 2", Collections.emptyMap()).getItem1();
@@ -473,14 +459,14 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * 如果使用取地址符 {@code &sql文件别名.sql名} 则获取sql文件中已缓存的sql。
+     * Get sql from {@link XQLFileManager} by sql name if first arg starts with symbol (&).<br>
+     * Sql name format: {@code &<alias>.<sqlName>}
      *
-     * @param sql  sql或sql名
-     * @param args 参数
+     * @param sql  sql statement or sql name
+     * @param args args
      * @return sql
-     * @throws NullPointerException     如果没有设置sql文件解析器或初始化，使用{@code &}引用用外部sql文件片段
-     * @throws IllegalArgumentException 如果严格模式下动态sql参数为null或空
-     * @throws IllegalSqlException      sql拦截器拒绝执行
+     * @throws NullPointerException if first arg starts with symbol (&) but {@link XQLFileManager} not configured
+     * @throws IllegalSqlException  sql interceptor reject sql
      */
     @Override
     protected Pair<String, Map<String, Object>> parseSql(String sql, Map<String, ?> args) {

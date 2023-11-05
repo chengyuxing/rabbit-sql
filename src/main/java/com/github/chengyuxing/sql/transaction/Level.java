@@ -3,7 +3,7 @@ package com.github.chengyuxing.sql.transaction;
 import java.sql.Connection;
 
 /**
- * 事务级别
+ * Transaction level.
  */
 public enum Level {
     NONE(Connection.TRANSACTION_NONE, "none"),

@@ -22,7 +22,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * SQL工具类
+ * SQL util.
  */
 public class SqlUtil {
     private static final Logger log = LoggerFactory.getLogger(SqlUtil.class);
@@ -47,37 +47,37 @@ public class SqlUtil {
     };
 
     /**
-     * 格式化sql字符串模版<br>
+     * Format sql string.<br>
      * e.g.
      * <blockquote>
-     * <pre>字符串：select ${ fields } from test.user where ${  cnd} and id in (${!idArr}) or id = ${!idArr.1}</pre>
-     * <pre>参数：{fields: "id, name", cnd: "name = 'cyx'", idArr: ["a", "b", "c"]}</pre>
-     * <pre>结果：select id, name from test.user where name = 'cyx' and id in ('a', 'b', 'c') or id = 'b'</pre>
+     * <pre>sql：select ${ fields } from test.user where ${  cnd} and id in (${!idArr}) or id = ${!idArr.1}</pre>
+     * <pre>args：{fields: "id, name", cnd: "name = 'cyx'", idArr: ["a", "b", "c"]}</pre>
+     * <pre>result：select id, name from test.user where name = 'cyx' and id in ('a', 'b', 'c') or id = 'b'</pre>
      * </blockquote>
      *
-     * @param template 带有字符串模版占位符的字符串
-     * @param data     参数
-     * @return 替换模版占位符后的字符串
+     * @param template sql string with template variable
+     * @param data     data
+     * @return formatted sql string
      */
     public static String formatSql(final String template, final Map<String, ?> data) {
         return FMT.format(template, data);
     }
 
     /**
-     * 使用单引号包裹
+     * String value with single quotes.
      *
-     * @param value 值
-     * @return 使用引号包裹值
+     * @param value string value
+     * @return string value with single quotes
      */
     public static String quote(String value) {
         return "'" + value + "'";
     }
 
     /**
-     * 使用单引号包裹，并安全的处理其中包含的引号
+     * String value with single safe quotes.
      *
-     * @param value 值
-     * @return 安全处理后的值
+     * @param value string value
+     * @return string value with single safe quotes
      */
     public static String safeQuote(String value) {
         if (value.contains("'")) {
@@ -87,10 +87,10 @@ public class SqlUtil {
     }
 
     /**
-     * 安全处理字符串引号和值类型进行默认格式化处理
+     * Object value safe format to string literal value.
      *
-     * @param obj 值对象
-     * @return 格式化后的值
+     * @param obj object value
+     * @return formatted string literal value
      */
     public static String quoteFormatValue(Object obj) {
         if (obj == null) {
@@ -143,11 +143,11 @@ public class SqlUtil {
     }
 
     /**
-     * 格式化值为适配sql的字符串
+     * Format object value for sql string.
      *
-     * @param value 可能是数组的值
-     * @param quote 是否加引号
-     * @return 匹配sql的字符串
+     * @param value object/array value
+     * @param quote single quotes or not
+     * @return string literal value
      */
     public static String formatObject(Object value, boolean quote) {
         Object[] values = ObjectUtil.toArray(value);
@@ -167,10 +167,10 @@ public class SqlUtil {
     }
 
     /**
-     * 转换为postgreSQL数组类型字面量
+     * Convert array to PostgreSQL array string literal.
      *
-     * @param values 对象数组
-     * @return 数组字面量
+     * @param values array
+     * @return array string literal
      */
     public static String toPgArrayLiteral(Object[] values) {
         String[] res = new String[values.length];
@@ -187,10 +187,10 @@ public class SqlUtil {
     }
 
     /**
-     * 处理一段sql，将sql内出现的字符串（单引号包裹的部分）替换为一个特殊的占位符，并将替换的字符串存储下来，可对原sql进行一些其他处理操作，而不受到字符串内容的影响
+     * Replace sql substring (single quotes) to unique string holder and save the substring map.
      *
-     * @param sql sql字符串
-     * @return 替换字符串后带有特殊占位符的sql和占位符与字符串的映射
+     * @param sql sql string
+     * @return [sql string with unique string holder, substring map]
      */
     public static Pair<String, Map<String, String>> replaceSqlSubstr(final String sql) {
         //noinspection UnnecessaryUnicodeEscape
@@ -211,27 +211,26 @@ public class SqlUtil {
     }
 
     /**
-     * 排除sql字符串尾部的非sql语句部分的其他字符
+     * Trim sql string ends (\t\n\r;).
      *
-     * @param sql sql字符串
-     * @return 去除分号后的sql
+     * @param sql sql string
+     * @return sql string
      */
     public static String trimEnd(String sql) {
-        String tSql = sql.replaceAll("([\\s;]*)$", "");
         // oracle procedure syntax end with ';' is required.
-        if (StringUtil.startsWithIgnoreCase(tSql, "begin") && StringUtil.endsWithIgnoreCase(tSql, "end")) {
-            tSql += ";";
+        if (StringUtil.startsWithIgnoreCase(sql, "begin") && StringUtil.endsWithIgnoreCase(sql, "end")) {
+            return sql;
         }
-        return tSql;
+        return sql.replaceAll("([\\s;]*)$", "");
     }
 
     /**
-     * 移除sql的块注释
+     * Remove block annotation (/**<span>/</span>).
      *
-     * @param sql sql
-     * @return 去除块注释的sql
+     * @param sql sql string
+     * @return sql without annotation
      */
-    public static String removeAnnotationBlock(final String sql) {
+    public static String removeBlockAnnotation(final String sql) {
         Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSqlSubstr(sql);
         String noStrSql = noneStrSqlAndHolder.getItem1();
         Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
@@ -273,12 +272,12 @@ public class SqlUtil {
     }
 
     /**
-     * 获取sql的块注释
+     * Get block annotation (/**<span>/</span>).
      *
-     * @param sql sql
-     * @return 块注释
+     * @param sql sql string
+     * @return block annotations
      */
-    public static List<String> getAnnotationBlock(final String sql) {
+    public static List<String> getBlockAnnotation(final String sql) {
         //noinspection UnnecessaryUnicodeEscape
         String splitter = "\u02ac";
         Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSqlSubstr(sql);
@@ -322,7 +321,7 @@ public class SqlUtil {
     }
 
     /**
-     * 修复sql常规语法错误<br>
+     * Repair sql normal syntax error.<br>
      * e.g.
      * <blockquote>
      * <pre>where and/or/order/limit...</pre>
@@ -330,8 +329,8 @@ public class SqlUtil {
      * <pre>update ... set  a=b, where</pre>
      * </blockquote>
      *
-     * @param sql sql语句
-     * @return 修复后的sql
+     * @param sql sql string
+     * @return sql string
      */
     public static String repairSyntaxError(final String sql) {
         String result = sql;
@@ -343,10 +342,10 @@ public class SqlUtil {
     }
 
     /**
-     * 处理sql字符串高亮
+     * Highlight sql string with ansi.
      *
-     * @param sql sql字符串
-     * @return 高亮sql
+     * @param sql sql string
+     * @return highlighted sql
      */
     public static String highlightSql(String sql) {
         try {
@@ -400,7 +399,7 @@ public class SqlUtil {
             colorfulSql = String.join("\n", sqlLine);
             // resolve block annotation
             if (colorfulSql.contains("/*") && colorfulSql.contains("*/")) {
-                List<String> annotations = getAnnotationBlock(colorfulSql);
+                List<String> annotations = getBlockAnnotation(colorfulSql);
                 for (String annotation : annotations) {
                     colorfulSql = colorfulSql.replace(annotation, Printer.colorful(annotation.replaceAll("\033\\[\\d{2}m|\033\\[0m", ""), Color.SILVER));
                 }
@@ -413,12 +412,12 @@ public class SqlUtil {
     }
 
     /**
-     * 终端输出有高亮的sql或者重定向输出非高亮的sql
+     * Build highlight sql for console if console is active.
      *
-     * @param sql sql字符串
-     * @return 普通sql或语法高亮的sql
+     * @param sql sql string
+     * @return normal sql string or highlight sql string
      */
-    public static String buildConsoleSql(String sql) {
+    public static String highlightSqlIfConsole(String sql) {
         if (System.console() != null && System.getenv().get("TERM") != null) {
             return highlightSql(sql);
         }

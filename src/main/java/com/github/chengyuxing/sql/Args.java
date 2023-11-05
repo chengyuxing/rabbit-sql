@@ -11,31 +11,31 @@ import java.util.Objects;
 import java.util.function.Function;
 
 /**
- * 简单参数工具类
+ * Simple sql args tool.
  *
- * @param <V> 值类型参数
+ * @param <V> value type
  */
 public final class Args<V> extends HashMap<String, V> implements MapExtends<V> {
     public Args() {
     }
 
     /**
-     * 创建一个空的参数对象
+     * Constructs an empty Args.
      *
-     * @param <V> 值类型参数
-     * @return 空的参数对象
+     * @param <V> value type
+     * @return empty Args instance
      */
     public static <V> Args<V> of() {
         return new Args<>();
     }
 
     /**
-     * 创建一个具有初始值类型的参数对象
+     * Constructs an Args with generic initial value.
      *
-     * @param k   键
-     * @param v   值
-     * @param <V> 值类型参数
-     * @return 限定值类型参数对象
+     * @param k   key
+     * @param v   value
+     * @param <V> value type
+     * @return generic Args instance
      */
     public static <V> Args<V> of(String k, V v) {
         Args<V> args = of();
@@ -44,30 +44,30 @@ public final class Args<V> extends HashMap<String, V> implements MapExtends<V> {
     }
 
     /**
-     * 从一组键值对创建一个参数对象
+     * Constructs an Args from more than one pairs of value.
      *
-     * @param input 键值对 k v，k v...
-     * @return 参数对象
+     * @param input key-value pairs: k v, k v, ...
+     * @return Args instance
      */
     public static Args<Object> of(Object... input) {
         return ObjectUtil.pairs2map(i -> Args.of(), input);
     }
 
     /**
-     * 从一个标准的javaBean实体转为参数对象
+     * Constructs an args from standard java bean entity.
      *
-     * @param entity 实体
-     * @return 参数对象
+     * @param entity standard java bean.
+     * @return Args instance
      */
     public static Args<Object> ofEntity(Object entity) {
         return ObjectUtil.entity2map(entity, i -> Args.of());
     }
 
     /**
-     * 从一个json对象字符串创建一个参数对象
+     * Constructs an Args from json object string.
      *
-     * @param json json对象字符串 e.g. {@code {"a":1,"b":2}}
-     * @return 参数对象
+     * @param json json object string, e.g. {@code {"a":1,"b":2}}
+     * @return Args instance
      */
     public static Args<Object> ofJson(String json) {
         if (Objects.isNull(json)) return of();
@@ -76,10 +76,10 @@ public final class Args<V> extends HashMap<String, V> implements MapExtends<V> {
     }
 
     /**
-     * 从map转换到参数对象
+     * Constructs an Args from Map.
      *
      * @param other map
-     * @return 参数对象
+     * @return Args instance
      */
     public static Args<Object> ofMap(Map<?, ?> other) {
         if (Objects.isNull(other)) return of();
@@ -91,11 +91,11 @@ public final class Args<V> extends HashMap<String, V> implements MapExtends<V> {
     }
 
     /**
-     * 添加一个键值对
+     * Add a key-value.
      *
-     * @param k 键
-     * @param v 值
-     * @return 参数对象
+     * @param k key
+     * @param v value
+     * @return Args instance
      */
     public Args<V> add(String k, V v) {
         put(k, v);
@@ -103,11 +103,11 @@ public final class Args<V> extends HashMap<String, V> implements MapExtends<V> {
     }
 
     /**
-     * 更新一个键名
+     * Update a key name to another.
      *
-     * @param oldKey 旧键名
-     * @param newKey 新键名
-     * @return 是否更新成功
+     * @param oldKey old key name
+     * @param newKey new key name
+     * @return true if updated or false
      */
     public boolean updateKey(String oldKey, String newKey) {
         if (containsKey(oldKey)) {
@@ -118,9 +118,9 @@ public final class Args<V> extends HashMap<String, V> implements MapExtends<V> {
     }
 
     /**
-     * 更新全部键名
+     * Update all key name.
      *
-     * @param updater 键名更新器（{@code 旧键名 -> 新键名}）
+     * @param updater key name updater ({@code old key name -> new key name}）
      */
     public void updateKeys(Function<String, String> updater) {
         Object[] keys = keySet().toArray();

@@ -1,7 +1,7 @@
 package com.github.chengyuxing.sql;
 
 /**
- * 数据库关键字帮助类
+ * Mostly keywords of database.
  */
 public class Keywords {
     public static final String[] STANDARD = new String[]{

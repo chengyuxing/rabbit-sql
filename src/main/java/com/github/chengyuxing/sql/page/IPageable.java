@@ -9,7 +9,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 /**
- * 分页查询构建器通用接口
+ * Abstract page query config builder.
  */
 public abstract class IPageable {
     protected Map<String, Object> args = new HashMap<>();
@@ -23,11 +23,11 @@ public abstract class IPageable {
     protected PageHelperProvider pageHelperProvider;
 
     /**
-     * 分页构建器构造函数
+     * Constructed IPageable with record query, page and size.
      *
-     * @param recordQuery 查询sql
-     * @param page        当前页
-     * @param size        页大小
+     * @param recordQuery record query
+     * @param page        current page
+     * @param size        page size
      */
     public IPageable(String recordQuery, int page, int size) {
         this.recordQuery = recordQuery;
@@ -36,10 +36,10 @@ public abstract class IPageable {
     }
 
     /**
-     * 设置sql参数
+     * Set query args.
      *
-     * @param args 参数
-     * @return 分页构建器
+     * @param args args
+     * @return IPageable
      */
     public IPageable args(Map<String, Object> args) {
         if (args != null) {
@@ -49,10 +49,10 @@ public abstract class IPageable {
     }
 
     /**
-     * 设置sql查询条数
+     * Set count query.
      *
-     * @param countQuery count查询语句
-     * @return 分页构建器
+     * @param countQuery count query
+     * @return IPageable
      */
     public IPageable count(String countQuery) {
         this.countQuery = countQuery;
@@ -60,10 +60,10 @@ public abstract class IPageable {
     }
 
     /**
-     * 设置sql查询条数
+     * Set data count.
      *
-     * @param count 总数据条数
-     * @return 分页构建器
+     * @param count data count
+     * @return IPageable
      */
     public IPageable count(Integer count) {
         this.count = count;
@@ -71,11 +71,11 @@ public abstract class IPageable {
     }
 
     /**
-     * 禁用默认生成（{@link PageHelper#pagedSql(String)}）的分页sql，将不进行内部的分页sql构建，
-     * 意味着需要自己实现个性化的分页sql
+     * Disable auto generate paged sql ({@link PageHelper#pagedSql(String)} and implement
+     * custom count query manually.
      *
-     * @param countQuery count查询语句，将覆盖方法{@link #count(String)}传入的语句
-     * @return 分页构建器
+     * @param countQuery count query, overwrite {@link #count(String)}
+     * @return IPageable
      */
     public IPageable disableDefaultPageSql(String countQuery) {
         this.disablePageSql = true;
@@ -84,8 +84,8 @@ public abstract class IPageable {
     }
 
     /**
-     * 重写默认（{@link PageHelper#pagedArgs()}）的分页参数<br>
-     * 例如PostgreSQL:
+     * Overwrite paged args: {@link PageHelper#pagedArgs()}<br>
+     * e.g. postgresql:
      * <blockquote>
      * <pre>
      * args -&gt; {
@@ -96,8 +96,8 @@ public abstract class IPageable {
      * </pre>
      * </blockquote>
      *
-     * @param func 分页参数重写函数
-     * @return 分页构建器
+     * @param func paged args rewrite function
+     * @return IPageable
      */
     public IPageable rewriteDefaultPageArgs(Function<Args<Integer>, Args<Integer>> func) {
         this.rewriteArgsFunc = func;
@@ -105,10 +105,10 @@ public abstract class IPageable {
     }
 
     /**
-     * 设置当前分页查询的自定义分页提供程序
+     * Set custom page helper provider for current page query.
      *
-     * @param pageHelperProvider 分页帮助提供程序
-     * @return 分页构建器
+     * @param pageHelperProvider page helper provider
+     * @return IPageable
      * @see #disableDefaultPageSql(String)
      * @see #rewriteDefaultPageArgs(Function)
      */
@@ -118,18 +118,18 @@ public abstract class IPageable {
     }
 
     /**
-     * 收集结果集操作
+     * Collect paged result.
      *
-     * @param mapper 行数据映射函数
-     * @param <T>    数据类型
-     * @return 已分页的资源
+     * @param mapper paged result each row mapper
+     * @param <T>    result type
+     * @return paged resource
      */
     public abstract <T> PagedResource<T> collect(Function<DataRow, T> mapper);
 
     /**
-     * 收集结果集
+     * Collect paged result.
      *
-     * @return 已分页的资源
+     * @return paged resource
      */
     public PagedResource<DataRow> collect() {
         return collect(Function.identity());

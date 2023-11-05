@@ -9,23 +9,23 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * sql拦截器
+ * Sql interceptor.
  */
 @FunctionalInterface
 public interface SqlInterceptor {
     /**
-     * 对将要执行的sql进行预处理，true则通过请求并执行，false拒绝执行
+     * Pre handle before sql real execute.
      *
-     * @param sql      要执行的sql
-     * @param args     sql参数
-     * @param metaData 当前数据库元数据
-     * @return true：执行sql，false：拒绝执行
-     * @throws IllegalSqlException 抛出异常信息达到拒绝执行
+     * @param sql      sql
+     * @param args     sql parameter data
+     * @param metaData current database metadata
+     * @return true if valid or false
+     * @throws IllegalSqlException reject execute exception
      */
     boolean preHandle(String sql, Map<String, ?> args, DatabaseMetaData metaData) throws IllegalSqlException;
 
     /**
-     * 默认的sql拦截器，拦截DDL语句和无效条件的delete语句
+     * Default sql interceptor (reject drop/create/alter and delete without condition).
      */
     class DefaultSqlInterceptor implements SqlInterceptor {
         //language=RegExp

@@ -9,26 +9,26 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
- * 查询执行器
+ * Query executor.
  */
 public abstract class QueryExecutor {
     protected final String sql;
     protected Map<String, Object> args = new HashMap<>();
 
     /**
-     * 构造函数
+     * Constructed QueryExecutor with 1 sql.
      *
-     * @param sql sql或sql名
+     * @param sql named parameter sql or sql name
      */
     public QueryExecutor(String sql) {
         this.sql = sql;
     }
 
     /**
-     * 覆盖并设置sql中新的参数字典
+     * Overwrite and set new args.
      *
-     * @param args 参数字典
-     * @return 查询执行器
+     * @param args args
+     * @return QueryExecutor
      * @see com.github.chengyuxing.sql.Args Args&lt;Object&gt;
      */
     public QueryExecutor args(Map<String, Object> args) {
@@ -39,10 +39,10 @@ public abstract class QueryExecutor {
     }
 
     /**
-     * 覆盖并设置sql中新的参数字典
+     * Overwrite and set new args.
      *
-     * @param keyValues 多组 key-value 结构参数
-     * @return 查询执行器
+     * @param keyValues multi pair of key-value data
+     * @return QueryExecutor
      */
     public QueryExecutor args(Object... keyValues) {
         if (keyValues.length > 0) {
@@ -52,11 +52,11 @@ public abstract class QueryExecutor {
     }
 
     /**
-     * 添加sql中的参数
+     * Add arg.
      *
-     * @param key   键
-     * @param value 值
-     * @return 查询执行器
+     * @param key   key
+     * @param value value
+     * @return QueryExecutor
      */
     public QueryExecutor arg(String key, Object value) {
         this.args.put(key, value);
@@ -64,105 +64,104 @@ public abstract class QueryExecutor {
     }
 
     /**
-     * 查询为一个流对象<br>
-     * 一个流对象占用一个连接对象，需要手动关闭流或使用try-with-resource包裹
+     * Collect result to Stream.
      *
-     * @return 收集为流的结果集
+     * @return Stream query result
      * @see com.github.chengyuxing.sql.support.JdbcSupport#executeQueryStream(String, Map) executeQueryStream(String, Map)
      */
     public abstract Stream<DataRow> stream();
 
     /**
-     * 查询为一组map对象
+     * Collect result to maps.
      *
-     * @return 一组map对象
+     * @return maps
      */
     public abstract List<Map<String, Object>> maps();
 
     /**
-     * 查询为一组DataRow对象
+     * Collect result to rows.
      *
-     * @return 一组DataRow对象
+     * @return rows
      */
     public abstract List<DataRow> rows();
 
     /**
-     * 查询为一组标准java bean实体
+     * Collect result to entities.
      *
-     * @param entityClass 实体类
-     * @param <T>         实体类型
-     * @return 一组实体
+     * @param entityClass entity class
+     * @param <T>         entity type
+     * @return entities
      */
     public abstract <T> List<T> entities(Class<T> entityClass);
 
     /**
-     * 将所有查询结果行转为列
+     * Convert result row to column.
      *
-     * @return 列数据结构
+     * @return column structured data
      * @see DataRow#zip(Collection)
      */
     public abstract DataRow zip();
 
     /**
-     * 分页查询<br>
-     * 可能默认的构建分页SQL无法满足所有情况，例如PostgreSQL中:
+     * Convert state to page query.<br>
+     * If built-in page sql not enough, such as postgresql's view query:
      * <pre>with a as (select ... limit 0 offset 5)<br>select * from a;</pre>
-     * 关于自定义分页SQL配置如下:
+     * About custom page query config:
      * <blockquote>
      * <ul>
-     * <li>禁用自动分页构建：{@link IPageable#disableDefaultPageSql(String) disableDefaultPageSql(String)}，如果不禁用，如上例子会在SQL结尾加{@code limit ... offset ...}</li>
-     * <li>自定义count查询语句：{@link IPageable#count(String) count(String)}</li>
-     * <li>如有必要自定义个性化参数名：{@link IPageable#rewriteDefaultPageArgs(Function) rewriteDefaultPageArgs(Function)}</li>
+     * <li>custom count query: {@link IPageable#count(String) count(String)};</li>
+     * <li>disable auto generate paged sql: {@link IPageable#disableDefaultPageSql(String) disableDefaultPageSql(String)}, otherwise above example will append ({@code limit ... offset ...}) to the end;</li>
+     * <li>custom page args name: {@link IPageable#rewriteDefaultPageArgs(Function) rewriteDefaultPageArgs(Function)}.</li>
      * </ul>
      * </blockquote>
      *
-     * @param page 页码
-     * @param size 每页大小
-     * @return 分页构建器
+     * @param page current page
+     * @param size page size
+     * @return IPageable instance
      */
     public abstract IPageable pageable(int page, int size);
 
     /**
-     * 分页查询一条记录
+     * Collect 1st row by page query.
      *
-     * @return 一条记录或空行
+     * @return 1st row or empty row
      * @see #findFirst()
      */
     public abstract DataRow findFirstRow();
 
     /**
-     * 分页查询一个实体
+     * Collect 1st entity by page query.
      *
-     * @param entityClass 实体类
-     * @param <T>         实体类型
-     * @return 一个实体对象或null
+     * @param entityClass entity class
+     * @param <T>         entity type
+     * @return 1st entity or null
      * @see #findFirst()
      */
     public abstract <T> T findFirstEntity(Class<T> entityClass);
 
     /**
-     * 分页查询一条记录
-     * <p>注意和 {@link  QueryExecutor#stream() stream().findFirst()} 的本质区别在于：</p>
+     * Collect 1st optional row by page query.
+     * <p>Notice: different with {@link  QueryExecutor#stream() stream().findFirst()}:</p>
      * <blockquote>
      *     <ul>
-     *         <li>{@link  QueryExecutor#stream() stream().findFirst()} ：执行原始sql，返回第1条记录（如果表数据量大且查询没做合理的条件限制，即使内部仅迭代一次，性能也会下降）；</li>
-     *         <li>{@code findFirst()} ：对sql进行分页处理，真实进行分页查询1条记录；</li>
+     *         <li>{@link  QueryExecutor#stream() stream().findFirst()}：execute source query and get 1st row, it will takes many time if condition not limit;</li>
+     *         <li>{@code findFirst()}：execute page query, limit 1 row.</li>
      *     </ul>
      * </blockquote>
-     * 例如 Postgresql：
+     * e.g postgresql:
      * <blockquote>
      * <pre>source: select * from users</pre>
      * <pre>target: select * from users limit 1 offset 0</pre>
      * </blockquote>
      *
-     * @return 可为空的一条记录
+     * @return 1st optional row
      */
     public abstract Optional<DataRow> findFirst();
 
     /**
-     * 查询结果是否存在
+     * Check query result exists or not.
      *
-     * @return 是否存在
+     * @return true if exists or false
      */
     public abstract boolean exists();
 }

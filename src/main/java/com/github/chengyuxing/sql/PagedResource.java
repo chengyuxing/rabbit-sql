@@ -6,9 +6,9 @@ import java.util.List;
 import java.util.function.BiFunction;
 
 /**
- * 分页资源
+ * Paged resource object.
  *
- * @param <T> 类型参数
+ * @param <T> data type
  */
 public final class PagedResource<T> {
     private PageHelper pager;
@@ -20,19 +20,19 @@ public final class PagedResource<T> {
     }
 
     /**
-     * 创建一个分页数据资源对象
+     * Constructs a PagedResource.
      *
-     * @param pager 分页对象
-     * @param data  数据
-     * @param <T>   类型参数
-     * @return 分页的数据
+     * @param pager page helper instance
+     * @param data  paged data
+     * @param <T>   data type
+     * @return PagedResource instance
      */
     public static <T> PagedResource<T> of(PageHelper pager, List<T> data) {
         return new PagedResource<>(pager, data);
     }
 
     /**
-     * 对已分页的资源进一步转换为符合预期的数据结构，例如：
+     * Convert paged resource to custom structured result,  e.g.
      * <blockquote>
      * <pre>
      * (pager, data) -> {@link com.github.chengyuxing.common.DataRow DataRow}.of(
@@ -42,9 +42,9 @@ public final class PagedResource<T> {
      * </pre>
      * </blockquote>
      *
-     * @param converter 转换器 [分页对象，已分页数据]
-     * @param <R>       结果类型参数
-     * @return 新的数据结构
+     * @param converter converter [PageHelper, PagedResource] {@code ->} result
+     * @param <R>       result type
+     * @return new structured result
      */
     public <R> R to(BiFunction<PageHelper, List<T>, R> converter) {
         return converter.apply(pager, data);

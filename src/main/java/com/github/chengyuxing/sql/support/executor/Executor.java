@@ -7,46 +7,46 @@ import java.util.Collection;
 import java.util.Map;
 
 /**
- * 通用执行器
+ * Basic executor.
  */
 public interface Executor {
     /**
-     * 执行一条sql（ddl、dml、query、plsql）
+     * Execute sql (ddl, dml, query or plsql).
      *
-     * @return 查询结果
+     * @return Query: List{@code <DataRow>}, DML: affected row count, DDL: 0
      * @see com.github.chengyuxing.sql.support.JdbcSupport#execute(String, Map) execute(String, Map)
      */
     DataRow execute();
 
     /**
-     * 执行一条sql（ddl、dml、query、plsql）
+     * Execute sql (ddl, dml, query or plsql).
      *
-     * @param args 参数
-     * @return 查询结果
+     * @param args args
+     * @return Query: List{@code <DataRow>}, DML: affected row count, DDL: 0
      * @see com.github.chengyuxing.sql.support.JdbcSupport#execute(String, Map) execute(String, Map)
      */
     DataRow execute(Map<String, ?> args);
 
     /**
-     * 批量执行非查询sql
+     * Batch execute non-prepared sql (dml, ddl).
      *
-     * @param moreSql 更多的sql
-     * @return 受影响的行数
+     * @param moreSql more sql
+     * @return affected row count
      */
     int executeBatch(String... moreSql);
 
     /**
-     * 批量执行dml语句
+     * Batch execute prepared dml sql.
      *
-     * @param data 数据
-     * @return 受影响的行数
+     * @param args args collection
+     * @return affected row count
      */
-    int executeBatch(Collection<? extends Map<String, ?>> data);
+    int executeBatch(Collection<? extends Map<String, ?>> args);
 
     /**
-     * 执行存储过程或函数
+     * Execute store procedure or function.
      *
-     * @param params 参数：{@link com.github.chengyuxing.sql.types.OUTParamType Args&lt;Param&gt;}
+     * @param params {@link com.github.chengyuxing.sql.types.OUTParamType Args&lt;Param&gt;}
      * @return DataRow
      * @see com.github.chengyuxing.sql.support.JdbcSupport#executeCallStatement(String, Map) executeCallStatement(String, Map)
      */

@@ -453,13 +453,13 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * Get sql from {@link XQLFileManager} by sql name if first arg starts with symbol (&).<br>
+     * Get sql from {@link XQLFileManager} by sql name if first arg starts with symbol ({@code &}).<br>
      * Sql name format: {@code &<alias>.<sqlName>}
      *
      * @param sql  sql statement or sql name
      * @param args args
      * @return sql
-     * @throws NullPointerException if first arg starts with symbol (&) but {@link XQLFileManager} not configured
+     * @throws NullPointerException if first arg starts with symbol ({@code &}) but {@link XQLFileManager} not configured
      * @throws IllegalSqlException  sql interceptor reject sql
      */
     @Override

@@ -35,7 +35,7 @@ public final class PagedResource<T> {
      * Convert paged resource to custom structured result,  e.g.
      * <blockquote>
      * <pre>
-     * (pager, data) -> {@link com.github.chengyuxing.common.DataRow DataRow}.of(
+     * (pager, data) {@code ->} {@link com.github.chengyuxing.common.DataRow DataRow}.of(
      *                    "length", pager.getRecordCount(),
      *                    "data", data)
      *                  );

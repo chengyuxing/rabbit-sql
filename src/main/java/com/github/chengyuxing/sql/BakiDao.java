@@ -477,7 +477,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 }
                 Pair<String, Map<String, Object>> result = xqlFileManager.get(trimSql.substring(1), data);
                 trimSql = result.getItem1();
-                // #for表达式的临时变量存储在 _for 变量中
+                // #for expression temp variables stored in _for variable.
                 if (!result.getItem2().isEmpty()) {
                     data.put(XQLFileManager.DynamicSqlParser.FOR_VARS_KEY, result.getItem2());
                 }

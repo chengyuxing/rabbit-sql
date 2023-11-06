@@ -47,7 +47,7 @@ public class SqlGenerator {
 
     /**
      * Generate prepared sql by named parameter sql.<br>
-     *  e.g.
+     * e.g.
      * <blockquote>
      * <pre>before: select * from table where id = :id</pre>
      * <pre>after: select * from table where id = ?</pre>
@@ -118,7 +118,7 @@ public class SqlGenerator {
     /**
      * Filter keys ignore case of data map if key not in custom keys scope.
      *
-     * @param data       data map
+     * @param data      data map
      * @param keysScope keys scope
      * @return scoped key set
      */
@@ -210,9 +210,9 @@ public class SqlGenerator {
             return new HashMap<>();
         }
         Map<String, Object> sets = new HashMap<>();
-        // 获取where条件中的参数名
+        // pick out named parameter from where condition.
         List<String> whereFields = generatePreparedSql(where, args).getItem2();
-        // 将where条件中的参数排除，因为where中的参数作为条件，而不是需要更新的值
+        // for build correct update sets excludes the arg which in where condition.
         // where id = :id
         for (Map.Entry<String, ?> e : args.entrySet()) {
             if (!containsIgnoreCase(whereFields, e.getKey())) {

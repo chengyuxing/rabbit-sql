@@ -35,7 +35,7 @@ Maven 中央仓库
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.7.10</version>
+    <version>7.8.0</version>
 </dependency>
 ```
 
@@ -225,6 +225,8 @@ Args.<Object>of("id","uuid")
   .add("moreFields", Arrays.asList("email", "enable"))
   .add("words", Arrays.asList("I'm OK!", "book", "warning"));
 ```
+
+> 特殊变量类型：`com.github.chengyuxing.sql.types.Variable`, 可实现自定义的格式化内容。
 
 最终生成的sql：
 
@@ -504,7 +506,7 @@ where id = :id
 说明：
 
 - `:data` 对应的值是一个map对象，经过 `pairs` [管道](#管道)后变成了一个**二元组集合**，所以可以用于 for 表达式；
-- `${pair.item1}` 是字符串模版占位符，每次迭代时就提前进行了格式化，所以不需要 `_for.` 前缀。
+- `${set.key}` 是字符串模版占位符，每次迭代时就提前进行了格式化，所以不需要 `_for.` 前缀。
 
 根据不同数据库进行判断来拼接适合的sql：
 
@@ -540,6 +542,24 @@ where id = 3
   ```
 
 - [分页查询](#分页查询)如果没有受支持的数据库，则可以通过属性 `globalPageHelperProvider` 实现自定义的数据库分页帮助提供程序；
+
+#### 配置项
+
+- **sqlInterceptor**
+
+  sql 拦截器，默认值为：
+
+  ```java
+  (sql, args, metaData) -> true
+  ```
+
+- **statementValueHandler**
+
+  预编译sql对象自定义参数值处理器，默认值为：
+
+  ```java
+  (ps, index, value, metaData) -> JdbcUtil.setStatementValue(ps, index, value)
+  ```
 
 ### XQLFileManager
 

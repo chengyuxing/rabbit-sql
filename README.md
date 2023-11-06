@@ -35,7 +35,7 @@ Maven central
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.7.10</version>
+    <version>7.8.0</version>
 </dependency>
 ```
 
@@ -225,6 +225,8 @@ Args.<Object>of("id","uuid")
   .add("moreFields", Arrays.asList("email", "enable"))
   .add("words", Arrays.asList("I'm OK!", "book", "warning"));
 ```
+
+> Special variable type: `com.github.chengyuxing.sql.types.Variable`, for implements custom format content.
 
 generate sql:
 
@@ -504,7 +506,7 @@ where id = :id
 Explain:
 
 - `:data` is a map, it convert to pairs `List<pair>` by pipe `pairs`, so it can be work with for expression;
-- `${pair.item1}` is string template holder, it's formatting on each loop, so prefix `_for.` is not required.
+- `${set.key}` is string template holder, it's formatting on each loop, so prefix `_for.` is not required.
 
 Concat different sql statement by database name:
 
@@ -540,6 +542,24 @@ Default implement of interface **Baki**, support some basic operation.
   ```
 
 - if [pageable query](#paging) not support your database, implement custom page helper provider to property `globalPageHelperProvider` get support.
+
+#### Options
+
+- **sqlInterceptor**
+
+  Custom sql interceptor, default:
+
+  ```java
+  (sql, args, metaData) -> true
+  ```
+
+- **statementValueHandler**
+
+  Custom prepared sql statement parameter value handler, default:
+
+  ```java
+  (ps, index, value, metaData) -> JdbcUtil.setStatementValue(ps, index, value)
+  ```
 
 ### XQLFileManager
 

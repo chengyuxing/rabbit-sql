@@ -83,7 +83,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     private volatile boolean initialized;
 
     /**
-     * Constructed a new XQLFileManager.<br>
+     * Constructs a new XQLFileManager.<br>
      * If <code>classpath</code> exists files：
      * <ol>
      *     <li><code>xql-file-manager.yml</code></li>
@@ -106,7 +106,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * Constructed a new XQLFileManager with config location.
+     * Constructs a new XQLFileManager with config location.
      *
      * @param configLocation {@link FileResource config file}: supports {@code .yml} and {@code .properties}
      * @see XQLFileManagerConfig
@@ -116,7 +116,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * Constructed a new XQLFileManager with xql file manager config.
+     * Constructs a new XQLFileManager with xql file manager config.
      *
      * @param config xql file manager config
      */
@@ -125,7 +125,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * Constructed a new XQLFileManager with initial sql file map.
+     * Constructs a new XQLFileManager with initial sql file map.
      *
      * @param files sql file: [alias, file path name]
      */

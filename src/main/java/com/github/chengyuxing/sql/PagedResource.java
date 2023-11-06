@@ -20,7 +20,7 @@ public final class PagedResource<T> {
     }
 
     /**
-     * Constructs a PagedResource.
+     * Returns a PagedResource.
      *
      * @param pager page helper instance
      * @param data  paged data

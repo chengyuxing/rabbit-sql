@@ -1,17 +1,13 @@
 package baki;
 
 import com.github.chengyuxing.common.DataRow;
-import com.github.chengyuxing.common.DateTimes;
-import com.github.chengyuxing.common.script.IPipe;
 import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.common.tuple.Triple;
 import com.github.chengyuxing.common.utils.Jackson;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.PagedResource;
 import com.github.chengyuxing.sql.XQLFileManager;
 import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
-import com.github.chengyuxing.sql.types.Variable;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
@@ -93,16 +89,5 @@ public class NonBakiTests {
                 "address", LocalDateTime.now()));
         System.out.println(sqla.getItem1());
         System.out.println(sqla.getItem2());
-    }
-
-    @Test
-    public void testVar() {
-        Variable pgArray = new Variable.ExamplePgArray(new Object[]{1, 2, 3, 4, 5, 6, 7});
-        int len = new IPipe.Length().transform("abcde");
-        System.out.println(pgArray.stringLiteral());
-        System.out.println(len);
-
-        System.out.println(SqlUtil.formatSql("select * from test.user where id in (${idArray})",
-                Args.of("idArray", pgArray)));
     }
 }

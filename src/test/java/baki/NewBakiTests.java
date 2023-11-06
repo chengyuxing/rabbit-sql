@@ -2,22 +2,23 @@ package baki;
 
 import baki.entity.User;
 import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.common.script.IPipe;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.Baki;
 import com.github.chengyuxing.sql.BakiDao;
 import com.github.chengyuxing.sql.XQLFileManager;
-import com.github.chengyuxing.sql.support.StatementValueHandler;
+import com.github.chengyuxing.sql.support.SqlInterceptor;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
 import com.github.chengyuxing.sql.types.OUTParamType;
 import com.github.chengyuxing.sql.types.Param;
+import com.github.chengyuxing.sql.types.Variable;
 import com.github.chengyuxing.sql.utils.JdbcUtil;
+import com.github.chengyuxing.sql.utils.SqlUtil;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.sql.CallableStatement;
-import java.sql.DatabaseMetaData;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -40,20 +41,14 @@ public class NewBakiTests {
         bakiDao = new BakiDao(dataSource);
         bakiDao.setXqlFileManager(xqlFileManager);
 
-        bakiDao.setStatementValueHandler(new StatementValueHandler() {
-            @Override
-            public void preHandle(PreparedStatement ps, int index, Object value, DatabaseMetaData metaData) throws SQLException {
-                if (ps instanceof CallableStatement) {
-                    System.out.println("Procedure calling.");
-                }
-                if (metaData.getDatabaseProductName().equals("PostgreSQL")) {
-                    // .....
-                }
-                JdbcUtil.setStatementValue(ps, index, value);
+        bakiDao.setStatementValueHandler((ps, index, value, metaData) -> {
+            if (ps instanceof CallableStatement) {
+                System.out.println("Procedure calling.");
             }
+            JdbcUtil.setStatementValue(ps, index, value);
         });
 
-//        bakiDao.setSqlInterceptor(new SqlInterceptor.DefaultSqlInterceptor());
+        bakiDao.setSqlInterceptor(new SqlInterceptor.DefaultSqlInterceptor());
         baki = bakiDao;
     }
 
@@ -192,6 +187,10 @@ public class NewBakiTests {
     public void testPageTo() {
         DataRow row = baki.query("select * from test.user")
                 .pageable(1, 4)
+                .rewriteDefaultPageArgs(a -> {
+                    a.updateKey("limit", "my_limit");
+                    return a;
+                })
                 .collect()
                 .to((pager, data) -> DataRow.of(
                         "length", pager.getRecordCount(),
@@ -215,5 +214,16 @@ public class NewBakiTests {
         baki.query("select * from test.user").zip()
                 .forEach((k, v) -> System.out.println(k + " -> " + v));
 
+    }
+
+    @Test
+    public void testVar() {
+        Variable pgArray = new Variable.ExampleDBArray(new Object[]{1, 2, 3, 4, 5, 6, 7}, baki.metaData());
+        int len = new IPipe.Length().transform("abcde");
+        System.out.println(pgArray.stringLiteral());
+        System.out.println(len);
+
+        System.out.println(SqlUtil.formatSql("select * from test.user where id in (${idArray})",
+                Args.of("idArray", pgArray)));
     }
 }

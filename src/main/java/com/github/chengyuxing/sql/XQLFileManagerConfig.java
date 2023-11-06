@@ -45,7 +45,7 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * Constructed a XQLFileManagerConfig with config location.
+     * Constructs a XQLFileManagerConfig with config location.
      *
      * @param configLocation config location path
      */

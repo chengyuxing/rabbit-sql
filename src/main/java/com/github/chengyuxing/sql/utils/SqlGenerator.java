@@ -25,7 +25,7 @@ public class SqlGenerator {
     private final Pattern namedParamPattern;
 
     /**
-     * Constructed a new SqlGenerator with named parameter prefix.
+     * Constructs a new SqlGenerator with named parameter prefix.
      *
      * @param namedParamPrefix named parameter prefix
      */

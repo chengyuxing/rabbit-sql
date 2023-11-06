@@ -14,8 +14,4 @@ public class AnotherBaki extends BakiDao {
         super(dataSource);
     }
 
-    @Override
-    protected void setDataSource(DataSource dataSource) {
-        super.setDataSource(dataSource);
-    }
 }

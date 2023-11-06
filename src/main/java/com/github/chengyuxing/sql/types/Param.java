@@ -11,7 +11,7 @@ public final class Param {
     private ParamMode paramMode;
 
     /**
-     * Constructed an IN parameter.
+     * Returns an IN parameter.
      *
      * @param value value
      * @return Param
@@ -24,7 +24,7 @@ public final class Param {
     }
 
     /**
-     * Constructed an OUT parameter.
+     * Returns an OUT parameter.
      *
      * @param type OUT parameter type
      * @return Param
@@ -37,7 +37,7 @@ public final class Param {
     }
 
     /**
-     * Constructed an IN_OUT parameter.
+     * Returns an IN_OUT parameter.
      *
      * @param value IN value
      * @param type  OUT parameter type

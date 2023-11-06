@@ -16,11 +16,14 @@ import java.util.function.Function;
  * @param <V> value type
  */
 public final class Args<V> extends HashMap<String, V> implements MapExtends<V> {
+    /**
+     * Constructs a new empty Args.
+     */
     public Args() {
     }
 
     /**
-     * Constructs an empty Args.
+     * Returns an empty Args.
      *
      * @param <V> value type
      * @return empty Args instance
@@ -30,7 +33,7 @@ public final class Args<V> extends HashMap<String, V> implements MapExtends<V> {
     }
 
     /**
-     * Constructs an Args with generic initial value.
+     * Returns an Args with generic initial value.
      *
      * @param k   key
      * @param v   value
@@ -44,7 +47,7 @@ public final class Args<V> extends HashMap<String, V> implements MapExtends<V> {
     }
 
     /**
-     * Constructs an Args from more than one pairs of value.
+     * Returns an Args from more than one pairs of value.
      *
      * @param input key-value pairs: k v, k v, ...
      * @return Args instance
@@ -54,7 +57,7 @@ public final class Args<V> extends HashMap<String, V> implements MapExtends<V> {
     }
 
     /**
-     * Constructs an args from standard java bean entity.
+     * Returns an Args from standard java bean entity.
      *
      * @param entity standard java bean.
      * @return Args instance
@@ -64,7 +67,7 @@ public final class Args<V> extends HashMap<String, V> implements MapExtends<V> {
     }
 
     /**
-     * Constructs an Args from json object string.
+     * Returns an Args from json object string.
      *
      * @param json json object string, e.g. {@code {"a":1,"b":2}}
      * @return Args instance
@@ -76,7 +79,7 @@ public final class Args<V> extends HashMap<String, V> implements MapExtends<V> {
     }
 
     /**
-     * Constructs an Args from Map.
+     * Returns an Args from Map.
      *
      * @param other map
      * @return Args instance

@@ -11,6 +11,7 @@ import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.Keywords;
+import com.github.chengyuxing.sql.types.Variable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,6 +43,9 @@ public class SqlUtil {
     public static final StringFormatter FMT = new StringFormatter() {
         @Override
         protected String parseValue(Object value, boolean isSpecial) {
+            if (value instanceof Variable) {
+                return ((Variable) value).stringLiteral();
+            }
             return formatObject(value, isSpecial);
         }
     };
@@ -54,10 +58,12 @@ public class SqlUtil {
      * <pre>args：{fields: "id, name", cnd: "name = 'cyx'", idArr: ["a", "b", "c"]}</pre>
      * <pre>result：select id, name from test.user where name = 'cyx' and id in ('a', 'b', 'c') or id = 'b'</pre>
      * </blockquote>
+     * Notice: If {@link Variable} type detected, {@link Variable#stringLiteral() stringLiteral()} method will be invoked.
      *
      * @param template sql string with template variable
      * @param data     data
      * @return formatted sql string
+     * @see Variable
      */
     public static String formatSql(final String template, final Map<String, ?> data) {
         return FMT.format(template, data);

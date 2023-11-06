@@ -114,7 +114,6 @@
                             </execution>
                         </executions>
                     </plugin>
-                    <!--gpg签名插件-->
                     <plugin>
                         <groupId>org.apache.maven.plugins</groupId>
                         <artifactId>maven-gpg-plugin</artifactId>

@@ -120,7 +120,7 @@ public final class Args<V> extends HashMap<String, V> implements MapExtends<V> {
     /**
      * Update all key name.
      *
-     * @param updater key name updater ({@code old key name -> new key name}）
+     * @param updater (old key name) {@code ->} (new key name)
      */
     public void updateKeys(Function<String, String> updater) {
         Object[] keys = keySet().toArray();

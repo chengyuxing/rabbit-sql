@@ -189,7 +189,7 @@ public abstract class JdbcSupport extends SqlParser {
 
     /**
      * Lazy execute query based on {@link Stream} support, real execute query when terminal
-     * operator called, every Stream query hold a connection, in case connection pool dead
+     * operation called, every Stream query hold a connection, in case connection pool dead
      * do must have to close this stream finally.<br>
      *  e.g.<br>
      * Auto close by {@code try-with-resource}:

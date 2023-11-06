@@ -57,7 +57,7 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeBlockAnnotation;
  * ${order};</pre>
  *  ...<br>
  *  /*[sqlNameN]*{@code /}<br>
- *    <pre>{@code <sql statement;>}</pre>
+ *    <pre>{@code <sql statement>};</pre>
  *    ...<br>
  *  /*{order}<span>*</span>/<br>
  *    <pre>order by id desc;</pre>
@@ -387,7 +387,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     /**
      * Foreach all sql resource.
      *
-     * @param consumer consumer [alias, resource]
+     * @param consumer (alias, resource) {@code ->} void
      */
     public void foreach(BiConsumer<String, Resource> consumer) {
         resources.forEach(consumer);

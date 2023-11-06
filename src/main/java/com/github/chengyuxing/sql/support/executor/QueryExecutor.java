@@ -104,7 +104,7 @@ public abstract class QueryExecutor {
 
     /**
      * Convert state to page query.<br>
-     * If built-in page sql not enough, such as postgresql's view query:
+     * If built-in paged sql not enough, such as postgresql's view query:
      * <pre>with a as (select ... limit 0 offset 5)<br>select * from a;</pre>
      * About custom page query config:
      * <blockquote>

@@ -21,8 +21,7 @@ public interface Baki {
     QueryExecutor query(String sql);
 
     /**
-     * Update executor.<br>
-     * About example:
+     * Update executor, generate update statement by 1st row of data, e.g.
      * <blockquote>
      * <pre>
      *  args： {id:14, name:'cyx', address:'kunming'},{...}...
@@ -75,7 +74,7 @@ public interface Baki {
     /**
      * Get an auto-closeable connection.
      *
-     * @param func connection provide callback
+     * @param func connection {@code ->} any
      * @param <T>  result type
      * @return any result
      */

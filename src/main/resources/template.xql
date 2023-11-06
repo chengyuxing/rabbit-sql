@@ -1,7 +1,5 @@
 /**
-* -------XQL文件内容格式说明-------
-* 文件格式为标准的sql文件格式进行了一点扩展;
-* 具体格式和规范可下载源码查看（XQLFileManager）注释或文档：
+* Get more information from:
 * https://github.com/chengyuxing/rabbit-sql#Prepare-SQL
 * https://github.com/chengyuxing/rabbit-sql#xqlfilemanager
 **/

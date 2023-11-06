@@ -42,7 +42,7 @@ public final class PagedResource<T> {
      * </pre>
      * </blockquote>
      *
-     * @param converter converter [PageHelper, PagedResource] {@code ->} result
+     * @param converter (PageHelper, List) {@code ->} (new result)
      * @param <R>       result type
      * @return new structured result
      */

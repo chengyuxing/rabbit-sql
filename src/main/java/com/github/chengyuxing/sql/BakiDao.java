@@ -46,8 +46,8 @@ import java.util.stream.Stream;
  */
 public class BakiDao extends JdbcSupport implements Baki {
     private final static Logger log = LoggerFactory.getLogger(BakiDao.class);
-    private DataSource dataSource;
-    private DatabaseMetaData currentMetaData;
+    private final DataSource dataSource;
+    private DatabaseMetaData metaData;
     private String databaseId;
     private SqlGenerator sqlGenerator;
     //---------optional properties------
@@ -81,15 +81,31 @@ public class BakiDao extends JdbcSupport implements Baki {
     private boolean reloadXqlOnGet = false;
 
     /**
-     * Constructs a BakiDao.
+     * Constructs a new BakiDao with initial datasource.
      *
      * @param dataSource datasource
      */
     public BakiDao(DataSource dataSource) {
         this.dataSource = dataSource;
+        init();
+    }
+
+    /**
+     * Initialize default configuration properties.
+     */
+    protected void init() {
         this.sqlGenerator = new SqlGenerator(namedParamPrefix);
         this.statementValueHandler = (ps, index, value, metaData) -> JdbcUtil.setStatementValue(ps, index, value);
         this.sqlInterceptor = (sql, args, metaData) -> true;
+        using(c -> {
+            try {
+                this.metaData = c.getMetaData();
+                this.databaseId = this.metaData.getDatabaseProductName().toLowerCase();
+                return 0;
+            } catch (SQLException e) {
+                throw new UncheckedSqlException("initialize metadata error.", e);
+            }
+        });
     }
 
     @Override
@@ -313,18 +329,14 @@ public class BakiDao extends JdbcSupport implements Baki {
         }
     }
 
+    @Override
     public DatabaseMetaData metaData() {
-        if (currentMetaData != null) {
-            return currentMetaData;
-        }
-        return using(c -> {
-            try {
-                currentMetaData = c.getMetaData();
-                return currentMetaData;
-            } catch (SQLException e) {
-                throw new UncheckedSqlException("get metadata error.", e);
-            }
-        });
+        return this.metaData;
+    }
+
+    @Override
+    public String databaseId() {
+        return this.databaseId;
     }
 
     /**
@@ -366,7 +378,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             PageHelper pageHelper = null;
 
             if (pageHelperProvider != null) {
-                pageHelper = pageHelperProvider.customPageHelper(metaData(), databaseId(), namedParamPrefix);
+                pageHelper = pageHelperProvider.customPageHelper(metaData, databaseId, namedParamPrefix);
             }
 
             if (pageHelper == null) {
@@ -389,23 +401,6 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
-     * Current database name.
-     *
-     * @return database name
-     */
-    protected String databaseId() {
-        if (databaseId == null) {
-            DatabaseMetaData metaData = metaData();
-            try {
-                databaseId = metaData.getDatabaseProductName().toLowerCase();
-            } catch (SQLException e) {
-                throw new UncheckedSqlException("get database id error.", e);
-            }
-        }
-        return databaseId;
-    }
-
-    /**
      * Built-in default page helper.
      *
      * @return PageHelper instance
@@ -413,14 +408,13 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @throws ConnectionStatusException     connection status exception
      */
     protected PageHelper defaultPager() {
-        String dbName = databaseId();
         if (Objects.nonNull(globalPageHelperProvider)) {
-            PageHelper pageHelper = globalPageHelperProvider.customPageHelper(metaData(), dbName, namedParamPrefix);
+            PageHelper pageHelper = globalPageHelperProvider.customPageHelper(metaData, databaseId, namedParamPrefix);
             if (Objects.nonNull(pageHelper)) {
                 return pageHelper;
             }
         }
-        switch (dbName) {
+        switch (databaseId) {
             case "oracle":
                 return new OraclePageHelper();
             case "postgresql":
@@ -437,7 +431,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             case "informix":
                 return new Db2PageHelper();
             default:
-                throw new UnsupportedOperationException("pager of \"" + dbName + "\" default not implement currently, see method 'setPageHelperProvider'.");
+                throw new UnsupportedOperationException("pager of \"" + databaseId + "\" default not implement currently, see method 'setPageHelperProvider'.");
         }
     }
 
@@ -497,7 +491,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 trimSql = SqlUtil.formatSql(trimSql, xqlFileManager.getConstants());
             }
         }
-        boolean request = sqlInterceptor.preHandle(trimSql, data, metaData());
+        boolean request = sqlInterceptor.preHandle(trimSql, data, metaData);
         if (!request) {
             throw new IllegalSqlException("permission denied, reject to execute invalid sql.\nSQL: " + trimSql + "\nArgs: " + data);
         }
@@ -512,10 +506,6 @@ public class BakiDao extends JdbcSupport implements Baki {
     @Override
     protected DataSource getDataSource() {
         return dataSource;
-    }
-
-    protected void setDataSource(DataSource dataSource) {
-        this.dataSource = dataSource;
     }
 
     @Override
@@ -534,12 +524,11 @@ public class BakiDao extends JdbcSupport implements Baki {
 
     @Override
     protected void doHandleStatementValue(PreparedStatement ps, int index, Object value) throws SQLException {
-        statementValueHandler.preHandle(ps, index, value, metaData());
+        statementValueHandler.preHandle(ps, index, value, metaData);
     }
 
     public void setGlobalPageHelperProvider(PageHelperProvider globalPageHelperProvider) {
-        if (Objects.nonNull(globalPageHelperProvider))
-            this.globalPageHelperProvider = globalPageHelperProvider;
+        this.globalPageHelperProvider = globalPageHelperProvider;
     }
 
     public void setSqlInterceptor(SqlInterceptor sqlInterceptor) {
@@ -555,9 +544,9 @@ public class BakiDao extends JdbcSupport implements Baki {
     public void setXqlFileManager(XQLFileManager xqlFileManager) {
         if (Objects.nonNull(xqlFileManager)) {
             this.xqlFileManager = xqlFileManager;
-            this.xqlFileManager.setDatabaseId(databaseId());
-            if (!xqlFileManager.isInitialized()) {
-                xqlFileManager.init();
+            this.xqlFileManager.setDatabaseId(databaseId);
+            if (!this.xqlFileManager.isInitialized()) {
+                this.xqlFileManager.init();
             }
         }
     }

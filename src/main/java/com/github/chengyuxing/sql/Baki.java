@@ -88,4 +88,11 @@ public interface Baki {
      * @return current database metadata
      */
     DatabaseMetaData metaData();
+
+    /**
+     * Get current database name.
+     *
+     * @return database name
+     */
+    String databaseId();
 }

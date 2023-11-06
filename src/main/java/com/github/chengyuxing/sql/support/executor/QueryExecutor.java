@@ -16,7 +16,7 @@ public abstract class QueryExecutor {
     protected Map<String, Object> args = new HashMap<>();
 
     /**
-     * Constructed QueryExecutor with 1 sql.
+     * Constructed a new QueryExecutor with 1 sql.
      *
      * @param sql named parameter sql or sql name
      */

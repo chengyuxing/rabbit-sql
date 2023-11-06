@@ -23,7 +23,7 @@ public abstract class IPageable {
     protected PageHelperProvider pageHelperProvider;
 
     /**
-     * Constructed IPageable with record query, page and size.
+     * Constructed a new IPageable with record query, page and size.
      *
      * @param recordQuery record query
      * @param page        current page

@@ -83,7 +83,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     private volatile boolean initialized;
 
     /**
-     * Constructs a XQL file manager.<br>
+     * Constructed a new XQLFileManager.<br>
      * If <code>classpath</code> exists files：
      * <ol>
      *     <li><code>xql-file-manager.yml</code></li>
@@ -106,7 +106,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * Constructs a XQL file manager with config location.
+     * Constructed a new XQLFileManager with config location.
      *
      * @param configLocation {@link FileResource config file}: supports {@code .yml} and {@code .properties}
      * @see XQLFileManagerConfig
@@ -116,7 +116,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * Constructs a XQL file manager with xql file manager config.
+     * Constructed a new XQLFileManager with xql file manager config.
      *
      * @param config xql file manager config
      */
@@ -125,7 +125,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * Constructs a XQL file manager with initial sql file map.
+     * Constructed a new XQLFileManager with initial sql file map.
      *
      * @param files sql file: [alias, file path name]
      */
@@ -196,13 +196,13 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * Put sql resource.
+     * Put sql resource persistent.
      *
      * @param alias        file alias
      * @param filename     file name
      * @param fileResource file resource
      * @throws IOException        if file not exists
-     * @throws DuplicateException if duplicate sql fragment name found in same sql file
+     * @throws DuplicateException if duplicate sql fragment name found in 1 sql file
      * @throws URISyntaxException if file uri syntax error
      */
     protected void putResource(String alias, String filename, FileResource fileResource) throws IOException, URISyntaxException {
@@ -311,8 +311,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     protected void loadResources() {
         try {
-            // In case method copyStateTo invoked, files are updated but resource not,
-            // It's necessary to remove non-associated dirty resource.
+            // In case method copyStateTo invoked, files are updated but resources not,
+            // It's necessary to remove non-associated dirty resources.
             resources.entrySet().removeIf(e -> !files.containsKey(e.getKey()));
             // Reload and parse all sql file.
             for (Map.Entry<String, String> fileE : files.entrySet()) {
@@ -569,7 +569,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * Trim line annotation for detect dynamic sql script expression.
      *
      * @param line current line
-     * @return script expression or line annotation
+     * @return script expression or other line
      */
     protected String trimAnnotation(String line) {
         String trimS = line.trim();

@@ -294,7 +294,7 @@ public class XQLFileManagerConfig {
     /**
      * Set delimiter of multi sql fragment/template, symbol ({@code ;}) is default.<br>
      * Sometimes default delimiter is not enough, such as one procedure body or plsql maybe contains
-     * more than one {@code ;}, set to other is necessary, like {@code ;;} .
+     * more than one sql statement which ends with  {@code ;}, for correct set to other is necessary, like {@code ;;} .
      *
      * @param delimiter multi sql fragment/template delimiter
      */

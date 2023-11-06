@@ -11,7 +11,7 @@ import java.sql.SQLException;
 public interface StatementValueHandler {
     /**
      * Custom handle statement parameter value.<br>
-     * Do some special thing for parameter value by {@link DatabaseMetaData},  e.g.
+     * For support database features do some converts for parameter value by check {@link DatabaseMetaData},  e.g.
      * <ul>
      *     <li>{@link DatabaseMetaData#getDatabaseProductName() getDatabaseProductName()} get current database name;</li>
      *     <li>{@link DatabaseMetaData#getDatabaseProductVersion() getDatabaseProductVersion()} get current database version.</li>

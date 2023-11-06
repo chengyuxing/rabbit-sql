@@ -606,13 +606,21 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         }
 
         /**
-         * Cleanup annotation in for loop and create indexed arg for special format named arg.
+         * Cleanup annotation in for loop and create indexed arg for special format named arg, e.g.
          * <blockquote>
          * <pre>
-         * -- #for user,idx of :users delimiter ', '
+         * users: ["CYX", "jack", "Mike"]; forIndex: 0
+         * </pre>
+         * <pre>
+         * -- #for user of :users delimiter ', '
          *     :_for.user
          * -- #done
-         *     </pre>
+         * </pre>
+         * <pre>
+         * result: :_for.user_0_0,
+         *         :_for.user_0_1,
+         *         :_for.user_0_2,
+         * </pre>
          * </blockquote>
          *
          * @param forIndex each for loop auto index

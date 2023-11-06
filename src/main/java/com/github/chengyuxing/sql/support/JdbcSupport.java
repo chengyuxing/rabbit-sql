@@ -29,6 +29,7 @@ import java.util.stream.StreamSupport;
  * <blockquote>
  * <pre>select * from ... where name = :name or id in (${!idList}) ${cnd};</pre>
  * </blockquote>
+ * @see com.github.chengyuxing.sql.types.Variable
  */
 public abstract class JdbcSupport extends SqlParser {
     private final static Logger log = LoggerFactory.getLogger(JdbcSupport.class);

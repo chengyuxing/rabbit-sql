@@ -8,7 +8,6 @@
 select *
 from test."user" t ${part1};
 
-/*第一部分*/
 /*{part1}*/
 where id = :id ${order};
 

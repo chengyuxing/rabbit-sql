@@ -2,6 +2,7 @@ package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.sql.page.PageHelper;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
 
@@ -29,6 +30,16 @@ public final class PagedResource<T> {
      */
     public static <T> PagedResource<T> of(PageHelper pager, List<T> data) {
         return new PagedResource<>(pager, data);
+    }
+
+    /**
+     * Returns an empty PagedResource.
+     *
+     * @param <T> data type
+     * @return empty PagedResource
+     */
+    public static <T> PagedResource<T> empty() {
+        return of(null, Collections.emptyList());
     }
 
     /**

@@ -2,7 +2,6 @@ package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.script.Patterns;
 import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.common.tuple.Triple;
 import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 
@@ -84,7 +83,7 @@ public class SqlGenerator {
         // resolve the sql string template first
         String fullSql = SqlUtil.formatSql(sql, args);
         if (!fullSql.contains(namedParamPrefix)) {
-            return Triple.of(fullSql, Collections.emptyList(), Collections.emptyList());
+            return Pair.of(fullSql, Collections.emptyList());
         }
         // exclude substr next
         Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSqlSubstr(fullSql);

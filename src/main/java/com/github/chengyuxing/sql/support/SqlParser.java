@@ -63,7 +63,7 @@ public abstract class SqlParser {
      *
      * @param sql  named parameter sql
      * @param args args
-     * @return [prepared sql, sorted arg names, args map，named parameter sql]
+     * @return [prepared sql, ordered arg names, args map，named parameter sql]
      */
     protected Quadruple<String, List<String>, Map<String, Object>, String> prepare(String sql, Map<String, ?> args) {
         // try to generate full named parameter sql.

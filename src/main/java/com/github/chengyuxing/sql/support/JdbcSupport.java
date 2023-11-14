@@ -107,7 +107,7 @@ public abstract class JdbcSupport extends SqlParser {
      *
      * @param ps    sql statement object
      * @param args  args
-     * @param names sorted arg names
+     * @param names ordered arg names
      * @throws SQLException if connection states error
      */
     protected void setPreparedSqlArgs(PreparedStatement ps, Map<String, ?> args, List<String> names) throws SQLException {
@@ -124,7 +124,7 @@ public abstract class JdbcSupport extends SqlParser {
      *
      * @param cs    store procedure/function statement object
      * @param args  args
-     * @param names sorted arg names
+     * @param names ordered arg names
      * @throws SQLException if connection states error
      */
     protected void setPreparedStoreArgs(CallableStatement cs, Map<String, Param> args, List<String> names) throws SQLException {

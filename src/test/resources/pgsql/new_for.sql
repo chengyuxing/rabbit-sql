@@ -9,6 +9,10 @@ where id = 1
 -- #done
 ;
 
+/*[queryTemp]*/
+select * from ${db}.${tableName} limit 4
+;
+
 /*[insert]*/
 insert into test.user (name, age, address, dt)
 values (

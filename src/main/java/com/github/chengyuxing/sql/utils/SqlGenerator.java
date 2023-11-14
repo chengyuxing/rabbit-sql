@@ -54,7 +54,7 @@ public class SqlGenerator {
      *
      * @param sql  named parameter sql
      * @param args data of named parameter
-     * @return [prepared sql, sorted arg names]
+     * @return [prepared sql, ordered arg names]
      */
     public Pair<String, List<String>> generatePreparedSql(final String sql, Map<String, ?> args) {
         return _generateSql(sql, args, true);
@@ -77,7 +77,7 @@ public class SqlGenerator {
      * @param sql     named parameter sql
      * @param args    data of named parameter
      * @param prepare prepare or not
-     * @return [prepare/normal sql，sorted arg names]
+     * @return [prepare/normal sql，ordered arg names]
      */
     protected Pair<String, List<String>> _generateSql(final String sql, Map<String, ?> args, boolean prepare) {
         // resolve the sql string template first

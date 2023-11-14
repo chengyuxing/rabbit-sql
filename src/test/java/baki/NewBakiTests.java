@@ -37,6 +37,7 @@ public class NewBakiTests {
 
         XQLFileManager xqlFileManager = new XQLFileManager(Args.of("new", "pgsql/new_for.sql"));
         xqlFileManager.setPipes(Args.of("isOdd", "baki.pipes.IsOdd"));
+        xqlFileManager.setConstants(Args.of("db", "test"));
 
         bakiDao = new BakiDao(dataSource);
         bakiDao.setXqlFileManager(xqlFileManager);
@@ -109,6 +110,14 @@ public class NewBakiTests {
     public void testDynamicSql1() {
         baki.query("&new.query")
                 .arg("ids", Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12))
+                .stream()
+                .forEach(System.out::println);
+    }
+
+    @Test
+    public void testQueryTemp() {
+        baki.query("&new.queryTemp")
+                .arg("tableName", "user")
                 .stream()
                 .forEach(System.out::println);
     }

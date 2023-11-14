@@ -96,14 +96,14 @@ public class SqlGenerator {
             int start = matcher.start("name");
             int end = matcher.end("name");
             String name = matcher.group("name");
-            String replaced = "?";
+            String replacement = "?";
             if (prepare) {
                 names.add(name);
             } else {
                 Object value = name.contains(".") ? ObjectUtil.getDeepValue(args, name) : args.get(name);
-                replaced = quoteFormatValue(value);
+                replacement = quoteFormatValue(value);
             }
-            sb.append(noStrSql, pos, start - 1).append(replaced);
+            sb.append(noStrSql, pos, start - 1).append(replacement);
             pos = end;
         }
         sb.append(noStrSql, pos, noStrSql.length());

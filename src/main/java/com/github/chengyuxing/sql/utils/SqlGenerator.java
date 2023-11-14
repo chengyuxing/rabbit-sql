@@ -10,8 +10,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.github.chengyuxing.common.utils.CollectionUtil.containsIgnoreCase;
-import static com.github.chengyuxing.sql.utils.SqlUtil.quoteFormatValue;
-import static com.github.chengyuxing.sql.utils.SqlUtil.replaceSqlSubstr;
+import static com.github.chengyuxing.sql.utils.SqlUtil.*;
 
 /**
  * Sql generate tool.
@@ -101,7 +100,7 @@ public class SqlGenerator {
                 names.add(name);
             } else {
                 Object value = name.contains(".") ? ObjectUtil.getDeepValue(args, name) : args.get(name);
-                replacement = quoteFormatValue(value);
+                replacement = parseValue(value, true);
             }
             sb.append(noStrSql, pos, start - 1).append(replacement);
             pos = end;

@@ -43,10 +43,7 @@ public class SqlUtil {
     public static final StringFormatter FMT = new StringFormatter() {
         @Override
         protected String parseValue(Object value, boolean isSpecial) {
-            if (value instanceof Variable) {
-                return ((Variable) value).stringLiteral();
-            }
-            return formatObject(value, isSpecial);
+            return SqlUtil.parseValue(value, isSpecial);
         }
     };
 
@@ -54,9 +51,10 @@ public class SqlUtil {
      * Format sql string.<br>
      * e.g.
      * <blockquote>
-     * <pre>sql：select ${ fields } from test.user where ${  cnd} and id in (${!idArr}) or id = ${!idArr.1}</pre>
-     * <pre>args：{fields: "id, name", cnd: "name = 'cyx'", idArr: ["a", "b", "c"]}</pre>
-     * <pre>result：select id, name from test.user where name = 'cyx' and id in ('a', 'b', 'c') or id = 'b'</pre>
+     * <pre>sql：select ${ fields } from test.user where ${  cnd} and id in (${!idArr}) or id = ${!idArr.1} and dt <= ${!now}</pre>
+     * <pre>args：{fields: "id, name", cnd: "name = 'cyx'", idArr: ["a", "b", "c"], now: {@link LocalDateTime#now() LocalDateTime.now()}}</pre>
+     * <pre>result：select id, name from test.user where name = 'cyx' and id in ('a', 'b', 'c') or id = 'b'
+     *       and dt <= to_timestamp('2023-11-14 19:14:34', 'yyyy-mm-dd hh24:mi:ss')</pre>
      * </blockquote>
      * Notice: If {@link Variable} type detected, {@link Variable#stringLiteral() stringLiteral()} method will be invoked.
      *
@@ -170,6 +168,20 @@ public class SqlUtil {
             }
         }
         return sb.toString();
+    }
+
+    /**
+     * Parse object value to string literal.
+     *
+     * @param value object/array value and special value type: {@link Variable}
+     * @param quote single quotes or not
+     * @return string literal value
+     */
+    public static String parseValue(Object value, boolean quote) {
+        if (value instanceof Variable) {
+            return ((Variable) value).stringLiteral();
+        }
+        return formatObject(value, quote);
     }
 
     /**

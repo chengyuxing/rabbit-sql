@@ -90,4 +90,11 @@ public class NonBakiTests {
         System.out.println(sqla.getItem1());
         System.out.println(sqla.getItem2());
     }
+
+    @Test
+    public void testSqlFormat() {
+        System.out.println(SqlUtil.formatSql("select *, '${now}' as now from test.user where dt < ${!current}",
+                Args.of("now", LocalDateTime.now(),
+                        "current", LocalDateTime.now())));
+    }
 }

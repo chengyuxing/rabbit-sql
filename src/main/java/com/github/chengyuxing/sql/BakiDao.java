@@ -76,7 +76,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     private char namedParamPrefix = ':';
     /**
-     * If XQL file changed, XQL file reloaded when {@link #parseSql(String, Map)} invoke always.
+     * If XQL file changed, XQL file will reload when {@link #parseSql(String, Map)} invoke always.
      */
     private boolean reloadXqlOnGet = false;
 

@@ -96,7 +96,6 @@ public class BakiDao extends JdbcSupport implements Baki {
     protected void init() {
         this.sqlGenerator = new SqlGenerator(namedParamPrefix);
         this.statementValueHandler = (ps, index, value, metaData) -> JdbcUtil.setStatementValue(ps, index, value);
-        this.sqlInterceptor = (sql, args, metaData) -> true;
         using(c -> {
             try {
                 this.metaData = c.getMetaData();
@@ -491,9 +490,11 @@ public class BakiDao extends JdbcSupport implements Baki {
                 trimSql = SqlUtil.formatSql(trimSql, xqlFileManager.getConstants());
             }
         }
-        boolean request = sqlInterceptor.preHandle(trimSql, data, metaData);
-        if (!request) {
-            throw new IllegalSqlException("permission denied, reject to execute invalid sql.\nSQL: " + trimSql + "\nArgs: " + data);
+        if (Objects.nonNull(sqlInterceptor)) {
+            boolean request = sqlInterceptor.preHandle(trimSql, data, metaData);
+            if (!request) {
+                throw new IllegalSqlException("permission denied, reject to execute invalid sql.\nSQL: " + trimSql + "\nArgs: " + data);
+            }
         }
         return Pair.of(trimSql, data);
     }
@@ -532,8 +533,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     public void setSqlInterceptor(SqlInterceptor sqlInterceptor) {
-        if (Objects.nonNull(sqlInterceptor))
-            this.sqlInterceptor = sqlInterceptor;
+        this.sqlInterceptor = sqlInterceptor;
     }
 
     public void setStatementValueHandler(StatementValueHandler statementValueHandler) {

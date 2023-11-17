@@ -51,10 +51,10 @@ public class SqlUtil {
      * Format sql string.<br>
      * e.g.
      * <blockquote>
-     * <pre>sql：select ${ fields } from test.user where ${  cnd} and id in (${!idArr}) or id = ${!idArr.1} and dt <= ${!now}</pre>
+     * <pre>sql：select ${ fields } from test.user where ${  cnd} and id in (${!idArr}) or id = ${!idArr.1} and dt &lt;= ${!now}</pre>
      * <pre>args：{fields: "id, name", cnd: "name = 'cyx'", idArr: ["a", "b", "c"], now: {@link LocalDateTime#now() LocalDateTime.now()}}</pre>
      * <pre>result：select id, name from test.user where name = 'cyx' and id in ('a', 'b', 'c') or id = 'b'
-     *       and dt <= to_timestamp('2023-11-14 19:14:34', 'yyyy-mm-dd hh24:mi:ss')</pre>
+     *       and dt &lt;= to_timestamp('2023-11-14 19:14:34', 'yyyy-mm-dd hh24:mi:ss')</pre>
      * </blockquote>
      * Notice: If {@link Variable} type detected, {@link Variable#stringLiteral() stringLiteral()} method will be invoked.
      *

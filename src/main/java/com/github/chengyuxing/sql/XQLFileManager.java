@@ -526,7 +526,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         newArgs.put("_databaseId", databaseId);
         String parsedSql = parser.parse(sql, newArgs);
         parsedSql = SqlUtil.repairSyntaxError(parsedSql);
-        return Pair.of(parsedSql, parser.getForVars());
+        return Pair.of(parsedSql, parser.getForContextVars());
     }
 
     /**

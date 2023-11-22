@@ -1,5 +1,10 @@
 # change note
 
+## 7.8.3
+
+- Update rabbit-common to v2.6.1;
+- New method: `DataRow#toJson(valueFormat)`.
+
 ## 7.8.2
 
 - Update methods document;

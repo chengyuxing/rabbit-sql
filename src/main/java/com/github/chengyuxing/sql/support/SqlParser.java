@@ -73,6 +73,6 @@ public abstract class SqlParser {
 
         // convert named parameter sql to prepared sql.
         Pair<String, List<String>> p = sqlGenerator().generatePreparedSql(parsedSql, parsedData);
-        return Tuples.quadruple(p.getItem1(), p.getItem2(), parsedData, parsedSql);
+        return Tuples.of(p.getItem1(), p.getItem2(), parsedData, parsedSql);
     }
 }

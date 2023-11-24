@@ -1,5 +1,10 @@
 # change note
 
+## 7.8.4
+
+- Update rabbit-common to v2.6.2;
+- Some optimized.
+
 ## 7.8.3
 
 - Update rabbit-common to v2.6.1;

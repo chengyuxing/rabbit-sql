@@ -123,9 +123,9 @@ public class JdbcUtil {
     }
 
     /**
-     * Create fields array by query result set.
+     * Create fields array by query resulSet.
      *
-     * @param resultSet   query result set
+     * @param resultSet   query resulSet
      * @param executedSql executed query sql, check column which be double-quoted for exclude case-sensitive column
      * @return fields array
      * @throws SQLException ex
@@ -146,10 +146,10 @@ public class JdbcUtil {
     }
 
     /**
-     * Create DataRow from result set.
+     * Create DataRow from resultSet.
      *
      * @param names     fields array
-     * @param resultSet result set
+     * @param resultSet resultSet
      * @return DataRow
      * @throws SQLException ex
      */
@@ -166,9 +166,9 @@ public class JdbcUtil {
     }
 
     /**
-     * Create DataRows from result set.
+     * Create DataRows from resultSet.
      *
-     * @param resultSet   result set
+     * @param resultSet   resultSet
      * @param executedSql executed query sql, check column which be double-quoted for exclude case-sensitive column
      * @param fetchSize   request result set size
      * @return DataRows

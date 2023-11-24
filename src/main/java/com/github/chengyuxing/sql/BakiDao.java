@@ -364,7 +364,6 @@ public class BakiDao extends JdbcSupport implements Baki {
                 if (cq == null) {
                     cq = sqlGenerator.generateCountQuery(query);
                 }
-                //noinspection unchecked
                 List<DataRow> cnRows = execute(cq, data).getFirstAs();
                 Object cn = cnRows.get(0).getFirst();
                 if (cn instanceof Integer) {

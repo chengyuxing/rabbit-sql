@@ -1,5 +1,10 @@
 # change note
 
+## 7.8.6
+
+- new field: `BakiDao#afterParseDynamicSql`;
+- Some optimized.
+
 ## 7.8.5
 
 - Update rabbit-common to v2.6.2;

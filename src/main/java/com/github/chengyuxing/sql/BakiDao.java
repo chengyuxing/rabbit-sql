@@ -14,6 +14,7 @@ import com.github.chengyuxing.sql.page.impl.Db2PageHelper;
 import com.github.chengyuxing.sql.page.impl.MysqlPageHelper;
 import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
+import com.github.chengyuxing.sql.support.AfterParseDynamicSql;
 import com.github.chengyuxing.sql.support.JdbcSupport;
 import com.github.chengyuxing.sql.support.SqlInterceptor;
 import com.github.chengyuxing.sql.support.StatementValueHandler;
@@ -64,6 +65,10 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     private StatementValueHandler statementValueHandler;
     /**
+     * Do something after parse dynamic sql.
+     */
+    private AfterParseDynamicSql afterParseDynamicSql;
+    /**
      * XQL file manager.
      */
     private XQLFileManager xqlFileManager;
@@ -96,6 +101,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     protected void init() {
         this.sqlGenerator = new SqlGenerator(namedParamPrefix);
         this.statementValueHandler = (ps, index, value, metaData) -> JdbcUtil.setStatementValue(ps, index, value);
+        this.afterParseDynamicSql = SqlUtil::repairSyntaxError;
         using(c -> {
             try {
                 this.metaData = c.getMetaData();
@@ -474,7 +480,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                     xqlFileManager.init();
                 }
                 Pair<String, Map<String, Object>> result = xqlFileManager.get(trimSql.substring(1), data);
-                trimSql = result.getItem1();
+                trimSql = afterParseDynamicSql.handle(result.getItem1());
                 // #for expression temp variables stored in _for variable.
                 if (!result.getItem2().isEmpty()) {
                     data.put(XQLFileManager.DynamicSqlParser.FOR_VARS_KEY, result.getItem2());
@@ -538,6 +544,11 @@ public class BakiDao extends JdbcSupport implements Baki {
     public void setStatementValueHandler(StatementValueHandler statementValueHandler) {
         if (Objects.nonNull(statementValueHandler))
             this.statementValueHandler = statementValueHandler;
+    }
+
+    public void setAfterParseDynamicSql(AfterParseDynamicSql afterParseDynamicSql) {
+        if (Objects.nonNull(afterParseDynamicSql))
+            this.afterParseDynamicSql = afterParseDynamicSql;
     }
 
     public void setXqlFileManager(XQLFileManager xqlFileManager) {

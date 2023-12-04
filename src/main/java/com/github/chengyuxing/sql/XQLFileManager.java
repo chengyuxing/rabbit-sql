@@ -525,7 +525,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         newArgs.put("_parameter", args);
         newArgs.put("_databaseId", databaseId);
         String parsedSql = parser.parse(sql, newArgs);
-        parsedSql = SqlUtil.repairSyntaxError(parsedSql);
         return Pair.of(parsedSql, parser.getForContextVars());
     }
 
@@ -638,11 +637,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                 return tl.startsWith("--") && !tl.substring(2).trim().startsWith("#");
             });
             String formatted = SqlUtil.formatSql(String.join(NEW_LINE, body), args);
-            if (varName != null) {
+            if (Objects.nonNull(varName)) {
                 String varParam = VAR_PREFIX + forVarKey(varName, forIndex, varIndex);
                 formatted = formatted.replace(VAR_PREFIX + varName, varParam);
             }
-            if (idxName != null) {
+            if (Objects.nonNull(idxName)) {
                 String idxParam = VAR_PREFIX + forVarKey(idxName, forIndex, varIndex);
                 formatted = formatted.replace(VAR_PREFIX + idxName, idxParam);
             }
@@ -691,10 +690,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         }
 
         void setEntry(Map<String, String> entry) {
-            if (entry == null) {
-                return;
-            }
-            this.entry = entry;
+            if (Objects.nonNull(entry))
+                this.entry = entry;
         }
     }
 }

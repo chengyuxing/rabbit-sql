@@ -1,5 +1,10 @@
 # change note
 
+## 7.8.8
+
+- Dynamic sql repair syntax error logic optimized.
+- Sql highlight optimized.
+
 ## 7.8.6
 
 - new field: `BakiDao#afterParseDynamicSql`;

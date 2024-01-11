@@ -30,9 +30,9 @@ public class SqlUtil {
     //language=RegExp
     public static final Pattern STR_PATTERN = Pattern.compile("'[^']*'", Pattern.MULTILINE);
     //language=RegExp
-    public static final Pattern SQL_ERR_COMMA_WHERE = Pattern.compile(",\\s*where", Pattern.CASE_INSENSITIVE);
+    public static final Pattern SQL_ERR_COMMA_WHERE = Pattern.compile(",(\\s*where\\W+)", Pattern.CASE_INSENSITIVE);
     //language=RegExp
-    public static final Pattern SQL_ERR_WHERE_AND_OR = Pattern.compile("\\s+where\\s+(and|or)\\s+", Pattern.CASE_INSENSITIVE);
+    public static final Pattern SQL_ERR_WHERE_AND_OR = Pattern.compile("(\\s+where\\s+)(and|or)\\s+", Pattern.CASE_INSENSITIVE);
     //language=RegExp
     public static final Pattern SQL_ERR_WHERE_ORDER = Pattern.compile("\\s+where(\\s+order|\\s+limit|\\s+group|\\s+union|\\s*\\))\\s+", Pattern.CASE_INSENSITIVE);
     //language=RegExp
@@ -352,8 +352,8 @@ public class SqlUtil {
      */
     public static String repairSyntaxError(final String sql) {
         String result = sql;
-        result = SQL_ERR_COMMA_WHERE.matcher(result).replaceAll(" where");
-        result = SQL_ERR_WHERE_AND_OR.matcher(result).replaceAll("where ");
+        result = SQL_ERR_COMMA_WHERE.matcher(result).replaceAll("$1");
+        result = SQL_ERR_WHERE_AND_OR.matcher(result).replaceAll("$1");
         result = SQL_ERR_WHERE_ORDER.matcher(result).replaceAll("$1 ");
         result = SQL_ERR_WHERE_END.matcher(result).replaceAll("");
         return result;
@@ -375,12 +375,12 @@ public class SqlUtil {
             for (int i = 0; i < maybeKeywords.size(); i++) {
                 String key = maybeKeywords.get(i);
                 if (!key.trim().isEmpty()) {
-                    // keywords highlight
-                    if (StringUtil.equalsAnyIgnoreCase(key, Keywords.STANDARD)) {
-                        maybeKeywords.set(i, Printer.colorful(key, Color.DARK_PURPLE));
-                        // functions highlight
-                    } else if (rSql.contains(key + "(")) {
+                    // functions highlight
+                    if (rSql.contains(key + "(")) {
                         maybeKeywords.set(i, Printer.colorful(key, Color.BLUE));
+                        // keywords highlight
+                    } else if (StringUtil.equalsAnyIgnoreCase(key, Keywords.STANDARD)) {
+                        maybeKeywords.set(i, Printer.colorful(key, Color.DARK_PURPLE));
                         // number highlight
                     } else if (StringUtil.isNumeric(key)) {
                         maybeKeywords.set(i, Printer.colorful(key, Color.DARK_CYAN));

@@ -97,4 +97,14 @@ public class NonBakiTests {
                 Args.of("now", LocalDateTime.now(),
                         "current", LocalDateTime.now())));
     }
+
+    @Test
+    public void testSqlErrorFix() {
+        String sql = "select * from user\nwhere and id = :id";
+        String sql2 = "select * from user where order by id desc";
+        String sql3 = "select * from user ,where id = 1";
+        System.out.println(SqlUtil.repairSyntaxError(sql));
+        System.out.println(SqlUtil.repairSyntaxError(sql2));
+        System.out.println(SqlUtil.repairSyntaxError(sql3));
+    }
 }

@@ -220,7 +220,7 @@ public class NewBakiTests {
 
     @Test
     public void testQ() throws SQLException {
-        baki.query("select * from test.user").zip()
+        baki.query("select id as \"ID\",name as \"NAME\",age,address from test.user limit 5").zip()
                 .forEach((k, v) -> System.out.println(k + " -> " + v));
 
     }

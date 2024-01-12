@@ -30,9 +30,9 @@ public class SqlUtil {
     //language=RegExp
     public static final Pattern STR_PATTERN = Pattern.compile("'[^']*'", Pattern.MULTILINE);
     //language=RegExp
-    public static final Pattern SQL_ERR_COMMA_WHERE = Pattern.compile(",(\\s*where\\W+)", Pattern.CASE_INSENSITIVE);
+    public static final Pattern SQL_ERR_COMMA_WHERE = Pattern.compile(",\\s*(where\\W+)", Pattern.CASE_INSENSITIVE);
     //language=RegExp
-    public static final Pattern SQL_ERR_WHERE_AND_OR = Pattern.compile("(\\s+where\\s+)(and|or)\\s+", Pattern.CASE_INSENSITIVE);
+    public static final Pattern SQL_ERR_WHERE_AND_OR = Pattern.compile("(\\s+where\\s+)(and|or)(\\W+)", Pattern.CASE_INSENSITIVE);
     //language=RegExp
     public static final Pattern SQL_ERR_WHERE_ORDER = Pattern.compile("\\s+where(\\s+order|\\s+limit|\\s+group|\\s+union|\\s*\\))\\s+", Pattern.CASE_INSENSITIVE);
     //language=RegExp
@@ -352,8 +352,8 @@ public class SqlUtil {
      */
     public static String repairSyntaxError(final String sql) {
         String result = sql;
-        result = SQL_ERR_COMMA_WHERE.matcher(result).replaceAll("$1");
-        result = SQL_ERR_WHERE_AND_OR.matcher(result).replaceAll("$1");
+        result = SQL_ERR_COMMA_WHERE.matcher(result).replaceAll(" $1");
+        result = SQL_ERR_WHERE_AND_OR.matcher(result).replaceAll("$1$3");
         result = SQL_ERR_WHERE_ORDER.matcher(result).replaceAll("$1 ");
         result = SQL_ERR_WHERE_END.matcher(result).replaceAll("");
         return result;

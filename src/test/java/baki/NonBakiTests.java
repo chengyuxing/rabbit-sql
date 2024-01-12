@@ -100,10 +100,12 @@ public class NonBakiTests {
 
     @Test
     public void testSqlErrorFix() {
-        String sql = "select * from user\nwhere and id = :id";
+        String sql = "select * from user\nwhere and(id = :id)";
+        String sql4 = "select * from user\nwhere and id = :id";
         String sql2 = "select * from user where order by id desc";
-        String sql3 = "select * from user ,where id = 1";
+        String sql3 = "update test.user set name = :name ,  where id = 1";
         System.out.println(SqlUtil.repairSyntaxError(sql));
+        System.out.println(SqlUtil.repairSyntaxError(sql4));
         System.out.println(SqlUtil.repairSyntaxError(sql2));
         System.out.println(SqlUtil.repairSyntaxError(sql3));
     }

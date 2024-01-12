@@ -1,5 +1,9 @@
 # change note
 
+## 7.8.9
+
+- Dynamic sql repair syntax error logic optimized.
+
 ## 7.8.8
 
 - Dynamic sql repair syntax error logic optimized.

@@ -9,6 +9,7 @@ import com.github.chengyuxing.sql.XQLFileManager;
 import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
+import com.github.chengyuxing.sql.utils.SqlHighlighter;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
 
@@ -50,15 +51,17 @@ public class NonBakiTests {
     @Test
     public void highlightSqlTest() {
         // language=SQL
-        String sql = "select count(*),\n" +
+        String sql = "/*[ooooooooo]*/\n" +
+                "select count(*),\n" +
                 "       count(*) filter ( where grade > 90 )               greate,\n" +
                 "       -- #if :_databaseId != blank\n" +
-                "        count(*) filter ( where grade < 90 and grade > 60) good,\n" +
+                "        string_agg (id, ', ') filter ( where grade < 90 and grade > 60) good,\n" +
                 "       -- #fi\n" +
                 "       count(*) filter ( where grade < 60 )               bad\n" +
                 "from test.score;";
 
-        System.out.println(SqlUtil.highlightSql(sql));
+        String b = SqlHighlighter.ansi(sql);
+        System.out.println(b);
     }
 
     static final String query = "select t.id || 'number' || 'age:age,name:cyx', '{\"name\":\"user\"}'::jsonb from test.user where id =:id::integer and id >:idc and name=text :username";

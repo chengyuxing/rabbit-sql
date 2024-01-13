@@ -10,6 +10,7 @@ import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.exceptions.DuplicateException;
+import com.github.chengyuxing.sql.utils.SqlHighlighter;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -254,7 +255,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                         if (trimLine.endsWith(delimiter)) {
                             String naSql = removeBlockAnnotation(String.join(NEW_LINE, sqlBodyBuffer));
                             entry.put(blockName, naSql.substring(0, naSql.lastIndexOf(delimiter)).trim());
-                            log.debug("scan {} to get sql({}) [{}.{}]：{}", filename, delimiter, alias, blockName, SqlUtil.highlightSqlIfConsole(entry.get(blockName)));
+                            log.debug("scan {} to get sql({}) [{}.{}]：{}", filename, delimiter, alias, blockName, SqlHighlighter.highlightSqlIfConsole(entry.get(blockName)));
                             blockName = "";
                             sqlBodyBuffer.clear();
                         }
@@ -265,7 +266,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             if (!blockName.isEmpty()) {
                 String lastSql = String.join(NEW_LINE, sqlBodyBuffer);
                 entry.put(blockName, removeBlockAnnotation(lastSql));
-                log.debug("scan {} to get sql({}) [{}.{}]：{}", filename, delimiter, alias, blockName, SqlUtil.highlightSqlIfConsole(lastSql));
+                log.debug("scan {} to get sql({}) [{}.{}]：{}", filename, delimiter, alias, blockName, SqlHighlighter.highlightSqlIfConsole(lastSql));
             }
         }
         if (!entry.isEmpty()) {

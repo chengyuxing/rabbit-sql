@@ -2,18 +2,13 @@ package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.DateTimes;
 import com.github.chengyuxing.common.StringFormatter;
-import com.github.chengyuxing.common.console.Color;
-import com.github.chengyuxing.common.console.Printer;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.Jackson;
 import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
-import com.github.chengyuxing.sql.Keywords;
 import com.github.chengyuxing.sql.types.Variable;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -26,7 +21,6 @@ import java.util.regex.Pattern;
  * SQL util.
  */
 public class SqlUtil {
-    private static final Logger log = LoggerFactory.getLogger(SqlUtil.class);
     //language=RegExp
     public static final Pattern STR_PATTERN = Pattern.compile("'[^']*'", Pattern.MULTILINE);
     //language=RegExp
@@ -357,88 +351,5 @@ public class SqlUtil {
         result = SQL_ERR_WHERE_ORDER.matcher(result).replaceAll("$1 ");
         result = SQL_ERR_WHERE_END.matcher(result).replaceAll("");
         return result;
-    }
-
-    /**
-     * Highlight sql string with ansi.
-     *
-     * @param sql sql string
-     * @return highlighted sql
-     */
-    public static String highlightSql(String sql) {
-        try {
-            Pair<String, Map<String, String>> r = SqlUtil.replaceSqlSubstr(sql);
-            String rSql = r.getItem1();
-            Pair<List<String>, List<String>> x = StringUtil.regexSplit(rSql, "(?<sp>[\\s,\\[\\]():;])", "sp");
-            List<String> maybeKeywords = x.getItem1();
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < maybeKeywords.size(); i++) {
-                String key = maybeKeywords.get(i);
-                if (!key.trim().isEmpty()) {
-                    // functions highlight
-                    if (!StringUtil.containsAnyIgnoreCase(key, Keywords.STANDARD) && rSql.contains(key + "(")) {
-                        maybeKeywords.set(i, Printer.colorful(key, Color.BLUE));
-                        // keywords highlight
-                    } else if (StringUtil.equalsAnyIgnoreCase(key, Keywords.STANDARD)) {
-                        maybeKeywords.set(i, Printer.colorful(key, Color.DARK_PURPLE));
-                        // number highlight
-                    } else if (StringUtil.isNumeric(key)) {
-                        maybeKeywords.set(i, Printer.colorful(key, Color.DARK_CYAN));
-                        // PostgreSQL function body block highlight
-                    } else if (key.equals("$$")) {
-                        maybeKeywords.set(i, Printer.colorful(key, Color.DARK_GREEN));
-                        // symbol '*' highlight
-                    } else if (key.equals("*")) {
-                        maybeKeywords.set(i, key.replace("*", Printer.colorful("*", Color.YELLOW)));
-                    }
-                }
-                sb.append(maybeKeywords.get(i));
-                if (i < maybeKeywords.size() - 1) {
-                    sb.append(x.getItem2().get(i));
-                }
-            }
-            String colorfulSql = sb.toString();
-            // reinsert the sub string
-            Map<String, String> subStr = r.getItem2();
-            for (String key : subStr.keySet()) {
-                colorfulSql = colorfulSql.replace(key, Printer.colorful(subStr.get(key), Color.DARK_GREEN));
-            }
-            // resolve single annotation
-            String[] sqlLine = colorfulSql.split("\n");
-            for (int i = 0; i < sqlLine.length; i++) {
-                String line = sqlLine[i];
-                if (line.trim().startsWith("--")) {
-                    sqlLine[i] = Printer.colorful(line, Color.SILVER);
-                } else if (line.contains("--")) {
-                    int idx = line.indexOf("--");
-                    sqlLine[i] = line.substring(0, idx) + Printer.colorful(line.substring(idx), Color.SILVER);
-                }
-            }
-            colorfulSql = String.join("\n", sqlLine);
-            // resolve block annotation
-            if (colorfulSql.contains("/*") && colorfulSql.contains("*/")) {
-                List<String> annotations = getBlockAnnotation(colorfulSql);
-                for (String annotation : annotations) {
-                    colorfulSql = colorfulSql.replace(annotation, Printer.colorful(annotation.replaceAll("\033\\[\\d{2}m|\033\\[0m", ""), Color.SILVER));
-                }
-            }
-            return colorfulSql;
-        } catch (Exception e) {
-            log.error("highlight sql error.", e);
-            return sql;
-        }
-    }
-
-    /**
-     * Build highlight sql for console if console is active.
-     *
-     * @param sql sql string
-     * @return normal sql string or highlight sql string
-     */
-    public static String highlightSqlIfConsole(String sql) {
-        if (System.console() != null && System.getenv().get("TERM") != null) {
-            return highlightSql(sql);
-        }
-        return sql;
     }
 }

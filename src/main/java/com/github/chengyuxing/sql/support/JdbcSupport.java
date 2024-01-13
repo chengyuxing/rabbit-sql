@@ -9,7 +9,7 @@ import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.types.ParamMode;
 import com.github.chengyuxing.sql.utils.JdbcUtil;
-import com.github.chengyuxing.sql.utils.SqlUtil;
+import com.github.chengyuxing.sql.utils.SqlHighlighter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -493,7 +493,7 @@ public abstract class JdbcSupport extends SqlParser {
      */
     protected void debugSql(String sql, Collection<? extends Map<String, ?>> args) {
         if (log.isDebugEnabled()) {
-            log.debug("SQL: {}", SqlUtil.highlightSqlIfConsole(sql));
+            log.debug("SQL: {}", SqlHighlighter.highlightSqlIfConsole(sql));
             for (Map<String, ?> arg : args) {
                 StringJoiner sb = new StringJoiner(", ", "{", "}");
                 arg.forEach((k, v) -> {

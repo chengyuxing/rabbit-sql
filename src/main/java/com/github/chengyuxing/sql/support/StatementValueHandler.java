@@ -24,5 +24,5 @@ public interface StatementValueHandler {
      * @throws SQLException if connection states error
      * @see com.github.chengyuxing.sql.utils.JdbcUtil#setStatementValue(PreparedStatement, int, Object) JdbcUtil.setStatementValue(PreparedStatement, int, Object)
      */
-    void preHandle(PreparedStatement ps, int index, Object value, DatabaseMetaData metaData) throws SQLException;
+    void handle(PreparedStatement ps, int index, Object value, DatabaseMetaData metaData) throws SQLException;
 }

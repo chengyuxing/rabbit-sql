@@ -1,5 +1,11 @@
 package baki;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.Module;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
+import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.Jackson;
@@ -14,6 +20,7 @@ import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 
@@ -111,5 +118,18 @@ public class NonBakiTests {
         System.out.println(SqlUtil.repairSyntaxError(sql4));
         System.out.println(SqlUtil.repairSyntaxError(sql2));
         System.out.println(SqlUtil.repairSyntaxError(sql3));
+    }
+
+    @Test
+    public void testJsonDate() throws JsonProcessingException {
+        JavaTimeModule module = new JavaTimeModule();
+        LocalDateTimeDeserializer dateTimeDeserializer = new LocalDateTimeDeserializer(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        LocalDateTimeSerializer dateTimeSerializer = new LocalDateTimeSerializer(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
+        module.addDeserializer(LocalDateTime.class, dateTimeDeserializer);
+        module.addSerializer(LocalDateTime.class, dateTimeSerializer);
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModules(module);
+        System.out.println(mapper.writeValueAsString(Args.of("now", LocalDateTime.now())));
+        System.out.println(Module[].class.getName());
     }
 }

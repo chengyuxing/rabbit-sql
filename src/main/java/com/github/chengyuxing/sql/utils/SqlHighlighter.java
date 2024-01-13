@@ -39,7 +39,7 @@ public final class SqlHighlighter {
      * @param sql sql string
      * @return normal sql string or highlight sql string
      */
-    public static String highlightSqlIfConsole(String sql) {
+    public static String highlightIfConsole(String sql) {
         if (System.console() != null && System.getenv().get("TERM") != null) {
             return ansi(sql);
         }
@@ -88,28 +88,28 @@ public final class SqlHighlighter {
             Pair<String, Map<String, String>> r = SqlUtil.replaceSqlSubstr(sql);
             String rSql = r.getItem1();
             Pair<List<String>, List<String>> x = StringUtil.regexSplit(rSql, "(?<sp>[\\s,\\[\\]():;])", "sp");
-            List<String> maybeKeywords = x.getItem1();
+            List<String> words = x.getItem1();
             List<String> delimiters = x.getItem2();
             StringBuilder sb = new StringBuilder();
-            for (int i = 0, j = maybeKeywords.size(); i < j; i++) {
-                String key = maybeKeywords.get(i);
-                String replacement = key;
-                if (!key.trim().isEmpty()) {
+            for (int i = 0, j = words.size(); i < j; i++) {
+                String word = words.get(i);
+                String replacement = word;
+                if (!word.trim().isEmpty()) {
                     // functions highlight
-                    if (!StringUtil.equalsAnyIgnoreCase(key, Keywords.STANDARD) && detectFunction(i, j, delimiters)) {
-                        replacement = replacer.apply(TAG.FUNCTION, key);
+                    if (!StringUtil.equalsAnyIgnoreCase(word, Keywords.STANDARD) && detectFunction(i, j, delimiters)) {
+                        replacement = replacer.apply(TAG.FUNCTION, word);
                         // keywords highlight
-                    } else if (StringUtil.equalsAnyIgnoreCase(key, Keywords.STANDARD)) {
-                        replacement = replacer.apply(TAG.KEYWORD, key);
+                    } else if (StringUtil.equalsAnyIgnoreCase(word, Keywords.STANDARD)) {
+                        replacement = replacer.apply(TAG.KEYWORD, word);
                         // number highlight
-                    } else if (StringUtil.isNumeric(key)) {
-                        replacement = replacer.apply(TAG.NUMBER, key);
+                    } else if (StringUtil.isNumeric(word)) {
+                        replacement = replacer.apply(TAG.NUMBER, word);
                         // PostgreSQL function body block highlight
-                    } else if (key.equals("$$")) {
-                        replacement = replacer.apply(TAG.POSTGRESQL_FUNCTION_BODY_SYMBOL, key);
+                    } else if (word.equals("$$")) {
+                        replacement = replacer.apply(TAG.POSTGRESQL_FUNCTION_BODY_SYMBOL, word);
                         // symbol '*' highlight
-                    } else if (key.equals("*")) {
-                        replacement = replacer.apply(TAG.ASTERISK, key);
+                    } else if (word.equals("*")) {
+                        replacement = replacer.apply(TAG.ASTERISK, word);
                     }
                 }
                 sb.append(replacement);

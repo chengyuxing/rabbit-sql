@@ -46,7 +46,7 @@ public interface Executor {
     /**
      * Execute store procedure or function.
      *
-     * @param params {@link com.github.chengyuxing.sql.types.OUTParamType Args&lt;Param&gt;}
+     * @param params in,out and in_out params
      * @return DataRow
      * @see com.github.chengyuxing.sql.support.JdbcSupport#executeCallStatement(String, Map) executeCallStatement(String, Map)
      */

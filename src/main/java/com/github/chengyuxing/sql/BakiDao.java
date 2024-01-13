@@ -530,7 +530,7 @@ public class BakiDao extends JdbcSupport implements Baki {
 
     @Override
     protected void doHandleStatementValue(PreparedStatement ps, int index, Object value) throws SQLException {
-        statementValueHandler.preHandle(ps, index, value, metaData);
+        statementValueHandler.handle(ps, index, value, metaData);
     }
 
     public void setGlobalPageHelperProvider(PageHelperProvider globalPageHelperProvider) {

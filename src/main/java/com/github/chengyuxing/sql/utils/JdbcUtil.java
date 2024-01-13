@@ -1,7 +1,6 @@
 package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.DataRow;
-import com.github.chengyuxing.common.utils.Jackson;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -69,10 +68,6 @@ public class JdbcUtil {
             ps.setObject(index, new Timestamp(((Instant) value).toEpochMilli()));
         } else if (value instanceof UUID) {
             ps.setObject(index, value.toString().replace("-", ""));
-        } else if (value instanceof Map || value instanceof Collection) {
-            ps.setObject(index, Jackson.toJson(value));
-        } else if (!value.getClass().getTypeName().startsWith("java.")) {
-            ps.setObject(index, Jackson.toJson(value));
         } else if (value instanceof InputStream) {
             ps.setBinaryStream(index, (InputStream) value);
         } else if (value instanceof Path) {

@@ -2,11 +2,10 @@ package tests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.chengyuxing.common.DataRow;
-import com.github.chengyuxing.common.DateTimes;
 import com.github.chengyuxing.common.ImmutableList;
+import com.github.chengyuxing.common.MostDateTime;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.common.tuple.Triple;
 import com.github.chengyuxing.common.utils.Jackson;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.sql.BakiDao;
@@ -55,7 +54,7 @@ public class Tests {
 
     @Test
     public void dtTest() throws Exception {
-        System.out.println(new java.sql.Time(DateTimes.toEpochMilli("2020-12-11 11:22:33")));
+        System.out.println(new java.sql.Time(MostDateTime.toEpochMilli("2020-12-11 11:22:33")));
         System.out.println(LocalDateTime.class.getTypeName());
     }
 
@@ -74,13 +73,13 @@ public class Tests {
         String dt = "2020-12-11";
         String tm = "23时12分55秒";
 
-        System.out.println(DateTimes.toDate(ts));
-        System.out.println(DateTimes.now().toString("yyyy-MM-dd"));
+        System.out.println(MostDateTime.toDate(ts));
+        System.out.println(MostDateTime.now().toString("yyyy-MM-dd"));
     }
 
     @Test
     public void formatDt() throws Exception {
-        System.out.println(DateTimes.of(new Date()).toString("yyyy年MM月dd日 HH:mm:ss"));
+        System.out.println(MostDateTime.of(new Date()).toString("yyyy年MM月dd日 HH:mm:ss"));
         for (int i = 0; i < 12; i++) {
             System.out.println(new Date(LocalDateTime.now().plusMonths(i).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
         }

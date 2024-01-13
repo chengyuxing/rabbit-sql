@@ -49,7 +49,6 @@ public class NewBakiTests {
             JdbcUtil.setStatementValue(ps, index, value);
         });
 
-        bakiDao.setSqlInterceptor(new SqlInterceptor.DefaultSqlInterceptor());
         baki = bakiDao;
     }
 
@@ -227,12 +226,7 @@ public class NewBakiTests {
 
     @Test
     public void testVar() {
-        Variable pgArray = new Variable.ExampleDBArray(new Object[]{1, 2, 3, 4, 5, 6, 7}, baki.metaData());
         int len = new IPipe.Length().transform("abcde");
-        System.out.println(pgArray.stringLiteral());
         System.out.println(len);
-
-        System.out.println(SqlUtil.formatSql("select * from test.user where id in (${idArray})",
-                Args.of("idArray", pgArray)));
     }
 }

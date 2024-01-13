@@ -1,6 +1,6 @@
 package com.github.chengyuxing.sql.utils;
 
-import com.github.chengyuxing.common.DateTimes;
+import com.github.chengyuxing.common.MostDateTime;
 import com.github.chengyuxing.common.StringFormatter;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.tuple.Pair;
@@ -104,19 +104,19 @@ public class SqlUtil {
         }
         Class<?> clazz = obj.getClass();
         if (Date.class.isAssignableFrom(clazz)) {
-            String dtStr = DateTimes.of((Date) obj).toString("yyyy-MM-dd HH:mm:ss");
+            String dtStr = MostDateTime.of((Date) obj).toString("yyyy-MM-dd HH:mm:ss");
             return "to_timestamp(" + quote(dtStr) + ", " + quote("yyyy-mm-dd hh24:mi:ss") + ")";
         }
         if (clazz == LocalDateTime.class) {
-            String dtStr = DateTimes.of((LocalDateTime) obj).toString("yyyy-MM-dd HH:mm:ss");
+            String dtStr = MostDateTime.of((LocalDateTime) obj).toString("yyyy-MM-dd HH:mm:ss");
             return "to_timestamp(" + quote(dtStr) + ", " + quote("yyyy-mm-dd hh24:mi:ss") + ")";
         }
         if (clazz == LocalDate.class) {
-            String dtStr = DateTimes.of((LocalDate) obj).toString("yyyy-MM-dd");
+            String dtStr = MostDateTime.of((LocalDate) obj).toString("yyyy-MM-dd");
             return "to_date(" + quote(dtStr) + ", " + quote("yyyy-mm-dd") + ")";
         }
         if (clazz == LocalTime.class) {
-            String dtStr = DateTimes.of((LocalTime) obj).toString("yyyy-MM-dd HH:mm:ss");
+            String dtStr = MostDateTime.of((LocalTime) obj).toString("yyyy-MM-dd HH:mm:ss");
             return "to_timestamp(" + quote(dtStr) + ", " + quote("yyyy-mm-dd hh24:mi:ss") + ")";
         }
         if (clazz == byte[].class) {

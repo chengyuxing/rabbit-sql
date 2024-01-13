@@ -1,5 +1,19 @@
 # change note
 
+## 7.8.10
+
+- New method: `DataRow#toKeyValue()`;
+- Rename **DateTimes** to **MostDateTime**;
+- `ObjectUtil#map2entity` remove supports for detected json string to collection or map;
+- **DataRow** remove
+  methods: `DataRow(Map<String, Object> map)`, `ofJson(String json)`, `ofMap(Map<String, Object> map)`, `toMap()`, `toJson(Function<Object, Object> valueFormatter)`, `toJson()`, `to(Function<DataRow, T> converter)`;
+- `SqlUtil#quoteFormatValue` remove supports for Map, Collection, JavaBean json serialized;
+- `JdbcUtil#setStatementValue` remove supports for Map, Collection, JavaBean json serialized;
+- `Args` remove methods: `ofJson()`, `ofMap()`;
+- Sql highlight optimized;
+- PagedArgs optimized;
+- Some bug fixed and code optimized.
+
 ## 7.8.9
 
 - Dynamic sql repair syntax error logic optimized.

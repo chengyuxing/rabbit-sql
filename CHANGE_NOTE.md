@@ -1,5 +1,9 @@
 # change note
 
+## 7.8.12
+
+- Sql highlight optimized;
+
 ## 7.8.10
 
 - New method: `DataRow#toKeyValue()`;

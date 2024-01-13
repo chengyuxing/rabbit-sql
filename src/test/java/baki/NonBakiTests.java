@@ -62,7 +62,7 @@ public class NonBakiTests {
                 "select count(*),\n" +
                 "       count(*) filter ( where grade > 90 )               greate,\n" +
                 "       -- #if :_databaseId != blank\n" +
-                "        string_agg (id, ', ') filter ( where grade < 90 and grade > 60) good,\n" +
+                "        test.string_agg (id, ', ') filter ( where grade < 90 and grade > 60) good,\n" +
                 "       -- #fi\n" +
                 "       count(*) filter ( where grade < 60 )               bad\n" +
                 "from test.score;";

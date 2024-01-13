@@ -48,7 +48,7 @@ public class Keywords {
             "serializable", "server", "session", "session_user", "set", "setof", "sets", "share", "show",
             "similar", "simple", "skip", "smallint", "snapshot", "some", "sql", "stable", "standalone",
             "start", "statement", "statistics", "stdin", "stdout", "storage", "stored", "strict", "strip",
-            "subscription", "substring", "support", "symmetric", "sysid", "system", "table", "tables",
+            "subscription", "support", "symmetric", "sysid", "system", "table", "tables",
             "tablesample", "tablespace", "temp", "template", "temporary", "text", "then", "ties", "time",
             "timestamp", "to", "trailing", "transaction", "transform", "treat", "trigger", "trim", "true",
             "truncate", "trusted", "type", "types", "uescape", "unbounded", "uncommitted", "unencrypted",

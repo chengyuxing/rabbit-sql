@@ -90,7 +90,7 @@ public final class SqlHighlighter {
         try {
             Pair<String, Map<String, String>> r = SqlUtil.replaceSqlSubstr(sql);
             String rSql = r.getItem1();
-            Pair<List<String>, List<String>> x = StringUtil.regexSplit(rSql, "(?<sp>[\\s,\\[\\]():;])", "sp");
+            Pair<List<String>, List<String>> x = StringUtil.regexSplit(rSql, "(?<sp>[\\s,\\[\\]():;]+)", "sp");
             List<String> words = x.getItem1();
             List<String> delimiters = x.getItem2();
             StringBuilder sb = new StringBuilder();
@@ -99,7 +99,7 @@ public final class SqlHighlighter {
                 String replacement = word;
                 if (!word.trim().isEmpty()) {
                     // functions highlight
-                    if (!StringUtil.equalsAnyIgnoreCase(word, Keywords.STANDARD) && detectFunction(i, j, delimiters)) {
+                    if (!StringUtil.equalsAnyIgnoreCase(word, Keywords.STANDARD) && detectFunction(word, i, j, delimiters)) {
                         replacement = replacer.apply(TAG.FUNCTION, word);
                         // keywords highlight
                     } else if (StringUtil.equalsAnyIgnoreCase(word, Keywords.STANDARD)) {
@@ -160,14 +160,12 @@ public final class SqlHighlighter {
      * @param delimiters delimiters
      * @return true or false
      */
-    private static boolean detectFunction(int i, int j, List<String> delimiters) {
+    private static boolean detectFunction(String word, int i, int j, List<String> delimiters) {
+        if (!word.matches("^[a-zA-Z][\\w.]+")) {
+            return false;
+        }
         if (i < j - 1) {
-            int dIdx = 0;
-            String delimiter;
-            while ((delimiter = delimiters.get(i + dIdx).trim()).isEmpty()) {
-                dIdx++;
-            }
-            return delimiter.equals("(");
+            return delimiters.get(i).trim().startsWith("(");
         }
         return false;
     }

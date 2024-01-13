@@ -376,7 +376,7 @@ public class SqlUtil {
                 String key = maybeKeywords.get(i);
                 if (!key.trim().isEmpty()) {
                     // functions highlight
-                    if (rSql.contains(key + "(")) {
+                    if (!StringUtil.containsAnyIgnoreCase(key, Keywords.STANDARD) && rSql.contains(key + "(")) {
                         maybeKeywords.set(i, Printer.colorful(key, Color.BLUE));
                         // keywords highlight
                     } else if (StringUtil.equalsAnyIgnoreCase(key, Keywords.STANDARD)) {

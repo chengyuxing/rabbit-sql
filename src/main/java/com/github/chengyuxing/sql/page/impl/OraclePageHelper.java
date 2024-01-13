@@ -5,14 +5,14 @@ import com.github.chengyuxing.sql.page.PageHelper;
 
 /**
  * <p>Oracle page helper.</p>
- * Default paged args: {@code :start, :end}<br>
+ * Default paged args: {@link  #START_NUM_KEY}, {@link #END_NUM_KEY}<br>
  * e.g.
  * <blockquote>
  * <pre>SELECT *
  * FROM (SELECT t.*, ROWNUM RN_4_RABBIT
  *       FROM (...) t
- *       WHERE ROWNUM{@code <=} :end)
- *  WHERE RN_4_RABBIT{@code >=} :start</pre>
+ *       WHERE ROWNUM{@code <=} :{@link #END_NUM_KEY})
+ *  WHERE RN_4_RABBIT{@code >=} :{@link  #START_NUM_KEY}</pre>
  * </blockquote>
  *
  * @see #pagedArgs()
@@ -40,6 +40,6 @@ public class OraclePageHelper extends PageHelper {
 
     @Override
     public Args<Integer> pagedArgs() {
-        return Args.of("start", start()).add("end", end());
+        return Args.of(START_NUM_KEY, start()).add(END_NUM_KEY, end());
     }
 }

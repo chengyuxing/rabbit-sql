@@ -5,10 +5,10 @@ import com.github.chengyuxing.sql.page.PageHelper;
 
 /**
  * <p>PostgreSQL page helper.</p>
- * Default paged args: {@code :limit, :offset}<br>
+ * Default paged args: {@link  #START_NUM_KEY}, {@link #END_NUM_KEY}<br>
  * e.g.
  * <blockquote>
- * <pre>select * from ... limit :limit offset :offset;</pre>
+ * <pre>select * from ... limit :{@link  #START_NUM_KEY} offset :{@link #END_NUM_KEY};</pre>
  * </blockquote>
  *
  * @see #pagedArgs()
@@ -33,6 +33,6 @@ public class PGPageHelper extends PageHelper {
 
     @Override
     public Args<Integer> pagedArgs() {
-        return Args.of("limit", limit()).add("offset", offset());
+        return Args.of(START_NUM_KEY, limit()).add(END_NUM_KEY, offset());
     }
 }

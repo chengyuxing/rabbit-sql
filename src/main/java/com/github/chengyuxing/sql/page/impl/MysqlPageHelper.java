@@ -5,10 +5,10 @@ import com.github.chengyuxing.sql.page.PageHelper;
 
 /**
  * <p>Mysql/MariaDB page helper.</p>
- * Default paged args: {@code :limit, :size}<br>
+ * Default paged args: {@link  #START_NUM_KEY}, {@link #END_NUM_KEY}<br>
  * e.g.
  * <blockquote>
- * <pre>select * from ... limit :limit, :size;</pre>
+ * <pre>select * from ... limit :{@link  #START_NUM_KEY}, :{@link #END_NUM_KEY};</pre>
  * </blockquote>
  *
  * @see #pagedArgs()
@@ -33,6 +33,6 @@ public class MysqlPageHelper extends PageHelper {
 
     @Override
     public Args<Integer> pagedArgs() {
-        return Args.of("limit", start()).add("size", size());
+        return Args.of(START_NUM_KEY, start()).add(END_NUM_KEY, size());
     }
 }

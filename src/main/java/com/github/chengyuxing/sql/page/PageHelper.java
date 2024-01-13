@@ -7,6 +7,8 @@ import com.github.chengyuxing.sql.Args;
  */
 public abstract class PageHelper {
     public static final String ROW_NUM_KEY = "rn_4_rabbit";
+    public static final String START_NUM_KEY = "start_4_rabbit";
+    public static final String END_NUM_KEY = "end_4_rabbit";
     protected int pageNumber;
     protected int pageSize;
     protected int pageCount;
@@ -24,6 +26,8 @@ public abstract class PageHelper {
      * Paged args.
      *
      * @return paged args
+     * @see #START_NUM_KEY
+     * @see #END_NUM_KEY
      */
     public abstract Args<Integer> pagedArgs();
 

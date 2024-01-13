@@ -4,7 +4,6 @@ import com.github.chengyuxing.common.DateTimes;
 import com.github.chengyuxing.common.StringFormatter;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.common.utils.Jackson;
 import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
@@ -126,16 +125,6 @@ public class SqlUtil {
         // PostgreSQL array
         if (Object[].class.isAssignableFrom(clazz)) {
             return toPgArrayLiteral((Object[]) obj);
-        }
-        // I think you wanna save json string
-        if (Map.class.isAssignableFrom(clazz) ||
-                Collection.class.isAssignableFrom(clazz) ||
-                !clazz.getTypeName().startsWith("java.")) {
-            String value = Jackson.toJson(obj);
-            if (value != null) {
-                return safeQuote(value);
-            }
-            return "null";
         }
         return safeQuote(obj.toString());
     }

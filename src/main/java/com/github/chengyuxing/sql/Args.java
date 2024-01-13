@@ -1,13 +1,10 @@
 package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.MapExtends;
-import com.github.chengyuxing.common.utils.Jackson;
 import com.github.chengyuxing.common.utils.ObjectUtil;
 
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -67,33 +64,6 @@ public final class Args<V> extends HashMap<String, V> implements MapExtends<V> {
     }
 
     /**
-     * Returns an Args from json object string.
-     *
-     * @param json json object string, e.g. {@code {"a":1,"b":2}}
-     * @return Args instance
-     */
-    public static Args<Object> ofJson(String json) {
-        if (Objects.isNull(json)) return of();
-        //noinspection unchecked
-        return Jackson.toObject(json, Args.class);
-    }
-
-    /**
-     * Returns an Args from Map.
-     *
-     * @param other map
-     * @return Args instance
-     */
-    public static Args<Object> ofMap(Map<?, ?> other) {
-        if (Objects.isNull(other)) return of();
-        Args<Object> args = of();
-        for (Map.Entry<?, ?> e : other.entrySet()) {
-            args.put(e.getKey().toString(), e.getValue());
-        }
-        return args;
-    }
-
-    /**
      * Add a key-value.
      *
      * @param k key
@@ -110,14 +80,11 @@ public final class Args<V> extends HashMap<String, V> implements MapExtends<V> {
      *
      * @param oldKey old key name
      * @param newKey new key name
-     * @return true if updated or false
      */
-    public boolean updateKey(String oldKey, String newKey) {
+    public void updateKey(String oldKey, String newKey) {
         if (containsKey(oldKey)) {
             put(newKey, remove(oldKey));
-            return true;
         }
-        return false;
     }
 
     /**

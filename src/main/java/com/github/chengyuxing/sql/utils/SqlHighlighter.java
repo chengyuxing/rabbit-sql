@@ -14,6 +14,9 @@ import java.util.function.BiFunction;
 
 import static com.github.chengyuxing.sql.utils.SqlUtil.getBlockAnnotation;
 
+/**
+ * Sql highlight util.
+ */
 public final class SqlHighlighter {
     private static final Logger log = LoggerFactory.getLogger(SqlHighlighter.class);
 

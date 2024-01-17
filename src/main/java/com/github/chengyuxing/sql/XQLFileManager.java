@@ -288,7 +288,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         for (Map.Entry<String, String> e : sqlResource.entrySet()) {
             String k = e.getKey();
             if (k.startsWith("${")) {
-                templates.put(k.substring(2, k.length() - 1), e.getValue());
+                String template = getTemplate(e.getValue());
+                templates.put(k.substring(2, k.length() - 1), template);
             }
         }
         if (templates.isEmpty() && constants.isEmpty()) {
@@ -299,9 +300,45 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             if (sql.contains("${")) {
                 sql = SqlUtil.formatSql(sql, templates);
                 sql = SqlUtil.formatSql(sql, constants);
-                e.setValue(sql);
+                // remove empty line.
+                e.setValue(sql.replaceAll("\\s*\r?\n", NEW_LINE));
             }
         }
+    }
+
+    /**
+     * In case line annotation in template occurs error,
+     * e.g.
+     *<pre>
+     * select * from test.user where ${cnd} order by id;
+     *
+     * {cnd}
+     * -- #if :id <> blank
+     *      id = :id
+     * -- #fi
+     *</pre>
+     * @param template template
+     * @return safe template
+     */
+    protected String getTemplate(String template) {
+        String newTemplate = template;
+        // e.g. select * from test.user where ${cnd} order by id;
+        //
+        // {cnd}
+        // -- #if :id <> blank
+        //      id = :id
+        // -- #fi
+        if (newTemplate.trim().startsWith("--")) {
+            newTemplate = NEW_LINE + newTemplate;
+        }
+        int lastLN = newTemplate.lastIndexOf(NEW_LINE);
+        if (lastLN != -1) {
+            String lastLine = newTemplate.substring(lastLN);
+            if (lastLine.trim().startsWith("--")) {
+                newTemplate += NEW_LINE;
+            }
+        }
+        return newTemplate;
     }
 
     /**

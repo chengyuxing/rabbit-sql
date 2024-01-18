@@ -292,7 +292,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * select * from test.user where ${cnd} order by id;
      *
      * {cnd}
-     * -- #if :id <> blank
+     * -- #if :id {@code <>} blank
      *      id = :id
      * -- #fi
      *</pre>

@@ -19,6 +19,9 @@ import com.github.chengyuxing.sql.utils.SqlHighlighter;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
@@ -68,7 +71,10 @@ public class NonBakiTests {
                 "from test.score;";
 
         String b = SqlHighlighter.ansi(sql);
+        System.out.println(System.console());
         System.out.println(b);
+
+        System.out.println(System.getenv("TERM"));
     }
 
     static final String query = "select t.id || 'number' || 'age:age,name:cyx', '{\"name\":\"user\"}'::jsonb from test.user where id =:id::integer and id >:idc and name=text :username";
@@ -131,5 +137,80 @@ public class NonBakiTests {
         mapper.registerModules(module);
         System.out.println(mapper.writeValueAsString(Args.of("now", LocalDateTime.now())));
         System.out.println(Module[].class.getName());
+    }
+
+    @Test
+    public void testSqlA() {
+        String sql = "select t.id || 'number' || 'name:cyx','{\"name\": \"user\"}'::jsonb\n" +
+                "from test.user t\n" +
+                "where id = :id::integer --suffix type convert\n" +
+                "and id {@code >} :idc\n" +
+                "and name = text :username --prefix type convert\n" +
+                "and '[\"a\",\"b\",\"c\"]'::jsonb{@code ??&} array ['a', 'b'] ${cnd};";
+        System.out.println(sql);
+        System.out.println("----");
+        boolean singleSubstring = false;
+        boolean named = false;
+        String sb = "";
+        char[] chars = sql.toCharArray();
+        for (int i = 0; i < chars.length; i++) {
+            char c = chars[i];
+            if (singleSubstring) {
+                if (c == '\'') {
+                    singleSubstring = false;
+                }
+                continue;
+            }
+
+            if (c == '\'') {
+                singleSubstring = true;
+                continue;
+            }
+
+            if (c == ':') {
+                if (named) {
+                    named = false;
+                } else
+                    named = true;
+                continue;
+            }
+            if (c < 'a' || c > 'z') {
+                if (named) {
+                    System.out.println(sb);
+                    sb = "";
+                    named = false;
+                }
+                continue;
+            }
+            if (named) {
+                sb += c;
+            }
+        }
+
+        System.out.println("----");
+    }
+
+    @Test
+    public void testPath() {
+        Path p = Paths.get("/Users/chengyuxing/Downloads/jdk19.excel.demo.xlsx");
+        Path p2 = Paths.get("/Users/chengyuxing/Downloads/jdk19.excel.demo.xlsx");
+
+        System.out.println(p.hashCode());
+        System.out.println(p2.hashCode());
+
+        System.out.println(p.getFileName());
+        System.out.println(p.endsWith(Paths.get("Downloads", "jdk19.excel.demo.xlsx")));
+        System.out.println(p.endsWith("jdk19.excel.demo.xlsx"));
+        System.out.println(Paths.get("/Users/chengyuxing/Downloads").getFileName());
+    }
+
+    @Test
+    public void test44() {
+        XQLFileManager xqlFileManager = new XQLFileManager();
+        xqlFileManager.add("pgsql/a.xql");
+        xqlFileManager.init();
+        String sql = xqlFileManager.get("a.queryUsers");
+        System.out.println(sql);
+        System.out.println(Files.exists(Paths.get("")));
     }
 }

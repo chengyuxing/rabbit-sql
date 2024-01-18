@@ -29,7 +29,8 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.github.chengyuxing.common.script.SimpleScriptParser.TAGS;
-import static com.github.chengyuxing.common.utils.StringUtil.*;
+import static com.github.chengyuxing.common.utils.StringUtil.NEW_LINE;
+import static com.github.chengyuxing.common.utils.StringUtil.containsAnyIgnoreCase;
 import static com.github.chengyuxing.sql.utils.SqlUtil.removeBlockAnnotation;
 
 /**
@@ -167,33 +168,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public void remove(String alias) {
         lock.lock();
         try {
-            resources.remove(alias);
             files.remove(alias);
+            resources.remove(alias);
         } finally {
             lock.unlock();
         }
-    }
-
-    /**
-     * Remove sql file with associated sql resource by file name.
-     *
-     * @param filename file name
-     */
-    public void removeByFilename(String filename) {
-        lock.lock();
-        try {
-            files.entrySet().removeIf(next -> next.getValue().equals(filename));
-            resources.entrySet().removeIf(e -> e.getValue().getFilename().equals(filename));
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    /**
-     * Clear all sql files.
-     */
-    public void clearFiles() {
-        files.clear();
     }
 
     /**
@@ -255,7 +234,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                         if (trimLine.endsWith(delimiter)) {
                             String naSql = removeBlockAnnotation(String.join(NEW_LINE, sqlBodyBuffer));
                             entry.put(blockName, naSql.substring(0, naSql.lastIndexOf(delimiter)).trim());
-                            log.debug("scan {} to get sql({}) [{}.{}]：{}", filename, delimiter, alias, blockName, SqlHighlighter.highlightIfConsole(entry.get(blockName)));
+                            log.debug("scan {} to get sql({}) [{}.{}]：{}", filename, delimiter, alias, blockName, SqlHighlighter.highlightIfAnsiCapable(entry.get(blockName)));
                             blockName = "";
                             sqlBodyBuffer.clear();
                         }
@@ -266,7 +245,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             if (!blockName.isEmpty()) {
                 String lastSql = String.join(NEW_LINE, sqlBodyBuffer);
                 entry.put(blockName, removeBlockAnnotation(lastSql));
-                log.debug("scan {} to get sql({}) [{}.{}]：{}", filename, delimiter, alias, blockName, SqlHighlighter.highlightIfConsole(lastSql));
+                log.debug("scan {} to get sql({}) [{}.{}]：{}", filename, delimiter, alias, blockName, SqlHighlighter.highlightIfAnsiCapable(lastSql));
             }
         }
         if (!entry.isEmpty()) {
@@ -490,23 +469,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * Check resources contains resource or not.
-     *
-     * @param alias file alias
-     * @return true if exists or false
-     */
-    public boolean containsResource(String alias) {
-        return resources.containsKey(alias);
-    }
-
-    /**
-     * CLear all sql resources.
-     */
-    public void clearResources() {
-        resources.clear();
-    }
-
-    /**
      * Get a sql fragment.
      *
      * @param name sql name ({@code <alias>.<sqlName>})
@@ -592,8 +554,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public void close() {
         lock.lock();
         try {
-            clearFiles();
-            clearResources();
+            files.clear();
+            resources.clear();
             pipes.clear();
             pipeInstances.clear();
             constants.clear();

@@ -293,7 +293,7 @@ public class Tests {
         names.add("pgsql/dynamic.sql");
         xqlFileManager.init();
 
-        xqlFileManager.remove("cyx");
+//        xqlFileManager.remove("cyx");
 
         System.out.println(Jackson.toJson(xqlFileManager));
     }

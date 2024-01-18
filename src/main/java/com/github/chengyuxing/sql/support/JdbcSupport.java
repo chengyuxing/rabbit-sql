@@ -493,7 +493,7 @@ public abstract class JdbcSupport extends SqlParser {
      */
     protected void debugSql(String sql, Collection<? extends Map<String, ?>> args) {
         if (log.isDebugEnabled()) {
-            log.debug("SQL: {}", SqlHighlighter.highlightIfConsole(sql));
+            log.debug("SQL: {}", SqlHighlighter.highlightIfAnsiCapable(sql));
             for (Map<String, ?> arg : args) {
                 StringJoiner sb = new StringJoiner(", ", "{", "}");
                 arg.forEach((k, v) -> {

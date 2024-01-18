@@ -40,7 +40,7 @@ public class XQLFileManagerTests {
         System.out.println("-----");
 //        boolean refreshed = xqlFileManager.getResource("a").refresh();
 //        System.out.println(refreshed);
-        xqlFileManager.removeByFilename("pgsql/nest.sql");
+//        xqlFileManager.removeByFilename("pgsql/nest.sql");
         System.out.println(xqlFileManager);
     }
 

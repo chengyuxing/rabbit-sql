@@ -42,7 +42,7 @@ public final class SqlHighlighter {
      * @param sql sql string
      * @return normal sql string or highlight sql string
      */
-    public static String highlightIfConsole(String sql) {
+    public static String highlightIfAnsiCapable(String sql) {
         if (System.console() != null && System.getenv().get("TERM") != null) {
             return ansi(sql);
         }

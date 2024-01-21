@@ -137,6 +137,9 @@ public class SqlUtil {
      * @return string literal value
      */
     public static String formatObject(Object value, boolean quote) {
+        if (Objects.isNull(value)) {
+            return "null";
+        }
         Object[] values = ObjectUtil.toArray(value);
         StringJoiner sb = new StringJoiner(", ");
         if (quote) {
@@ -145,9 +148,11 @@ public class SqlUtil {
             }
         } else {
             for (Object v : values) {
-                if (v != null) {
-                    sb.add(v.toString());
+                if (Objects.isNull(v)) {
+                    sb.add("null");
+                    continue;
                 }
+                sb.add(v.toString());
             }
         }
         return sb.toString();

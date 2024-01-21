@@ -213,4 +213,10 @@ public class NonBakiTests {
         System.out.println(sql);
         System.out.println(Files.exists(Paths.get("")));
     }
+
+    @Test
+    public void test45() {
+        String sql = "select * from test.user where id = :id";
+        System.out.println(new SqlGenerator(':').generateSql(sql, Args.of("id", null)));
+    }
 }

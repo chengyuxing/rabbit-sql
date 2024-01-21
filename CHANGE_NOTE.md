@@ -1,5 +1,9 @@
 # change note
 
+## 7.8.15
+
+- Fixed `SqlUtil#formatObject` value is null returns empty string.
+
 ## 7.8.14
 
 - Some optimized.

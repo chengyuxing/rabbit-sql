@@ -207,11 +207,10 @@ public class NonBakiTests {
     @Test
     public void test44() {
         XQLFileManager xqlFileManager = new XQLFileManager();
-        xqlFileManager.add("pgsql/a.xql");
+        xqlFileManager.add("pgsql/b.a.xql");
         xqlFileManager.init();
-        String sql = xqlFileManager.get("a.queryUsers");
+        String sql = xqlFileManager.get("b.a.queryUsers");
         System.out.println(sql);
-        System.out.println(Files.exists(Paths.get("")));
     }
 
     @Test

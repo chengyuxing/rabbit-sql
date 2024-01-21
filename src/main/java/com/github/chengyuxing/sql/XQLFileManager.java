@@ -476,10 +476,10 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @throws NoSuchElementException if sql fragment name not exists
      */
     public String get(String name) {
-        String alias = name.substring(0, name.indexOf("."));
+        String alias = name.substring(0, name.lastIndexOf("."));
         if (resources.containsKey(alias)) {
             Map<String, String> singleResource = getResource(alias).getEntry();
-            String sqlName = name.substring(name.indexOf(".") + 1);
+            String sqlName = name.substring(name.lastIndexOf(".") + 1);
             if (singleResource.containsKey(sqlName)) {
                 return SqlUtil.trimEnd(singleResource.get(sqlName));
             }

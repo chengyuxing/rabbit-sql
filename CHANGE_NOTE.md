@@ -1,5 +1,9 @@
 # change note
 
+## 7.8.16
+
+- XQLFileManager auto generate sql alias allows includes dot(.)
+
 ## 7.8.15
 
 - Fixed `SqlUtil#formatObject` value is null returns empty string.

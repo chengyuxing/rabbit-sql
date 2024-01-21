@@ -84,4 +84,22 @@ public final class PagedResource<T> {
                 ", data=" + data +
                 '}';
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof PagedResource)) return false;
+
+        PagedResource<?> that = (PagedResource<?>) o;
+
+        if (getPager() != null ? !getPager().equals(that.getPager()) : that.getPager() != null) return false;
+        return getData() != null ? getData().equals(that.getData()) : that.getData() == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = getPager() != null ? getPager().hashCode() : 0;
+        result = 31 * result + (getData() != null ? getData().hashCode() : 0);
+        return result;
+    }
 }

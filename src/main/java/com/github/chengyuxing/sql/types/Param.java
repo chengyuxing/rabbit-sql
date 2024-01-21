@@ -80,4 +80,24 @@ public final class Param {
                 .append("}");
         return sb.toString();
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof Param)) return false;
+
+        Param param = (Param) o;
+
+        if (getValue() != null ? !getValue().equals(param.getValue()) : param.getValue() != null) return false;
+        if (getType() != null ? !getType().equals(param.getType()) : param.getType() != null) return false;
+        return getParamMode() == param.getParamMode();
+    }
+
+    @Override
+    public int hashCode() {
+        int result = getValue() != null ? getValue().hashCode() : 0;
+        result = 31 * result + (getType() != null ? getType().hashCode() : 0);
+        result = 31 * result + (getParamMode() != null ? getParamMode().hashCode() : 0);
+        return result;
+    }
 }

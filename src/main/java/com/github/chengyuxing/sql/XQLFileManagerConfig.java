@@ -343,4 +343,34 @@ public class XQLFileManagerConfig {
         checkLoading();
         this.databaseId = databaseId;
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof XQLFileManagerConfig)) return false;
+
+        XQLFileManagerConfig config = (XQLFileManagerConfig) o;
+
+        if (!getFiles().equals(config.getFiles())) return false;
+        if (!getConstants().equals(config.getConstants())) return false;
+        if (!getPipeInstances().equals(config.getPipeInstances())) return false;
+        if (!getPipes().equals(config.getPipes())) return false;
+        if (!getCharset().equals(config.getCharset())) return false;
+        if (!getDelimiter().equals(config.getDelimiter())) return false;
+        if (!getNamedParamPrefix().equals(config.getNamedParamPrefix())) return false;
+        return getDatabaseId() != null ? getDatabaseId().equals(config.getDatabaseId()) : config.getDatabaseId() == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = getFiles().hashCode();
+        result = 31 * result + getConstants().hashCode();
+        result = 31 * result + getPipeInstances().hashCode();
+        result = 31 * result + getPipes().hashCode();
+        result = 31 * result + getCharset().hashCode();
+        result = 31 * result + getDelimiter().hashCode();
+        result = 31 * result + getNamedParamPrefix().hashCode();
+        result = 31 * result + (getDatabaseId() != null ? getDatabaseId().hashCode() : 0);
+        return result;
+    }
 }

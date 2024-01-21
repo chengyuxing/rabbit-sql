@@ -590,6 +590,24 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         return new DynamicSqlParser();
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof XQLFileManager)) return false;
+        if (!super.equals(o)) return false;
+
+        XQLFileManager that = (XQLFileManager) o;
+
+        return getResources().equals(that.getResources());
+    }
+
+    @Override
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + getResources().hashCode();
+        return result;
+    }
+
     /**
      * Dynamic sql parser.
      */
@@ -692,6 +710,30 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         void setEntry(Map<String, String> entry) {
             if (Objects.nonNull(entry))
                 this.entry = entry;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof Resource)) return false;
+
+            Resource resource = (Resource) o;
+
+            if (getLastModified() != resource.getLastModified()) return false;
+            if (getAlias() != null ? !getAlias().equals(resource.getAlias()) : resource.getAlias() != null)
+                return false;
+            if (getFilename() != null ? !getFilename().equals(resource.getFilename()) : resource.getFilename() != null)
+                return false;
+            return getEntry().equals(resource.getEntry());
+        }
+
+        @Override
+        public int hashCode() {
+            int result = getAlias() != null ? getAlias().hashCode() : 0;
+            result = 31 * result + (getFilename() != null ? getFilename().hashCode() : 0);
+            result = 31 * result + (int) (getLastModified() ^ (getLastModified() >>> 32));
+            result = 31 * result + getEntry().hashCode();
+            return result;
         }
     }
 }

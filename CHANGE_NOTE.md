@@ -1,5 +1,9 @@
 # change note
 
+## 7.8.14
+
+- Some optimized.
+
 ## 7.8.13
 
 - Fixed XQLFileManager#mergeSqlTemplate bug occurs line annotation into sql statement.

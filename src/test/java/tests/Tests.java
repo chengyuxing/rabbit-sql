@@ -252,14 +252,15 @@ public class Tests {
     @Test
     public void pageTest() throws Exception {
         OraclePageHelper page = new OraclePageHelper();
-        page.init(5, 12, 100);
+        page.init(1, 10, 100);
         System.out.println(page.start());
         System.out.println(page.end());
-        PagedResource<Integer> pagedResource = PagedResource.of(page, Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9));
-        System.out.println(pagedResource);
-        System.out.println(Json.toJson(pagedResource));
-        ObjectMapper mapper = new ObjectMapper();
-        System.out.println(mapper.writeValueAsString(pagedResource));
+        System.out.println(page.pagedSql("select * from test.user"));
+//        PagedResource<Integer> pagedResource = PagedResource.of(page, Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9));
+//        System.out.println(pagedResource);
+//        System.out.println(Json.toJson(pagedResource));
+//        ObjectMapper mapper = new ObjectMapper();
+//        System.out.println(mapper.writeValueAsString(pagedResource));
     }
 
     @Test

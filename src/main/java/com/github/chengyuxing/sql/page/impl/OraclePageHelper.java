@@ -26,7 +26,7 @@ public class OraclePageHelper extends PageHelper {
     }
 
     public int start() {
-        return (pageNumber - 1) * pageSize;
+        return (pageNumber - 1) * pageSize + 1;
     }
 
     @Override

@@ -1,5 +1,9 @@
 # change note
 
+## 7.8.17
+
+- Fixed OraclePageHelper#start() start rownum from 0.
+
 ## 7.8.16
 
 - XQLFileManager auto generate sql alias allows includes dot(.)

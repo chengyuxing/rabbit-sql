@@ -1,5 +1,9 @@
 # change note
 
+## 7.8.18
+
+- Some optimized.
+
 ## 7.8.17
 
 - Fixed OraclePageHelper#start() start rownum from 0.

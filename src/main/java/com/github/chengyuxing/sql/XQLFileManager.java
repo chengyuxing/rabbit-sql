@@ -288,14 +288,15 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     /**
      * In case line annotation in template occurs error,
      * e.g.
-     *<pre>
+     * <pre>
      * select * from test.user where ${cnd} order by id;
      *
      * {cnd}
      * -- #if :id {@code <>} blank
      *      id = :id
      * -- #fi
-     *</pre>
+     * </pre>
+     *
      * @param template template
      * @return safe template
      */
@@ -437,7 +438,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     /**
      * Check resources contains sql fragment or not.
      *
-     * @param name sql name ({@code <alias>.<sqlName>})
+     * @param name sql reference name ({@code <alias>.<sqlName>})
      * @return true if exists or false
      */
     public boolean contains(String name) {
@@ -471,15 +472,19 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     /**
      * Get a sql fragment.
      *
-     * @param name sql name ({@code <alias>.<sqlName>})
+     * @param name sql reference name ({@code <alias>.<sqlName>})
      * @return sql fragment
      * @throws NoSuchElementException if sql fragment name not exists
      */
     public String get(String name) {
-        String alias = name.substring(0, name.lastIndexOf("."));
+        int dotIdx = name.lastIndexOf(".");
+        if (dotIdx < 1) {
+            throw new IllegalArgumentException("Invalid sql reference name, please follow <alias>.<sqlName> format.");
+        }
+        String alias = name.substring(0, dotIdx);
         if (resources.containsKey(alias)) {
             Map<String, String> singleResource = getResource(alias).getEntry();
-            String sqlName = name.substring(name.lastIndexOf(".") + 1);
+            String sqlName = name.substring(dotIdx + 1);
             if (singleResource.containsKey(sqlName)) {
                 return SqlUtil.trimEnd(singleResource.get(sqlName));
             }

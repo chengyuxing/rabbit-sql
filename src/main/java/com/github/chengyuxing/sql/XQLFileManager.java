@@ -505,7 +505,9 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public Pair<String, Map<String, Object>> get(String name, Map<String, ?> args) {
         String sql = get(name);
         try {
-            return parseDynamicSql(sql, args);
+            Pair<String, Map<String, Object>> pair = parseDynamicSql(sql, args);
+            String fixedSql = SqlUtil.repairSyntaxError(pair.getItem1());
+            return Pair.of(fixedSql, pair.getItem2());
         } catch (Exception e) {
             throw new ScriptSyntaxException("an error occurred when getting dynamic sql of name: " + name, e);
         }

@@ -26,6 +26,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 
 public class NonBakiTests {
     @Test
@@ -117,7 +118,7 @@ public class NonBakiTests {
     @Test
     public void testSqlErrorFix() {
         String sql = "select * from user\nwhere and(id = :id)";
-        String sql4 = "select * from user\nwhere and id = :id";
+        String sql4 = "select * from user\nwhere \n\t\nand id = :id";
         String sql2 = "select * from user where order by id desc";
         String sql3 = "update test.user set name = :name ,  where id = 1";
         System.out.println(SqlUtil.repairSyntaxError(sql));
@@ -217,5 +218,15 @@ public class NonBakiTests {
     public void test45() {
         String sql = "select * from test.user where id = :id";
         System.out.println(new SqlGenerator(':').generateSql(sql, Args.of("id", null)));
+    }
+
+    @Test
+    public void test46() {
+        XQLFileManager xqlFileManager = new XQLFileManager();
+        xqlFileManager.add("sys", "pgsql/system.xql");
+        xqlFileManager.init();
+
+        Pair<String, Map<String, Object>> pair = xqlFileManager.get("sys.queryUserByPassword", Args.of("username", "abc"));
+        System.out.println(SqlUtil.repairSyntaxError(pair.getItem1()));
     }
 }

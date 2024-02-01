@@ -101,7 +101,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     protected void init() {
         this.sqlGenerator = new SqlGenerator(namedParamPrefix);
         this.statementValueHandler = (ps, index, value, metaData) -> JdbcUtil.setStatementValue(ps, index, value);
-        this.afterParseDynamicSql = SqlUtil::repairSyntaxError;
+        this.afterParseDynamicSql = sql -> sql;
         using(c -> {
             try {
                 this.metaData = c.getMetaData();

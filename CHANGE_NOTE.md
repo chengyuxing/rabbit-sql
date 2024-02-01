@@ -1,6 +1,6 @@
 # change note
 
-## 7.8.21
+## 7.8.22
 
 - Fixed `DataRow#toEntity` bug.
 

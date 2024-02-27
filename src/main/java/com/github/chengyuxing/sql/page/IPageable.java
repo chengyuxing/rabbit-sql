@@ -89,8 +89,8 @@ public abstract class IPageable {
      * <blockquote>
      * <pre>
      * args -&gt; {
-     *      args.updateKey("limit", "my_limit");
-     *      args.updateKey("offset", "my_offset");
+     *      args.updateKey({@link PageHelper#START_NUM_KEY START_NUM_KEY}, "my_limit");
+     *      args.updateKey({@link PageHelper#END_NUM_KEY END_NUM_KEY}, "my_offset");
      *      return args;
      * }
      * </pre>

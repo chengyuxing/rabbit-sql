@@ -5,7 +5,6 @@ import com.github.chengyuxing.sql.page.PageHelper;
 
 /**
  * <p>Oracle page helper.</p>
- * Default paged args: {@link  #START_NUM_KEY}, {@link #END_NUM_KEY}<br>
  * e.g.
  * <blockquote>
  * <pre>SELECT *

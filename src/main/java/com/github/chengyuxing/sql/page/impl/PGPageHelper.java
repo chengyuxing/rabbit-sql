@@ -5,7 +5,6 @@ import com.github.chengyuxing.sql.page.PageHelper;
 
 /**
  * <p>PostgreSQL page helper.</p>
- * Default paged args: {@link  #START_NUM_KEY}, {@link #END_NUM_KEY}<br>
  * e.g.
  * <blockquote>
  * <pre>select * from ... limit :{@link  #START_NUM_KEY} offset :{@link #END_NUM_KEY};</pre>

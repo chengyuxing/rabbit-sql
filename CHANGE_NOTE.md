@@ -1,5 +1,9 @@
 # change note
 
+## 7.8.23
+
+- Fixed sql generate bug: `SqlUtil#replaceSqlSubstr`.
+
 ## 7.8.22
 
 - Fixed `DataRow#toEntity` bug.

@@ -206,10 +206,9 @@ public class SqlUtil {
         String noStrSql = sql;
         Map<String, String> mapper = new HashMap<>();
         Matcher m = STR_PATTERN.matcher(sql);
-        int i = 0;
         while (m.find()) {
             String str = m.group();
-            String holder = SYMBOL + (i++) + SYMBOL;
+            String holder = SYMBOL + UUID.randomUUID() + SYMBOL;
             noStrSql = noStrSql.replace(str, holder);
             mapper.put(holder, str);
         }

@@ -131,6 +131,34 @@ public class Tests {
     }
 
     @Test
+    public void testSql() {
+        String sql = "select kb.ajbh,aj.ajmc,aj.ajlxmc,aj.ajlbmc,kb.lasj,\n" +
+                "       decode(qbdq, '5004', '取保到期', '') || ',' || decode(jjdq, '监居到期', '') || ',' ||\n" +
+                "       decode(wxyr, '5001', '无嫌疑人', '') || ',' || decode(wqzcs, '5002', '嫌疑人无强制措施', '') ||\n" +
+                "       ',' ||decode(qzcsdq, '5003', '强制措施到期')                              as wpajbz,\n" +
+                "       decode(zj.ajscjb,'1','一级审查','2','二级审查') as ajscjb,\n" +
+                "       decode(zj.clzt,'0','未处理','1','办案单位已处理') as clzt,\n" +
+                "       zbyj.yjnr,zbyj.lrdwdm,zbyj.lrdwmc,zbyj.lrsj,qs.lrsj as qssj,fk.clnr,\n" +
+                "       decode(fk.cljg,'1','完成','2','部分完成','3','未完成') as cljg,\n" +
+                "       fk.lrsj as fksj\n" +
+                "from zhag_xs_wpajxckb kb\n" +
+                "         join g2bajd.ZFBA_GT_ajzbyjxx zbyj on kb.ajbh=zbyj.ajbh and zbyj.jlbz='1'\n" +
+                "         left join g2bajd.ZFBA_GT_ajzbyjqsxx qs on qs.yjbh = zbyj.jlbh and qs.jlbz='1'\n" +
+                "         left join g2bajd.ZFBA_GT_ajzbyjfkxx fk on fk.yjbh = zbyj.jlbh and fk.jlbz='1'\n" +
+                "         join g2bajd.ZFBA_GT_WPXSAJZJSCB zj on zj.ajbh=kb.ajbh and zj.jlbz='1'\n" +
+                "         join V_ZHAG_XSAJXX aj on kb.ajbh=aj.ajbh\n" +
+                "where zbyj.lrsj <= to_date(:jssj, 'yyyy-mm-dd hh24:mi:ss')\n" +
+                "  and zbyj.lrsj >= to_date(:kssj, 'yyyy-mm-dd hh24:mi:ss')\n" +
+                "  -- #if :dwdm != blank\n" +
+                "  and zbyj.lrdwdm in(select dm from table(zhag.FUNC_ZHAG_GET_JGXX(:dwdm)))\n" +
+                "  -- #fi\n" +
+                "  order by kb.ajbh,zbyj.lrsj";
+        SqlGenerator generator = new SqlGenerator(':');
+        System.out.println(generator.generatePreparedSql(sql, Collections.emptyMap()));
+        System.out.println(SqlUtil.replaceSqlSubstr(sql).getItem1());
+    }
+
+    @Test
     public void sqlPlaceHolder() throws Exception {
         String query = "select * from test where id = ?_i.d and id = ?id and idCard = '5301111' or name = ?na-me ${cnd}";
         Pair<String, List<String>> sql = new SqlGenerator('?').generatePreparedSql(query, DataRow.of("cnd", "and date <= '${date}'")

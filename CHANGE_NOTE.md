@@ -1,5 +1,10 @@
 # change note
 
+## 7.8.24
+
+- Fixed `XQLFileManager#contains` bug.
+- Fixed `XQLFileManager#parse` bug.
+
 ## 7.8.23
 
 - Fixed sql generate bug: `SqlUtil#replaceSqlSubstr`.

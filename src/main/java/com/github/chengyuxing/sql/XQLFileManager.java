@@ -507,11 +507,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @see DynamicSqlParser
      */
     public Pair<String, Map<String, Object>> get(String name, Map<String, ?> args) {
-        String sql = get(name);
         try {
-            Pair<String, Map<String, Object>> pair = parseDynamicSql(sql, args);
-            String fixedSql = SqlUtil.repairSyntaxError(pair.getItem1());
-            return Pair.of(fixedSql, pair.getItem2());
+            return parseDynamicSql(get(name), args);
         } catch (Exception e) {
             throw new ScriptSyntaxException("an error occurred when getting dynamic sql of name: " + name, e);
         }
@@ -536,7 +533,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         newArgs.put("_parameter", args);
         newArgs.put("_databaseId", databaseId);
         String parsedSql = parser.parse(sql, newArgs);
-        return Pair.of(parsedSql, parser.getForContextVars());
+        String fixedSql = SqlUtil.repairSyntaxError(parsedSql);
+        return Pair.of(fixedSql, parser.getForContextVars());
     }
 
     /**

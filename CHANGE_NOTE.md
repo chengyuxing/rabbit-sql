@@ -1,5 +1,9 @@
 # change note
 
+## 7.8.26
+
+- XQLFileManager sql fragment description parsing optimized.
+
 ## 7.8.25
 
 - XQLFileManager add support for parsing sql fragment description `/*#some description#*/` which around sql name.

@@ -16,7 +16,10 @@ Every managed sql file must follows **"k-v"** structure, e.g.
 `my.sql`
 
 ```sql
+/*#some description...#*/
 /*[query]*/
+/*#some more 
+  description...#*/
 select *
 from test."user" t ${part1};
 
@@ -30,6 +33,7 @@ order by id;
 
 ...
 ```
+- Sql object description formatter is `/*#some description...#*/`;
 
 - Sql object name formatter is `/*[name]*/`, sql object supports nest sql fragment by using `${fragment name}` holder;
 
@@ -70,6 +74,7 @@ order by id;
   charset: UTF-8
   # for plugin
   named-param-prefix: ':'
+  database-id:
   ```
 
   `sql-file-manager.properties`
@@ -92,6 +97,7 @@ order by id;
   charset=UTF-8
   # for plugin
   namedParamPrefix=:
+  databaseId=
   ```
 
 #### Options

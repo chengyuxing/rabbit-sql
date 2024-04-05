@@ -4,7 +4,11 @@
 * https://github.com/chengyuxing/rabbit-sql#xqlfilemanager
 **/
 
+/*#some description...#*/
 /*[query]*/
+/*#more
+  description...
+  #*/
 select *
 from test."user" t ${part1};
 

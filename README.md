@@ -35,7 +35,7 @@ Maven central
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.8.24</version>
+    <version>7.8.25</version>
 </dependency>
 ```
 
@@ -576,7 +576,10 @@ Every managed sql file must follows **"k-v"** structure, e.g.
 `my.sql`
 
 ```sql
+/*#some description...#*/
 /*[query]*/
+/*#some more 
+  description...#*/
 select * from test."user" t ${part1};
 
 /*part 1*/
@@ -589,6 +592,8 @@ order by id;
 
 ...
 ```
+
+- Sql object description formatter is `/*#some description...#*/`;
 
 - Sql object name formatter is `/*[name]*/`, sql object supports nest sql fragment by using `${fragment name}` holder; 
 

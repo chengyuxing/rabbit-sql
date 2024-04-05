@@ -724,6 +724,9 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         }
     }
 
+    /**
+     * Sql object.
+     */
     public static final class Sql {
         private String content;
         private String description = "";
@@ -732,7 +735,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             this.content = content;
         }
 
-        public void setContent(String content) {
+        void setContent(String content) {
             this.content = content;
         }
 
@@ -744,7 +747,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             return description;
         }
 
-        public void setDescription(String description) {
+        void setDescription(String description) {
             this.description = description;
         }
     }

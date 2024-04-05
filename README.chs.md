@@ -35,7 +35,7 @@ Maven 中央仓库
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.8.24</version>
+    <version>7.8.25</version>
 </dependency>
 ```
 
@@ -574,7 +574,10 @@ SQL文件管理器，对普通sql文件的标准进行了**扩展**，不破坏�
 每个被XQLFileManager管理的sql文件都必须遵循 **"k-v"** 结构，例如`my.sql`：
 
 ```sql
+/*#some description...#*/
 /*[query]*/
+/*#some more 
+  description...#*/
 select * from test."user" t ${part1};
 
 /*第一部分*/
@@ -587,6 +590,7 @@ order by id;
 
 ...
 ```
+- Sql描述格式为 `/*#some description...#*/`;
 
 - 对象名格式为 `/*[name]*/` ，sql文件中可以嵌套sql片段，使用 `${片段名}` 指定;
 
@@ -624,6 +628,7 @@ order by id;
   charset: UTF-8
   # for plugin
   named-param-prefix: ':'
+  database-id:
   ```
   
   `xql-file-manager.properties`
@@ -646,6 +651,7 @@ order by id;
   charset=UTF-8
   # for plugin
   namedParamPrefix=:
+  databaseId=
   ```
 
 #### 配置项

@@ -1,5 +1,10 @@
 # change note
 
+## 7.8.25
+
+- XQLFileManager add support for parsing sql fragment description `/*#some description#*/` which around sql name.
+- New method: `XQLFileManager#getSqlObject(String name)`.
+
 ## 7.8.24
 
 - Fixed `XQLFileManager#contains` bug.

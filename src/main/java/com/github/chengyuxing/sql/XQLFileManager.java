@@ -295,7 +295,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         for (Map.Entry<String, Sql> e : sqlResource.entrySet()) {
             String k = e.getKey();
             if (k.startsWith("${")) {
-                String template = getTemplate(e.getValue().getContent());
+                String template = fixTemplate(e.getValue().getContent());
                 templates.put(k.substring(2, k.length() - 1), template);
             }
         }
@@ -329,7 +329,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @param template template
      * @return safe template
      */
-    protected String getTemplate(String template) {
+    protected String fixTemplate(String template) {
         String newTemplate = template;
         // e.g. select * from test.user where ${cnd} order by id;
         //

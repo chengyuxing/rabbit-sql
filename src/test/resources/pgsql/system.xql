@@ -16,13 +16,18 @@ from zhag_ptyw_role_menu rm
          inner join zhag_ptyw_menu_uri mu on rm.menu_id = mu.menu_id
 ;
 
-/*#块代扣代
+/*#
+  块代扣代
   的大哭大哭大哭大哭
+
   赶快赶快赶快赶快
-  缴杜鹃#*/
+  缴杜鹃
+  #*/
 /*[queryUserByPassword]*/
-/*#疯狂飞机
-  上看手机#*/
+/*#   疯狂飞机
+  上看手机
+
+      #*/
 select t.guid      id,
        t.zsxm      xm,
        t.sfzh,

@@ -232,18 +232,26 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                 }
                 if (trimLine.startsWith(DESC_START)) {
                     if (trimLine.endsWith(DESC_END)) {
-                        descriptionBuffer.add(trimLine.substring(3, trimLine.length() - 3));
+                        String description = trimLine.substring(3, trimLine.length() - 3);
+                        if (!description.trim().isEmpty()) {
+                            descriptionBuffer.add(description);
+                        }
                         continue;
                     }
-                    descriptionBuffer.add(trimLine.substring(3));
+                    String descriptionStart = trimLine.substring(3);
+                    if (!descriptionStart.trim().isEmpty()) {
+                        descriptionBuffer.add(descriptionStart);
+                    }
                     String descLine;
                     while ((descLine = reader.readLine()) != null) {
-                        String trimDescLine = descLine.trim();
-                        if (trimDescLine.endsWith(DESC_END)) {
-                            descriptionBuffer.add(trimDescLine.substring(0, trimDescLine.length() - 3));
+                        if (descLine.trim().endsWith(DESC_END)) {
+                            String descriptionEnd = descLine.substring(0, descLine.lastIndexOf(DESC_END));
+                            if (!descriptionEnd.trim().isEmpty()) {
+                                descriptionBuffer.add(descriptionEnd);
+                            }
                             break;
                         }
-                        descriptionBuffer.add(trimDescLine);
+                        descriptionBuffer.add(descLine);
                     }
                     continue;
                 }

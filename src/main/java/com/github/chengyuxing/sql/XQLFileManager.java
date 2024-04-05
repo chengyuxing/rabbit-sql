@@ -77,6 +77,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public static final Pattern NAME_PATTERN = Pattern.compile("/\\*\\s*\\[\\s*(?<name>\\S+)\\s*]\\s*\\*/");
     //language=RegExp
     public static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+)\\s*}\\s*\\*/");
+    public static final String DESC_START = "/*#";
+    public static final String DESC_END = "#*/";
     public static final String PROPERTIES = "xql-file-manager.properties";
     public static final String YML = "xql-file-manager.yml";
     private final ClassLoader classLoader = this.getClass().getClassLoader();
@@ -201,9 +203,10 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @throws URISyntaxException if file uri syntax error
      */
     public Resource parse(String alias, String filename, FileResource fileResource) throws IOException, URISyntaxException {
-        Map<String, String> entry = new LinkedHashMap<>();
+        Map<String, Sql> entry = new LinkedHashMap<>();
         try (BufferedReader reader = fileResource.getBufferedReader(Charset.forName(charset))) {
             String blockName = "";
+            List<String> descriptionBuffer = new ArrayList<>();
             List<String> sqlBodyBuffer = new ArrayList<>();
             String line;
             while ((line = reader.readLine()) != null) {
@@ -227,24 +230,49 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     }
                     continue;
                 }
+                if (trimLine.startsWith(DESC_START)) {
+                    if (trimLine.endsWith(DESC_END)) {
+                        descriptionBuffer.add(trimLine.substring(3, trimLine.length() - 3));
+                        continue;
+                    }
+                    descriptionBuffer.add(trimLine.substring(3));
+                    String descLine;
+                    while ((descLine = reader.readLine()) != null) {
+                        String trimDescLine = descLine.trim();
+                        if (trimDescLine.endsWith(DESC_END)) {
+                            descriptionBuffer.add(trimDescLine.substring(0, trimDescLine.length() - 3));
+                            break;
+                        }
+                        descriptionBuffer.add(trimDescLine);
+                    }
+                    continue;
+                }
                 // exclude single line annotation except expression keywords
                 if (!trimLine.startsWith("--") || (StringUtil.startsWithsIgnoreCase(trimAnnotation(trimLine), TAGS))) {
                     if (!blockName.isEmpty()) {
                         sqlBodyBuffer.add(line);
                         if (trimLine.endsWith(delimiter)) {
-                            String naSql = removeBlockAnnotation(String.join(NEW_LINE, sqlBodyBuffer));
-                            entry.put(blockName, naSql.substring(0, naSql.lastIndexOf(delimiter)).trim());
-                            log.debug("scan {} to get sql({}) [{}.{}]：{}", filename, delimiter, alias, blockName, SqlHighlighter.highlightIfAnsiCapable(entry.get(blockName)));
+                            String sql = removeBlockAnnotation(String.join(NEW_LINE, sqlBodyBuffer));
+                            sql = sql.substring(0, sql.lastIndexOf(delimiter)).trim();
+                            String description = String.join(NEW_LINE, descriptionBuffer);
+                            Sql sqlObj = new Sql(sql);
+                            sqlObj.setDescription(description);
+                            entry.put(blockName, sqlObj);
+                            log.debug("scan {} to get sql({}) [{}.{}]：{}", filename, delimiter, alias, blockName, SqlHighlighter.highlightIfAnsiCapable(sql));
                             blockName = "";
                             sqlBodyBuffer.clear();
+                            descriptionBuffer.clear();
                         }
                     }
                 }
             }
             // if last part of sql is not ends with delimiter symbol
             if (!blockName.isEmpty()) {
-                String lastSql = String.join(NEW_LINE, sqlBodyBuffer);
-                entry.put(blockName, removeBlockAnnotation(lastSql));
+                String lastSql = removeBlockAnnotation(String.join(NEW_LINE, sqlBodyBuffer));
+                String lastDesc = String.join(NEW_LINE, descriptionBuffer);
+                Sql sqlObj = new Sql(lastSql);
+                sqlObj.setDescription(lastDesc);
+                entry.put(blockName, sqlObj);
                 log.debug("scan {} to get sql({}) [{}.{}]：{}", filename, delimiter, alias, blockName, SqlHighlighter.highlightIfAnsiCapable(lastSql));
             }
         }
@@ -262,25 +290,26 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      *
      * @param sqlResource sql resource
      */
-    protected void mergeSqlTemplate(Map<String, String> sqlResource) {
+    protected void mergeSqlTemplate(Map<String, Sql> sqlResource) {
         Map<String, String> templates = new HashMap<>();
-        for (Map.Entry<String, String> e : sqlResource.entrySet()) {
+        for (Map.Entry<String, Sql> e : sqlResource.entrySet()) {
             String k = e.getKey();
             if (k.startsWith("${")) {
-                String template = getTemplate(e.getValue());
+                String template = getTemplate(e.getValue().getContent());
                 templates.put(k.substring(2, k.length() - 1), template);
             }
         }
         if (templates.isEmpty() && constants.isEmpty()) {
             return;
         }
-        for (Map.Entry<String, String> e : sqlResource.entrySet()) {
-            String sql = e.getValue();
-            if (sql.contains("${")) {
-                sql = SqlUtil.formatSql(sql, templates);
-                sql = SqlUtil.formatSql(sql, constants);
+        for (Map.Entry<String, Sql> e : sqlResource.entrySet()) {
+            Sql sql = e.getValue();
+            String sqlContent = sql.getContent();
+            if (sqlContent.contains("${")) {
+                sqlContent = SqlUtil.formatSql(sqlContent, templates);
+                sqlContent = SqlUtil.formatSql(sqlContent, constants);
                 // remove empty line.
-                e.setValue(sql.replaceAll("\\s*\r?\n", NEW_LINE));
+                sql.setContent(sqlContent.replaceAll("\\s*\r?\n", NEW_LINE));
             }
         }
     }
@@ -474,26 +503,40 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * Get a sql fragment.
+     * Get a sql object.
      *
      * @param name sql reference name ({@code <alias>.<sqlName>})
-     * @return sql fragment
-     * @throws NoSuchElementException if sql fragment name not exists
+     * @return sql object
+     * @throws NoSuchElementException   if sql fragment name not exists
+     * @throws IllegalArgumentException if sql reference name format error
      */
-    public String get(String name) {
+    public Sql getSqlObject(String name) {
         int dotIdx = name.lastIndexOf(".");
         if (dotIdx < 1) {
             throw new IllegalArgumentException("Invalid sql reference name, please follow <alias>.<sqlName> format.");
         }
         String alias = name.substring(0, dotIdx);
         if (resources.containsKey(alias)) {
-            Map<String, String> singleResource = getResource(alias).getEntry();
+            Map<String, Sql> singleResource = getResource(alias).getEntry();
             String sqlName = name.substring(dotIdx + 1);
             if (singleResource.containsKey(sqlName)) {
-                return SqlUtil.trimEnd(singleResource.get(sqlName));
+                return singleResource.get(sqlName);
             }
         }
         throw new NoSuchElementException(String.format("no SQL named [%s] was found.", name));
+    }
+
+    /**
+     * Get a sql fragment.
+     *
+     * @param name sql reference name ({@code <alias>.<sqlName>})
+     * @return sql fragment
+     * @throws NoSuchElementException   if sql fragment name not exists
+     * @throws IllegalArgumentException if sql reference name format error
+     */
+    public String get(String name) {
+        String sql = getSqlObject(name).getContent();
+        return SqlUtil.trimEnd(sql);
     }
 
     /**
@@ -681,14 +724,39 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         }
     }
 
+    public static final class Sql {
+        private String content;
+        private String description = "";
+
+        public Sql(String content) {
+            this.content = content;
+        }
+
+        public void setContent(String content) {
+            this.content = content;
+        }
+
+        public String getContent() {
+            return content;
+        }
+
+        public String getDescription() {
+            return description;
+        }
+
+        public void setDescription(String description) {
+            this.description = description;
+        }
+    }
+
     /**
      * Sql file resource.
      */
-    public static class Resource {
+    public static final class Resource {
         private final String alias;
         private final String filename;
         private long lastModified = -1;
-        private Map<String, String> entry;
+        private Map<String, Sql> entry;
 
         public Resource(String alias, String filename) {
             this.alias = alias;
@@ -712,11 +780,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             this.lastModified = lastModified;
         }
 
-        public Map<String, String> getEntry() {
+        public Map<String, Sql> getEntry() {
             return entry;
         }
 
-        void setEntry(Map<String, String> entry) {
+        void setEntry(Map<String, Sql> entry) {
             if (Objects.nonNull(entry))
                 this.entry = entry;
         }

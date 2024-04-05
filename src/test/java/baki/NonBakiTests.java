@@ -224,9 +224,12 @@ public class NonBakiTests {
     public void test46() {
         XQLFileManager xqlFileManager = new XQLFileManager();
         xqlFileManager.add("sys", "pgsql/system.xql");
+        xqlFileManager.add("cyx", "pgsql/b.a.xql");
         xqlFileManager.init();
 
-        Pair<String, Map<String, Object>> pair = xqlFileManager.get("sys.queryUserByPassword", Args.of("username", "abc"));
-        System.out.println(SqlUtil.repairSyntaxError(pair.getItem1()));
+        Map<String, XQLFileManager.Resource> resourceMap = xqlFileManager.getResources();
+        System.out.println(resourceMap);
+//        Pair<String, Map<String, Object>> pair = xqlFileManager.get("sys.queryUserByPassword", Args.of("username", "abc"));
+//        System.out.println(SqlUtil.repairSyntaxError(pair.getItem1()));
     }
 }

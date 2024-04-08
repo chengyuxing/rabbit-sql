@@ -9,7 +9,8 @@ import java.sql.DatabaseMetaData;
 import java.util.function.Function;
 
 /**
- * Basic database access interface.
+ * Basic database access interface
+ * work perfectly with <a href="https://plugins.jetbrains.com/plugin/21403-rabbit-sql">Rabbit-SQL IDEA Plugin</a>.
  */
 public interface Baki {
     /**

@@ -96,7 +96,7 @@ public abstract class IPageable {
      * </pre>
      * </blockquote>
      *
-     * @param func (old paged args) {@code ->} (new paged args)
+     * @param func (old paged args) -&gt; (new paged args)
      * @return IPageable
      */
     public IPageable rewriteDefaultPageArgs(Function<Args<Integer>, Args<Integer>> func) {
@@ -120,7 +120,7 @@ public abstract class IPageable {
     /**
      * Collect paged result.
      *
-     * @param mapper (each row) {@code ->} (each any)
+     * @param mapper (each row) -&gt; (each any)
      * @param <T>    result type
      * @return paged resource
      */

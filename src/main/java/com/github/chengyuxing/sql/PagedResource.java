@@ -46,14 +46,14 @@ public final class PagedResource<T> {
      * Convert paged resource to custom structured result,  e.g.
      * <blockquote>
      * <pre>
-     * (pager, data) {@code ->} {@link com.github.chengyuxing.common.DataRow DataRow}.of(
+     * ({@link PageHelper pager}, data) -&gt; {@link com.github.chengyuxing.common.DataRow DataRow}.of(
      *                    "length", pager.getRecordCount(),
      *                    "data", data)
      *                  );
      * </pre>
      * </blockquote>
      *
-     * @param converter (PageHelper, List) {@code ->} (new result)
+     * @param converter (PageHelper, List) -&gt; (new result)
      * @param <R>       result type
      * @return new structured result
      */

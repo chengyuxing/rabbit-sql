@@ -39,35 +39,40 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeBlockAnnotation;
  * named parameter ({@code :name}) and string template variable ({@code ${template}}) to
  * extends SQL file standard syntax with special content format, brings more features to
  * SQL file and follow the strict SQL file syntax.</p>
- * <p>File type supports: {@code .xql .sql}, suffix {@code .xql} means this file is
+ * <p>File type supports: {@code .xql}, {@code .sql}, suffix {@code .xql} means this file is
  * {@code XQLFileManager} default file type.</p>
  * {@link FileResource Support local sql file(URI) and classpath sql file},  e.g.
  * <ul>
- *     <li><pre>windows file system: file:/D:/rabbit.xql</pre></li>
- *     <li><pre>Linux/Unix file system: file:/root/rabbit.xql</pre></li>
- *     <li><pre>ClassPath: sql/rabbit.xql</pre></li>
+ *     <li>Windows file system: <code>file:/D:/rabbit.xql</code></li>
+ *     <li>Linux/Unix file system: <code>file:/root/rabbit.xql</code></li>
+ *     <li>ClassPath: <code>sql/rabbit.xql</code></li>
  * </ul>
- * Notice: Rabbit-SQL IDEA Plugin only support detect {@code .xql} file type.
+ * <p>
+ * Notice: <a href="https://plugins.jetbrains.com/plugin/21403-rabbit-sql">Rabbit-SQL IDEA Plugin</a> only support detect {@code .xql} file.
  * <h3>File content structure</h3>
  * <p>{@code key-value} format, key is sql name, value is sql statement,  e.g.</p>
  * <blockquote>
- *  /*[sqlName1]*{@code /}<br>
- *  <pre>select * from test.region where
+ * <pre>
+ * /&#42;[sqlName1]&#42;/
+ * select * from test.region where
  *  -- #if :id != blank
- *      id = :id
+ *     id = :id
  *  -- #fi
- * ${order};</pre>
- *  ...<br>
- *  /*[sqlNameN]*{@code /}<br>
- *    <pre>{@code <sql statement>};</pre>
- *    ...<br>
- *  /*{order}<span>*</span>/<br>
- *    <pre>order by id desc;</pre>
- *    ...
+ * ${order}
+ * ;
+ *
+ * /&#42;[sqlNameN]&#42;/
+ * -- Some sql statement;
+ *
+ * /&#42;{order}&#42;/
+ * order by id desc;
+ * ...
+ * </pre>
  * </blockquote>
- * <p>{@link #get(String, Map)}</p>
- * Dynamic sql script write in line annotation where starts with --,
- * check example following class path file: template.xql.
+ * <p>
+ * Dynamic sql script write in line annotation where starts with {@code --},
+ * check example following class path file: {@code template.xql}.
+ * <p>Invoke method {@link #get(String, Map)} to enjoy the dynamic sql!</p>
  *
  * @see SimpleScriptParser
  */
@@ -325,26 +330,34 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     /**
      * In case line annotation in template occurs error,
      * e.g.
+     * <p>sql statement:</p>
+     * <blockquote>
+     * <pre>select * from test.user where ${cnd} order by id</pre>
+     * </blockquote>
+     * <p>{cnd}</p>
+     * <blockquote>
      * <pre>
-     * select * from test.user where ${cnd} order by id;
-     *
-     * {cnd}
-     * -- #if :id {@code <>} blank
-     *      id = :id
+     * -- #if :id &lt;&gt; blank
+     *    id = :id
      * -- #fi
      * </pre>
+     * </blockquote>
+     * <p>result:</p>
+     * <blockquote>
+     * <pre>
+     * select * from test.user where
+     * -- #if :id &lt;&gt; blank
+     *    id = :id
+     * -- #fi
+     * order by id
+     *     </pre>
+     * </blockquote>
      *
      * @param template template
      * @return safe template
      */
     protected String fixTemplate(String template) {
         String newTemplate = template;
-        // e.g. select * from test.user where ${cnd} order by id;
-        //
-        // {cnd}
-        // -- #if :id <> blank
-        //      id = :id
-        // -- #fi
         if (newTemplate.trim().startsWith("--")) {
             newTemplate = NEW_LINE + newTemplate;
         }
@@ -442,7 +455,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     /**
      * Foreach all sql resource.
      *
-     * @param consumer (alias, resource) {@code ->} void
+     * @param consumer (alias, resource) -&gt; void
      */
     public void foreach(BiConsumer<String, Resource> consumer) {
         resources.forEach(consumer);
@@ -684,19 +697,24 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
 
         /**
          * Cleanup annotation in for loop and create indexed arg for special format named arg, e.g.
+         * <p>Mock data {@code users} and {@code forIndex: 0}:</p>
+         * <blockquote>
+         * <pre>["CYX", "jack", "Mike"]</pre>
+         * </blockquote>
+         * <p>for loop:</p>
          * <blockquote>
          * <pre>
-         * users: ["CYX", "jack", "Mike"]; forIndex: 0
-         * </pre>
-         * <pre>
-         * -- #for user of :users delimiter ', '
-         *     :_for.user
+         * -- #for user,idx of :users delimiter ', '
+         *    :_for.user
          * -- #done
          * </pre>
+         * </blockquote>
+         * <p>result:</p>
+         * <blockquote>
          * <pre>
-         * result: :_for.user_0_0,
-         *         :_for.user_0_1,
-         *         :_for.user_0_2,
+         * :_for.user_0_0,
+         * :_for.user_0_1,
+         * :_for.user_0_2,
          * </pre>
          * </blockquote>
          *
@@ -819,7 +837,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         public int hashCode() {
             int result = getAlias() != null ? getAlias().hashCode() : 0;
             result = 31 * result + (getFilename() != null ? getFilename().hashCode() : 0);
-            result = 31 * result + (int) (getLastModified() ^ (getLastModified() >>> 32));
+            result = 31 * result + Long.hashCode(getLastModified());
             result = 31 * result + getEntry().hashCode();
             return result;
         }

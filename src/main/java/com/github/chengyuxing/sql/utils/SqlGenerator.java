@@ -44,11 +44,14 @@ public class SqlGenerator {
     }
 
     /**
-     * Generate prepared sql by named parameter sql.<br>
-     * e.g.
+     * Generate prepared sql by named parameter sql, e.g.
+     * <p>before: </p>
      * <blockquote>
-     * <pre>before: select * from table where id = :id</pre>
-     * <pre>after: select * from table where id = ?</pre>
+     * <pre>select * from table where id = :id</pre>
+     * </blockquote>
+     * <p>after: </p>
+     * <blockquote>
+     * <pre>select * from table where id = ?</pre>
      * </blockquote>
      *
      * @param sql  named parameter sql

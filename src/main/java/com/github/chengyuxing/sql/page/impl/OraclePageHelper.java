@@ -4,14 +4,13 @@ import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.page.PageHelper;
 
 /**
- * <p>Oracle page helper.</p>
- * e.g.
+ * <p>Oracle page helper, e.g.</p>
  * <blockquote>
  * <pre>SELECT *
  * FROM (SELECT t.*, ROWNUM RN_4_RABBIT
  *       FROM (...) t
- *       WHERE ROWNUM{@code <=} :{@link #END_NUM_KEY})
- *  WHERE RN_4_RABBIT{@code >=} :{@link  #START_NUM_KEY}</pre>
+ *       WHERE ROWNUM &lt;= :{@link #END_NUM_KEY})
+ *  WHERE RN_4_RABBIT &gt;= :{@link  #START_NUM_KEY}</pre>
  * </blockquote>
  *
  * @see #pagedArgs()

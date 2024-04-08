@@ -41,13 +41,32 @@ public class SqlUtil {
     };
 
     /**
-     * Format sql string.<br>
-     * e.g.
+     * Format sql string, e.g.
+     * <p>sql statement:</p>
      * <blockquote>
-     * <pre>sql：select ${ fields } from test.user where ${  cnd} and id in (${!idArr}) or id = ${!idArr.1} and dt &lt;= ${!now}</pre>
-     * <pre>args：{fields: "id, name", cnd: "name = 'cyx'", idArr: ["a", "b", "c"], now: {@link LocalDateTime#now() LocalDateTime.now()}}</pre>
-     * <pre>result：select id, name from test.user where name = 'cyx' and id in ('a', 'b', 'c') or id = 'b'
-     *       and dt &lt;= to_timestamp('2023-11-14 19:14:34', 'yyyy-mm-dd hh24:mi:ss')</pre>
+     * <pre>select ${ fields } from test.user
+     * where ${  cnd}
+     * and id in (${!idArr})
+     * or id = ${!idArr.1}
+     * and dt &lt;= ${!now}</pre>
+     * </blockquote>
+     * <p>args:</p>
+     * <blockquote>
+     * <pre>
+     * {
+     *  fields: "id, name",
+     *  cnd: "name = 'cyx'",
+     *  idArr: ["a", "b", "c"],
+     *  now: {@link LocalDateTime#now() LocalDateTime.now()}
+     * }</pre>
+     * </blockquote>
+     * <p>result:</p>
+     * <blockquote>
+     * <pre>select id, name from test.user
+     * where name = 'cyx'
+     * and id in ('a', 'b', 'c')
+     * or id = 'b'
+     * and dt &lt;= to_timestamp('2023-11-14 19:14:34', 'yyyy-mm-dd hh24:mi:ss')</pre>
      * </blockquote>
      * Notice: If {@link Variable} type detected, {@link Variable#stringLiteral() stringLiteral()} method will be invoked.
      *
@@ -230,7 +249,7 @@ public class SqlUtil {
     }
 
     /**
-     * Remove block annotation (/**<span>/</span>).
+     * Remove block annotation (/&#42;&#42;/).
      *
      * @param sql sql string
      * @return sql without annotation
@@ -277,7 +296,7 @@ public class SqlUtil {
     }
 
     /**
-     * Get block annotation (/**<span>/</span>).
+     * Get block annotation (/&#42;&#42;/).
      *
      * @param sql sql string
      * @return block annotations
@@ -329,9 +348,10 @@ public class SqlUtil {
      * Repair sql normal syntax error.<br>
      * e.g.
      * <blockquote>
-     * <pre>where and/or/order/limit...</pre>
-     * <pre>select ... from ...where</pre>
-     * <pre>update ... set  a=b, where</pre>
+     * <pre>
+     * where and/or/order/limit...;
+     * select ... from ...where;
+     * update ... set  a=b, where;</pre>
      * </blockquote>
      *
      * @param sql sql string

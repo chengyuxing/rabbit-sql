@@ -22,15 +22,22 @@ public interface Baki {
 
     /**
      * Update executor, generate update statement by 1st row of data, e.g.
+     * <p>args:</p>
      * <blockquote>
-     * <pre>
-     *  args： {id:14, name:'cyx', address:'kunming'},{...}...
-     *  where condition："id = :id"
-     *  generate：update{@code <table>} set name = :name, address = :address
-     *       where id = :id
-     *  </pre>
-     * Notice: where condition must contains at least 1 named parameter and args must contains it's value.
+     * <pre>{id:14, name:'cyx', address:'kunming'}, {...}, ...
+     *  </pre></blockquote>
+     * <p>where condition：</p>
+     * <blockquote>
+     * <pre>id = :id</pre>
      * </blockquote>
+     * <p>generated update statement：</p>
+     * <blockquote>
+     * <pre>update [table] set
+     * name = :name,
+     * address = :address
+     * where id = :id</pre>
+     * </blockquote>
+     * Notice: where condition must contain at least 1 named parameter and args must contains it's value.
      *
      * @param tableName table name
      * @param where     condition
@@ -74,7 +81,7 @@ public interface Baki {
     /**
      * Get an auto-closeable connection.
      *
-     * @param func connection {@code ->} any
+     * @param func connection -&gt; any
      * @param <T>  result type
      * @return any result
      */

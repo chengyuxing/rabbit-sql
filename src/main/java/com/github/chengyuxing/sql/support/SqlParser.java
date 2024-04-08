@@ -12,30 +12,25 @@ import java.util.Map;
  * <h2>Support parse named parameter sql</h2>
  * <p>Named parameter prefix symbol depends on implementation of {@link #sqlGenerator()}.</p>
  * Named parameter format e.g if named parameter prefix is '{@code :}' :
- * <blockquote>
  * <ul>
- *     <li>:name (jdbc standard named parameter format, it will parsed to '{@code ?}').</li>
+ *     <li>{@code :name} (jdbc standard named parameter format, it will parsed to '{@code ?}').</li>
  * </ul>
- * </blockquote>
- * String template variable format:
- * <blockquote>
- * ${...} (will not be prepared)
- *     <ul>
- *         <li>${var}: if boxed basic type array (String[], Integer[]...) or (Set, List...) detected, just expand and replace;</li>
- *         <li>${!var}: starts with '{@code !}', if boxed basic type array (String[], Integer[]...) or (Set, List...) detected, expand and wrap safe single quotes, then replace.</li>
- *     </ul>
- * </blockquote>
- * <p>Notice: in postgresql, some symbol operator such as (?, ?|, ?&amp;, @?) should be write double '{@code ?}' (??, ??|, ??&amp;, @??) to avoid prepare sql error or use function to replace.</p>
- *  e.g.
+ * <p>String template ({@code ${...}} will not be prepared) variable format:</p>
+ * <ul>
+ *   <li>{@code ${var}}: if boxed basic type array ({@link  String String[]}, {@link Integer Integer[]}, ...) or ({@link java.util.Set Set}, {@link List List}, ...) detected, just expand and replace;</li>
+ *   <li>{@code ${!var}}: starts with '{@code !}', if boxed basic type array ({@link  String String[]}, {@link Integer Integer[]}, ...) or ({@link java.util.Set Set}, {@link List List}, ...) detected, expand and wrap safe single quotes, then replace.</li>
+ * </ul>
+ * <p>Notice: in postgresql, some symbol operator such as ({@code ?}, {@code ?|}, {@code ?&}, {@code @?}) should be write double '{@code ?}' ({@code ??}, {@code ??|}, {@code ??&}, {@code @??}) to avoid prepare sql error or use function to replace.</p>
+ * <p>e.g. postgresql sql statement:</p>
  * <blockquote>
  * <pre>
- *       select t.id || 'number' || 'name:cyx','{"name": "user"}'::jsonb
- *       from test.user t
- *       where id = :id::integer --suffix type convert
- *       and id {@code >} :idc
- *       and name = text :username --prefix type convert
- *       and '["a","b","c"]'::jsonb{@code ??&} array ['a', 'b'] ${cnd};
- *     </pre>
+ * select t.id || 'number' || 'name:cyx','{"name": "user"}'::jsonb
+ * from test.user t
+ * where id = :id::integer
+ * and id &gt; :idc
+ * and name = text :username
+ * and '["a","b","c"]'::jsonb ??&amp; array ['a', 'b']
+ * ${cnd}</pre>
  * </blockquote>
  *
  * @see SqlGenerator

@@ -103,17 +103,16 @@ public abstract class QueryExecutor {
     public abstract DataRow zip();
 
     /**
-     * Convert state to page query.<br>
-     * If built-in paged sql not enough, such as postgresql's view query:
-     * <pre>with a as (select ... limit 0 offset 5)<br>select * from a;</pre>
-     * About custom page query config:
+     * Convert state to page query.
+     * <p>If built-in paged sql not enough, such as postgresql's view query:</p>
      * <blockquote>
+     * <pre>with a as (select ... limit 0 offset 5)<br>select * from a;</pre></blockquote>
+     * <p>About custom page query config:</p>
      * <ul>
      * <li>custom count query: {@link IPageable#count(String) count(String)};</li>
      * <li>disable auto generate paged sql: {@link IPageable#disableDefaultPageSql(String) disableDefaultPageSql(String)}, otherwise above example will append ({@code limit ... offset ...}) to the end;</li>
      * <li>custom page args name: {@link IPageable#rewriteDefaultPageArgs(Function) rewriteDefaultPageArgs(Function)}.</li>
      * </ul>
-     * </blockquote>
      *
      * @param page current page
      * @param size page size
@@ -142,16 +141,17 @@ public abstract class QueryExecutor {
     /**
      * Collect 1st optional row by page query.
      * <p>Notice: different with {@link  QueryExecutor#stream() stream().findFirst()}:</p>
-     * <blockquote>
      *     <ul>
      *         <li>{@link  QueryExecutor#stream() stream().findFirst()}：execute source query and get 1st row, it will takes many time if condition not limit;</li>
      *         <li>{@code findFirst()}：execute page query, limit 1 row.</li>
      *     </ul>
-     * </blockquote>
-     * e.g postgresql:
+     * <p>e.g. postgresql, source:</p>
      * <blockquote>
-     * <pre>source: select * from users</pre>
-     * <pre>target: select * from users limit 1 offset 0</pre>
+     * <pre>select * from users</pre>
+     * </blockquote>
+     * <p>target: </p>
+     * <blockquote>
+     * <pre>select * from users limit 1 offset 0</pre>
      * </blockquote>
      *
      * @return 1st optional row

@@ -4,8 +4,8 @@ import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.page.PageHelper;
 
 /**
- * <p>Mysql/MariaDB page helper.</p>
- * e.g.
+ * <p>Mysql/MariaDB page helper,
+ * e.g.</p>
  * <blockquote>
  * <pre>select * from ... limit :{@link  #START_NUM_KEY}, :{@link #END_NUM_KEY};</pre>
  * </blockquote>

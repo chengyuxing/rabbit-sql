@@ -24,11 +24,14 @@ import java.util.stream.StreamSupport;
 
 /**
  * <h2>JDBC support</h2>
- * Provide basic support: stream query, ddl, dml, store procedure/function, plsql.<br>
- *  e.g.
+ * Provide basic support: {@link  Stream stream query}, {@code ddl}, {@code dml}, {@code store procedure/function}, {@code plsql}.<br>
+ * <p>e.g. sql statement:</p>
  * <blockquote>
- * <pre>select * from ... where name = :name or id in (${!idList}) ${cnd};</pre>
+ * <pre>select * from ...
+ * where name = :name
+ * or id in (${!idList}) ${cnd};</pre>
  * </blockquote>
+ *
  * @see com.github.chengyuxing.sql.types.Variable
  */
 public abstract class JdbcSupport extends SqlParser {
@@ -191,21 +194,20 @@ public abstract class JdbcSupport extends SqlParser {
     /**
      * Lazy execute query based on {@link Stream} support, real execute query when terminal
      * operation called, every Stream query hold a connection, in case connection pool dead
-     * do must have to close this stream finally.<br>
-     *  e.g.<br>
-     * Auto close by {@code try-with-resource}:
-     * <blockquote>
-     * <pre>try ({@link Stream}&lt;{@link DataRow}&gt; stream = executeQueryStream(...)) {
-     *       stream.limit(10).forEach(System.out::println);
-     *         }</pre>
-     * </blockquote>
-     * Manual close by call {@link Stream#close()}:
+     * do must have to close this stream finally, e.g.
+     * <p>Auto close by {@code try-with-resource}:</p>
      * <blockquote>
      * <pre>
-     *     {@link Stream}&lt;{@link DataRow}&gt; stream = executeQueryStream(...);
-     *     ...
-     *     stream.close();
-     *     </pre>
+     * try ({@link Stream}&lt;{@link DataRow}&gt; stream = executeQueryStream(...)) {
+     *      stream.limit(10).forEach(System.out::println);
+     * }</pre>
+     * </blockquote>
+     * <p>Manual close by call {@link Stream#close()}:</p>
+     * <blockquote>
+     * <pre>
+     * {@link Stream}&lt;{@link DataRow}&gt; stream = executeQueryStream(...);
+     * ...
+     * stream.close();</pre>
      * </blockquote>
      *
      * @param sql  named parameter sql, e.g. <code>select * from test.user where id = :id</code>
@@ -263,7 +265,7 @@ public abstract class JdbcSupport extends SqlParser {
     }
 
     /**
-     * Batch execute not prepared sql (ddl or dml).
+     * Batch execute not prepared sql ({@code ddl} or {@code dml}).
      *
      * @param sqls      more than 1 sql
      * @param batchSize batch size
@@ -321,7 +323,7 @@ public abstract class JdbcSupport extends SqlParser {
     }
 
     /**
-     * Batch execute prepared non-query sql (insert, update, delete).
+     * Batch execute prepared non-query sql ({@code insert}, {@code update}, {@code delete}).
      *
      * @param sql       named parameter sql
      * @param args      args collection
@@ -360,10 +362,13 @@ public abstract class JdbcSupport extends SqlParser {
     }
 
     /**
-     * Execute prepared non-query sql (insert, update, delete)<br>
-     *  e.g.
+     * Execute prepared non-query sql ({@code insert}, {@code update}, {@code delete})
+     * <p>e.g. insert statement:</p>
      * <blockquote>
      * <pre>insert into table (a,b,c) values (:v1,:v2,:v3)</pre>
+     * </blockquote>
+     * <p>args:</p>
+     * <blockquote>
      * <pre>{v1:'a',v2:'b',v3:'c'}</pre>
      * </blockquote>
      *
@@ -391,7 +396,7 @@ public abstract class JdbcSupport extends SqlParser {
     }
 
     /**
-     * Execute store procedure/function.<br>
+     * Execute store {@code procedure} or {@code function}.
      * <blockquote>
      * <pre>
      * { call func1(:in1, :in2, :out1, :out2) }
@@ -401,13 +406,11 @@ public abstract class JdbcSupport extends SqlParser {
      * call procedure() //postgresql v13+
      * </pre>
      * </blockquote>
-     * Get result depends on have OUT parameter or not:
-     * <blockquote>
+     * <p>2 ways to get result:</p>
      * <ul>
-     *     <li>without OUT parameter: {@link DataRow#getFirst(Object...) getFirst()} or {@link DataRow#getFirstAs(Object...) getFirstAs()}</li>
+     *     <li>zero OUT parameters: {@link DataRow#getFirst(Object...) getFirst()} or {@link DataRow#getFirstAs(Object...) getFirstAs()}</li>
      *     <li>by OUT parameter name: {@link DataRow#getAs(String, Object...) getAs(String)} or {@link DataRow#get(Object) get(String)}</li>
      * </ul>
-     * </blockquote>
      *
      * @param procedure procedure
      * @param args      args
@@ -510,8 +513,8 @@ public abstract class JdbcSupport extends SqlParser {
 
     /**
      * Print sql log, e.g postgresql：
-     * <blockquote>
-     * raise notice 'my console.';
+     * <blockquote><pre>
+     * raise notice 'my console.';</pre>
      * </blockquote>
      *
      * @param sc sql statement object

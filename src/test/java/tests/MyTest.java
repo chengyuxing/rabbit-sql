@@ -352,8 +352,8 @@ public class MyTest {
 
     @Test
     public void testX() throws Exception {
-        Tx.begin();
-        try (Stream<DataRow> s = baki.query("select now()").stream()) {
+//        Tx.begin();
+        try (Stream<DataRow> s = baki.query("select now()").stream().distinct()) {
             s.forEach(System.out::println);
         }
         while (true) {

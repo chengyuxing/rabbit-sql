@@ -191,10 +191,17 @@ public class XQLFileManagerConfig {
     /**
      * Set constants map.<br>
      * Example：
+     * <p>constants: </p>
      * <blockquote>
-     * <pre>constants: {db: "test"}</pre>
-     * <pre>sql: {@code select ${db}.user from table;}</pre>
-     * <pre>result: select test.user from table.</pre>
+     * <pre>{db: "test"}</pre>
+     * </blockquote>
+     * <p>sql statement:</p>
+     * <blockquote>
+     * <pre>select ${db}.user from table</pre>
+     * </blockquote>
+     * <p>result: </p>
+     * <blockquote>
+     * <pre>select test.user from table</pre>
      * </blockquote>
      *
      * @param constants constants map

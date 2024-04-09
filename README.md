@@ -567,7 +567,7 @@ SQL file manager extends standard sql annotation implement more features, for su
 
 you can get sql syntax highlight, intelligent suggestions and error check when using sql develop tools cause support sql file with extension `.sql`, dba developer     work with java developer together so easy.
 
-Supported file extension with `.sql` or `.xql`, you can write any standard sql annotation in file, format reference `data.xql.template`.
+Supported file extension with `.sql` or `.xql`, you can write any standard sql annotation in file, format reference `template.xql`.
 
 :bulb: Recommend use `.xql` file to get [plugin](#IDEA-plugin-support) supports.
 

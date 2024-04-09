@@ -48,7 +48,7 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeBlockAnnotation;
  *     <li>ClassPath: <code>sql/rabbit.xql</code></li>
  * </ul>
  * <p>
- * Notice: <a href="https://plugins.jetbrains.com/plugin/21403-rabbit-sql">Rabbit-SQL IDEA Plugin</a> only support detect {@code .xql} file.
+ * Notice: <a href="https://plugins.jetbrains.com/plugin/21403-rabbit-sql/introduction/execute-dynamic-sql">Rabbit-SQL IDEA Plugin</a> only support detect {@code .xql} file.
  * <h3>File content structure</h3>
  * <p>{@code key-value} format, key is sql name, value is sql statement,  e.g.</p>
  * <blockquote>
@@ -62,7 +62,7 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeBlockAnnotation;
  * ;
  *
  * /&#42;[sqlNameN]&#42;/
- * -- Some sql statement;
+ * select * from test.user;
  *
  * /&#42;{order}&#42;/
  * order by id desc;

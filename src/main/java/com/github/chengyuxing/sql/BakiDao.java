@@ -38,13 +38,11 @@ import java.util.stream.Stream;
 /**
  * <h2>Default implementation of Baki interface</h2>
  * <p>If {@link XQLFileManager } configured, all methods will be support replace sql statement to sql name ({@code &<alias>.<sqlName>}).</p>
- * Example:
- * <blockquote>
- * <pre>
+ * <p>Example:</p>
+ * <blockquote><pre>
  * try ({@link Stream}&lt;{@link DataRow}&gt; s = baki.query("&amp;sys.getUser").stream()) {
  *     s.forEach(System.out::println);
- * }</pre>
- * </blockquote>
+ * }</pre></blockquote>
  */
 public class BakiDao extends JdbcSupport implements Baki {
     private final static Logger log = LoggerFactory.getLogger(BakiDao.class);

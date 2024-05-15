@@ -267,15 +267,15 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     }
                     if (xqlDesc.isEmpty()) {
                         StringJoiner descSb = new StringJoiner(NEW_LINE);
-                        int descSymbolCnt = 0;
+                        boolean isDesc = false;
                         String annoLine;
                         while ((annoLine = reader.readLine()) != null) {
                             String trimAnnoLine = annoLine.trim();
                             if (trimAnnoLine.equals(XQL_DESC_SYMBOL)) {
-                                descSymbolCnt += 1;
+                                isDesc = !isDesc;
                                 continue;
                             }
-                            if (descSymbolCnt == 1) {
+                            if (isDesc) {
                                 descSb.add(trimAnnoLine);
                             }
                             if (trimAnnoLine.endsWith(ANNO_END)) {

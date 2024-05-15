@@ -86,7 +86,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public static final String ANNO_END = "*/";
     public static final String SQL_DESC_START = "/*#";
     public static final String SQL_DESC_END = "#*/";
-    public static final String XQL_DESC_SYMBOL = "###";
+    public static final String XQL_DESC_QUOTE = "###";
     public static final String PROPERTIES = "xql-file-manager.properties";
     public static final String YML = "xql-file-manager.yml";
     private final ClassLoader classLoader = this.getClass().getClassLoader();
@@ -271,7 +271,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                         String annoLine;
                         while ((annoLine = reader.readLine()) != null) {
                             String trimAnnoLine = annoLine.trim();
-                            if (trimAnnoLine.equals(XQL_DESC_SYMBOL)) {
+                            if (trimAnnoLine.equals(XQL_DESC_QUOTE)) {
                                 isDesc = !isDesc;
                                 continue;
                             }

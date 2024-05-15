@@ -1,5 +1,17 @@
 # change note
 
+## 7.8.28
+
+- XQLFileManager support parse file description which in annotation format is:
+
+```sql
+/*
+ ###
+ Some description for the file at here.
+ ###
+ */
+```
+
 ## 7.8.26
 
 - XQLFileManager sql fragment description parsing optimized.

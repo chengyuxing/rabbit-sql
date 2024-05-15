@@ -2,6 +2,9 @@
  Get more information from:
  https://github.com/chengyuxing/rabbit-sql#Prepare-SQL
  https://github.com/chengyuxing/rabbit-sql#xqlfilemanager
+ ###
+ You can write some description for the file at here.
+ ###
 */
 
 /*#some description...#*/

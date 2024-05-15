@@ -82,8 +82,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public static final Pattern NAME_PATTERN = Pattern.compile("/\\*\\s*\\[\\s*(?<name>\\S+)\\s*]\\s*\\*/");
     //language=RegExp
     public static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+)\\s*}\\s*\\*/");
-    public static final String DESC_START = "/*#";
-    public static final String DESC_END = "#*/";
+    public static final String ANNO_START = "/*";
+    public static final String ANNO_END = "*/";
+    public static final String SQL_DESC_START = "/*#";
+    public static final String SQL_DESC_END = "#*/";
+    public static final String XQL_DESC_SYMBOL = "###";
     public static final String PROPERTIES = "xql-file-manager.properties";
     public static final String YML = "xql-file-manager.yml";
     private final ClassLoader classLoader = this.getClass().getClassLoader();
@@ -209,6 +212,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     public Resource parse(String alias, String filename, FileResource fileResource) throws IOException, URISyntaxException {
         Map<String, Sql> entry = new LinkedHashMap<>();
+        String xqlDesc = "";
         try (BufferedReader reader = fileResource.getBufferedReader(Charset.forName(charset))) {
             String blockName = "";
             List<String> descriptionBuffer = new ArrayList<>();
@@ -235,30 +239,51 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     }
                     continue;
                 }
-                if (trimLine.startsWith(DESC_START)) {
-                    if (trimLine.endsWith(DESC_END)) {
-                        String description = trimLine.substring(3, trimLine.length() - 3);
-                        if (!description.trim().isEmpty()) {
-                            descriptionBuffer.add(description);
+                if (trimLine.startsWith(ANNO_START)) {
+                    if (trimLine.startsWith(SQL_DESC_START)) {
+                        if (trimLine.endsWith(SQL_DESC_END)) {
+                            String description = trimLine.substring(3, trimLine.length() - 3);
+                            if (!description.trim().isEmpty()) {
+                                descriptionBuffer.add(description);
+                            }
+                            continue;
+                        }
+                        String descriptionStart = trimLine.substring(3);
+                        if (!descriptionStart.trim().isEmpty()) {
+                            descriptionBuffer.add(descriptionStart);
+                        }
+                        String descLine;
+                        while ((descLine = reader.readLine()) != null) {
+                            if (descLine.trim().endsWith(SQL_DESC_END)) {
+                                String descriptionEnd = descLine.substring(0, descLine.lastIndexOf(SQL_DESC_END));
+                                if (!descriptionEnd.trim().isEmpty()) {
+                                    descriptionBuffer.add(descriptionEnd);
+                                }
+                                break;
+                            }
+                            descriptionBuffer.add(descLine);
                         }
                         continue;
                     }
-                    String descriptionStart = trimLine.substring(3);
-                    if (!descriptionStart.trim().isEmpty()) {
-                        descriptionBuffer.add(descriptionStart);
-                    }
-                    String descLine;
-                    while ((descLine = reader.readLine()) != null) {
-                        if (descLine.trim().endsWith(DESC_END)) {
-                            String descriptionEnd = descLine.substring(0, descLine.lastIndexOf(DESC_END));
-                            if (!descriptionEnd.trim().isEmpty()) {
-                                descriptionBuffer.add(descriptionEnd);
+                    if (xqlDesc.isEmpty()) {
+                        StringJoiner descSb = new StringJoiner(NEW_LINE);
+                        int descSymbolCnt = 0;
+                        String annoLine;
+                        while ((annoLine = reader.readLine()) != null) {
+                            String trimAnnoLine = annoLine.trim();
+                            if (trimAnnoLine.equals(XQL_DESC_SYMBOL)) {
+                                descSymbolCnt += 1;
+                                continue;
                             }
-                            break;
+                            if (descSymbolCnt == 1) {
+                                descSb.add(trimAnnoLine);
+                            }
+                            if (trimAnnoLine.endsWith(ANNO_END)) {
+                                break;
+                            }
                         }
-                        descriptionBuffer.add(descLine);
+                        xqlDesc = descSb.toString();
                     }
-                    continue;
                 }
                 // exclude single line annotation except expression keywords
                 if (!trimLine.startsWith("--") || (StringUtil.startsWithsIgnoreCase(trimAnnotation(trimLine), TAGS))) {
@@ -295,6 +320,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         Resource resource = new Resource(alias, filename);
         resource.setEntry(Collections.unmodifiableMap(entry));
         resource.setLastModified(fileResource.getLastModified());
+        resource.setDescription(xqlDesc);
         return resource;
     }
 
@@ -785,6 +811,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         private final String alias;
         private final String filename;
         private long lastModified = -1;
+        private String description;
         private Map<String, Sql> entry;
 
         public Resource(String alias, String filename) {
@@ -809,6 +836,14 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             this.lastModified = lastModified;
         }
 
+        public String getDescription() {
+            return description;
+        }
+
+        void setDescription(String description) {
+            this.description = description;
+        }
+
         public Map<String, Sql> getEntry() {
             return entry;
         }
@@ -824,20 +859,15 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             if (!(o instanceof Resource)) return false;
 
             Resource resource = (Resource) o;
-
-            if (getLastModified() != resource.getLastModified()) return false;
-            if (getAlias() != null ? !getAlias().equals(resource.getAlias()) : resource.getAlias() != null)
-                return false;
-            if (getFilename() != null ? !getFilename().equals(resource.getFilename()) : resource.getFilename() != null)
-                return false;
-            return getEntry().equals(resource.getEntry());
+            return getLastModified() == resource.getLastModified() && Objects.equals(getAlias(), resource.getAlias()) && Objects.equals(getFilename(), resource.getFilename()) && Objects.equals(getDescription(), resource.getDescription()) && getEntry().equals(resource.getEntry());
         }
 
         @Override
         public int hashCode() {
-            int result = getAlias() != null ? getAlias().hashCode() : 0;
-            result = 31 * result + (getFilename() != null ? getFilename().hashCode() : 0);
+            int result = Objects.hashCode(getAlias());
+            result = 31 * result + Objects.hashCode(getFilename());
             result = 31 * result + Long.hashCode(getLastModified());
+            result = 31 * result + Objects.hashCode(getDescription());
             result = 31 * result + getEntry().hashCode();
             return result;
         }

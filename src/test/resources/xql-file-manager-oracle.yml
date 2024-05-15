@@ -1,0 +1,29 @@
+# Created by IntelliJ IDEA.
+# User: chengyuxing
+# Date: 2024/4/13
+# Time: 00:39
+# Configure 'src/main/resources/xql-file-manager.yml' to enable the rabbit-sql plugin.
+# https://github.com/chengyuxing/rabbit-sql/blob/master/XQL_FILE_MANAGER.md
+
+database-id: &db postgresql
+
+# 1. 先检查databaseId属性是否不为null
+# 2. init之前先检查files的文件路径中是否包含 postgresql/ 或 /postgresql/ 的路径
+# 3. 如果包含，把此路径替换为当前数据库的名字
+# 还是应该重构一下configLocation的加载逻辑，应该放在init里面？
+
+constants:
+
+files:
+  foo: !path [ *db, a.xql ]
+#  bar: b.xql
+
+#delimiter: ;
+
+#charset: UTF-8
+
+#pipes:
+
+# The following properties work for plugin action (Execute Dynamic sql).
+
+#named-param-prefix: ':'

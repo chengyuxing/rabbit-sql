@@ -73,7 +73,7 @@ public class XQLFileManagerConfig {
         try {
             XQLFileManagerConfig config = yaml.loadAs(yamlLocation.getInputStream(), XQLFileManagerConfig.class);
             if (Objects.isNull(config)) {
-                log.warn("yaml loaded nothing, resource length is " + yamlLocation.getInputStream().available());
+                log.warn("yaml loaded nothing, resource length is {}", yamlLocation.getInputStream().available());
                 return;
             }
             config.copyStateTo(this);

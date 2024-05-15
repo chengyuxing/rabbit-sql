@@ -225,8 +225,14 @@ public class NewBakiTests {
     }
 
     @Test
-    public void testVar() {
-        int len = new IPipe.Length().transform("abcde");
-        System.out.println(len);
+    public void testPatchError() {
+        List<Args<Object>> args = new ArrayList<>();
+        args.add(Args.of("name", "chengyuxing", "dt", LocalDateTime.now()));
+        args.add(Args.of("name", "chengyuxing", "dt", 1000L));
+        args.add(Args.of("name", "chengyuxing", "dt", LocalDateTime.now()));
+        int i = baki.insert("test.user")
+                .fast()
+                .save(args);
+        System.out.println(i);
     }
 }

@@ -1,14 +1,14 @@
 # change note
 
-## 7.8.28
+## 7.8.29
 
 - XQLFileManager support parse file description which in annotation format is:
 
 ```sql
 /*
- ###
+ @@@
  Some description for the file at here.
- ###
+ @@@
  */
 ```
 

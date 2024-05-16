@@ -143,7 +143,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         if (files == null) {
             return;
         }
-        this.files = new HashMap<>(files);
+        this.files = new LinkedHashMap<>(files);
     }
 
     /**

@@ -1,5 +1,13 @@
 # change note
 
+## 7.8.33
+
+- Optimized.
+
+## 7.8.32
+
+- Fixed `BakiDao#autoXFMConfig` bug when any config not exists.
+
 ## 7.8.31
 
 - Fixed doc.

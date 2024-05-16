@@ -35,7 +35,7 @@ Maven 中央仓库
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.8.31</version>
+    <version>7.8.33</version>
 </dependency>
 ```
 
@@ -549,7 +549,7 @@ where id = 3
 
 自动根据数据库名称加载合适的配置文件，默认值为：`true`。
 
-如果为 `true` ，根据数据库名称自动寻找合适的 `xql-file-manager-*.yml`，数据库名称来自于 **jdbc驱动** `DatabaseMetaData#getDatabaseProductName()`。
+如果为 `true` ，根据数据库名称自动寻找合适的 `xql-file-manager-*.yml`，数据库名称来自于 **jdbc驱动** `DatabaseMetaData#getDatabaseProductName().toLowerCase()`。
 
 例如当前数据库为**oracle**，则优先加载 `xql-file-manager-oracle.yml` 文件，如果文件不存在，再加载 `xql-file-manager.yml`。
 

@@ -561,19 +561,17 @@ public class BakiDao extends JdbcSupport implements Baki {
             this.xqlFileManager = xqlFileManager;
             this.xqlFileManager.setDatabaseId(databaseId);
             if (autoXFMConfig) {
-                XQLFileManagerConfig config = new XQLFileManagerConfig();
                 String pathByDb = "xql-file-manager-" + databaseId() + ".yml";
                 FileResource resource = new FileResource(pathByDb);
-                if (resource.exists()) {
-                    config.loadYaml(resource);
-                    log.debug("{} by databaseId detected and loaded!", pathByDb);
-                } else {
+                if (!resource.exists()) {
                     resource = new FileResource(XQLFileManager.YML);
-                    if (resource.exists()) {
-                        config.loadYaml(resource);
-                    }
                 }
-                config.copyStateTo(this.xqlFileManager);
+                if (resource.exists()) {
+                    XQLFileManagerConfig config = new XQLFileManagerConfig();
+                    config.loadYaml(resource);
+                    config.copyStateTo(this.xqlFileManager);
+                    log.debug("{} detected and loaded!", resource.getFileName());
+                }
             }
             if (!this.xqlFileManager.isInitialized()) {
                 this.xqlFileManager.init();

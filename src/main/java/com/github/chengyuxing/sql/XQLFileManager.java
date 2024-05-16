@@ -82,8 +82,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public static final Pattern NAME_PATTERN = Pattern.compile("/\\*\\s*\\[\\s*(?<name>\\S+)\\s*]\\s*\\*/");
     //language=RegExp
     public static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+)\\s*}\\s*\\*/");
-    public static final String ANNO_START = "/*";
-    public static final String ANNO_END = "*/";
     public static final String SQL_DESC_START = "/*#";
     public static final String SQL_DESC_END = "#*/";
     public static final String XQL_DESC_QUOTE = "@@@";
@@ -239,50 +237,44 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     }
                     continue;
                 }
-                if (trimLine.startsWith(ANNO_START)) {
-                    if (trimLine.startsWith(SQL_DESC_START)) {
-                        if (trimLine.endsWith(SQL_DESC_END)) {
-                            String description = trimLine.substring(3, trimLine.length() - 3);
-                            if (!description.trim().isEmpty()) {
-                                descriptionBuffer.add(description);
-                            }
-                            continue;
-                        }
-                        String descriptionStart = trimLine.substring(3);
-                        if (!descriptionStart.trim().isEmpty()) {
-                            descriptionBuffer.add(descriptionStart);
-                        }
-                        String descLine;
-                        while ((descLine = reader.readLine()) != null) {
-                            if (descLine.trim().endsWith(SQL_DESC_END)) {
-                                String descriptionEnd = descLine.substring(0, descLine.lastIndexOf(SQL_DESC_END));
-                                if (!descriptionEnd.trim().isEmpty()) {
-                                    descriptionBuffer.add(descriptionEnd);
-                                }
-                                break;
-                            }
-                            descriptionBuffer.add(descLine);
+                if (trimLine.startsWith(SQL_DESC_START)) {
+                    if (trimLine.endsWith(SQL_DESC_END)) {
+                        String description = trimLine.substring(3, trimLine.length() - 3);
+                        if (!description.trim().isEmpty()) {
+                            descriptionBuffer.add(description);
                         }
                         continue;
                     }
-                    if (xqlDesc.isEmpty()) {
+                    String descriptionStart = trimLine.substring(3);
+                    if (!descriptionStart.trim().isEmpty()) {
+                        descriptionBuffer.add(descriptionStart);
+                    }
+                    String descLine;
+                    while ((descLine = reader.readLine()) != null) {
+                        if (descLine.trim().endsWith(SQL_DESC_END)) {
+                            String descriptionEnd = descLine.substring(0, descLine.lastIndexOf(SQL_DESC_END));
+                            if (!descriptionEnd.trim().isEmpty()) {
+                                descriptionBuffer.add(descriptionEnd);
+                            }
+                            break;
+                        }
+                        descriptionBuffer.add(descLine);
+                    }
+                    continue;
+                }
+                if (xqlDesc.isEmpty()) {
+                    if (trimLine.equals(XQL_DESC_QUOTE)) {
                         StringJoiner descSb = new StringJoiner(NEW_LINE);
-                        boolean isDesc = false;
                         String annoLine;
                         while ((annoLine = reader.readLine()) != null) {
                             String trimAnnoLine = annoLine.trim();
                             if (trimAnnoLine.equals(XQL_DESC_QUOTE)) {
-                                isDesc = !isDesc;
-                                continue;
-                            }
-                            if (isDesc) {
-                                descSb.add(trimAnnoLine);
-                            }
-                            if (trimAnnoLine.endsWith(ANNO_END)) {
                                 break;
                             }
+                            descSb.add(trimAnnoLine);
                         }
                         xqlDesc = descSb.toString();
+                        continue;
                     }
                 }
                 // exclude single line annotation except expression keywords

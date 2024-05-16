@@ -223,8 +223,7 @@ public class NonBakiTests {
     @Test
     public void test46() {
         XQLFileManager xqlFileManager = new XQLFileManager();
-        xqlFileManager.add("sys", "pgsql/system.xql");
-        xqlFileManager.add("cyx", "pgsql/b.a.xql");
+        xqlFileManager.add("cyx", "pgsql/big-anno-demo.xql");
         xqlFileManager.init();
 
         Map<String, XQLFileManager.Resource> resourceMap = xqlFileManager.getResources();

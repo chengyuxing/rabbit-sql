@@ -571,6 +571,8 @@ public class BakiDao extends JdbcSupport implements Baki {
                     config.loadYaml(resource);
                     config.copyStateTo(this.xqlFileManager);
                     log.debug("{} detected and loaded!", resource.getFileName());
+                    this.xqlFileManager.init();
+                    return;
                 }
             }
             if (!this.xqlFileManager.isInitialized()) {

@@ -15,10 +15,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.util.ConcurrentModificationException;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 /**
  * Dynamic SQL parse file manager config.
@@ -28,7 +25,7 @@ public class XQLFileManagerConfig {
     protected volatile boolean loading;
 
     // ----------------optional properties------------------
-    protected Map<String, String> files = new HashMap<>();
+    protected Map<String, String> files = new LinkedHashMap<>();
     protected Map<String, Object> constants = new HashMap<>();
     protected Map<String, IPipe<?>> pipeInstances = new HashMap<>();
     protected Map<String, String> pipes = new HashMap<>();
@@ -91,7 +88,7 @@ public class XQLFileManagerConfig {
         TypedProperties properties = new TypedProperties();
         try {
             properties.load(propertiesLocation.getInputStream());
-            Map<String, String> localFiles = new HashMap<>();
+            Map<String, String> localFiles = new LinkedHashMap<>();
             Map<String, Object> localConstants = new HashMap<>();
             Map<String, String> localPipes = new HashMap<>();
             properties.forEach((k, s) -> {
@@ -175,7 +172,7 @@ public class XQLFileManagerConfig {
      */
     public void setFiles(Map<String, String> files) {
         if (Objects.nonNull(files)) {
-            this.files = new HashMap<>(files);
+            this.files = new LinkedHashMap<>(files);
         }
     }
 

@@ -89,7 +89,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public static final String YML = "xql-file-manager.yml";
     private final ClassLoader classLoader = this.getClass().getClassLoader();
     private final ReentrantLock lock = new ReentrantLock();
-    private final Map<String, Resource> resources = new HashMap<>();
+    private final Map<String, Resource> resources = new LinkedHashMap<>();
     private volatile boolean initialized;
 
     /**

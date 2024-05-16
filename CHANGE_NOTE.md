@@ -1,5 +1,9 @@
 # change note
 
+## 7.8.30
+
+- Support auto configure xql file manager by databaseId.
+
 ## 7.8.29
 
 - XQLFileManager support parse file description which in annotation format is:

@@ -1,5 +1,9 @@
 # change note
 
+## 7.8.31
+
+- Fixed doc.
+
 ## 7.8.30
 
 - Support auto configure xql file manager by databaseId.

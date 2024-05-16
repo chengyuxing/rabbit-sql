@@ -85,7 +85,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     private boolean reloadXqlOnGet = false;
     /**
-     * Load {@code xql-file-manager-}{@linkplain #databaseId()}{@code .yml} first if exists,
+     * Load {@code xql-file-manager-}{@link #databaseId() databaseId}{@code .yml} first if exists,
      * otherwise {@code xql-file-manager.yml}
      */
     private boolean autoXFMConfig = true;

@@ -545,21 +545,29 @@ Default implement of interface **Baki**, support some basic operation.
 
 #### Options
 
-- **sqlInterceptor**
+##### autoXFMConfig
 
-  Custom sql interceptor, default:
+Auto load xql file manager config by database name, default: `true` .
 
-  ```java
-  (sql, args, metaData) -> true
-  ```
+If `true`, find the suitable `xql-file-manager-*.yml` by database name, database name depends on **jdbc driver** `DatabaseMetaData#getDatabaseProductName()` .
 
-- **statementValueHandler**
+E.g. current database is **oracle**, it will be load `xql-file-manager-oracle.yml` first if exists, otherwise load `xql-file-manager.yml` .
 
-  Custom prepared sql statement parameter value handler, default:
+##### sqlInterceptor
 
-  ```java
-  (ps, index, value, metaData) -> JdbcUtil.setStatementValue(ps, index, value)
-  ```
+Custom sql interceptor, default:
+
+```java
+(sql, args, metaData) -> true
+```
+
+##### statementValueHandler
+
+Custom prepared sql statement parameter value handler, default:
+
+```java
+(ps, index, value, metaData) -> JdbcUtil.setStatementValue(ps, index, value)
+```
 
 ### XQLFileManager
 

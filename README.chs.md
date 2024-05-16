@@ -545,21 +545,29 @@ where id = 3
 
 #### 配置项
 
-- **sqlInterceptor**
+##### autoXFMConfig
 
-  sql 拦截器，默认值为：
+自动根据数据库名称加载合适的配置文件，默认值为：`true`。
 
-  ```java
-  (sql, args, metaData) -> true
-  ```
+如果为 `true` ，根据数据库名称自动寻找合适的 `xql-file-manager-*.yml`，数据库名称来自于 **jdbc驱动** `DatabaseMetaData#getDatabaseProductName()`。
 
-- **statementValueHandler**
+例如当前数据库为**oracle**，则优先加载 `xql-file-manager-oracle.yml` 文件，如果文件不存在，再加载 `xql-file-manager.yml`。
 
-  预编译sql对象自定义参数值处理器，默认值为：
+##### sqlInterceptor
 
-  ```java
-  (ps, index, value, metaData) -> JdbcUtil.setStatementValue(ps, index, value)
-  ```
+sql 拦截器，默认值为：
+
+```java
+(sql, args, metaData) -> true
+```
+
+##### statementValueHandler
+
+预编译sql对象自定义参数值处理器，默认值为：
+
+```java
+(ps, index, value, metaData) -> JdbcUtil.setStatementValue(ps, index, value)
+```
 
 ### XQLFileManager
 

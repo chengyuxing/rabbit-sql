@@ -1,6 +1,7 @@
 package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.datasource.DataSourceUtil;
@@ -83,6 +84,11 @@ public class BakiDao extends JdbcSupport implements Baki {
      * If XQL file changed, XQL file will reload when {@link #parseSql(String, Map)} invoke always.
      */
     private boolean reloadXqlOnGet = false;
+    /**
+     * Load {@code xql-file-manager-}{@linkplain #databaseId()}{@code .yml} first if exists,
+     * otherwise {@code xql-file-manager.yml}
+     */
+    private boolean autoXFMConfig = true;
 
     /**
      * Constructs a new BakiDao with initial datasource.
@@ -554,6 +560,21 @@ public class BakiDao extends JdbcSupport implements Baki {
         if (Objects.nonNull(xqlFileManager)) {
             this.xqlFileManager = xqlFileManager;
             this.xqlFileManager.setDatabaseId(databaseId);
+            if (autoXFMConfig) {
+                XQLFileManagerConfig config = new XQLFileManagerConfig();
+                String pathByDb = "xql-file-manager-" + databaseId() + ".yml";
+                FileResource resource = new FileResource(pathByDb);
+                if (resource.exists()) {
+                    config.loadYaml(resource);
+                    log.debug("{} by databaseId detected and loaded!", pathByDb);
+                } else {
+                    resource = new FileResource(XQLFileManager.YML);
+                    if (resource.exists()) {
+                        config.loadYaml(resource);
+                    }
+                }
+                config.copyStateTo(this.xqlFileManager);
+            }
             if (!this.xqlFileManager.isInitialized()) {
                 this.xqlFileManager.init();
             }
@@ -587,5 +608,13 @@ public class BakiDao extends JdbcSupport implements Baki {
 
     public void setReloadXqlOnGet(boolean reloadXqlOnGet) {
         this.reloadXqlOnGet = reloadXqlOnGet;
+    }
+
+    public boolean isAutoXFMConfig() {
+        return autoXFMConfig;
+    }
+
+    public void setAutoXFMConfig(boolean autoXFMConfig) {
+        this.autoXFMConfig = autoXFMConfig;
     }
 }

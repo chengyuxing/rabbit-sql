@@ -169,6 +169,21 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
+     * Remove a sql file with associated sql resource.
+     *
+     * @param alias file alias
+     */
+    public void remove(String alias) {
+        lock.lock();
+        try {
+            files.remove(alias);
+            resources.remove(alias);
+        } finally {
+            lock.unlock();
+        }
+    }
+
+    /**
      * Put sql resource persistent.
      *
      * @param alias        file alias
@@ -595,7 +610,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         if (!containsAnyIgnoreCase(sql, TAGS)) {
             return Pair.of(sql, Collections.emptyMap());
         }
-        DynamicSqlParser parser = new DynamicSqlParser();
+        DynamicSqlParser parser = newDynamicSqlParser();
         Map<String, Object> newArgs = new HashMap<>();
         if (Objects.nonNull(args)) {
             newArgs.putAll(args);
@@ -658,6 +673,15 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             }
         }
         return trimS;
+    }
+
+    /**
+     * Create a new dynamic sql parser.
+     *
+     * @return dynamic sql parser
+     */
+    public DynamicSqlParser newDynamicSqlParser() {
+        return new DynamicSqlParser();
     }
 
     @Override

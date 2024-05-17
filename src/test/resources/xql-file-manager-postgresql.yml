@@ -1,0 +1,24 @@
+# Created by IntelliJ IDEA.
+# User: chengyuxing
+# Date: 2024/5/17
+# Time: 11:31
+# https://github.com/chengyuxing/rabbit-sql/blob/master/XQL_FILE_MANAGER.md
+
+#constants:
+#  db: &db pgsql
+
+files:
+#  foo: !path [ *db, a.xql ]
+#  bar: b.xql
+
+#delimiter: ;
+
+#charset: UTF-8
+
+#pipes:
+
+# The following properties work for plugin action (Execute Dynamic sql).
+
+#named-param-prefix: ':'
+
+#database-id:

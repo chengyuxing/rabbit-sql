@@ -169,21 +169,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * Remove a sql file with associated sql resource.
-     *
-     * @param alias file alias
-     */
-    public void remove(String alias) {
-        lock.lock();
-        try {
-            files.remove(alias);
-            resources.remove(alias);
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    /**
      * Put sql resource persistent.
      *
      * @param alias        file alias
@@ -401,23 +386,23 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             // It's necessary to remove non-associated dirty resources.
             resources.entrySet().removeIf(e -> !files.containsKey(e.getKey()));
             // Reload and parse all sql file.
-            for (Map.Entry<String, String> fileE : files.entrySet()) {
-                String alias = fileE.getKey();
-                String filename = fileE.getValue();
-                FileResource cr = new FileResource(filename);
-                if (cr.exists()) {
-                    String ext = cr.getFilenameExtension();
+            for (Map.Entry<String, String> e : files.entrySet()) {
+                String alias = e.getKey();
+                String filename = e.getValue();
+                FileResource fr = new FileResource(filename);
+                if (fr.exists()) {
+                    String ext = fr.getFilenameExtension();
                     if (ext != null && (ext.equals("sql") || ext.equals("xql"))) {
                         if (resources.containsKey(alias)) {
                             Resource resource = resources.get(alias);
                             long oldLastModified = resource.getLastModified();
-                            long lastModified = cr.getLastModified();
+                            long lastModified = fr.getLastModified();
                             if (oldLastModified > 0 && oldLastModified != lastModified) {
-                                putResource(alias, filename, cr);
-                                log.debug("reload modified sql file: " + filename);
+                                putResource(alias, filename, fr);
+                                log.debug("reload modified sql file: {}", filename);
                             }
                         } else {
-                            putResource(alias, filename, cr);
+                            putResource(alias, filename, fr);
                         }
                     }
                 } else {
@@ -436,6 +421,9 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     protected void loadPipes() {
         if (pipes.isEmpty()) return;
+        if (pipes.keySet().equals(pipeInstances.keySet())) {
+            return;
+        }
         try {
             for (Map.Entry<String, String> entry : pipes.entrySet()) {
                 pipeInstances.put(entry.getKey(), (IPipe<?>) ReflectUtil.getInstance(classLoader.loadClass(entry.getValue())));
@@ -556,10 +544,10 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         }
         String alias = name.substring(0, dotIdx);
         if (resources.containsKey(alias)) {
-            Map<String, Sql> singleResource = getResource(alias).getEntry();
+            Map<String, Sql> sqlMap = getResource(alias).getEntry();
             String sqlName = name.substring(dotIdx + 1);
-            if (singleResource.containsKey(sqlName)) {
-                return singleResource.get(sqlName);
+            if (sqlMap.containsKey(sqlName)) {
+                return sqlMap.get(sqlName);
             }
         }
         throw new NoSuchElementException(String.format("no SQL named [%s] was found.", name));
@@ -607,7 +595,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         if (!containsAnyIgnoreCase(sql, TAGS)) {
             return Pair.of(sql, Collections.emptyMap());
         }
-        DynamicSqlParser parser = newDynamicSqlParser();
+        DynamicSqlParser parser = new DynamicSqlParser();
         Map<String, Object> newArgs = new HashMap<>();
         if (Objects.nonNull(args)) {
             newArgs.putAll(args);
@@ -639,7 +627,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * Close and cleanup XQL file manager.
+     * Cleanup XQL file manager.
      */
     @Override
     public void close() {
@@ -670,15 +658,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             }
         }
         return trimS;
-    }
-
-    /**
-     * Create a new dynamic sql parser.
-     *
-     * @return dynamic sql parser
-     */
-    public DynamicSqlParser newDynamicSqlParser() {
-        return new DynamicSqlParser();
     }
 
     @Override

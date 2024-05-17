@@ -22,8 +22,6 @@ import java.util.*;
  */
 public class XQLFileManagerConfig {
     private static final Logger log = LoggerFactory.getLogger(XQLFileManagerConfig.class);
-    protected volatile boolean loading;
-
     // ----------------optional properties------------------
     protected Map<String, String> files = new LinkedHashMap<>();
     protected Map<String, Object> constants = new HashMap<>();
@@ -34,6 +32,7 @@ public class XQLFileManagerConfig {
     protected Character namedParamPrefix = ':';
     protected String databaseId;
     // ----------------optional properties------------------
+    protected volatile boolean loading;
 
     /**
      * 配置项构造器
@@ -87,6 +86,7 @@ public class XQLFileManagerConfig {
     public void loadProperties(FileResource propertiesLocation) {
         TypedProperties properties = new TypedProperties();
         try {
+            XQLFileManagerConfig config = new XQLFileManagerConfig();
             properties.load(propertiesLocation.getInputStream());
             Map<String, String> localFiles = new LinkedHashMap<>();
             Map<String, Object> localConstants = new HashMap<>();
@@ -105,12 +105,14 @@ public class XQLFileManagerConfig {
                 }
             });
 
-            setFiles(localFiles);
-            setConstants(localConstants);
-            setPipes(localPipes);
-            setDelimiter(properties.getProperty("delimiter"));
-            setCharset(properties.getProperty("charset"));
-            setNamedParamPrefix(properties.getProperty("namedParamPrefix", ":").charAt(0));
+            config.setFiles(localFiles);
+            config.setConstants(localConstants);
+            config.setPipes(localPipes);
+            config.setDelimiter(properties.getProperty("delimiter"));
+            config.setCharset(properties.getProperty("charset"));
+            config.setNamedParamPrefix(properties.getProperty("namedParamPrefix", ":").charAt(0));
+            config.setDatabaseId(properties.getProperty("databaseId"));
+            config.copyStateTo(this);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -119,9 +121,9 @@ public class XQLFileManagerConfig {
     /**
      * Copy config state to another.
      *
-     * @param another another XQLFileManagerConfig
+     * @param other another XQLFileManagerConfig
      */
-    public void copyStateTo(XQLFileManagerConfig another) {
+    public void copyStateTo(XQLFileManagerConfig other) {
         Field[] fields = XQLFileManagerConfig.class.getDeclaredFields();
         for (Field field : fields) {
             if (!Modifier.isFinal(field.getModifiers())) {
@@ -129,7 +131,7 @@ public class XQLFileManagerConfig {
                 try {
                     Object v = field.get(this);
                     if (Objects.nonNull(v)) {
-                        field.set(another, v);
+                        field.set(other, v);
                     }
                 } catch (IllegalAccessException e) {
                     throw new RuntimeException("Failed to copy XQLFileManagerConfig state: " + e.getMessage(), e);
@@ -141,10 +143,8 @@ public class XQLFileManagerConfig {
     /**
      * If XQL file manager on loading while config state changing by another thread, throws exception.
      */
-    protected void checkLoading() {
-        if (loading) {
-            throw new ConcurrentModificationException("Cannot set property while loading.");
-        }
+    void checkLoading() {
+        if (loading) throw new ConcurrentModificationException("Cannot set property while loading.");
     }
 
     /**
@@ -171,6 +171,7 @@ public class XQLFileManagerConfig {
      * @param files files map [alias, file name]
      */
     public void setFiles(Map<String, String> files) {
+        checkLoading();
         if (Objects.nonNull(files)) {
             this.files = new LinkedHashMap<>(files);
         }
@@ -204,8 +205,8 @@ public class XQLFileManagerConfig {
      * @param constants constants map
      */
     public void setConstants(Map<String, Object> constants) {
+        checkLoading();
         if (Objects.nonNull(constants)) {
-            checkLoading();
             this.constants = new HashMap<>(constants);
         }
     }
@@ -225,6 +226,7 @@ public class XQLFileManagerConfig {
      * @param pipeInstances custom pipe instances map [pipe name, pipe instance]
      */
     public void setPipeInstances(Map<String, IPipe<?>> pipeInstances) {
+        checkLoading();
         if (Objects.nonNull(pipeInstances)) {
             this.pipeInstances = new HashMap<>(pipeInstances);
         }
@@ -246,6 +248,7 @@ public class XQLFileManagerConfig {
      * @see IPipe
      */
     public void setPipes(Map<String, String> pipes) {
+        checkLoading();
         if (Objects.nonNull(pipes)) {
             this.pipes = new HashMap<>(pipes);
         }
@@ -267,8 +270,8 @@ public class XQLFileManagerConfig {
      * @see StandardCharsets
      */
     public void setCharset(String charset) {
+        checkLoading();
         if (Objects.nonNull(charset)) {
-            this.checkLoading();
             this.charset = charset;
         }
     }
@@ -280,8 +283,8 @@ public class XQLFileManagerConfig {
      * @see StandardCharsets
      */
     public void setCharset(Charset charset) {
+        checkLoading();
         if (Objects.nonNull(charset)) {
-            checkLoading();
             this.charset = charset.name();
         }
     }
@@ -303,8 +306,8 @@ public class XQLFileManagerConfig {
      * @param delimiter multi sql fragment/template delimiter
      */
     public void setDelimiter(String delimiter) {
+        checkLoading();
         if (Objects.nonNull(delimiter) && !delimiter.trim().isEmpty()) {
-            checkLoading();
             this.delimiter = delimiter;
         }
     }

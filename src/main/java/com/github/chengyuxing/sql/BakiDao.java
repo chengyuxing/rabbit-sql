@@ -462,6 +462,26 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     /**
+     * Reload xql file manager by database id if necessary.
+     */
+    protected void loadXFMConfigByDatabaseId() {
+        if (Objects.nonNull(xqlFileManager)) {
+            String pathByDb = "xql-file-manager-" + databaseId + ".yml";
+            FileResource resource = new FileResource(pathByDb);
+            if (!resource.exists()) {
+                resource = new FileResource(XQLFileManager.YML);
+            }
+            if (resource.exists()) {
+                XQLFileManagerConfig config = new XQLFileManagerConfig();
+                config.loadYaml(resource);
+                config.copyStateTo(xqlFileManager);
+                xqlFileManager.init();
+                log.debug("{} detected by '{}' and loaded!", resource.getFileName(), databaseId);
+            }
+        }
+    }
+
+    /**
      * Get sql from {@link XQLFileManager} by sql name if first arg starts with symbol ({@code &}).<br>
      * Sql name format: {@code &<alias>.<sqlName>}
      *
@@ -491,7 +511,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                     data.put(XQLFileManager.DynamicSqlParser.FOR_VARS_KEY, result.getItem2());
                 }
             } else {
-                throw new NullPointerException("can not find property 'xqlFileManager' or XQLFileManager object init failed!");
+                throw new NullPointerException("can not find property 'xqlFileManager'.");
             }
         }
         if (trimSql.contains("${")) {
@@ -503,7 +523,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         if (Objects.nonNull(sqlInterceptor)) {
             boolean request = sqlInterceptor.preHandle(trimSql, data, metaData);
             if (!request) {
-                throw new IllegalSqlException("permission denied, reject to execute invalid sql.\nSQL: " + trimSql + "\nArgs: " + data);
+                throw new IllegalSqlException("permission denied, reject to execute sql.\nSQL: " + trimSql + "\nArgs: " + data);
             }
         }
         return Pair.of(trimSql, data);
@@ -561,19 +581,8 @@ public class BakiDao extends JdbcSupport implements Baki {
             this.xqlFileManager = xqlFileManager;
             this.xqlFileManager.setDatabaseId(databaseId);
             if (autoXFMConfig) {
-                String pathByDb = "xql-file-manager-" + databaseId() + ".yml";
-                FileResource resource = new FileResource(pathByDb);
-                if (!resource.exists()) {
-                    resource = new FileResource(XQLFileManager.YML);
-                }
-                if (resource.exists()) {
-                    XQLFileManagerConfig config = new XQLFileManagerConfig();
-                    config.loadYaml(resource);
-                    config.copyStateTo(this.xqlFileManager);
-                    log.debug("{} detected and loaded!", resource.getFileName());
-                    this.xqlFileManager.init();
-                    return;
-                }
+                loadXFMConfigByDatabaseId();
+                return;
             }
             if (!this.xqlFileManager.isInitialized()) {
                 this.xqlFileManager.init();
@@ -599,7 +608,7 @@ public class BakiDao extends JdbcSupport implements Baki {
 
     public void setNamedParamPrefix(char namedParamPrefix) {
         this.namedParamPrefix = namedParamPrefix;
-        this.sqlGenerator = new SqlGenerator(namedParamPrefix);
+        this.sqlGenerator = new SqlGenerator(this.namedParamPrefix);
     }
 
     public boolean isReloadXqlOnGet() {
@@ -616,5 +625,8 @@ public class BakiDao extends JdbcSupport implements Baki {
 
     public void setAutoXFMConfig(boolean autoXFMConfig) {
         this.autoXFMConfig = autoXFMConfig;
+        if (this.autoXFMConfig) {
+            loadXFMConfigByDatabaseId();
+        }
     }
 }

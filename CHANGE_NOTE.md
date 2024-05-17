@@ -1,5 +1,9 @@
 # change note
 
+## 7.9.2
+
+- Some optimized and bug fixed.
+
 ## 7.9.1
 
 - Some optimized.

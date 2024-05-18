@@ -35,7 +35,7 @@ Maven central
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.9.3</version>
+    <version>7.9.4</version>
 </dependency>
 ```
 
@@ -547,7 +547,7 @@ Default implement of interface **Baki**, support some basic operation.
 
 ##### autoXFMConfig
 
-Auto load xql file manager config by database name, default: `true` .
+Auto load xql file manager config by database name, default: `false` .
 
 If `true`, find the suitable `xql-file-manager-*.yml` by database name, database name depends on **jdbc driver** `DatabaseMetaData#getDatabaseProductName().toLowerCase()` .
 

@@ -1,5 +1,9 @@
 # change note
 
+## 7.9.4
+
+- `BakiDao#autoXFMConfig` set default to false.
+
 ## 7.9.3
 
 - Some optimized and bug fixed.

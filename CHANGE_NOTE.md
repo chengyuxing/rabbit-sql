@@ -1,5 +1,9 @@
 # change note
 
+## 7.9.5
+
+- Query optimized.
+
 ## 7.9.4
 
 - `BakiDao#autoXFMConfig` set default to false.

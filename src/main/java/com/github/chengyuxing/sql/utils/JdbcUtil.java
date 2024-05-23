@@ -174,14 +174,11 @@ public class JdbcUtil {
             return Collections.emptyList();
         }
         List<DataRow> list = new ArrayList<>();
-        String[] names = null;
+        String[] names = createNames(resultSet, executedSql);
         long size = fetchSize;
         while (resultSet.next()) {
             if (size == 0)
                 break;
-            if (Objects.isNull(names)) {
-                names = createNames(resultSet, executedSql);
-            }
             list.add(createDataRow(names, resultSet));
             size--;
         }

@@ -225,6 +225,14 @@ public class NewBakiTests {
     }
 
     @Test
+    public void testS() {
+        baki.of("select current_date").execute()
+                .forEach((k, v) -> {
+                    System.out.println(k + " -> " + v);
+                });
+    }
+
+    @Test
     public void testPatchError() {
         List<Args<Object>> args = new ArrayList<>();
         args.add(Args.of("name", "chengyuxing", "dt", LocalDateTime.now()));

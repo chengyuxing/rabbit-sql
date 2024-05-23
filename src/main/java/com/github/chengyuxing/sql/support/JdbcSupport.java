@@ -234,16 +234,13 @@ public abstract class JdbcSupport extends SqlParser {
             ResultSet resultSet = ps.executeQuery();
             close = close.nest(resultSet);
             return StreamSupport.stream(new Spliterators.AbstractSpliterator<DataRow>(Long.MAX_VALUE, Spliterator.ORDERED) {
-                String[] names = null;
+                final String[] names = JdbcUtil.createNames(resultSet, preparedSql);
 
                 @Override
                 public boolean tryAdvance(Consumer<? super DataRow> action) {
                     try {
                         if (!resultSet.next()) {
                             return false;
-                        }
-                        if (names == null) {
-                            names = JdbcUtil.createNames(resultSet, preparedSql);
                         }
                         action.accept(JdbcUtil.createDataRow(names, resultSet));
                         return true;

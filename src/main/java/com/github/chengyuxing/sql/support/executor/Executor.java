@@ -4,6 +4,7 @@ import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.types.Param;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -34,6 +35,14 @@ public interface Executor {
      * @return affected row count
      */
     int executeBatch(String... moreSql);
+
+    /**
+     * Batch execute non-prepared sql (dml, ddl).
+     *
+     * @param moreSql more sql
+     * @return affected row count
+     */
+    int executeBatch(List<String> moreSql);
 
     /**
      * Batch execute prepared dml sql.

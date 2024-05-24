@@ -304,6 +304,11 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
 
             @Override
+            public int executeBatch(List<String> moreSql) {
+                return BakiDao.super.executeBatch(moreSql, batchSize);
+            }
+
+            @Override
             public int executeBatch(Collection<? extends Map<String, ?>> data) {
                 Map<String, ?> arg = data.isEmpty() ? new HashMap<>() : data.iterator().next();
                 Pair<String, Map<String, Object>> parsed = parseSql(sql, arg);

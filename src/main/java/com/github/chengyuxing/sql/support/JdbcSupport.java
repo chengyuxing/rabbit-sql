@@ -174,17 +174,14 @@ public abstract class JdbcSupport extends SqlParser {
                 setPreparedSqlArgs(ps, data, argNames);
                 boolean isQuery = ps.execute();
                 printSqlConsole(ps);
-                DataRow result;
                 if (isQuery) {
                     ResultSet resultSet = ps.getResultSet();
                     List<DataRow> rows = JdbcUtil.createDataRows(resultSet, preparedSql, -1);
                     JdbcUtil.closeResultSet(resultSet);
-                    result = DataRow.of("result", rows, "type", "QUERY");
-                } else {
-                    int count = ps.getUpdateCount();
-                    result = DataRow.of("result", count, "type", "DD(M)L");
+                    return DataRow.of("result", rows, "type", "QUERY");
                 }
-                return result;
+                int count = ps.getUpdateCount();
+                return DataRow.of("result", count, "type", "DD(M)L");
             });
         } catch (Exception e) {
             throw new RuntimeException("prepare sql error:\n[" + sql + "]\n" + data, e);
@@ -522,7 +519,7 @@ public abstract class JdbcSupport extends SqlParser {
                 SQLWarning warning = sc.getWarnings();
                 if (warning != null) {
                     String state = warning.getSQLState();
-                    sc.getWarnings().forEach(r -> log.warn("[{}] [{}] {}", LocalDateTime.now(), state, r.getMessage()));
+                    warning.forEach(r -> log.warn("[{}] [{}] {}", LocalDateTime.now(), state, r.getMessage()));
                 }
             } catch (SQLException e) {
                 log.error("get sql warning error.", e);

@@ -1,6 +1,7 @@
 package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.common.MostDateTime;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -55,7 +56,7 @@ public class JdbcUtil {
         } else if (value instanceof LocalDateTime) {
             ps.setObject(index, new Timestamp(((LocalDateTime) value).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
         } else if (value instanceof LocalDate) {
-            ps.setObject(index, new Date(((LocalDate) value).atStartOfDay(ZoneOffset.systemDefault()).toInstant().toEpochMilli()));
+            ps.setObject(index, new Date(((LocalDate) value).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()));
         } else if (value instanceof LocalTime) {
             ps.setObject(index, new Time(((LocalTime) value).atDate(LocalDate.now()).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
         } else if (value instanceof OffsetDateTime) {
@@ -66,6 +67,8 @@ public class JdbcUtil {
             ps.setObject(index, new Timestamp(((ZonedDateTime) value).toInstant().toEpochMilli()));
         } else if (value instanceof Instant) {
             ps.setObject(index, new Timestamp(((Instant) value).toEpochMilli()));
+        } else if (value instanceof MostDateTime) {
+            ps.setObject(index, new Timestamp(((MostDateTime) value).toInstant().toEpochMilli()));
         } else if (value instanceof UUID) {
             ps.setObject(index, value.toString().replace("-", ""));
         } else if (value instanceof InputStream) {

@@ -71,9 +71,14 @@ public class NonBakiTests {
                 "       count(*) filter ( where grade < 60 )               bad\n" +
                 "from test.score;";
 
+        String proc = "{call test.func1(:id)}";
+
         String b = SqlHighlighter.ansi(sql);
         System.out.println(System.console());
         System.out.println(b);
+
+        String c = SqlHighlighter.ansi(proc);
+        System.out.println(c);
 
         System.out.println(System.getenv("TERM"));
     }

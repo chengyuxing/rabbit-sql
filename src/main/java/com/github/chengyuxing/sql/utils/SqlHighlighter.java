@@ -90,7 +90,7 @@ public final class SqlHighlighter {
         try {
             Pair<String, Map<String, String>> r = SqlUtil.replaceSqlSubstr(sql);
             String rSql = r.getItem1();
-            Pair<List<String>, List<String>> x = StringUtil.regexSplit(rSql, "(?<d>[\\s,\\[\\]():;]+)", "d");
+            Pair<List<String>, List<String>> x = StringUtil.regexSplit(rSql, "(?<d>[\\s,\\[\\]():;{}]+)", "d");
             List<String> words = x.getItem1();
             List<String> delimiters = x.getItem2();
             StringBuilder sb = new StringBuilder();

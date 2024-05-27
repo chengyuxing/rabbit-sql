@@ -29,8 +29,8 @@ public class OraclePageHelper extends PageHelper {
 
     @Override
     public String pagedSql(String sql) {
-        return "SELECT * \n" +
-                "FROM (SELECT t.*, ROWNUM " + ROW_NUM_KEY + " \n" +
+        return "SELECT *\n" +
+                "FROM (SELECT t.*, ROWNUM " + ROW_NUM_KEY + "\n" +
                 "          FROM (" + sql + ") t\n" +
                 "          WHERE ROWNUM <= " + end() + ")\n" +
                 " WHERE " + ROW_NUM_KEY + " >= " + start();

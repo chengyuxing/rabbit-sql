@@ -131,11 +131,13 @@ public class JdbcUtil {
         String[] names = new String[columnCount];
         for (int i = 0; i < columnCount; i++) {
             String columnName = metaData.getColumnName(i + 1);
-            if (executedSql.contains("\"" + columnName + "\"")) {
-                names[i] = columnName;
-            } else {
-                names[i] = columnName.toLowerCase();
+            if (!executedSql.contains("\"" + columnName + "\"")) {
+                columnName = columnName.toLowerCase();
             }
+            if (columnName.equals("?column?")) {
+                columnName = "column" + i;
+            }
+            names[i] = columnName;
         }
         return names;
     }
@@ -151,11 +153,7 @@ public class JdbcUtil {
     public static DataRow createDataRow(String[] names, ResultSet resultSet) throws SQLException {
         DataRow row = new DataRow(names.length);
         for (int i = 0; i < names.length; i++) {
-            String name = names[i];
-            if (name.equals("?column?")) {
-                name = "column" + i;
-            }
-            row.put(name, JdbcUtil.getResultValue(resultSet, i + 1));
+            row.put(names[i], JdbcUtil.getResultValue(resultSet, i + 1));
         }
         return row;
     }

@@ -233,6 +233,12 @@ public class NewBakiTests {
     }
 
     @Test
+    public void testA() {
+        baki.query("select 1,2,3,4,5").findFirst()
+                .ifPresent(System.out::println);
+    }
+
+    @Test
     public void testPatchError() {
         List<Args<Object>> args = new ArrayList<>();
         args.add(Args.of("name", "chengyuxing", "dt", LocalDateTime.now()));

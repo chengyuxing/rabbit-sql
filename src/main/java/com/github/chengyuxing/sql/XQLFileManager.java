@@ -566,10 +566,10 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         }
         String alias = name.substring(0, dotIdx);
         if (resources.containsKey(alias)) {
-            Map<String, Sql> sqlMap = getResource(alias).getEntry();
+            Map<String, Sql> e = getResource(alias).getEntry();
             String sqlName = name.substring(dotIdx + 1);
-            if (sqlMap.containsKey(sqlName)) {
-                return sqlMap.get(sqlName);
+            if (e.containsKey(sqlName)) {
+                return e.get(sqlName);
             }
         }
         throw new NoSuchElementException(String.format("no SQL named [%s] was found.", name));
@@ -726,9 +726,9 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
 
         @Override
         protected IExpression expression(String expression) {
-            FastExpression fastExpression = new FastExpression(expression);
-            fastExpression.setPipes(getPipeInstances());
-            return fastExpression;
+            FastExpression fe = new FastExpression(expression);
+            fe.setPipes(getPipeInstances());
+            return fe;
         }
 
         /**

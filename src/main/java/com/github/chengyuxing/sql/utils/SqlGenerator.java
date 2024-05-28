@@ -6,6 +6,8 @@ import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 
 import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -16,11 +18,21 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.*;
  * Sql generate tool.
  */
 public class SqlGenerator {
-    private final String namedParamPrefix;
+    private final char namedParamPrefix;
     /**
      * Named parameter pattern.
      */
     private final Pattern namedParamPattern;
+    /**
+     * Non-prepared Sql named parameter ({@code :key}) value formatter.
+     * Default implementation: {@link SqlUtil#parseValue(Object, boolean) parseValue(value, true)}
+     */
+    private Function<Object, String> namedParamFormatter = v -> parseValue(v, true);
+    /**
+     * Non-prepared Sql template ({@code ${key}}) formatter.
+     * Default implementation: {@link SqlUtil#parseValue(Object, boolean) parseValue(value, boolean)}
+     */
+    private BiFunction<Object, Boolean, String> templateFormatter = SqlUtil::parseValue;
 
     /**
      * Constructs a new SqlGenerator with named parameter prefix.
@@ -31,16 +43,8 @@ public class SqlGenerator {
         if (namedParamPrefix == ' ') {
             throw new IllegalArgumentException("prefix char cannot be empty.");
         }
-        this.namedParamPattern = Pattern.compile("(^\\" + namedParamPrefix + "|[^\\" + namedParamPrefix + "]\\" + namedParamPrefix + ")(?<name>" + Patterns.VAR_KEY_PATTERN + ")");
-        this.namedParamPrefix = String.valueOf(namedParamPrefix);
-    }
-
-    public Pattern getNamedParamPattern() {
-        return namedParamPattern;
-    }
-
-    public String getNamedParamPrefix() {
-        return namedParamPrefix;
+        this.namedParamPrefix = namedParamPrefix;
+        this.namedParamPattern = Pattern.compile(String.format("(^\\%1$s|[^\\%1$s]\\%1$s)(?<name>%2$s)", namedParamPrefix, Patterns.VAR_KEY_PATTERN));
     }
 
     /**
@@ -68,6 +72,8 @@ public class SqlGenerator {
      * @param sql  named parameter sql
      * @param args data of named parameter
      * @return normal sql
+     * @see #setNamedParamFormatter(Function)
+     * @see #setTemplateFormatter(BiFunction)
      */
     public String generateSql(final String sql, Map<String, ?> args) {
         return _generateSql(sql, args, false).getItem1();
@@ -83,8 +89,8 @@ public class SqlGenerator {
      */
     protected Pair<String, List<String>> _generateSql(final String sql, Map<String, ?> args, boolean prepare) {
         // resolve the sql string template first
-        String fullSql = SqlUtil.formatSql(sql, args);
-        if (!fullSql.contains(namedParamPrefix)) {
+        String fullSql = SqlUtil.formatSql(sql, args, templateFormatter);
+        if (fullSql.lastIndexOf(namedParamPrefix) < 0) {
             return Pair.of(fullSql, Collections.emptyList());
         }
         // exclude substr next
@@ -103,7 +109,7 @@ public class SqlGenerator {
                 names.add(name);
             } else {
                 Object value = name.contains(".") ? ObjectUtil.getDeepValue(args, name) : args.get(name);
-                replacement = parseValue(value, true);
+                replacement = namedParamFormatter.apply(value);
             }
             sb.append(noStrSql, pos, start - 1).append(replacement);
             pos = end;
@@ -231,5 +237,29 @@ public class SqlGenerator {
      */
     public String generateCountQuery(final String recordQuery) {
         return "select count(*) from (" + recordQuery + ") t_4_rabbit";
+    }
+
+    public Pattern getNamedParamPattern() {
+        return namedParamPattern;
+    }
+
+    public char getNamedParamPrefix() {
+        return namedParamPrefix;
+    }
+
+    public Function<Object, String> getNamedParamFormatter() {
+        return namedParamFormatter;
+    }
+
+    public void setNamedParamFormatter(Function<Object, String> namedParamFormatter) {
+        this.namedParamFormatter = namedParamFormatter;
+    }
+
+    public BiFunction<Object, Boolean, String> getTemplateFormatter() {
+        return templateFormatter;
+    }
+
+    public void setTemplateFormatter(BiFunction<Object, Boolean, String> templateFormatter) {
+        this.templateFormatter = templateFormatter;
     }
 }

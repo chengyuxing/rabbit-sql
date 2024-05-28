@@ -520,9 +520,9 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
         }
         if (trimSql.contains("${")) {
-            trimSql = SqlUtil.formatSql(trimSql, data);
+            trimSql = SqlUtil.formatSql(trimSql, data, sqlGenerator().getTemplateFormatter());
             if (Objects.nonNull(xqlFileManager)) {
-                trimSql = SqlUtil.formatSql(trimSql, xqlFileManager.getConstants());
+                trimSql = SqlUtil.formatSql(trimSql, xqlFileManager.getConstants(), sqlGenerator().getTemplateFormatter());
             }
         }
         if (Objects.nonNull(sqlInterceptor)) {

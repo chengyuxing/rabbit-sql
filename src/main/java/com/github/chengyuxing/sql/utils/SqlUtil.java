@@ -13,6 +13,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -33,12 +34,43 @@ public class SqlUtil {
     @SuppressWarnings("UnnecessaryUnicodeEscape")
     public static final String SYMBOL = "\u02de";
 
-    public static final StringFormatter FMT = new StringFormatter() {
-        @Override
-        protected String parseValue(Object value, boolean isSpecial) {
-            return SqlUtil.parseValue(value, isSpecial);
-        }
-    };
+    public static final StringFormatter FMT = new StringFormatter();
+
+    /**
+     * Format sql string, e.g.
+     * <p>sql statement:</p>
+     * <blockquote>
+     * <pre>select ${ fields } from test.user
+     * where ${  cnd}
+     * and id in (${!idArr})
+     * or id = ${!idArr.1}</pre>
+     * </blockquote>
+     * <p>args:</p>
+     * <blockquote>
+     * <pre>
+     * {
+     *  fields: "id, name",
+     *  cnd: "name = 'cyx'",
+     *  idArr: ["a", "b", "c"],
+     * }</pre>
+     * </blockquote>
+     * <p>result:</p>
+     * <blockquote>
+     * <pre>select id, name from test.user
+     * where name = 'cyx'
+     * and id in ('a', 'b', 'c')
+     * or id = 'b'</pre>
+     * </blockquote>
+     *
+     * @param template       sql string with template variable
+     * @param data           data
+     * @param valueFormatter function for value format to string literal value
+     * @return formatted sql string
+     * @see Variable
+     */
+    public static String formatSql(final String template, final Map<String, ?> data, BiFunction<Object, Boolean, String> valueFormatter) {
+        return FMT.format(template, data, valueFormatter);
+    }
 
     /**
      * Format sql string, e.g.
@@ -76,7 +108,7 @@ public class SqlUtil {
      * @see Variable
      */
     public static String formatSql(final String template, final Map<String, ?> data) {
-        return FMT.format(template, data);
+        return formatSql(template, data, SqlUtil::parseValue);
     }
 
     /**
@@ -139,7 +171,7 @@ public class SqlUtil {
             return "to_timestamp(" + quote(dtStr) + ", " + quote("yyyy-mm-dd hh24:mi:ss") + ")";
         }
         if (clazz == byte[].class) {
-            return quote("blob:" + FileResource.getSize((byte[]) obj));
+            return quote("blob:" + FileResource.formatFileSize((byte[]) obj));
         }
         // PostgreSQL array
         if (Object[].class.isAssignableFrom(clazz)) {

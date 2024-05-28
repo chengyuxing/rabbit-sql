@@ -25,6 +25,7 @@ import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -87,10 +88,16 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public static final String XQL_DESC_QUOTE = "@@@";
     public static final String PROPERTIES = "xql-file-manager.properties";
     public static final String YML = "xql-file-manager.yml";
+    /**
+     * Template ({@code ${key}}) formatter.
+     * Default implementation: {@link SqlUtil#parseValue(Object, boolean) parseValue(value, boolean)}
+     */
+    private BiFunction<Object, Boolean, String> templateFormatter = SqlUtil::parseValue;
     private final ClassLoader classLoader = this.getClass().getClassLoader();
     private final ReentrantLock lock = new ReentrantLock();
     private final Map<String, Resource> resources = new LinkedHashMap<>();
     private volatile boolean initialized;
+
 
     /**
      * Constructs a new XQLFileManager.<br>
@@ -337,8 +344,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             Sql sql = e.getValue();
             String sqlContent = sql.getContent();
             if (sqlContent.contains("${")) {
-                sqlContent = SqlUtil.formatSql(sqlContent, templates);
-                sqlContent = SqlUtil.formatSql(sqlContent, constants);
+                sqlContent = SqlUtil.formatSql(sqlContent, templates, templateFormatter);
+                sqlContent = SqlUtil.formatSql(sqlContent, constants, templateFormatter);
                 // remove empty line.
                 sql.setContent(sqlContent.replaceAll("\\s*\r?\n", NEW_LINE));
             }
@@ -684,6 +691,14 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         return new DynamicSqlParser();
     }
 
+    public BiFunction<Object, Boolean, String> getTemplateFormatter() {
+        return templateFormatter;
+    }
+
+    public void setTemplateFormatter(BiFunction<Object, Boolean, String> templateFormatter) {
+        this.templateFormatter = templateFormatter;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -753,7 +768,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                 String tl = l.trim();
                 return tl.startsWith("--") && !tl.substring(2).trim().startsWith("#");
             });
-            String formatted = SqlUtil.formatSql(String.join(NEW_LINE, body), args);
+            String formatted = SqlUtil.formatSql(String.join(NEW_LINE, body), args, templateFormatter);
             if (Objects.nonNull(varName)) {
                 String varParam = VAR_PREFIX + forVarKey(varName, forIndex, varIndex);
                 formatted = formatted.replace(VAR_PREFIX + varName, varParam);

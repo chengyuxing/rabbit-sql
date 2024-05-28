@@ -2,6 +2,7 @@ package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.console.Color;
 import com.github.chengyuxing.common.console.Printer;
+import com.github.chengyuxing.common.script.Patterns;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.Keywords;
@@ -33,7 +34,8 @@ public final class SqlHighlighter {
         ASTERISK,
         SINGLE_QUOTE_STRING,
         LINE_ANNOTATION,
-        BLOCK_ANNOTATION
+        BLOCK_ANNOTATION,
+        NAMED_PARAMETER
     }
 
     /**
@@ -73,6 +75,8 @@ public final class SqlHighlighter {
                     return Printer.colorful(content, Color.SILVER);
                 case BLOCK_ANNOTATION:
                     return Printer.colorful(content.replaceAll("\033\\[\\d{2}m|\033\\[0m", ""), Color.SILVER);
+                case NAMED_PARAMETER:
+                    return Printer.colorful(content, Color.CYAN);
                 default:
                     return content;
             }
@@ -101,6 +105,9 @@ public final class SqlHighlighter {
                     // functions highlight
                     if (!StringUtil.equalsAnyIgnoreCase(word, Keywords.STANDARD) && detectFunction(word, i, j, delimiters)) {
                         replacement = replacer.apply(TAG.FUNCTION, word);
+                        // named parameter
+                    } else if (detectNamedParameter(word, i, delimiters)) {
+                        replacement = replacer.apply(TAG.NAMED_PARAMETER, word);
                         // keywords highlight
                     } else if (StringUtil.equalsAnyIgnoreCase(word, Keywords.STANDARD)) {
                         replacement = replacer.apply(TAG.KEYWORD, word);
@@ -168,5 +175,13 @@ public final class SqlHighlighter {
             return delimiters.get(i).trim().startsWith("(");
         }
         return false;
+    }
+
+    private static boolean detectNamedParameter(String word, int i, List<String> delimiters) {
+        if (!word.matches(Patterns.VAR_KEY_PATTERN)) {
+            return false;
+        }
+        String prefix = delimiters.get(i - 1).trim();
+        return prefix.endsWith(":") && !prefix.endsWith("::");
     }
 }

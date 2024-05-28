@@ -69,7 +69,7 @@ public class NonBakiTests {
                 "        test.string_agg (id, ', ') filter ( where grade < 90 and grade > 60) good,\n" +
                 "       -- #fi\n" +
                 "       count(*) filter ( where grade < 60 )               bad\n" +
-                "from test.score;";
+                "from test.score where id::number = :id;";
 
         String proc = "{call test.func1(:id)}";
 

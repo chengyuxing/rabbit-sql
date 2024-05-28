@@ -60,6 +60,6 @@ public class Keywords {
             "xmlserialize", "xmltable", "year", "yes", "zone", "loop", "json", "return",
             // postgresql
             "raise", "notice", "slice", "jsonb", "record", "elsif", "minutes", "days", "hours",
-            "seconds", "foreach", "exception", "internal", "bytea"
+            "seconds", "foreach", "exception", "internal", "bytea", "number"
     };
 }

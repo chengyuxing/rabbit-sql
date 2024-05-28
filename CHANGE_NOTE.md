@@ -1,5 +1,13 @@
 # change note
 
+## 7.9.6
+
+- Template format support function.
+- `SqlHighlighter` optimized.
+- `JdbcUtil` support `MostDateTime`.
+- New method: `Executor#executeBatch`.
+- Query optimized.
+
 ## 7.9.5
 
 - Query optimized.

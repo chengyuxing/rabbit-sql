@@ -84,20 +84,21 @@ public class NonBakiTests {
     }
 
     static final String query = "select t.id || 'number' || 'age:age,name:cyx', '{\"name\":\"user\"}'::jsonb from test.user where id =:id::integer and id >:idc and name=text :username";
-    static final String insert = "insert into test.user(idd,name,id,age,address) values (:id,:name::integer,:idd::float,integer :age,date :address)";
+    static final String insert = "insert into test.user(idd,name,id,age,address) values (?id,?name::integer,?idd::float,integer ?age,date ?address)";
 
     @Test
     public void testSqlParamResolve2() {
         SqlGenerator sqlGenerator = new SqlGenerator(':');
-        System.out.println("--old---");
         Pair<String, List<String>> pairQ = sqlGenerator.generatePreparedSql(query, Collections.emptyMap());
         System.out.println(pairQ.getItem1());
         System.out.println(pairQ.getItem2());
 
-        System.out.println("--old---");
-        Pair<String, List<String>> pairI = sqlGenerator.generatePreparedSql(insert, Collections.emptyMap());
+        SqlGenerator sqlGenerator2 = new SqlGenerator('?');
+        System.out.println(sqlGenerator2.getNamedParamPattern());
+        Pair<String, List<String>> pairI = sqlGenerator2.generatePreparedSql(insert, Collections.emptyMap());
         System.out.println(pairI.getItem1());
         System.out.println(pairI.getItem2());
+
 
     }
 

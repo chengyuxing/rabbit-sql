@@ -520,9 +520,9 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
         }
         if (trimSql.contains("${")) {
-            trimSql = SqlUtil.formatSql(trimSql, data, sqlGenerator().getTemplateFormatter());
+            trimSql = SqlUtil.formatSql(trimSql, data, sqlGenerator.getTemplateFormatter());
             if (Objects.nonNull(xqlFileManager)) {
-                trimSql = SqlUtil.formatSql(trimSql, xqlFileManager.getConstants(), sqlGenerator().getTemplateFormatter());
+                trimSql = SqlUtil.formatSql(trimSql, xqlFileManager.getConstants(), sqlGenerator.getTemplateFormatter());
             }
         }
         if (Objects.nonNull(sqlInterceptor)) {
@@ -585,6 +585,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         if (Objects.nonNull(xqlFileManager)) {
             this.xqlFileManager = xqlFileManager;
             this.xqlFileManager.setDatabaseId(databaseId);
+            this.xqlFileManager.setTemplateFormatter(sqlGenerator.getTemplateFormatter());
             if (autoXFMConfig) {
                 loadXFMConfigByDatabaseId();
                 return;

@@ -181,7 +181,8 @@ public final class SqlHighlighter {
         if (!word.matches(Patterns.VAR_KEY_PATTERN)) {
             return false;
         }
-        String prefix = delimiters.get(i - 1).trim();
+        int idx = i > 0 ? i - 1 : i;
+        String prefix = delimiters.get(idx).trim();
         return prefix.endsWith(":") && !prefix.endsWith("::");
     }
 }

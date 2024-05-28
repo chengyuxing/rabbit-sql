@@ -1,5 +1,8 @@
 # change note
 
+## 7.9.7
+- 5Fixed SqlHighlighter bug.
+
 ## 7.9.6
 
 - Template format support function.

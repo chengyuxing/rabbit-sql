@@ -563,6 +563,10 @@ public class BakiDao extends JdbcSupport implements Baki {
         statementValueHandler.handle(ps, index, value, metaData);
     }
 
+    public SqlGenerator getSqlGenerator() {
+        return sqlGenerator;
+    }
+
     public void setGlobalPageHelperProvider(PageHelperProvider globalPageHelperProvider) {
         this.globalPageHelperProvider = globalPageHelperProvider;
     }

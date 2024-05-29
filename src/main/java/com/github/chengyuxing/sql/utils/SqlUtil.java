@@ -7,13 +7,13 @@ import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
+import com.github.chengyuxing.sql.support.TemplateFormatter;
 import com.github.chengyuxing.sql.types.Variable;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
-import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -31,8 +31,6 @@ public class SqlUtil {
     public static final Pattern SQL_ERR_WHERE_ORDER = Pattern.compile("\\s+where(\\s+order|\\s+limit|\\s+group|\\s+union|\\s*\\))\\s+", Pattern.CASE_INSENSITIVE);
     //language=RegExp
     public static final Pattern SQL_ERR_WHERE_END = Pattern.compile("\\s+where\\s*$", Pattern.CASE_INSENSITIVE);
-    @SuppressWarnings("UnnecessaryUnicodeEscape")
-    public static final String SYMBOL = "\u02de";
 
     public static final StringFormatter FMT = new StringFormatter();
 
@@ -68,8 +66,8 @@ public class SqlUtil {
      * @return formatted sql string
      * @see Variable
      */
-    public static String formatSql(final String template, final Map<String, ?> data, BiFunction<Object, Boolean, String> valueFormatter) {
-        return FMT.format(template, data, valueFormatter);
+    public static String formatSql(final String template, final Map<String, ?> data, TemplateFormatter valueFormatter) {
+        return FMT.format(template, data, valueFormatter::format);
     }
 
     /**
@@ -249,21 +247,26 @@ public class SqlUtil {
      * @param sql sql string
      * @return [sql string with unique string holder, substring map]
      */
-    public static Pair<String, Map<String, String>> replaceSqlSubstr(final String sql) {
+    public static Pair<String, Map<String, String>> replaceSubstring(final String sql) {
         //noinspection UnnecessaryUnicodeEscape
         if (!sql.contains("'")) {
             return Pair.of(sql, Collections.emptyMap());
         }
-        String noStrSql = sql;
-        Map<String, String> mapper = new HashMap<>();
         Matcher m = STR_PATTERN.matcher(sql);
+        Map<String, String> map = new HashMap<>();
+        StringBuilder sb = new StringBuilder();
+        int pos = 0;
         while (m.find()) {
+            int start = m.start();
+            int end = m.end();
             String str = m.group();
-            String holder = SYMBOL + UUID.randomUUID() + SYMBOL;
-            noStrSql = noStrSql.replace(str, holder);
-            mapper.put(holder, str);
+            String holder = UUID.randomUUID().toString();
+            map.put(holder, str);
+            sb.append(sql, pos, start).append(holder);
+            pos = end;
         }
-        return Pair.of(noStrSql, mapper);
+        sb.append(sql, pos, sql.length());
+        return Pair.of(sb.toString(), map);
     }
 
     /**
@@ -287,7 +290,7 @@ public class SqlUtil {
      * @return sql without annotation
      */
     public static String removeBlockAnnotation(final String sql) {
-        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSqlSubstr(sql);
+        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSubstring(sql);
         String noStrSql = noneStrSqlAndHolder.getItem1();
         Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
         char[] chars = noStrSql.toCharArray();
@@ -336,7 +339,7 @@ public class SqlUtil {
     public static List<String> getBlockAnnotation(final String sql) {
         //noinspection UnnecessaryUnicodeEscape
         String splitter = "\u02ac";
-        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSqlSubstr(sql);
+        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSubstring(sql);
         String noneStrSql = noneStrSqlAndHolder.getItem1();
         Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
         char[] chars = noneStrSql.toCharArray();

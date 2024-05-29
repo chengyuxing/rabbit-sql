@@ -10,6 +10,7 @@ import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.exceptions.DuplicateException;
+import com.github.chengyuxing.sql.support.TemplateFormatter;
 import com.github.chengyuxing.sql.utils.SqlHighlighter;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.slf4j.Logger;
@@ -25,7 +26,6 @@ import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -92,7 +92,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * Template ({@code ${key}}) formatter.
      * Default implementation: {@link SqlUtil#parseValue(Object, boolean) parseValue(value, boolean)}
      */
-    private BiFunction<Object, Boolean, String> templateFormatter = SqlUtil::parseValue;
+    private TemplateFormatter templateFormatter = SqlUtil::parseValue;
     private final ClassLoader classLoader = this.getClass().getClassLoader();
     private final ReentrantLock lock = new ReentrantLock();
     private final Map<String, Resource> resources = new LinkedHashMap<>();
@@ -691,11 +691,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         return new DynamicSqlParser();
     }
 
-    public BiFunction<Object, Boolean, String> getTemplateFormatter() {
+    public TemplateFormatter getTemplateFormatter() {
         return templateFormatter;
     }
 
-    public void setTemplateFormatter(BiFunction<Object, Boolean, String> templateFormatter) {
+    public void setTemplateFormatter(TemplateFormatter templateFormatter) {
         this.templateFormatter = templateFormatter;
     }
 

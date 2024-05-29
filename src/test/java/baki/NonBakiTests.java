@@ -222,8 +222,15 @@ public class NonBakiTests {
 
     @Test
     public void test45() {
-        String sql = "select * from test.user where id = :id";
-        System.out.println(new SqlGenerator(':').generateSql(sql, Args.of("id", null)));
+        String sql = "select * from test.user where id = :id and dt = ${!now} and o = ${!now}";
+        SqlGenerator sqlGenerator = new SqlGenerator(':');
+        sqlGenerator.setTemplateFormatter((v, b) -> {
+            if (b) {
+                return SqlUtil.safeQuote(v.toString());
+            }
+            return v.toString();
+        });
+        System.out.println(sqlGenerator.generateSql(sql, Args.of("id", null, "now", LocalDateTime.now())));
     }
 
     @Test

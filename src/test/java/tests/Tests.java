@@ -1,6 +1,5 @@
 package tests;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.ImmutableList;
 import com.github.chengyuxing.common.MostDateTime;
@@ -9,7 +8,6 @@ import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.Jackson;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.sql.BakiDao;
-import com.github.chengyuxing.sql.PagedResource;
 import com.github.chengyuxing.sql.XQLFileManager;
 import com.github.chengyuxing.sql.exceptions.DuplicateException;
 import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
@@ -21,7 +19,6 @@ import com.zaxxer.hikari.HikariDataSource;
 import func.BeanUtil;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.nutz.json.Json;
 
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
@@ -125,7 +122,7 @@ public class Tests {
         System.out.println(pair.getItem1());
         System.out.println(pair.getItem2());
 
-        Pair<String, Map<String, String>> stringMapPair = SqlUtil.replaceSqlSubstr(str);
+        Pair<String, Map<String, String>> stringMapPair = SqlUtil.replaceSubstring(str);
         System.out.println(stringMapPair.getItem1());
         System.out.println(stringMapPair.getItem2());
     }
@@ -155,7 +152,7 @@ public class Tests {
                 "  order by kb.ajbh,zbyj.lrsj";
         SqlGenerator generator = new SqlGenerator(':');
         System.out.println(generator.generatePreparedSql(sql, Collections.emptyMap()));
-        System.out.println(SqlUtil.replaceSqlSubstr(sql).getItem1());
+        System.out.println(SqlUtil.replaceSubstring(sql).getItem1());
     }
 
     @Test

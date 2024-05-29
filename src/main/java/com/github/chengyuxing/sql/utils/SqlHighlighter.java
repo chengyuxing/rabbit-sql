@@ -92,7 +92,7 @@ public final class SqlHighlighter {
      */
     public static String highlight(String sql, BiFunction<TAG, String, String> replacer) {
         try {
-            Pair<String, Map<String, String>> r = SqlUtil.replaceSqlSubstr(sql);
+            Pair<String, Map<String, String>> r = SqlUtil.replaceSubstring(sql);
             String rSql = r.getItem1();
             Pair<List<String>, List<String>> x = StringUtil.regexSplit(rSql, "(?<d>[\\s,\\[\\]():;{}]+)", "d");
             List<String> words = x.getItem1();

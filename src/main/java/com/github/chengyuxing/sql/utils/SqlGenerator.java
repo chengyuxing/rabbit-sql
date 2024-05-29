@@ -4,10 +4,10 @@ import com.github.chengyuxing.common.script.Patterns;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
+import com.github.chengyuxing.sql.support.NamedParamFormatter;
+import com.github.chengyuxing.sql.support.TemplateFormatter;
 
 import java.util.*;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -27,12 +27,12 @@ public class SqlGenerator {
      * Non-prepared Sql named parameter ({@code :key}) value formatter.
      * Default implementation: {@link SqlUtil#parseValue(Object, boolean) parseValue(value, true)}
      */
-    private Function<Object, String> namedParamFormatter = v -> parseValue(v, true);
+    private NamedParamFormatter namedParamFormatter = v -> parseValue(v, true);
     /**
-     * Non-prepared Sql template ({@code ${key}}) formatter.
+     * Sql template ({@code ${[!]key}}) formatter.
      * Default implementation: {@link SqlUtil#parseValue(Object, boolean) parseValue(value, boolean)}
      */
-    private BiFunction<Object, Boolean, String> templateFormatter = SqlUtil::parseValue;
+    private TemplateFormatter templateFormatter = SqlUtil::parseValue;
 
     /**
      * Constructs a new SqlGenerator with named parameter prefix.
@@ -72,8 +72,8 @@ public class SqlGenerator {
      * @param sql  named parameter sql
      * @param args data of named parameter
      * @return normal sql
-     * @see #setNamedParamFormatter(Function)
-     * @see #setTemplateFormatter(BiFunction)
+     * @see #setNamedParamFormatter(NamedParamFormatter)
+     * @see #setTemplateFormatter(TemplateFormatter)
      */
     public String generateSql(final String sql, Map<String, ?> args) {
         return _generateSql(sql, args, false).getItem1();
@@ -94,7 +94,7 @@ public class SqlGenerator {
             return Pair.of(fullSql, Collections.emptyList());
         }
         // exclude substr next
-        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSqlSubstr(fullSql);
+        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSubstring(fullSql);
         String noStrSql = noneStrSqlAndHolder.getItem1();
         Matcher matcher = namedParamPattern.matcher(noStrSql);
         List<String> names = new ArrayList<>();
@@ -109,7 +109,7 @@ public class SqlGenerator {
                 names.add(name);
             } else {
                 Object value = name.contains(".") ? ObjectUtil.getDeepValue(args, name) : args.get(name);
-                replacement = namedParamFormatter.apply(value);
+                replacement = namedParamFormatter.format(value);
             }
             sb.append(noStrSql, pos, start - 1).append(replacement);
             pos = end;
@@ -247,19 +247,19 @@ public class SqlGenerator {
         return namedParamPrefix;
     }
 
-    public Function<Object, String> getNamedParamFormatter() {
+    public NamedParamFormatter getNamedParamFormatter() {
         return namedParamFormatter;
     }
 
-    public void setNamedParamFormatter(Function<Object, String> namedParamFormatter) {
+    public void setNamedParamFormatter(NamedParamFormatter namedParamFormatter) {
         this.namedParamFormatter = namedParamFormatter;
     }
 
-    public BiFunction<Object, Boolean, String> getTemplateFormatter() {
+    public TemplateFormatter getTemplateFormatter() {
         return templateFormatter;
     }
 
-    public void setTemplateFormatter(BiFunction<Object, Boolean, String> templateFormatter) {
+    public void setTemplateFormatter(TemplateFormatter templateFormatter) {
         this.templateFormatter = templateFormatter;
     }
 }

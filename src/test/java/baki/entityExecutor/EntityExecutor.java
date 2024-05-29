@@ -18,7 +18,7 @@ public abstract class EntityExecutor<T> {
     public abstract int save(Collection<? extends T> entities);
 
     public static void main(String[] args) {
-//        EntityExecutor<User> entityExecutor = new EntityExecutor<>(User.class);
+//        EntitySaveExecutor<User> entityExecutor = new EntitySaveExecutor<>(User.class);
 //        entityExecutor.where(User::getAddress, "=", 10)
 //                .and(User::getId, "<>", 1, Objects::nonNull)
 //                .or(User::getName, "==", "cyx")

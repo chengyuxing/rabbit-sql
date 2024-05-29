@@ -1,5 +1,6 @@
 package baki;
 
+import baki.entity.AnotherUser;
 import baki.entity.User;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.script.IPipe;
@@ -15,6 +16,7 @@ import com.github.chengyuxing.sql.types.Variable;
 import com.github.chengyuxing.sql.utils.JdbcUtil;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import com.zaxxer.hikari.HikariDataSource;
+import org.checkerframework.checker.units.qual.A;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -81,6 +83,50 @@ public class NewBakiTests {
                 .ignoreNull()
                 .saveEntity(user);
 
+        System.out.println(i);
+    }
+
+    @Test
+    public void testQu() {
+        baki.query("select * from test.user")
+                .stream()
+                .map(d -> d.toEntity(AnotherUser.class))
+                .forEach(System.out::println);
+    }
+
+    @Test
+    public void testInsertEntity() {
+        AnotherUser user = new AnotherUser();
+        user.setNl(322);
+        user.setXm("cyx");
+        user.setXxdz("kunming xi shan qu");
+        int i = baki.entity(AnotherUser.class)
+                .insert()
+                .ignoreNull()
+                .saveEntity(user);
+        System.out.println(i);
+    }
+
+    @Test
+    public void testUpdateEntity() {
+        AnotherUser user = new AnotherUser();
+        user.setNl(76);
+//        user.setXm("cyx");
+        user.setUserId(2120056);
+        int i = baki.entity(AnotherUser.class)
+                .update("id = :id")
+                .ignoreNull()
+                .saveEntity(user);
+        System.out.println(i);
+    }
+
+    @Test
+    public void testDeleteEntity() {
+        AnotherUser user = new AnotherUser();
+        user.setUserId(2120056);
+        int i = baki.entity(AnotherUser.class)
+                .delete("id = :id")
+                .saveEntity(user);
         System.out.println(i);
     }
 

@@ -1,5 +1,6 @@
 package com.github.chengyuxing.sql;
 
+import com.github.chengyuxing.sql.support.executor.EntitySaveExecutor;
 import com.github.chengyuxing.sql.support.executor.Executor;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
 import com.github.chengyuxing.sql.support.executor.SaveExecutor;
@@ -22,7 +23,8 @@ public interface Baki {
     QueryExecutor query(String sql);
 
     /**
-     * Update executor, generate update statement by 1st row of data, e.g.
+     * Update executor.
+     * <p>Generate update statement by 1st row of data, e.g.</p>
      * <p>args:</p>
      * <blockquote>
      * <pre>{id:14, name:'cyx', address:'kunming'}, {...}, ...
@@ -38,13 +40,13 @@ public interface Baki {
      * address = :address
      * where id = :id</pre>
      * </blockquote>
-     * Notice: where condition must contain at least 1 named parameter and args must contains it's value.
+     * Notice: where condition must contain at least 1 named parameter and args must contain its value.
      *
      * @param tableName table name
      * @param where     condition
      * @return Update executor
      */
-    SaveExecutor update(String tableName, String where);
+    <T> SaveExecutor<T> update(String tableName, String where);
 
     /**
      * Insert executor.
@@ -52,18 +54,42 @@ public interface Baki {
      * @param tableName table name
      * @return Insert executor
      */
-    SaveExecutor insert(String tableName);
+    <T> SaveExecutor<T> insert(String tableName);
 
     /**
-     * Delete executor.<br>
-     * Methods {@link SaveExecutor#safe() safe(boolean?)} and {@link SaveExecutor#ignoreNull() ignoreNull(boolean?)}
-     * were not implements, ignore please.
+     * Delete executor.
+     * <p>Methods {@link SaveExecutor#safe() safe(boolean?)} and {@link SaveExecutor#ignoreNull() ignoreNull(boolean?)}
+     * were not implements, ignore please.</p>
      *
      * @param tableName table name
      * @param where     condition
      * @return Delete executor
      */
-    SaveExecutor delete(String tableName, String where);
+    <T> SaveExecutor<T> delete(String tableName, String where);
+
+    /**
+     * Entity executor.
+     * <p>{@link com.github.chengyuxing.common.anno.Alias @Alias} is optional, use {@link com.github.chengyuxing.common.anno.Alias @Alias} if:</p>
+     * <ul>
+     *     <li>table name not equals entity class name.</li>
+     *     <li>column name not equals entity field name.</li>
+     * </ul>
+     * <blockquote><pre>
+     *     {@code @}Alias("test.user") // table name 'test.user'
+     *     public class User{
+     *        {@code @}Alias("name") // column name 'name'
+     *        private String userName;
+     *        private Integer age;  // column name 'age'
+     *
+     *        // getter...
+     *        // setter...
+     *     }
+     * </pre></blockquote>
+     *
+     * @param <T> entity type
+     * @see com.github.chengyuxing.common.anno.Alias @Alias
+     */
+    <T> EntitySaveExecutor<T> entity(Class<T> entityClass);
 
     /**
      * Basic Executor.

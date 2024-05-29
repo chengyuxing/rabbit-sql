@@ -1,6 +1,7 @@
 package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.common.anno.Alias;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.StringUtil;
@@ -19,6 +20,7 @@ import com.github.chengyuxing.sql.support.AfterParseDynamicSql;
 import com.github.chengyuxing.sql.support.JdbcSupport;
 import com.github.chengyuxing.sql.support.SqlInterceptor;
 import com.github.chengyuxing.sql.support.StatementValueHandler;
+import com.github.chengyuxing.sql.support.executor.EntitySaveExecutor;
 import com.github.chengyuxing.sql.support.executor.Executor;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
 import com.github.chengyuxing.sql.support.executor.SaveExecutor;
@@ -191,8 +193,8 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public SaveExecutor update(String tableName, String where) {
-        return new SaveExecutor() {
+    public <T> SaveExecutor<T> update(String tableName, String where) {
+        return new SaveExecutor<T>() {
             @Override
             public int save(Map<String, ?> data) {
                 return save(Collections.singletonList(data));
@@ -228,8 +230,8 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public SaveExecutor insert(String tableName) {
-        return new SaveExecutor() {
+    public <T> SaveExecutor<T> insert(String tableName) {
+        return new SaveExecutor<T>() {
             @Override
             public int save(Map<String, ?> data) {
                 return save(Collections.singletonList(data));
@@ -256,8 +258,8 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public SaveExecutor delete(String tableName, String where) {
-        return new SaveExecutor() {
+    public <T> SaveExecutor<T> delete(String tableName, String where) {
+        return new SaveExecutor<T>() {
             @Override
             public int save(Map<String, ?> data) {
                 return save(Collections.singletonList(data));
@@ -279,6 +281,27 @@ public class BakiDao extends JdbcSupport implements Baki {
                     i += executeUpdate(delete, item);
                 }
                 return i;
+            }
+        };
+    }
+
+    @Override
+    public <T> EntitySaveExecutor<T> entity(Class<T> entityClass) {
+        String tableName = getTableNameByAlias(entityClass);
+        return new EntitySaveExecutor<T>() {
+            @Override
+            public SaveExecutor<T> insert() {
+                return BakiDao.this.insert(tableName);
+            }
+
+            @Override
+            public SaveExecutor<T> update(String where) {
+                return BakiDao.this.update(tableName, where);
+            }
+
+            @Override
+            public SaveExecutor<T> delete(String where) {
+                return BakiDao.this.delete(tableName, where);
             }
         };
     }
@@ -447,6 +470,23 @@ public class BakiDao extends JdbcSupport implements Baki {
             default:
                 throw new UnsupportedOperationException("pager of \"" + databaseId + "\" default not implement currently, see method 'setPageHelperProvider'.");
         }
+    }
+
+    /**
+     * Get table name by {@link Alias @Alias} .
+     *
+     * @param entityClass entity class
+     * @return table name
+     */
+    protected String getTableNameByAlias(Class<?> entityClass) {
+        if (entityClass == null) {
+            throw new IllegalArgumentException("entityClass must not be null.");
+        }
+        String tableName = entityClass.getSimpleName();
+        if (entityClass.isAnnotationPresent(Alias.class)) {
+            tableName = entityClass.getAnnotation(Alias.class).value();
+        }
+        return tableName;
     }
 
     /**

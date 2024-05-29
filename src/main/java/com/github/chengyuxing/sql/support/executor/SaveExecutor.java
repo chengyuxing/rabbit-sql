@@ -9,8 +9,10 @@ import java.util.stream.Collectors;
 
 /**
  * Save executor.
+ *
+ * @param <T> entity type
  */
-public abstract class SaveExecutor {
+public abstract class SaveExecutor<T> {
     protected boolean safe = false;
     protected boolean fast = false;
     protected boolean ignoreNull = false;
@@ -21,7 +23,7 @@ public abstract class SaveExecutor {
      *
      * @return SaveExecutor
      */
-    public SaveExecutor safe() {
+    public SaveExecutor<T> safe() {
         this.safe = true;
         return this;
     }
@@ -33,7 +35,7 @@ public abstract class SaveExecutor {
      * @param enableSafe enable safe mode or not
      * @return SaveExecutor
      */
-    public SaveExecutor safe(boolean enableSafe) {
+    public SaveExecutor<T> safe(boolean enableSafe) {
         this.safe = enableSafe;
         return this;
     }
@@ -60,7 +62,7 @@ public abstract class SaveExecutor {
      * @return SaveExecutor
      * @see PreparedStatement#executeBatch()
      */
-    public SaveExecutor fast() {
+    public SaveExecutor<T> fast() {
         this.fast = true;
         return this;
     }
@@ -72,7 +74,7 @@ public abstract class SaveExecutor {
      * @return SaveExecutor
      * @see #fast()
      */
-    public SaveExecutor fast(boolean enableFast) {
+    public SaveExecutor<T> fast(boolean enableFast) {
         this.fast = enableFast;
         return this;
     }
@@ -82,7 +84,7 @@ public abstract class SaveExecutor {
      *
      * @return SaveExecutor
      */
-    public SaveExecutor ignoreNull() {
+    public SaveExecutor<T> ignoreNull() {
         this.ignoreNull = true;
         return this;
     }
@@ -93,7 +95,7 @@ public abstract class SaveExecutor {
      * @param enableIgnoreNull enable ignore null or not
      * @return SaveExecutor
      */
-    public SaveExecutor ignoreNull(boolean enableIgnoreNull) {
+    public SaveExecutor<T> ignoreNull(boolean enableIgnoreNull) {
         this.ignoreNull = enableIgnoreNull;
         return this;
     }
@@ -120,7 +122,7 @@ public abstract class SaveExecutor {
      * @param entity standard java bean entity
      * @return affected row count
      */
-    public int saveEntity(Object entity) {
+    public int saveEntity(T entity) {
         return save(DataRow.ofEntity(entity));
     }
 
@@ -130,7 +132,7 @@ public abstract class SaveExecutor {
      * @param entities standard java bean entity
      * @return affected row count
      */
-    public int saveEntities(Collection<?> entities) {
+    public int saveEntities(Collection<T> entities) {
         return save(entities.stream().map(DataRow::ofEntity).collect(Collectors.toList()));
     }
 }

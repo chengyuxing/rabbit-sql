@@ -1,6 +1,12 @@
 # change note
 
+## 7.9.8
+
+- Support entity mapping.
+- Formatter function optimized.
+
 ## 7.9.7
+
 - 5Fixed SqlHighlighter bug.
 
 ## 7.9.6

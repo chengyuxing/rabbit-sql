@@ -242,7 +242,7 @@ public abstract class JdbcSupport extends SqlParser {
                         action.accept(JdbcUtil.createDataRow(names, resultSet));
                         return true;
                     } catch (SQLException ex) {
-                        throw new UncheckedSqlException("reading result set of query: [" + preparedSql + "]\nerror: ", ex);
+                        throw new UncheckedSqlException("reading result set of query: [" + preparedSql + "]\nerror.", ex);
                     }
                 }
             }, false).onClose(close);

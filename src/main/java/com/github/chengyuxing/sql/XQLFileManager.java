@@ -812,6 +812,22 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         void setDescription(String description) {
             this.description = description;
         }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof Sql)) return false;
+
+            Sql sql = (Sql) o;
+            return getContent().equals(sql.getContent()) && getDescription().equals(sql.getDescription());
+        }
+
+        @Override
+        public int hashCode() {
+            int result = getContent().hashCode();
+            result = 31 * result + getDescription().hashCode();
+            return result;
+        }
     }
 
     /**

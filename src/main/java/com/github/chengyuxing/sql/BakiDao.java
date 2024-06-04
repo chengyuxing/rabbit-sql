@@ -468,7 +468,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             case "informix":
                 return new Db2PageHelper();
             default:
-                throw new UnsupportedOperationException("pager of \"" + databaseId + "\" default not implement currently, see method 'setPageHelperProvider'.");
+                throw new UnsupportedOperationException("pager of \"" + databaseId + "\" default not implement currently, see method 'setGlobalPageHelperProvider'.");
         }
     }
 

@@ -15,7 +15,6 @@ import java.util.*;
  * JDBC util.
  */
 public class JdbcUtil {
-
     public static Object getResultValue(ResultSet resultSet, int index) throws SQLException {
         Object obj = resultSet.getObject(index);
         String className = null;
@@ -156,7 +155,7 @@ public class JdbcUtil {
     public static DataRow createDataRow(String[] names, ResultSet resultSet) throws SQLException {
         DataRow row = new DataRow(names.length);
         for (int i = 0; i < names.length; i++) {
-            row.put(names[i], JdbcUtil.getResultValue(resultSet, i + 1));
+            row.put(names[i], getResultValue(resultSet, i + 1));
         }
         return row;
     }

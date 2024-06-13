@@ -19,7 +19,6 @@ import com.github.chengyuxing.sql.utils.SqlHighlighter;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
 
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
@@ -68,10 +67,12 @@ public class NonBakiTests {
                 "       -- #if :_databaseId != blank\n" +
                 "        test.string_agg (id, ', ') filter ( where grade < 90 and grade > 60) good,\n" +
                 "       -- #fi\n" +
-                "       count(*) filter ( where grade < 60 )               bad\n" +
-                "from test.score where id::number = :id;";
+                "       count(*) filter /*( where grade < 60 )               bad\n" +
+                "from test.score where id::number = :id*/;";
 
         String proc = "{call test.func1(:id)}";
+
+        System.out.println(SqlUtil.getBlockAnnotation(sql));
 
         String b = SqlHighlighter.ansi(sql);
         System.out.println(System.console());

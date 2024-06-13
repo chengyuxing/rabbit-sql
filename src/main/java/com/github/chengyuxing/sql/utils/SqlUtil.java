@@ -14,6 +14,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.*;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -242,12 +243,12 @@ public class SqlUtil {
     }
 
     /**
-     * Replace sql substring (single quotes) to unique string holder and save the substring map.
+     * Escape sql substring (single quotes) to unique string holder and save the substring map.
      *
      * @param sql sql string
      * @return [sql string with unique string holder, substring map]
      */
-    public static Pair<String, Map<String, String>> replaceSubstring(final String sql) {
+    public static Pair<String, Map<String, String>> escapeSubstring(final String sql) {
         //noinspection UnnecessaryUnicodeEscape
         if (!sql.contains("'")) {
             return Pair.of(sql, Collections.emptyMap());
@@ -267,6 +268,25 @@ public class SqlUtil {
         }
         sb.append(sql, pos, sql.length());
         return Pair.of(sb.toString(), map);
+    }
+
+    /**
+     * Escape sql substring (single quotes) to unique string holder.
+     *
+     * @param sql sql string
+     * @return sql with holder
+     */
+    public static String escapeSubstring(final String sql, Function<String, String> func) {
+        Pair<String, Map<String, String>> pair = escapeSubstring(sql);
+        String nonStrSql = pair.getItem1();
+        if (pair.getItem2().isEmpty()) {
+            return nonStrSql;
+        }
+        String newSql = func.apply(nonStrSql);
+        for (Map.Entry<String, String> e : pair.getItem2().entrySet()) {
+            newSql = newSql.replace(e.getKey(), e.getValue());
+        }
+        return newSql;
     }
 
     /**
@@ -290,44 +310,42 @@ public class SqlUtil {
      * @return sql without annotation
      */
     public static String removeBlockAnnotation(final String sql) {
-        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSubstring(sql);
-        String noStrSql = noneStrSqlAndHolder.getItem1();
-        Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
-        char[] chars = noStrSql.toCharArray();
-        List<Character> characters = new ArrayList<>();
-        int count = 0;
-        for (int i = 0; i < chars.length; i++) {
-            int prev = i;
-            int next = i;
-            if (i > 0) {
-                prev = i - 1;
-            }
-            if (i < chars.length - 1) {
-                next = i + 1;
-            }
-            if (chars[i] == '/' && chars[next] == '*') {
-                count++;
-            } else if (chars[i] == '*' && chars[next] == '/') {
-                count--;
-            } else if (count == 0) {
-                if (chars[prev] == '*') {
-                    if (chars[i] != '/') {
+        if (!sql.contains("/*")) {
+            return sql;
+        }
+        return escapeSubstring(sql, noStrSql -> {
+            char[] chars = noStrSql.toCharArray();
+            List<Character> characters = new ArrayList<>();
+            int count = 0;
+            for (int i = 0; i < chars.length; i++) {
+                int prev = i;
+                int next = i;
+                if (i > 0) {
+                    prev = i - 1;
+                }
+                if (i < chars.length - 1) {
+                    next = i + 1;
+                }
+                if (chars[i] == '/' && chars[next] == '*') {
+                    count++;
+                } else if (chars[i] == '*' && chars[next] == '/') {
+                    count--;
+                } else if (count == 0) {
+                    if (chars[prev] == '*') {
+                        if (chars[i] != '/') {
+                            characters.add(chars[i]);
+                        }
+                    } else {
                         characters.add(chars[i]);
                     }
-                } else {
-                    characters.add(chars[i]);
                 }
             }
-        }
-        StringBuilder sb = new StringBuilder();
-        for (Character c : characters) {
-            sb.append(c);
-        }
-        String noBSql = sb.toString().replaceAll("\n\\s*\n", "\n");
-        for (String key : placeholderMapper.keySet()) {
-            noBSql = noBSql.replace(key, placeholderMapper.get(key));
-        }
-        return noBSql;
+            StringBuilder sb = new StringBuilder();
+            for (Character c : characters) {
+                sb.append(c);
+            }
+            return sb.toString().replaceAll("\n\\s*\n", "\n");
+        });
     }
 
     /**
@@ -337,46 +355,67 @@ public class SqlUtil {
      * @return block annotations
      */
     public static List<String> getBlockAnnotation(final String sql) {
+        if (!sql.contains("/*")) {
+            return Collections.emptyList();
+        }
         //noinspection UnnecessaryUnicodeEscape
         String splitter = "\u02ac";
-        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSubstring(sql);
-        String noneStrSql = noneStrSqlAndHolder.getItem1();
-        Map<String, String> placeholderMapper = noneStrSqlAndHolder.getItem2();
-        char[] chars = noneStrSql.toCharArray();
-        StringBuilder annotations = new StringBuilder();
-        int count = 0;
-        for (int i = 0; i < chars.length; i++) {
-            int prev = i;
-            int next = i;
-            if (i > 0) {
-                prev = i - 1;
-            }
-            if (i < chars.length - 1) {
-                next = i + 1;
-            }
-            if (chars[i] == '/' && chars[next] == '*') {
-                count++;
-                annotations.append("/");
-            } else if (chars[i] == '*' && chars[next] == '/') {
-                count--;
-                annotations.append("*");
-            } else if (count == 0) {
-                if (chars[prev] == '*') {
-                    if (chars[i] == '/') {
-                        annotations.append("/").append(splitter);
-                    }
+        String res = escapeSubstring(sql, noneStrSql -> {
+            char[] chars = noneStrSql.toCharArray();
+            StringBuilder annotations = new StringBuilder();
+            int count = 0;
+            for (int i = 0; i < chars.length; i++) {
+                int prev = i;
+                int next = i;
+                if (i > 0) {
+                    prev = i - 1;
                 }
-            } else {
-                annotations.append(chars[i]);
+                if (i < chars.length - 1) {
+                    next = i + 1;
+                }
+                if (chars[i] == '/' && chars[next] == '*') {
+                    count++;
+                    annotations.append("/");
+                } else if (chars[i] == '*' && chars[next] == '/') {
+                    count--;
+                    annotations.append("*");
+                } else if (count == 0) {
+                    if (chars[prev] == '*') {
+                        if (chars[i] == '/') {
+                            annotations.append("/").append(splitter);
+                        }
+                    }
+                } else {
+                    annotations.append(chars[i]);
+                }
             }
+            return annotations.toString();
+        });
+        return Arrays.asList(res.split(splitter));
+    }
+
+    /**
+     * Remove line annotation (--)
+     *
+     * @param sql sql string
+     * @return none line annotation sql
+     */
+    public static String removeLineAnnotation(final String sql) {
+        if (!sql.contains("--")) {
+            return sql;
         }
-        String annotationStr = annotations.toString();
-        for (String key : placeholderMapper.keySet()) {
-            if (annotationStr.contains(key)) {
-                annotationStr = annotationStr.replace(key, placeholderMapper.get(key));
+        return escapeSubstring(sql, noStrSql -> {
+            StringJoiner joiner = new StringJoiner("\n");
+            String[] lines = noStrSql.split("\n");
+            for (String line : lines) {
+                int idx = line.indexOf("--");
+                String newLine = idx == -1 ? line : line.substring(0, idx).trim();
+                if (!newLine.isEmpty()) {
+                    joiner.add(newLine);
+                }
             }
-        }
-        return Arrays.asList(annotationStr.split(splitter));
+            return joiner.toString();
+        });
     }
 
     /**

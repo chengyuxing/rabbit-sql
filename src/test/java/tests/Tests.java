@@ -122,7 +122,7 @@ public class Tests {
         System.out.println(pair.getItem1());
         System.out.println(pair.getItem2());
 
-        Pair<String, Map<String, String>> stringMapPair = SqlUtil.replaceSubstring(str);
+        Pair<String, Map<String, String>> stringMapPair = SqlUtil.escapeSubstring(str);
         System.out.println(stringMapPair.getItem1());
         System.out.println(stringMapPair.getItem2());
     }
@@ -152,7 +152,7 @@ public class Tests {
                 "  order by kb.ajbh,zbyj.lrsj";
         SqlGenerator generator = new SqlGenerator(':');
         System.out.println(generator.generatePreparedSql(sql, Collections.emptyMap()));
-        System.out.println(SqlUtil.replaceSubstring(sql).getItem1());
+        System.out.println(SqlUtil.escapeSubstring(sql).getItem1());
     }
 
     @Test

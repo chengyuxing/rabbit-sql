@@ -295,4 +295,16 @@ public class NewBakiTests {
                 .save(args);
         System.out.println(i);
     }
+
+    @Test
+    public void testLineAnno() {
+        baki.query("select name, age, address\n" +
+                        "from test.user\n" +
+                        "where name = :name\n" +
+                        "--or age = :age\n" +
+                        "   or address = :address")
+                .args("name", "cyx", "age", 27, "address", "kunming")
+                .findFirst()
+                .ifPresent(System.out::println);
+    }
 }

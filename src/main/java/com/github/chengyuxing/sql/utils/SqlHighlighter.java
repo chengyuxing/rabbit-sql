@@ -92,7 +92,7 @@ public final class SqlHighlighter {
      */
     public static String highlight(String sql, BiFunction<TAG, String, String> replacer) {
         try {
-            Pair<String, Map<String, String>> r = SqlUtil.replaceSubstring(sql);
+            Pair<String, Map<String, String>> r = SqlUtil.escapeSubstring(sql);
             String rSql = r.getItem1();
             Pair<List<String>, List<String>> x = StringUtil.regexSplit(rSql, "(?<d>[\\s,\\[\\]():;{}]+)", "d");
             List<String> words = x.getItem1();
@@ -134,17 +134,17 @@ public final class SqlHighlighter {
                 colorfulSql = colorfulSql.replace(key, replacer.apply(TAG.SINGLE_QUOTE_STRING, subStr.get(key)));
             }
             // resolve single annotation
-            String[] sqlLine = colorfulSql.split("\n");
-            for (int i = 0; i < sqlLine.length; i++) {
-                String line = sqlLine[i];
+            String[] sqlLines = colorfulSql.split("\n");
+            for (int i = 0; i < sqlLines.length; i++) {
+                String line = sqlLines[i];
                 if (line.trim().startsWith("--")) {
-                    sqlLine[i] = replacer.apply(TAG.LINE_ANNOTATION, line);
+                    sqlLines[i] = replacer.apply(TAG.LINE_ANNOTATION, line);
                 } else if (line.contains("--")) {
                     int idx = line.indexOf("--");
-                    sqlLine[i] = line.substring(0, idx) + replacer.apply(TAG.LINE_ANNOTATION, line.substring(idx));
+                    sqlLines[i] = line.substring(0, idx) + replacer.apply(TAG.LINE_ANNOTATION, line.substring(idx));
                 }
             }
-            colorfulSql = String.join("\n", sqlLine);
+            colorfulSql = String.join("\n", sqlLines);
             // resolve block annotation
             if (colorfulSql.contains("/*") && colorfulSql.contains("*/")) {
                 List<String> annotations = getBlockAnnotation(colorfulSql);

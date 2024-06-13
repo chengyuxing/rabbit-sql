@@ -94,9 +94,13 @@ public class SqlGenerator {
             return Pair.of(fullSql, Collections.emptyList());
         }
         // exclude substr next
-        Pair<String, Map<String, String>> noneStrSqlAndHolder = replaceSubstring(fullSql);
-        String noStrSql = noneStrSqlAndHolder.getItem1();
-        Matcher matcher = namedParamPattern.matcher(noStrSql);
+        Pair<String, Map<String, String>> noneStrSqlAndHolder = escapeSubstring(fullSql);
+        String cleanedSql = removeBlockAnnotation(noneStrSqlAndHolder.getItem1());
+        cleanedSql = removeLineAnnotation(cleanedSql);
+        if (cleanedSql.lastIndexOf(namedParamPrefix) < 0) {
+            return Pair.of(fullSql, Collections.emptyList());
+        }
+        Matcher matcher = namedParamPattern.matcher(cleanedSql);
         List<String> names = new ArrayList<>();
         StringBuilder sb = new StringBuilder();
         int pos = 0;
@@ -111,10 +115,10 @@ public class SqlGenerator {
                 Object value = name.contains(".") ? ObjectUtil.getDeepValue(args, name) : args.get(name);
                 replacement = namedParamFormatter.format(value);
             }
-            sb.append(noStrSql, pos, start - 1).append(replacement);
+            sb.append(cleanedSql, pos, start - 1).append(replacement);
             pos = end;
         }
-        sb.append(noStrSql, pos, noStrSql.length());
+        sb.append(cleanedSql, pos, cleanedSql.length());
         String result = sb.toString();
         for (Map.Entry<String, String> e : noneStrSqlAndHolder.getItem2().entrySet()) {
             result = result.replace(e.getKey(), e.getValue());

@@ -44,6 +44,7 @@ public interface Baki {
      *
      * @param tableName table name
      * @param where     condition
+     * @param <T>       entity type
      * @return Update executor
      */
     <T> SaveExecutor<T> update(String tableName, String where);
@@ -52,6 +53,7 @@ public interface Baki {
      * Insert executor.
      *
      * @param tableName table name
+     * @param <T>       entity type
      * @return Insert executor
      */
     <T> SaveExecutor<T> insert(String tableName);
@@ -63,6 +65,7 @@ public interface Baki {
      *
      * @param tableName table name
      * @param where     condition
+     * @param <T>       entity type
      * @return Delete executor
      */
     <T> SaveExecutor<T> delete(String tableName, String where);
@@ -87,6 +90,7 @@ public interface Baki {
      * </pre></blockquote>
      *
      * @param <T> entity type
+     * @return Entity Save Executor
      * @see com.github.chengyuxing.common.anno.Alias @Alias
      */
     <T> EntitySaveExecutor<T> entity(Class<T> entityClass);

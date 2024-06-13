@@ -273,8 +273,9 @@ public class SqlUtil {
     /**
      * Escape sql substring (single quotes) to unique string holder.
      *
-     * @param sql sql string
-     * @return sql with holder
+     * @param sql  sql string
+     * @param func function for doing something to sql with escaped substring
+     * @return sql with escaped substring
      */
     public static String escapeSubstring(final String sql, Function<String, String> func) {
         Pair<String, Map<String, String>> pair = escapeSubstring(sql);

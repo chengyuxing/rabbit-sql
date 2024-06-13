@@ -7,6 +7,7 @@ public interface TemplateFormatter {
      *
      * @param value     value
      * @param isSpecial key start with {@code !} or not
+     * @return formatted content
      */
     String format(Object value, boolean isSpecial);
 }

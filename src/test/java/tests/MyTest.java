@@ -2,8 +2,6 @@ package tests;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.chengyuxing.common.DataRow;
-import com.github.chengyuxing.common.utils.Jackson;
-import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.sql.*;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
 import com.github.chengyuxing.sql.support.IOutParam;
@@ -144,7 +142,6 @@ public class MyTest {
         List<Map<String, Object>> trees = new ArrayList<>();
         trees.add(tree);
         mergeTreeInverse(list, trees);
-        System.out.println(Jackson.toJson(trees));
         System.out.println(list.size());
     }
 

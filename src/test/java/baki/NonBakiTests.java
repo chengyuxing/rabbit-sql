@@ -8,7 +8,6 @@ import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.common.utils.Jackson;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.PagedResource;
 import com.github.chengyuxing.sql.XQLFileManager;
@@ -45,8 +44,8 @@ public class NonBakiTests {
         PageHelper pageHelper = new PGPageHelper();
         pageHelper.init(1, 15, 45);
         PagedResource<DataRow> pagedResource = PagedResource.of(pageHelper, Collections.singletonList(DataRow.of("a", 1, "b", 2)));
-        String j = Jackson.toJson(pagedResource);
-        System.out.println(j);
+//        String j = Jackson.toJson(pagedResource);
+//        System.out.println(j);
     }
 
     @Test

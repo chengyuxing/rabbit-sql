@@ -5,7 +5,6 @@ import com.github.chengyuxing.common.ImmutableList;
 import com.github.chengyuxing.common.MostDateTime;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.common.utils.Jackson;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.sql.BakiDao;
 import com.github.chengyuxing.sql.XQLFileManager;
@@ -321,7 +320,6 @@ public class Tests {
 
 //        xqlFileManager.remove("cyx");
 
-        System.out.println(Jackson.toJson(xqlFileManager));
     }
 
     @Test
@@ -341,7 +339,6 @@ public class Tests {
         Object xql = ReflectUtil.getInstance(XQLFileManager.class);
         Method m = xql.getClass().getDeclaredMethod("setFilenames", Set.class);
         m.invoke(xql, Stream.of("a/v/d/bbb.xql", "111/222/ddd.xql").collect(Collectors.toSet()));
-        System.out.println(Jackson.toJson(xql));
     }
 
     @Test

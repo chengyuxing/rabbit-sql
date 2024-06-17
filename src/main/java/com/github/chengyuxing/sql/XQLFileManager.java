@@ -42,13 +42,7 @@ import static com.github.chengyuxing.sql.utils.SqlUtil.removeBlockAnnotation;
  * SQL file and follow the strict SQL file syntax.</p>
  * <p>File type supports: {@code .xql}, {@code .sql}, suffix {@code .xql} means this file is
  * {@code XQLFileManager} default file type.</p>
- * {@link FileResource Support local sql file(URI) and classpath sql file},  e.g.
- * <ul>
- *     <li>Windows file system: <code>file:/D:/rabbit.xql</code></li>
- *     <li>Linux/Unix file system: <code>file:/root/rabbit.xql</code></li>
- *     <li>ClassPath: <code>sql/rabbit.xql</code></li>
- * </ul>
- * <p>
+ * <p>File path support {@link FileResource URI and classpath}.</p>
  * Notice: <a href="https://plugins.jetbrains.com/plugin/21403-rabbit-sql/introduction/execute-dynamic-sql">Rabbit-SQL IDEA Plugin</a> only support detect {@code .xql} file.
  * <h3>File content structure</h3>
  * <p>{@code key-value} format, key is sql name, value is sql statement,  e.g.</p>
@@ -97,7 +91,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     private final ReentrantLock lock = new ReentrantLock();
     private final Map<String, Resource> resources = new LinkedHashMap<>();
     private volatile boolean initialized;
-
 
     /**
      * Constructs a new XQLFileManager.<br>

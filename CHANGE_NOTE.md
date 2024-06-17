@@ -1,5 +1,9 @@
 # change note
 
+## 7.9.10
+
+- Some optimized.
+
 ## 7.9.9
 
 - Fixed named parameter in annotation occurs error.

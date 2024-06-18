@@ -1,5 +1,9 @@
 # change note
 
+## 7.9.11
+
+- XQLFileManager yml config supports Variable placeholder: `${env.Name}` (`System.getenv`)
+
 ## 7.9.10
 
 - Some optimized.

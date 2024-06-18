@@ -2,5 +2,5 @@ constants:
   ba-se: &basePath pgsql
 
 files:
-  dt: !path [ *basePath, '${prop.active}' ]
+  dt: !path [ *basePath, '${env.active}' ]
   other: ${env.PUBLISH_TOKEN}

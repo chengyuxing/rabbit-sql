@@ -252,10 +252,6 @@ public class NonBakiTests {
     @Test
     public void testYml() {
         XQLFileManagerConfig config = new XQLFileManagerConfig();
-        config.setConstants(Args.of(
-                "db", "oracle",
-                "active", (Variable) () -> "postgresql")
-        );
         config.loadYaml(new FileResource("xql-file-manager.old.yml"));
         System.out.println(config);
     }

@@ -94,17 +94,11 @@ public class FeaturedConstructor extends Constructor {
             String holder = matcher.group(1);
             String varType = resolveVarType(holder);
             String resolvedValue;
+            //noinspection SwitchStatementWithTooFewBranches
             switch (varType) {
                 case "env":
                     String envKey = holder.substring(4);
                     resolvedValue = System.getenv(envKey);
-                    if (resolvedValue == null) {
-                        resolvedValue = matcher.group(0);
-                    }
-                    break;
-                case "prop":
-                    String varKey = holder.substring(5);
-                    resolvedValue = System.getProperty(varKey);
                     if (resolvedValue == null) {
                         resolvedValue = matcher.group(0);
                     }

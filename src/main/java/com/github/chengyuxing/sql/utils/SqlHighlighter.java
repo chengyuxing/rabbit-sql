@@ -12,14 +12,15 @@ import org.slf4j.LoggerFactory;
 import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
-
-import static com.github.chengyuxing.sql.utils.SqlUtil.getBlockAnnotation;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * Sql highlight util.
  */
 public final class SqlHighlighter {
     private static final Logger log = LoggerFactory.getLogger(SqlHighlighter.class);
+    private static final Pattern BLOCK_ANNOTATION_PATTERN = Pattern.compile("(/\\*.*?\\*/)", Pattern.DOTALL | Pattern.MULTILINE);
 
     public enum TAG {
         FUNCTION,
@@ -146,13 +147,17 @@ public final class SqlHighlighter {
             }
             colorfulSql = String.join("\n", sqlLines);
             // resolve block annotation
-            if (colorfulSql.contains("/*") && colorfulSql.contains("*/")) {
-                List<String> annotations = getBlockAnnotation(colorfulSql);
-                for (String annotation : annotations) {
-                    colorfulSql = colorfulSql.replace(annotation, replacer.apply(TAG.BLOCK_ANNOTATION, annotation));
-                }
+            StringBuilder parsedSql = new StringBuilder();
+            Matcher matcher = BLOCK_ANNOTATION_PATTERN.matcher(colorfulSql);
+            int lastMatchEnd = 0;
+            while (matcher.find()) {
+                String match = matcher.group();
+                parsedSql.append(colorfulSql, lastMatchEnd, matcher.start());
+                parsedSql.append(replacer.apply(TAG.BLOCK_ANNOTATION, match));
+                lastMatchEnd = matcher.end();
             }
-            return colorfulSql;
+            parsedSql.append(colorfulSql.substring(lastMatchEnd));
+            return parsedSql.toString();
         } catch (Exception e) {
             log.error("highlight sql error.", e);
             return sql;

@@ -117,7 +117,7 @@ public class Tests {
     public void sqlReplace() throws Exception {
         String str = "select t.id || 'number' || 'age:age,name:cyx', '{\"name\":\"user\"}'::jsonb from test.user where id =:id::integer and id >:idc and name=text :username";
         String sql = "insert into test.user(idd,name,id,age,address) values (:id,:name::integer,:idd::float,integer :age,date :address)";
-        Pair<String, List<String>> pair = new SqlGenerator(':').generatePreparedSql(str, Collections.emptyMap());
+        Pair<String, Map<String, List<Integer>>> pair = new SqlGenerator(':').generatePreparedSql(str, Collections.emptyMap());
         System.out.println(pair.getItem1());
         System.out.println(pair.getItem2());
 
@@ -151,13 +151,12 @@ public class Tests {
                 "  order by kb.ajbh,zbyj.lrsj";
         SqlGenerator generator = new SqlGenerator(':');
         System.out.println(generator.generatePreparedSql(sql, Collections.emptyMap()));
-        System.out.println(SqlUtil.escapeSubstring(sql).getItem1());
     }
 
     @Test
     public void sqlPlaceHolder() throws Exception {
-        String query = "select * from test where id = ?_i.d and id = ?id and idCard = '5301111' or name = ?na-me ${cnd}";
-        Pair<String, List<String>> sql = new SqlGenerator('?').generatePreparedSql(query, DataRow.of("cnd", "and date <= '${date}'")
+        String query = "select * from test where id = ?_i.d and id = ?id and idCard = '5301111' or name = ?na_me ${cnd}";
+        Pair<String, Map<String, List<Integer>>> sql = new SqlGenerator('?').generatePreparedSql(query, DataRow.of("cnd", "and date <= '${date}'")
                 .add("date", "2020-12-23 ${time}")
                 .add("time", "11:23:44"));
         System.out.println(sql.getItem1());

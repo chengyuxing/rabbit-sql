@@ -2,6 +2,7 @@ package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.script.Patterns;
 import com.github.chengyuxing.common.tuple.Pair;
+import com.github.chengyuxing.common.tuple.Tuples;
 import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.support.NamedParamFormatter;
@@ -44,7 +45,15 @@ public class SqlGenerator {
             throw new IllegalArgumentException("prefix char cannot be empty.");
         }
         this.namedParamPrefix = namedParamPrefix;
-        this.namedParamPattern = Pattern.compile(String.format("(^\\%1$s|[^\\%1$s]\\%1$s)(?<name>%2$s)", namedParamPrefix, Patterns.VAR_KEY_PATTERN));
+        this.namedParamPattern = Pattern.compile(String.format(
+                        "(\\%1$s%2$s)|" +               // Named parameters
+                                "('(?:''|[^'])*')|" +   // String literals
+                                "(--.*?$)|" +           // Line comments
+                                "(/\\*.*?\\*/)|" +  // Block comments
+                                "(::\\w+)",             // PostgreSQL type casts
+                        namedParamPrefix, Patterns.VAR_KEY_PATTERN),
+                Pattern.DOTALL | Pattern.MULTILINE
+        );
     }
 
     /**
@@ -62,8 +71,8 @@ public class SqlGenerator {
      * @param args data of named parameter
      * @return [prepared sql, ordered arg names]
      */
-    public Pair<String, List<String>> generatePreparedSql(final String sql, Map<String, ?> args) {
-        return _generateSql(sql, args, true);
+    public Pair<String, Map<String, List<Integer>>> generatePreparedSql(final String sql, Map<String, ?> args) {
+        return parseNamedParameterSql(sql, args, true);
     }
 
     /**
@@ -76,7 +85,7 @@ public class SqlGenerator {
      * @see #setTemplateFormatter(TemplateFormatter)
      */
     public String generateSql(final String sql, Map<String, ?> args) {
-        return _generateSql(sql, args, false).getItem1();
+        return parseNamedParameterSql(sql, args, false).getItem1();
     }
 
     /**
@@ -87,43 +96,40 @@ public class SqlGenerator {
      * @param prepare prepare or not
      * @return [prepare/normal sql，ordered arg names]
      */
-    protected Pair<String, List<String>> _generateSql(final String sql, Map<String, ?> args, boolean prepare) {
+    protected Pair<String, Map<String, List<Integer>>> parseNamedParameterSql(final String sql, Map<String, ?> args, boolean prepare) {
         // resolve the sql string template first
         String fullSql = SqlUtil.formatSql(sql, args, templateFormatter);
         if (fullSql.lastIndexOf(namedParamPrefix) < 0) {
-            return Pair.of(fullSql, Collections.emptyList());
+            return Pair.of(fullSql, Collections.emptyMap());
         }
-        // exclude substr next
-        Pair<String, Map<String, String>> noneStrSqlAndHolder = escapeSubstring(fullSql);
-        String cleanedSql = removeBlockAnnotation(noneStrSqlAndHolder.getItem1());
-        cleanedSql = removeLineAnnotation(cleanedSql);
-        if (cleanedSql.lastIndexOf(namedParamPrefix) < 0) {
-            return Pair.of(fullSql, Collections.emptyList());
-        }
-        Matcher matcher = namedParamPattern.matcher(cleanedSql);
-        List<String> names = new ArrayList<>();
-        StringBuilder sb = new StringBuilder();
-        int pos = 0;
+        Map<String, List<Integer>> indexMap = new HashMap<>();
+        StringBuilder parsedSql = new StringBuilder();
+        Matcher matcher = namedParamPattern.matcher(fullSql);
+        int index = 1;
+        int lastMatchEnd = 0;
         while (matcher.find()) {
-            int start = matcher.start("name");
-            int end = matcher.end("name");
-            String name = matcher.group("name");
-            String replacement = "?";
-            if (prepare) {
-                names.add(name);
+            String match = matcher.group();
+            parsedSql.append(fullSql, lastMatchEnd, matcher.start());
+            if (match.charAt(0) == namedParamPrefix && match.charAt(1) != namedParamPrefix) {
+                String name = match.substring(1);
+                if (prepare) {
+                    if (!indexMap.containsKey(name)) {
+                        indexMap.put(name, new ArrayList<>());
+                    }
+                    indexMap.get(name).add(index);
+                    parsedSql.append("?");
+                    index++;
+                } else {
+                    Object value = name.contains(".") ? ObjectUtil.getDeepValue(args, name) : args.get(name);
+                    parsedSql.append(namedParamFormatter.format(value));
+                }
             } else {
-                Object value = name.contains(".") ? ObjectUtil.getDeepValue(args, name) : args.get(name);
-                replacement = namedParamFormatter.format(value);
+                parsedSql.append(match);
             }
-            sb.append(cleanedSql, pos, start - 1).append(replacement);
-            pos = end;
+            lastMatchEnd = matcher.end();
         }
-        sb.append(cleanedSql, pos, cleanedSql.length());
-        String result = sb.toString();
-        for (Map.Entry<String, String> e : noneStrSqlAndHolder.getItem2().entrySet()) {
-            result = result.replace(e.getKey(), e.getValue());
-        }
-        return Pair.of(result, names);
+        parsedSql.append(fullSql.substring(lastMatchEnd));
+        return Tuples.of(parsedSql.toString(), indexMap);
     }
 
     /**
@@ -222,7 +228,7 @@ public class SqlGenerator {
         }
         Map<String, Object> sets = new HashMap<>();
         // pick out named parameter from where condition.
-        List<String> whereFields = generatePreparedSql(where, args).getItem2();
+        Set<String> whereFields = generatePreparedSql(where, args).getItem2().keySet();
         // for build correct update sets excludes the arg which in where condition.
         // where id = :id
         for (Map.Entry<String, ?> e : args.entrySet()) {

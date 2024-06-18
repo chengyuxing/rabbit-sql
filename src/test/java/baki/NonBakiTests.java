@@ -65,16 +65,19 @@ public class NonBakiTests {
         // language=SQL
         String sql = "/*[ooooooooo]*/\n" +
                 "select count(*),\n" +
-                "       count(*) filter ( where grade > 90 )               greate,\n" +
-                "       -- #if :_databaseId != blank\n" +
-                "        test.string_agg (id, ', ') filter ( where grade < 90 and grade > 60) good,\n" +
+                "       count(*) filter ( where grade > :g1 )               greate,\n" +
+                "       -- #if :databaseId != blank\n" +
+                "        test.string_agg (id, ', ') /*filter ( where grade < :g2 and grade > :g3)*/ good,\n" +
                 "       -- #fi\n" +
                 "       count(*) filter /*( where grade < 60 )               bad\n" +
                 "from test.score where id::number = :id*/;";
 
-        String proc = "{call test.func1(:id)}";
+        SqlGenerator sqlGenerator = new SqlGenerator(':');
+        Pair<String, Map<String, List<Integer>>> pair = sqlGenerator.generatePreparedSql(sql, Collections.emptyMap());
+        System.out.println(pair.getItem1());
+        System.out.println(pair.getItem2());
 
-        System.out.println(SqlUtil.getBlockAnnotation(sql));
+        String proc = "{call test.func1(:id)}";
 
         String b = SqlHighlighter.ansi(sql);
         System.out.println(System.console());
@@ -86,29 +89,25 @@ public class NonBakiTests {
         System.out.println(System.getenv("TERM"));
     }
 
-    static final String query = "select t.id || 'number' || 'age:age,name:cyx', '{\"name\":\"user\"}'::jsonb from test.user where id =:id::integer and id >:idc and name=text :username";
+    static final String query = "select t.id || 'number' || 'age:age,name:cyx', '{\"name\":\"user\"}'::jsonb from test.user where id =:id::integer and id >:idc or id < :idc and name=text :username";
     static final String insert = "insert into test.user(idd,name,id,age,address) values (?id,?name::integer,?idd::float,integer ?age,date ?address)";
 
     @Test
-    public void testSqlParamResolve2() {
+    public void testPs3() {
         SqlGenerator sqlGenerator = new SqlGenerator(':');
-        Pair<String, List<String>> pairQ = sqlGenerator.generatePreparedSql(query, Collections.emptyMap());
-        System.out.println(pairQ.getItem1());
-        System.out.println(pairQ.getItem2());
-
-        SqlGenerator sqlGenerator2 = new SqlGenerator('?');
-        System.out.println(sqlGenerator2.getNamedParamPattern());
-        Pair<String, List<String>> pairI = sqlGenerator2.generatePreparedSql(insert, Collections.emptyMap());
-        System.out.println(pairI.getItem1());
-        System.out.println(pairI.getItem2());
-
-
+        Pair<String, Map<String, List<Integer>>> pair1 = sqlGenerator.generatePreparedSql(query, Args.of(
+                "id", 25,
+                "idc", 15,
+                "username", "cyx"
+        ));
+        System.out.println(pair1.getItem1());
+        System.out.println(pair1.getItem2());
     }
 
     @Test
     public void test23() {
         SqlGenerator sqlGenerator = new SqlGenerator(':');
-        Pair<String, List<String>> sqla = sqlGenerator.generatePreparedSql(insert, Args.of("id", 12,
+        Pair<String, Map<String, List<Integer>>> sqla = sqlGenerator.generatePreparedSql(insert, Args.of("id", 12,
                 "name", "chengyuxing",
                 "idd", 16,
                 "age", 30,

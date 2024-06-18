@@ -32,7 +32,6 @@ import java.util.regex.Pattern;
 import static com.github.chengyuxing.common.script.SimpleScriptParser.TAGS;
 import static com.github.chengyuxing.common.utils.StringUtil.NEW_LINE;
 import static com.github.chengyuxing.common.utils.StringUtil.containsAnyIgnoreCase;
-import static com.github.chengyuxing.sql.utils.SqlUtil.removeBlockAnnotation;
 
 /**
  * <h2>Dynamic SQL parse file manager</h2>
@@ -282,7 +281,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     if (!blockName.isEmpty()) {
                         sqlBodyBuffer.add(line);
                         if (trimLine.endsWith(delimiter)) {
-                            String sql = removeBlockAnnotation(String.join(NEW_LINE, sqlBodyBuffer));
+                            String sql = String.join(NEW_LINE, sqlBodyBuffer);
                             sql = sql.substring(0, sql.lastIndexOf(delimiter)).trim();
                             String description = String.join(NEW_LINE, descriptionBuffer);
                             Sql sqlObj = new Sql(sql);
@@ -298,7 +297,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             }
             // if last part of sql is not ends with delimiter symbol
             if (!blockName.isEmpty()) {
-                String lastSql = removeBlockAnnotation(String.join(NEW_LINE, sqlBodyBuffer));
+                String lastSql = String.join(NEW_LINE, sqlBodyBuffer);
                 String lastDesc = String.join(NEW_LINE, descriptionBuffer);
                 Sql sqlObj = new Sql(lastSql);
                 sqlObj.setDescription(lastDesc);

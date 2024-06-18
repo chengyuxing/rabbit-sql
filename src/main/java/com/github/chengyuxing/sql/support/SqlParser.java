@@ -60,14 +60,14 @@ public abstract class SqlParser {
      * @param args args
      * @return [prepared sql, ordered arg names, args map，named parameter sql]
      */
-    protected Quadruple<String, List<String>, Map<String, Object>, String> prepare(String sql, Map<String, ?> args) {
+    protected Quadruple<String, Map<String, List<Integer>>, Map<String, Object>, String> prepare(String sql, Map<String, ?> args) {
         // try to generate full named parameter sql.
         Pair<String, Map<String, Object>> result = parseSql(sql, args);
         String parsedSql = result.getItem1();
         Map<String, Object> parsedData = result.getItem2();
 
         // convert named parameter sql to prepared sql.
-        Pair<String, List<String>> p = sqlGenerator().generatePreparedSql(parsedSql, parsedData);
+        Pair<String, Map<String, List<Integer>>> p = sqlGenerator().generatePreparedSql(parsedSql, parsedData);
         return Tuples.of(p.getItem1(), p.getItem2(), parsedData, parsedSql);
     }
 }

@@ -113,12 +113,13 @@ public abstract class JdbcSupport extends SqlParser {
      * @param names ordered arg names
      * @throws SQLException if connection states error
      */
-    protected void setPreparedSqlArgs(PreparedStatement ps, Map<String, ?> args, List<String> names) throws SQLException {
-        for (int i = 0; i < names.size(); i++) {
-            int index = i + 1;
-            String name = names.get(i);
+    protected void setPreparedSqlArgs(PreparedStatement ps, Map<String, ?> args, Map<String, List<Integer>> names) throws SQLException {
+        for (Map.Entry<String, List<Integer>> e : names.entrySet()) {
+            String name = e.getKey();
             Object value = name.contains(".") ? ObjectUtil.getDeepValue(args, name) : args.get(name);
-            doHandleStatementValue(ps, index, value);
+            for (Integer i : e.getValue()) {
+                doHandleStatementValue(ps, i, value);
+            }
         }
     }
 
@@ -130,21 +131,25 @@ public abstract class JdbcSupport extends SqlParser {
      * @param names ordered arg names
      * @throws SQLException if connection states error
      */
-    protected void setPreparedStoreArgs(CallableStatement cs, Map<String, Param> args, List<String> names) throws SQLException {
+    protected void setPreparedStoreArgs(CallableStatement cs, Map<String, Param> args, Map<String, List<Integer>> names) throws SQLException {
         if (args != null && !args.isEmpty()) {
             // adapt postgresql
             // out and inout param first
-            for (int i = 0; i < names.size(); i++) {
-                Param param = args.get(names.get(i));
+            for (Map.Entry<String, List<Integer>> e : names.entrySet()) {
+                Param param = args.get(e.getKey());
                 if (param.getParamMode() == ParamMode.OUT || param.getParamMode() == ParamMode.IN_OUT) {
-                    cs.registerOutParameter(i + 1, param.getType().typeNumber());
+                    for (Integer i : e.getValue()) {
+                        cs.registerOutParameter(i, param.getType().typeNumber());
+                    }
                 }
             }
             // in param next
-            for (int i = 0; i < names.size(); i++) {
-                Param param = args.get(names.get(i));
-                if (param.getParamMode() == ParamMode.IN || param.getParamMode() == ParamMode.IN_OUT) {
-                    doHandleStatementValue(cs, i + 1, param.getValue());
+            for (Map.Entry<String, List<Integer>> e : names.entrySet()) {
+                Param param = args.get(e.getKey());
+                for (Integer i : e.getValue()) {
+                    if (param.getParamMode() == ParamMode.IN || param.getParamMode() == ParamMode.IN_OUT) {
+                        doHandleStatementValue(cs, i, param.getValue());
+                    }
                 }
             }
         }
@@ -164,8 +169,8 @@ public abstract class JdbcSupport extends SqlParser {
      * @throws UncheckedSqlException sql execute error
      */
     public DataRow execute(final String sql, Map<String, ?> args) {
-        Quadruple<String, List<String>, Map<String, Object>, String> prepared = prepare(sql, args);
-        final List<String> argNames = prepared.getItem2();
+        Quadruple<String, Map<String, List<Integer>>, Map<String, Object>, String> prepared = prepare(sql, args);
+        final Map<String, List<Integer>> argNames = prepared.getItem2();
         final String preparedSql = prepared.getItem1();
         final Map<String, Object> data = prepared.getItem3();
         try {
@@ -213,8 +218,8 @@ public abstract class JdbcSupport extends SqlParser {
      * @throws UncheckedSqlException sql execute error
      */
     public Stream<DataRow> executeQueryStream(final String sql, Map<String, ?> args) {
-        Quadruple<String, List<String>, Map<String, Object>, String> prepared = prepare(sql, args);
-        final List<String> argNames = prepared.getItem2();
+        Quadruple<String, Map<String, List<Integer>>, Map<String, Object>, String> prepared = prepare(sql, args);
+        final Map<String, List<Integer>> argNames = prepared.getItem2();
         final String preparedSql = prepared.getItem1();
         final Map<String, Object> data = prepared.getItem3();
         UncheckedCloseable close = null;
@@ -329,8 +334,8 @@ public abstract class JdbcSupport extends SqlParser {
             throw new IllegalArgumentException("batchSize must greater than 0.");
         }
         Map<String, ?> first = args.iterator().next();
-        Quadruple<String, List<String>, Map<String, Object>, String> prepared = prepare(sql, first);
-        final List<String> argNames = prepared.getItem2();
+        Quadruple<String, Map<String, List<Integer>>, Map<String, Object>, String> prepared = prepare(sql, first);
+        final Map<String, List<Integer>> argNames = prepared.getItem2();
         final String preparedSql = prepared.getItem1();
         try {
             debugSql(prepared.getItem4(), args);
@@ -371,8 +376,8 @@ public abstract class JdbcSupport extends SqlParser {
      * @return affect row count
      */
     public int executeUpdate(final String sql, Map<String, ?> args) {
-        Quadruple<String, List<String>, Map<String, Object>, String> prepared = prepare(sql, args);
-        final List<String> argNames = prepared.getItem2();
+        Quadruple<String, Map<String, List<Integer>>, Map<String, Object>, String> prepared = prepare(sql, args);
+        final Map<String, List<Integer>> argNames = prepared.getItem2();
         final String preparedSql = prepared.getItem1();
         final Map<String, Object> data = prepared.getItem3();
         try {
@@ -412,9 +417,9 @@ public abstract class JdbcSupport extends SqlParser {
      * @throws UncheckedSqlException execute procedure error
      */
     public DataRow executeCallStatement(final String procedure, Map<String, Param> args) {
-        Quadruple<String, List<String>, Map<String, Object>, String> prepared = prepare(procedure, args);
+        Quadruple<String, Map<String, List<Integer>>, Map<String, Object>, String> prepared = prepare(procedure, args);
         final String executeSql = prepared.getItem1();
-        final List<String> argNames = prepared.getItem2();
+        final Map<String, List<Integer>> argNames = prepared.getItem2();
         CallableStatement statement = null;
         Connection connection = getConnection();
         try {
@@ -424,7 +429,7 @@ public abstract class JdbcSupport extends SqlParser {
             List<String> outNames = new ArrayList<>();
             if (!args.isEmpty()) {
                 setPreparedStoreArgs(statement, args, argNames);
-                for (String name : argNames) {
+                for (String name : argNames.keySet()) {
                     if (args.containsKey(name)) {
                         ParamMode mode = args.get(name).getParamMode();
                         if (mode == ParamMode.OUT || mode == ParamMode.IN_OUT) {
@@ -446,20 +451,21 @@ public abstract class JdbcSupport extends SqlParser {
             }
             Object[] values = new Object[outNames.size()];
             int resultIndex = 0;
-            for (int i = 0; i < argNames.size(); i++) {
-                String name = argNames.get(i);
-                if (outNames.contains(name)) {
-                    Object result = statement.getObject(i + 1);
-                    if (Objects.isNull(result)) {
-                        values[resultIndex] = null;
-                    } else if (result instanceof ResultSet) {
-                        List<DataRow> rows = JdbcUtil.createDataRows((ResultSet) result, "", -1);
-                        JdbcUtil.closeResultSet((ResultSet) result);
-                        values[resultIndex] = rows;
-                    } else {
-                        values[resultIndex] = result;
+            for (Map.Entry<String, List<Integer>> e : argNames.entrySet()) {
+                if (outNames.contains(e.getKey())) {
+                    for (Integer i : e.getValue()) {
+                        Object result = statement.getObject(i);
+                        if (Objects.isNull(result)) {
+                            values[resultIndex] = null;
+                        } else if (result instanceof ResultSet) {
+                            List<DataRow> rows = JdbcUtil.createDataRows((ResultSet) result, "", -1);
+                            JdbcUtil.closeResultSet((ResultSet) result);
+                            values[resultIndex] = rows;
+                        } else {
+                            values[resultIndex] = result;
+                        }
+                        resultIndex++;
                     }
-                    resultIndex++;
                 }
             }
             return DataRow.of(outNames.toArray(new String[0]), values);

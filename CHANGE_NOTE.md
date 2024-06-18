@@ -1,8 +1,9 @@
 # change note
 
-## 7.9.11
+## 7.9.12
 
 - XQLFileManager yml config supports Variable placeholder: `${env.Name}` (`System.getenv`)
+- Fixed XQLFileManager yml in windows file system error.
 
 ## 7.9.10
 

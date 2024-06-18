@@ -4,7 +4,7 @@ import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.io.TypedProperties;
 import com.github.chengyuxing.common.script.IPipe;
 import com.github.chengyuxing.sql.exceptions.YamlDeserializeException;
-import com.github.chengyuxing.sql.yaml.JoinConstructor;
+import com.github.chengyuxing.sql.yaml.FeaturedConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -65,7 +65,7 @@ public class XQLFileManagerConfig {
      * @param yamlLocation yml resource
      */
     public void loadYaml(FileResource yamlLocation) {
-        Yaml yaml = new Yaml(new JoinConstructor());
+        Yaml yaml = new Yaml(new FeaturedConstructor());
         try {
             XQLFileManagerConfig config = yaml.loadAs(yamlLocation.getInputStream(), XQLFileManagerConfig.class);
             if (Objects.isNull(config)) {

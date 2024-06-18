@@ -1,20 +1,6 @@
 constants:
   ba-se: &basePath pgsql
 
-filenames:
-  - data.xql
-  - system.xql
-
 files:
-  dt: !path [ *basePath, other.xql ]
-  other: another.xql
-
-delimiter: ;
-charset: UTF-8
-named-param-prefix:
-pipes:
-highlight-sql: false
-check-period: 30
-check-modified: false
-
-bbb:
+  dt: !path [ *basePath, '${prop.active}' ]
+  other: ${env.PUBLISH_TOKEN}

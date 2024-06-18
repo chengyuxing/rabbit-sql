@@ -7,12 +7,15 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.PagedResource;
 import com.github.chengyuxing.sql.XQLFileManager;
+import com.github.chengyuxing.sql.XQLFileManagerConfig;
 import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
+import com.github.chengyuxing.sql.types.Variable;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.utils.SqlHighlighter;
 import com.github.chengyuxing.sql.utils.SqlUtil;
@@ -244,5 +247,16 @@ public class NonBakiTests {
         System.out.println(resourceMap);
 //        Pair<String, Map<String, Object>> pair = xqlFileManager.get("sys.queryUserByPassword", Args.of("username", "abc"));
 //        System.out.println(SqlUtil.repairSyntaxError(pair.getItem1()));
+    }
+
+    @Test
+    public void testYml() {
+        XQLFileManagerConfig config = new XQLFileManagerConfig();
+        config.setConstants(Args.of(
+                "db", "oracle",
+                "active", (Variable) () -> "postgresql")
+        );
+        config.loadYaml(new FileResource("xql-file-manager.old.yml"));
+        System.out.println(config);
     }
 }

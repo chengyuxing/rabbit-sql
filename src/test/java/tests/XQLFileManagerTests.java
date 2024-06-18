@@ -5,7 +5,7 @@ import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.sql.XQLFileManager;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
-import com.github.chengyuxing.sql.yaml.JoinConstructor;
+import com.github.chengyuxing.sql.yaml.FeaturedConstructor;
 import org.junit.Test;
 import org.yaml.snakeyaml.Yaml;
 
@@ -18,7 +18,7 @@ import java.util.Map;
 public class XQLFileManagerTests {
     @Test
     public void test() {
-        Yaml yaml = new Yaml(new JoinConstructor());
+        Yaml yaml = new Yaml(new FeaturedConstructor());
 //        yaml.addImplicitResolver(new Tag("!!merge"), Pattern.compile("!!merge"), "[");
         Map<String, Object> res = yaml.loadAs(new FileResource("xql-file-manager.old.yml").getInputStream(), Map.class);
         System.out.println(res);

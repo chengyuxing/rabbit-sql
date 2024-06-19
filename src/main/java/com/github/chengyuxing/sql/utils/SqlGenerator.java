@@ -46,7 +46,7 @@ public class SqlGenerator {
         }
         this.namedParamPrefix = namedParamPrefix;
         this.namedParamPattern = Pattern.compile(String.format(
-                        "(\\%1$s%2$s)|" +               // Named parameters
+                        "(?<name>\\%1$s%2$s)|" +               // Named parameters
                                 "('(?:''|[^'])*')|" +   // String literals
                                 "(--.*?$)|" +           // Line comments
                                 "(/\\*.*?\\*/)|" +  // Block comments
@@ -108,10 +108,10 @@ public class SqlGenerator {
         int index = 1;
         int lastMatchEnd = 0;
         while (matcher.find()) {
-            String match = matcher.group();
             parsedSql.append(fullSql, lastMatchEnd, matcher.start());
-            if (match.charAt(0) == namedParamPrefix && match.charAt(1) != namedParamPrefix) {
-                String name = match.substring(1);
+            String name = matcher.group("name");
+            if (name != null) {
+                name = name.substring(1);
                 if (prepare) {
                     if (!indexMap.containsKey(name)) {
                         indexMap.put(name, new ArrayList<>());
@@ -124,7 +124,7 @@ public class SqlGenerator {
                     parsedSql.append(namedParamFormatter.format(value));
                 }
             } else {
-                parsedSql.append(match);
+                parsedSql.append(matcher.group());
             }
             lastMatchEnd = matcher.end();
         }

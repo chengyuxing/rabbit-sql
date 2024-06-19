@@ -28,6 +28,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Matcher;
 
 public class NonBakiTests {
     @Test
@@ -76,6 +77,13 @@ public class NonBakiTests {
         Pair<String, Map<String, List<Integer>>> pair = sqlGenerator.generatePreparedSql(sql, Collections.emptyMap());
         System.out.println(pair.getItem1());
         System.out.println(pair.getItem2());
+
+        Matcher m = sqlGenerator.getNamedParamPattern().matcher(sql);
+        while (m.find()) {
+            for (int i = 1; i <= m.groupCount(); i++) {
+                System.out.println("Group " + i + ": " + m.group(i));
+            }
+        }
 
         String proc = "{call test.func1(:id)}";
 

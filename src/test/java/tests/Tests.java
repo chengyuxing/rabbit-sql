@@ -151,6 +151,13 @@ public class Tests {
                 "  order by kb.ajbh,zbyj.lrsj";
         SqlGenerator generator = new SqlGenerator(':');
         System.out.println(generator.generatePreparedSql(sql, Collections.emptyMap()));
+        System.out.println(generator.getNamedParamPattern());
+        Matcher m = generator.getNamedParamPattern().matcher(sql);
+        while (m.find()) {
+            for (int i = 1; i <= m.groupCount(); i++) {
+                System.out.println("Group " + i + ": " + m.group(i));
+            }
+        }
     }
 
     @Test

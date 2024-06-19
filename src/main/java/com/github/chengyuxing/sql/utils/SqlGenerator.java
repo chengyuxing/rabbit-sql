@@ -46,11 +46,11 @@ public class SqlGenerator {
         }
         this.namedParamPrefix = namedParamPrefix;
         this.namedParamPattern = Pattern.compile(String.format(
-                        "(?<name>\\%1$s%2$s)|" +               // Named parameters
-                                "('(?:''|[^'])*')|" +   // String literals
-                                "(--.*?$)|" +           // Line comments
-                                "(/\\*.*?\\*/)|" +  // Block comments
-                                "(::\\w+)",             // PostgreSQL type casts
+                        "(?<!\\%1$s)\\%1$s(%2$s)|" +        // Named parameters
+                                "'(?:''|[^'])*'|" +         // String literals
+                                "--.*?$|" +                 // Line comments
+                                "/\\*.*?\\*/|" +            // Block comments
+                                "::\\w+",                   // PostgreSQL type casts
                         namedParamPrefix, Patterns.VAR_KEY_PATTERN),
                 Pattern.DOTALL | Pattern.MULTILINE
         );
@@ -109,9 +109,8 @@ public class SqlGenerator {
         int lastMatchEnd = 0;
         while (matcher.find()) {
             parsedSql.append(fullSql, lastMatchEnd, matcher.start());
-            String name = matcher.group("name");
+            String name = matcher.group(1);
             if (name != null) {
-                name = name.substring(1);
                 if (prepare) {
                     if (!indexMap.containsKey(name)) {
                         indexMap.put(name, new ArrayList<>());

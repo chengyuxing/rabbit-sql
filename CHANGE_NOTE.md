@@ -1,5 +1,9 @@
 # change note
 
+## 7.9.13
+
+- Named parameter sql parsing optimized.
+
 ## 7.9.12
 
 - XQLFileManager yml config supports Variable placeholder: `${env.Name}` (`System.getenv`)

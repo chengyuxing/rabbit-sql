@@ -1,10 +1,9 @@
 package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.io.FileResource;
-import com.github.chengyuxing.common.script.AbstractParser;
-import com.github.chengyuxing.common.script.FlowControlLexer;
-import com.github.chengyuxing.common.script.FlowControlParser;
-import com.github.chengyuxing.common.script.SimpleScriptParser;
+import com.github.chengyuxing.common.script.parser.AbstractParser;
+import com.github.chengyuxing.common.script.lexer.FlowControlLexer;
+import com.github.chengyuxing.common.script.parser.FlowControlParser;
 import com.github.chengyuxing.common.script.exception.ScriptSyntaxException;
 import com.github.chengyuxing.common.script.expression.IExpression;
 import com.github.chengyuxing.common.script.expression.IPipe;
@@ -70,7 +69,7 @@ import static com.github.chengyuxing.common.utils.StringUtil.containsAnyIgnoreCa
  * check example following class path file: {@code template.xql}.
  * <p>Invoke method {@link #get(String, Map)} to enjoy the dynamic sql!</p>
  *
- * @see SimpleScriptParser
+ * @see AbstractParser
  */
 public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(XQLFileManager.class);

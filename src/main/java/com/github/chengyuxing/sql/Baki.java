@@ -89,7 +89,8 @@ public interface Baki {
      *     }
      * </pre></blockquote>
      *
-     * @param <T> entity type
+     * @param <T>         entity type
+     * @param entityClass entity class
      * @return Entity Save Executor
      * @see com.github.chengyuxing.common.anno.Alias @Alias
      */

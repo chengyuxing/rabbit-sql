@@ -1,11 +1,14 @@
 package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.io.FileResource;
-import com.github.chengyuxing.common.script.IExpression;
-import com.github.chengyuxing.common.script.IPipe;
+import com.github.chengyuxing.common.script.AbstractParser;
+import com.github.chengyuxing.common.script.FlowControlLexer;
+import com.github.chengyuxing.common.script.FlowControlParser;
 import com.github.chengyuxing.common.script.SimpleScriptParser;
 import com.github.chengyuxing.common.script.exception.ScriptSyntaxException;
-import com.github.chengyuxing.common.script.impl.FastExpression;
+import com.github.chengyuxing.common.script.expression.IExpression;
+import com.github.chengyuxing.common.script.expression.IPipe;
+import com.github.chengyuxing.common.script.expression.impl.FastExpression;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
@@ -29,7 +32,6 @@ import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.github.chengyuxing.common.script.SimpleScriptParser.TAGS;
 import static com.github.chengyuxing.common.utils.StringUtil.NEW_LINE;
 import static com.github.chengyuxing.common.utils.StringUtil.containsAnyIgnoreCase;
 
@@ -277,7 +279,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     }
                 }
                 // exclude single line annotation except expression keywords
-                if (!trimLine.startsWith("--") || (StringUtil.startsWithsIgnoreCase(trimAnnotation(trimLine), TAGS))) {
+                if (!trimLine.startsWith("--") || (StringUtil.startsWithsIgnoreCase(trimAnnotation(trimLine), FlowControlLexer.KEYWORDS))) {
                     if (!blockName.isEmpty()) {
                         sqlBodyBuffer.add(line);
                         if (trimLine.endsWith(delimiter)) {
@@ -606,10 +608,10 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @return parsed sql and extra args calculated by {@code #for} expression if exists
      */
     public Pair<String, Map<String, Object>> parseDynamicSql(String sql, Map<String, ?> args) {
-        if (!containsAnyIgnoreCase(sql, TAGS)) {
+        if (!containsAnyIgnoreCase(sql, FlowControlLexer.KEYWORDS)) {
             return Pair.of(sql, Collections.emptyMap());
         }
-        DynamicSqlParser parser = newDynamicSqlParser();
+        AbstractParser parser = newDynamicSqlParser();
         Map<String, Object> newArgs = new HashMap<>();
         if (Objects.nonNull(args)) {
             newArgs.putAll(args);
@@ -664,14 +666,14 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @return script expression or other line
      */
     protected String trimAnnotation(String line) {
-        String trimS = line.trim();
-        if (trimS.startsWith("--")) {
-            String expAnon = trimS.substring(2).trim();
-            if (expAnon.startsWith("#")) {
-                return expAnon;
+        String tl = line.trim();
+        if (tl.startsWith("--")) {
+            String kl = tl.substring(2).trim();
+            if (kl.startsWith("#")) {
+                return kl;
             }
         }
-        return trimS;
+        return line;
     }
 
     /**
@@ -679,7 +681,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      *
      * @return dynamic sql parser
      */
-    public DynamicSqlParser newDynamicSqlParser() {
+    public AbstractParser newDynamicSqlParser() {
         return new DynamicSqlParser();
     }
 
@@ -712,7 +714,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     /**
      * Dynamic sql parser.
      */
-    public class DynamicSqlParser extends SimpleScriptParser {
+    public class DynamicSqlParser extends FlowControlParser {
         public static final String FOR_VARS_KEY = "_for";
         public static final String VAR_PREFIX = FOR_VARS_KEY + ".";
 
@@ -755,13 +757,10 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
          * @return formatted content
          */
         @Override
-        protected String forLoopBodyFormatter(int forIndex, int varIndex, String varName, String idxName, List<String> body, Map<String, Object> args) {
-            body.removeIf(l -> {
-                String tl = l.trim();
-                return tl.startsWith("--") && !tl.substring(2).trim().startsWith("#");
-            });
-            String formatted = SqlUtil.formatSql(String.join(NEW_LINE, body), args, templateFormatter);
+        protected String forLoopBodyFormatter(int forIndex, int varIndex, String varName, String idxName, String body, Map<String, Object> args) {
+            String formatted = SqlUtil.formatSql(body, args, templateFormatter);
             if (Objects.nonNull(varName)) {
+                //e.g _for.item  ->  _for.item_0_1
                 String varParam = VAR_PREFIX + forVarKey(varName, forIndex, varIndex);
                 formatted = formatted.replace(VAR_PREFIX + varName, varParam);
             }

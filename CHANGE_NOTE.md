@@ -1,5 +1,11 @@
 # change note
 
+## 7.9.14
+
+- Dynamic sql parser optimized.
+- Dynamic sql parse supports `if-else-fi` block.
+- Some optimized.
+
 ## 7.9.13
 
 - Named parameter sql parsing optimized.

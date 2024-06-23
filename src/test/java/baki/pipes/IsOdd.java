@@ -1,6 +1,7 @@
 package baki.pipes;
 
-import com.github.chengyuxing.common.script.IPipe;
+
+import com.github.chengyuxing.common.script.expression.IPipe;
 
 public class IsOdd implements IPipe<Boolean> {
     @Override

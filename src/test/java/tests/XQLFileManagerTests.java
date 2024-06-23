@@ -1,8 +1,10 @@
 package tests;
 
+import baki.pipes.IsOdd;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.tuple.Pair;
+import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.XQLFileManager;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.yaml.FeaturedConstructor;
@@ -33,15 +35,24 @@ public class XQLFileManagerTests {
     @Test
     public void test4() throws IOException, URISyntaxException {
         XQLFileManager xqlFileManager = new XQLFileManager(new HashMap<>());
-        xqlFileManager.add("a", "pgsql/nest.sql");
-        xqlFileManager.add("b", "pgsql/nest.sql");
+        xqlFileManager.add("a", "pgsql/deep_nest.sql");
         xqlFileManager.init();
 
         System.out.println("-----");
-//        boolean refreshed = xqlFileManager.getResource("a").refresh();
-//        System.out.println(refreshed);
-//        xqlFileManager.removeByFilename("pgsql/nest.sql");
-        System.out.println(xqlFileManager);
+        System.out.println(xqlFileManager.get("a.region", Args.of(
+                "id", 15,
+                "name", "cyx",
+                "a", "bbb",
+                "a2", "ccc",
+                "x", "fff",
+                "b", "ddd",
+                "c1", "ttt",
+                "c", "aaa",
+                "e", null,
+                "f", "qqq",
+                "ff", null,
+                "list", Arrays.asList(1, 2, 3, 4, 5, 6)
+        )));
     }
 
     @Test
@@ -70,6 +81,7 @@ public class XQLFileManagerTests {
     public void test78() {
         XQLFileManager xqlFileManager = new XQLFileManager();
         xqlFileManager.add("new", "pgsql/new_for.sql");
+        xqlFileManager.setPipeInstances(Args.of("isOdd", new IsOdd()));
         xqlFileManager.init();
 
         SqlGenerator generator = new SqlGenerator(':');

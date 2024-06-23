@@ -1,7 +1,7 @@
 /*[region]*/
 select *
 from test.region t
-where t.enable = true
+            where t.enable = true
 --#if :a <> blank
     and t.a = :a
     --#if :a1 <> blank
@@ -76,6 +76,11 @@ where t.enable = true
        --#if :ff <> blank
             and t.ff = :ff
             and t.ff2 = :ff
+       --#else
+            and t.ff3 = :ff and id in
+            -- #for item  of :list  delimiter ',' open '(' close ')'
+                :_for.item
+            -- #done
        --#fi
     --#break
     --#when :g <> blank

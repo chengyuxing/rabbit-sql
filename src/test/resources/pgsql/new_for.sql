@@ -5,7 +5,7 @@ where id = 1
 -- #for id of :ids delimiter ', ' open ' or id in (' close ')'
       -- #if :id | isOdd == true
     :_for.id
--- #fi
+        -- #fi
 -- #done
 ;
 
@@ -27,7 +27,7 @@ values (
 /*[update]*/
 update test.user
 set
--- #for pair of :data | pairs delimiter ','
+-- #for pair of :data | pairs delimiter ', '
 ${pair.item1} = :_for.pair.item2
 -- #done
 where id = :id;

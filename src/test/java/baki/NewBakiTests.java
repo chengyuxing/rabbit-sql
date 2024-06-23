@@ -3,7 +3,6 @@ package baki;
 import baki.entity.AnotherUser;
 import baki.entity.User;
 import com.github.chengyuxing.common.DataRow;
-import com.github.chengyuxing.common.script.IPipe;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.Baki;
 import com.github.chengyuxing.sql.BakiDao;

@@ -3,4 +3,4 @@ constants:
 
 files:
   dt: !path [ *basePath, '${env.active}' ]
-  other: ${env.PUBLISH_TOKEN}
+  other: ${env.JAVA_HOME}

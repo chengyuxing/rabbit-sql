@@ -6,6 +6,7 @@ import com.github.chengyuxing.common.MostDateTime;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.ReflectUtil;
+import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.BakiDao;
 import com.github.chengyuxing.sql.XQLFileManager;
 import com.github.chengyuxing.sql.exceptions.DuplicateException;
@@ -318,23 +319,32 @@ public class Tests {
 
     @Test
     public void test() {
-        XQLFileManager xqlFileManager = new XQLFileManager();
-        xqlFileManager.add("cyx", "pgsql/data.sql");
-        Set<String> names = new HashSet<>();
-        names.add("pgsql/dynamic.sql");
-        xqlFileManager.init();
-
-//        xqlFileManager.remove("cyx");
-
+        StringJoiner stringJoiner = new StringJoiner(" ");
+        stringJoiner.setEmptyValue("--");
+        stringJoiner.add("");
+        stringJoiner.add("");
+        stringJoiner.add("");
+        stringJoiner.add("");
+        stringJoiner.add("");
+        String res = stringJoiner.toString();
+        System.out.println(res);
     }
 
     @Test
     public void testf1() {
         try {
             XQLFileManager xqlFileManager = new XQLFileManager();
-            xqlFileManager.add("abc", "pgsql/data.sql");
             xqlFileManager.add("pgsql/data.sql");
             xqlFileManager.init();
+            System.out.println("------------");
+            System.out.println("------------");
+            System.out.println(xqlFileManager.get("data.update", Args.of(
+                    "name", "cyx",
+                    "age", 31,
+                    "open", "abc",
+                    "address", "kunaming"
+            )));
+
         } catch (DuplicateException e) {
             e.printStackTrace();
         }

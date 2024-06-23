@@ -80,15 +80,15 @@ family  = 'happy',
 --#fi
 
 --#choose
-    --#when :address | km2null != null
-    address = :address
-    --#break
     --#when :address == 'kunming'
         address = 'kunming'
     --#break
     --#when :address == "beijing"
         address = '北京'
     --#break
+    -- #default
+        address = 'Other'
+    -- #break
 --#end
 where id = 10;
 

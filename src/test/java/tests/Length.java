@@ -1,6 +1,7 @@
 package tests;
 
-import com.github.chengyuxing.common.script.IPipe;
+
+import com.github.chengyuxing.common.script.expression.IPipe;
 
 public class Length implements IPipe<Integer> {
     @Override

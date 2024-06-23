@@ -1,6 +1,7 @@
 package sql;
 
-import com.github.chengyuxing.common.script.IPipe;
+
+import com.github.chengyuxing.common.script.expression.IPipe;
 
 public class IsIdCardPipe implements IPipe<Boolean> {
     @Override

@@ -1,6 +1,6 @@
 package com.github.chengyuxing.sql.yaml;
 
-import com.github.chengyuxing.common.script.Patterns;
+import com.github.chengyuxing.common.script.expression.Patterns;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.constructor.AbstractConstruct;
 import org.yaml.snakeyaml.constructor.Constructor;
@@ -41,17 +41,7 @@ public class FeaturedConstructor extends Constructor {
     @Override
     protected Map<Object, Object> constructMapping(MappingNode node) {
         Map<Object, Object> mapping = super.constructMapping(node);
-        for (Map.Entry<Object, Object> e : mapping.entrySet()) {
-            if (e.getValue() instanceof String) {
-                e.setValue(resolveHolders((String) e.getValue()));
-            } else if (e.getValue() instanceof List) {
-                //noinspection unchecked
-                processSequence((List<Object>) e.getValue());
-            } else if (e.getValue() instanceof Map) {
-                //noinspection unchecked
-                processMapping((Map<Object, Object>) e.getValue());
-            }
-        }
+        processMapping(mapping);
         return mapping;
     }
 

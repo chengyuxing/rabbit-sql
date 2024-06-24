@@ -1,5 +1,11 @@
 # change note
 
+## 7.9.15
+
+- Dynamic sql #case branch support multiple values: e.g. `#case 'a', 3.14, c` .
+- More strict syntax check for dynamic sql script.
+- Some optimized.
+
 ## 7.9.14
 
 - Dynamic sql parser optimized.

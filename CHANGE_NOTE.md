@@ -1,5 +1,9 @@
 # change note
 
+## 7.9.17
+
+- Fixed `#for` pipes line bug.
+
 ## 7.9.16
 
 - Bug fixed.

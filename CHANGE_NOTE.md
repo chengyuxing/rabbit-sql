@@ -1,5 +1,9 @@
 # change note
 
+## 7.9.16
+
+- Bug fixed.
+
 ## 7.9.15
 
 - Dynamic sql #case branch support multiple values: e.g. `#case 'a', 3.14, c` .

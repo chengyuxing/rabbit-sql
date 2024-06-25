@@ -5,9 +5,7 @@ import com.github.chengyuxing.common.script.parser.AbstractParser;
 import com.github.chengyuxing.common.script.lexer.FlowControlLexer;
 import com.github.chengyuxing.common.script.parser.FlowControlParser;
 import com.github.chengyuxing.common.script.exception.ScriptSyntaxException;
-import com.github.chengyuxing.common.script.expression.IExpression;
 import com.github.chengyuxing.common.script.expression.IPipe;
-import com.github.chengyuxing.common.script.expression.impl.FastExpression;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
@@ -65,11 +63,11 @@ import static com.github.chengyuxing.common.utils.StringUtil.containsAnyIgnoreCa
  * </pre>
  * </blockquote>
  * <p>
- * Dynamic sql script write in line annotation where starts with {@code --},
+ * {@linkplain DynamicSqlParser Dynamic sql script} write in line annotation where starts with {@code --},
  * check example following class path file: {@code template.xql}.
  * <p>Invoke method {@link #get(String, Map)} to enjoy the dynamic sql!</p>
  *
- * @see AbstractParser
+ * @see FlowControlParser
  */
 public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(XQLFileManager.class);
@@ -718,10 +716,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         public static final String VAR_PREFIX = FOR_VARS_KEY + ".";
 
         @Override
-        protected IExpression expression(String expression) {
-            FastExpression fe = new FastExpression(expression);
-            fe.setPipes(getPipeInstances());
-            return fe;
+        public Map<String, IPipe<?>> getPipes() {
+            return getPipeInstances();
         }
 
         /**

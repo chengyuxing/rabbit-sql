@@ -685,6 +685,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     /**
      * Create a new dynamic sql parser.
      *
+     * @param sql sql
      * @return dynamic sql parser
      */
     public DynamicSqlParser newDynamicSqlParser(String sql) {

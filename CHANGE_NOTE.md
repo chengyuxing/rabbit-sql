@@ -1,5 +1,10 @@
 # change note
 
+## 7.10.0
+
+- Dynamic sql parse optimized.
+- XQL File Manager support dynamic sql script syntax verify.
+
 ## 7.9.18
 
 - Fixed `#for` pipes line bug.

@@ -1,5 +1,9 @@
 # change note
 
+## 7.10.1
+
+- Dynamic sql Flow-control syntax verify optimized.
+
 ## 7.10.0
 
 - Dynamic sql parse optimized.

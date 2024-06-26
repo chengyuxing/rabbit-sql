@@ -1,7 +1,6 @@
 package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.io.FileResource;
-import com.github.chengyuxing.common.script.parser.AbstractParser;
 import com.github.chengyuxing.common.script.lexer.FlowControlLexer;
 import com.github.chengyuxing.common.script.parser.FlowControlParser;
 import com.github.chengyuxing.common.script.exception.ScriptSyntaxException;
@@ -282,9 +281,14 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                         if (trimLine.endsWith(delimiter)) {
                             String sql = String.join(NEW_LINE, sqlBodyBuffer);
                             sql = sql.substring(0, sql.lastIndexOf(delimiter)).trim();
-                            String description = String.join(NEW_LINE, descriptionBuffer);
+                            String desc = String.join(NEW_LINE, descriptionBuffer);
+                            try {
+                                newDynamicSqlParser(sql).verify();
+                            } catch (ScriptSyntaxException e) {
+                                throw new ScriptSyntaxException("Sql of name '" + blockName + "' dynamic sql script syntax error.", e);
+                            }
                             Sql sqlObj = new Sql(sql);
-                            sqlObj.setDescription(description);
+                            sqlObj.setDescription(desc);
                             entry.put(blockName, sqlObj);
                             log.debug("scan {} to get sql({}) [{}.{}]：{}", filename, delimiter, alias, blockName, SqlHighlighter.highlightIfAnsiCapable(sql));
                             blockName = "";
@@ -298,6 +302,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             if (!blockName.isEmpty()) {
                 String lastSql = String.join(NEW_LINE, sqlBodyBuffer);
                 String lastDesc = String.join(NEW_LINE, descriptionBuffer);
+                try {
+                    newDynamicSqlParser(lastSql).verify();
+                } catch (ScriptSyntaxException e) {
+                    throw new ScriptSyntaxException("Sql of name '" + blockName + "' dynamic sql script syntax error.", e);
+                }
                 Sql sqlObj = new Sql(lastSql);
                 sqlObj.setDescription(lastDesc);
                 entry.put(blockName, sqlObj);
@@ -608,14 +617,14 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         if (!containsAnyIgnoreCase(sql, FlowControlLexer.KEYWORDS)) {
             return Pair.of(sql, Collections.emptyMap());
         }
-        AbstractParser parser = newDynamicSqlParser();
         Map<String, Object> newArgs = new HashMap<>();
         if (Objects.nonNull(args)) {
             newArgs.putAll(args);
         }
         newArgs.put("_parameter", args);
         newArgs.put("_databaseId", databaseId);
-        String parsedSql = parser.parse(sql, newArgs);
+        DynamicSqlParser parser = newDynamicSqlParser(sql);
+        String parsedSql = parser.parse(newArgs);
         String fixedSql = SqlUtil.repairSyntaxError(parsedSql);
         return Pair.of(fixedSql, parser.getForContextVars());
     }
@@ -678,8 +687,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      *
      * @return dynamic sql parser
      */
-    public AbstractParser newDynamicSqlParser() {
-        return new DynamicSqlParser();
+    public DynamicSqlParser newDynamicSqlParser(String sql) {
+        return new DynamicSqlParser(sql);
     }
 
     public TemplateFormatter getTemplateFormatter() {
@@ -714,6 +723,10 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public class DynamicSqlParser extends FlowControlParser {
         public static final String FOR_VARS_KEY = "_for";
         public static final String VAR_PREFIX = FOR_VARS_KEY + ".";
+
+        public DynamicSqlParser(String sql) {
+            super(sql);
+        }
 
         @Override
         public Map<String, IPipe<?>> getPipes() {
@@ -754,12 +767,12 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         @Override
         protected String forLoopBodyFormatter(int forIndex, int varIndex, String varName, String idxName, String body, Map<String, Object> args) {
             String formatted = SqlUtil.formatSql(body, args, templateFormatter);
-            if (Objects.nonNull(varName)) {
+            if (!varName.isEmpty()) {
                 //e.g _for.item  ->  _for.item_0_1
                 String varParam = VAR_PREFIX + forVarKey(varName, forIndex, varIndex);
                 formatted = formatted.replace(VAR_PREFIX + varName, varParam);
             }
-            if (Objects.nonNull(idxName)) {
+            if (!idxName.isEmpty()) {
                 String idxParam = VAR_PREFIX + forVarKey(idxName, forIndex, varIndex);
                 formatted = formatted.replace(VAR_PREFIX + idxName, idxParam);
             }

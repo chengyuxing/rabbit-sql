@@ -285,7 +285,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                             try {
                                 newDynamicSqlParser(sql).verify();
                             } catch (ScriptSyntaxException e) {
-                                throw new ScriptSyntaxException("Sql of name '" + blockName + "' dynamic sql script syntax error.", e);
+                                throw new ScriptSyntaxException("File: " + fileResource.getURL() + ", sql:'" + blockName + "' dynamic sql script syntax error.", e);
                             }
                             Sql sqlObj = new Sql(sql);
                             sqlObj.setDescription(desc);
@@ -305,7 +305,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                 try {
                     newDynamicSqlParser(lastSql).verify();
                 } catch (ScriptSyntaxException e) {
-                    throw new ScriptSyntaxException("Sql of name '" + blockName + "' dynamic sql script syntax error.", e);
+                    throw new ScriptSyntaxException("File: " + fileResource.getURL() + ", sql:'" + blockName + "' dynamic sql script syntax error.", e);
                 }
                 Sql sqlObj = new Sql(lastSql);
                 sqlObj.setDescription(lastDesc);

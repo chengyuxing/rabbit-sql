@@ -7,7 +7,6 @@ import com.github.chengyuxing.common.script.exception.ScriptSyntaxException;
 import com.github.chengyuxing.common.script.expression.IPipe;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.ReflectUtil;
-import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.exceptions.DuplicateException;
 import com.github.chengyuxing.sql.support.TemplateFormatter;
 import com.github.chengyuxing.sql.utils.SqlHighlighter;
@@ -275,12 +274,13 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     }
                 }
                 // exclude single line annotation except expression keywords
-                if (!trimLine.startsWith("--") || (StringUtil.startsWithsIgnoreCase(trimAnnotation(trimLine), FlowControlLexer.KEYWORDS))) {
+                if (!trimLine.startsWith("--") || trimExpressionLine(trimLine).matches(FlowControlLexer.KEYWORDS_PATTERN)) {
                     if (!blockName.isEmpty()) {
                         sqlBodyBuffer.add(line);
                         if (trimLine.endsWith(delimiter)) {
                             String sql = String.join(NEW_LINE, sqlBodyBuffer);
                             sql = sql.substring(0, sql.lastIndexOf(delimiter)).trim();
+                            //noinspection DuplicatedCode
                             String desc = String.join(NEW_LINE, descriptionBuffer);
                             try {
                                 newDynamicSqlParser(sql).verify();
@@ -301,6 +301,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             // if last part of sql is not ends with delimiter symbol
             if (!blockName.isEmpty()) {
                 String lastSql = String.join(NEW_LINE, sqlBodyBuffer);
+                //noinspection DuplicatedCode
                 String lastDesc = String.join(NEW_LINE, descriptionBuffer);
                 try {
                     newDynamicSqlParser(lastSql).verify();
@@ -671,13 +672,10 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @param line current line
      * @return script expression or other line
      */
-    protected String trimAnnotation(String line) {
-        String tl = line.trim();
-        if (tl.startsWith("--")) {
-            String kl = tl.substring(2).trim();
-            if (kl.startsWith("#")) {
-                return kl;
-            }
+    protected String trimExpressionLine(String line) {
+        String lt = line.trim();
+        if (lt.startsWith("--")) {
+            return lt.substring(2);
         }
         return line;
     }
@@ -769,11 +767,12 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         protected String forLoopBodyFormatter(int forIndex, int varIndex, String varName, String idxName, String body, Map<String, Object> args) {
             String formatted = SqlUtil.formatSql(body, args, templateFormatter);
             if (!varName.isEmpty()) {
-                //e.g _for.item  ->  _for.item_0_1
+                // e.g _for.item  ->  _for._item_0_1
                 String varParam = VAR_PREFIX + forVarKey(varName, forIndex, varIndex);
                 formatted = formatted.replace(VAR_PREFIX + varName, varParam);
             }
             if (!idxName.isEmpty()) {
+                // e.g _for.idx  ->  _for._idx_0_1
                 String idxParam = VAR_PREFIX + forVarKey(idxName, forIndex, varIndex);
                 formatted = formatted.replace(VAR_PREFIX + idxName, idxParam);
             }
@@ -781,8 +780,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         }
 
         @Override
-        protected String trimExpression(String line) {
-            return trimAnnotation(line);
+        protected String trimExpressionLine(String line) {
+            return XQLFileManager.this.trimExpressionLine(line);
         }
     }
 

@@ -1,5 +1,13 @@
 # change note
 
+## 7.11.0
+
+- Support verify invalid nest expression.
+- Support verify non-pair expression.
+- Support `switch-case` and `choose-when` branch nest `switch` and `choose` expression.
+- Fixed dynamic sql parsed result concat bugs.
+- Fixed dynamic sql parse bugs.
+
 ## 7.10.1
 
 - Dynamic sql Flow-control syntax verify optimized.

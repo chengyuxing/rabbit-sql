@@ -27,7 +27,7 @@ It's just a small lib, wrapper of **jdbc**, support some basic operation. simple
 - [dynamic sql](#Dynamic-SQL);
 - support **spring-boot** framework.
 
-## Maven dependency (jdk1.8)
+## Maven dependency (jdk1.8+)
 
 Maven central
 
@@ -35,7 +35,7 @@ Maven central
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.11.0</version>
+    <version>7.11.1</version>
 </dependency>
 ```
 
@@ -76,8 +76,8 @@ baki.query("&my.users")
 
 ```mermaid
 flowchart LR;
-A["#quot;select ...#quot;"] --> Baki["query(#quot;#quot;)"];
-B[&my.users] --> X[XQLFileManager];
+A[#quot;select ...#quot;] --> Baki["query()"];
+B[#quot;&my.users#quot;] --> X[XQLFileManager];
 X --> Baki;
 click X href "#XQLFileManager" "go to defenition"
 ```
@@ -89,7 +89,7 @@ click X href "#XQLFileManager" "go to defenition"
 ##### Stream-query
 
 ```java
-try(Stream<DataRow> fruits=baki.query("select * from fruit").stream()){
+try(Stream<DataRow> fruits = baki.query("select * from fruit").stream()){
         fruits.limit(10).forEach(System.out::println);
         }
 ```
@@ -159,7 +159,7 @@ I'm going to focus here on the update operation, use [baki](#BakiDao)'s  `update
 
 - **fast** property: in fact, `jdbc batch execute` is invoked.
 
-  > It's not  recommend unless you need to batch execute more than 1000 rows of data.
+  > Batch size is 1000.
   >
   > Same as **insert** operation.
 
@@ -214,15 +214,14 @@ Prepare sql support named parameter style, e.g.
 sql:
 
 ```sql
-select ${fields}, ${moreFields} from ... where word in (${!words}) or id = :id;
+select ${fields} from ... where word in (${!words}) or id = :id;
 ```
 
 args:
 
 ```java
 Args.<Object>of("id","uuid")
-  .add("fields", "id, name, address")
-  .add("moreFields", Arrays.asList("email", "enable"))
+  .add("fields", Arrays.asList("name", "age"))
   .add("words", Arrays.asList("I'm OK!", "book", "warning"));
 ```
 
@@ -231,7 +230,7 @@ Args.<Object>of("id","uuid")
 generate sql:
 
 ```sql
-select id, name, address, email, enable from ... where id in ('I''m Ok!', 'book', 'warning') or id = ?;
+select name, age from ... where id in ('I''m Ok!', 'book', 'warning') or id = ?;
 ```
 
 ## Dynamic-SQL
@@ -242,63 +241,56 @@ Dynamic SQL depends on [XQLFileManager](#XQLFileManager), based on resolve speci
 
 Annotation mark must be pair and follows **open-close** tag.
 
-#### if
-
-Similar to Mybatis's  `if`  tag:
+#### if-else-fi
 
 ```sql
---#if :user <> null
-       --#if :user.name <> blank
-       ...
-       --#fi
---#fi
-```
-
-#### switch
-
-Similar to program language `switch`'s logic:
-
-```sql
---#switch :name
-       --#case 'jack'
+-- #if :user <> null
 		...
-       --#break
-       ...
-       --#default
-       	...
-       --#break
---#end
+-- #else	(optional)
+		...
+-- #fi
 ```
 
-#### choose
-
-Similar to Mybatis's `choose...when` tag:
+#### switch-case-end
 
 ```sql
---#choose
-       --#when :id >= 0
+-- #switch :name
+       -- #case 'a', 'b', c
        ...
-       --#break
+       -- #break	
+       -- #case 'd'
        ...
-       --#default
-       	...
-       --#break
---#end
+       -- #break
+       ...
+       -- #default
+       ...
+       -- #break
+-- #end
 ```
 
-#### for
-
-Similar to Mybatis's `foreach`, and more features:
+#### choose-when-end
 
 ```sql
---#for item,idx of :list delimiter ',' open '' close ''
+-- #choose
+       -- #when :id >= 0
+       ...
+       -- #break
+       ...
+       -- #default
+       	...
+       -- #break
+-- #end
+```
+
+#### for-done
+
+```sql
+-- #for item,idx of :list delimiter ',' open '' close ''
 	...
---#done
+-- #done
 ```
 
 **For expression** syntax:
-
-:warning: `filter` keyword removed from this version, not support anymore.
 
 Keywords: `of` `delimiter` `open` `close`
 
@@ -371,7 +363,8 @@ Implement  `com.github.chengyuxing.common.script.IPipe`  interface and add to [X
 - **length**: get length of string value;
 - **upper**: convert to upper case;
 - **lower**: convert to lower case;
-- **pairs**: map convert to pairs `List<Pair>`.
+- **pairs**: map convert to pairs `List<Pair>` ; 
+- **kv**: object or map convert to keyValues `List<KeyValue>` .
 
 ### Example
 
@@ -416,29 +409,29 @@ example above will be generate sql and variables:
 ```sql
 select * from test.user where id = 1
  or id in (
-    :_for.id_0_7, 
-    :_for.id_0_8, 
-    :_for.id_0_9, 
-    :_for.id_0_10, 
-    :_for.id_0_11
+    :_for._id_0_7, 
+    :_for._id_0_8, 
+    :_for._id_0_9, 
+    :_for._id_0_10, 
+    :_for._id_0_11
 )
 ```
 
 ```json
 {
   "_for": {
-    "id_0_0": 1,
-    "id_0_2": 3,
-    "id_0_1": 2,
-    "id_0_10": 11,
-    "id_0_11": 12,
-    "id_0_4": 5,
-    "id_0_3": 4,
-    "id_0_6": 7,
-    "id_0_5": 6,
-    "id_0_8": 9,
-    "id_0_7": 8,
-    "id_0_9": 10
+    "_id_0_0": 1,
+    "_id_0_2": 3,
+    "_id_0_1": 2,
+    "_id_0_10": 11,
+    "_id_0_11": 12,
+    "_id_0_4": 5,
+    "_id_0_3": 4,
+    "_id_0_6": 7,
+    "_id_0_5": 6,
+    "_id_0_8": 9,
+    "_id_0_7": 8,
+    "_id_0_9": 10
   }
 }
 ```
@@ -477,9 +470,9 @@ example above will generate sql and variables:
 ```sql
 update test.user
 set
-  address = :_for.set_0_0.value,
-  name = :_for.set_0_1.value,
-  age = :_for.set_0_2.value
+  address = :_for._set_0_0.value,
+  name = :_for._set_0_1.value,
+  age = :_for._set_0_2.value
 where id = :id
 ```
 
@@ -487,15 +480,15 @@ where id = :id
 {
   "id": 10,
   "_for": {
-    "set_0_2": {
+    "_set_0_2": {
       "key": "age",
       "value": 30
     },
-    "set_0_1": {
+    "_set_0_1": {
       "key": "name",
       "value": "abc"
     },
-    "set_0_0": {
+    "_set_0_0": {
       "key": "address",
       "value": "kunming"
     }
@@ -505,7 +498,7 @@ where id = :id
 
 Explain:
 
-- `:data` is a map, it convert to pairs `List<pair>` by pipe `pairs`, so it can be work with for expression;
+- `:sets` is a map, it convert to `List<KeyValue>` by pipe `kv`, so it can be work with for expression;
 - `${set.key}` is string template holder, it's formatting on each loop, so prefix `_for.` is not required.
 
 Concat different sql statement by database name:

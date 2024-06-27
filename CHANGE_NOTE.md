@@ -1,6 +1,6 @@
 # change note
 
-## 7.11.0
+## 7.11.1
 
 - Support verify invalid nest expression.
 - Support verify non-pair expression.

@@ -6,7 +6,7 @@
 
 语言：[English](README.md) | 简体中文
 
-你不喜欢写xml，不喜欢xml和接口强绑定？
+你不喜欢xml，不喜欢xml和接口强绑定？
 
 你不喜欢工具帮你生成实体和大量的接口文件？
 
@@ -27,7 +27,7 @@
 - [动态sql](#动态SQL)；
 - 支持spring-boot框架。
 
-## Maven dependency (jdk1.8)
+## Maven dependency (jdk1.8+)
 
 Maven 中央仓库
 
@@ -35,7 +35,7 @@ Maven 中央仓库
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.11.0</version>
+    <version>7.11.1</version>
 </dependency>
 ```
 
@@ -76,8 +76,8 @@ baki.query("&my.users")
 
 ```mermaid
 flowchart LR;
-A["#quot;select ...#quot;"] --> Baki["query(#quot;#quot;)"];
-B[&my.users] --> X[XQLFileManager];
+A[#quot;select ...#quot;] --> Baki["query()"];
+B[#quot;&my.users#quot;] --> X[XQLFileManager];
 X --> Baki;
 click X href "#XQLFileManager" "go to defenition"
 ```
@@ -89,7 +89,7 @@ click X href "#XQLFileManager" "go to defenition"
 ##### 流查询
 
 ```java
-try(Stream<DataRow> fruits=baki.query("select * from fruit").stream()){
+try(Stream<DataRow> fruits = baki.query("select * from fruit").stream()){
         fruits.limit(10).forEach(System.out::println);
         }
 ```
@@ -159,7 +159,7 @@ baki.of("{call test.fun_query(:c::refcursor)}")
 
 - **fast**属性：底层调用的是jdbc的批量执行。
 
-  > 一般情况不推荐使用，除非真的需要一次性插入上千条数据批量操作。
+  > 每次批量大小为1000.
   >
   > 同样适用于**插入**操作。
 
@@ -194,7 +194,7 @@ Tx.using(() -> {
 
 ### 预编译SQL
 
-支持预编译sql，预编译sql的语法使用**命名参数**，例如：
+预编译sql的语法使用**命名参数**，例如：
 
 `:name` (jdbc标准的命名参数写法，sql将被预编译安全处理，参数名为：`name` )
 
@@ -214,15 +214,14 @@ Tx.using(() -> {
 sql：
 
 ```sql
-select ${fields}, ${moreFields} from ... where word in (${!words}) or id = :id;
+select ${fields} from ... where word in (${!words}) or id = :id;
 ```
 
 参数：
 
 ```java
 Args.<Object>of("id","uuid")
-  .add("fields", "id, name, address")
-  .add("moreFields", Arrays.asList("email", "enable"))
+  .add("fields", Arrays.asList("name", "age"))
   .add("words", Arrays.asList("I'm OK!", "book", "warning"));
 ```
 
@@ -231,7 +230,7 @@ Args.<Object>of("id","uuid")
 最终生成的sql：
 
 ```sql
-select id, name, address, email, enable from ... where id in ('I''m Ok!', 'book', 'warning') or id = ?;
+select name, age from ... where id in ('I''m Ok!', 'book', 'warning') or id = ?;
 ```
 
 ## 动态SQL
@@ -242,63 +241,56 @@ select id, name, address, email, enable from ... where id in ('I''m Ok!', 'book'
 
 注释标记都必须成对出现，都具有开闭标签，缩进不是必要的，只为了有层次感。
 
-#### if标签
-
-类似于Mybatis的 `if` 标签：
+#### if-else-fi
 
 ```sql
---#if :user <> null
-       --#if :user.name <> blank
-       ...
-       --#fi
---#fi
+-- #if :user <> null
+		...
+-- #else	(可选)
+		...
+-- #fi
 ```
 
-#### switch标签
-
-效果类似于程序代码的 `switch` :
+#### switch-case-end
 
 ```sql
---#switch :name
-       --#case 'jack'
+-- #switch :name
+       -- #case 'a', 'b', c
        ...
-       --#break
+       -- #break	
+       -- #case 'd'
        ...
-       --#default
+       -- #break
        ...
-       --#break
---#end
+       -- #default
+       ...
+       -- #break
+-- #end
 ```
 
-#### choose标签
-
-效果类似于mybatis的 `choose...when` 标签：
+#### choose-when-end
 
 ```sql
---#choose
-       --#when :id >= 0
+-- #choose
+       -- #when :id >= 0
        	...
-       --#break
+       -- #break
        ...
-       --#default
+       -- #default
        	...
-       --#break
---#end
+       -- #break
+-- #end
 ```
 
-#### for标签
-
-类似于mybatis的 `foreach` ，并进行了一些扩展：
+#### for-done
 
 ```sql
---#for item,idx of :list delimiter ',' open '' close ''
+-- #for item,idx of :list delimiter ',' open '' close ''
 	...
---#done
+-- #done
 ```
 
 **for表达式**语法说明：
-
-:warning: 从此版本开始， **for**表达式移除关键字 `filter`。
 
 关键字：`of` `delimiter` `open` `close`
 
@@ -371,7 +363,8 @@ C --pipeN--> D[...]
 - **length**：获取字符串的长度；
 - **upper**：转大写；
 - **lower**：转小写；
-- **pairs**：map转为一个二元组集合 `List<Pair>`。
+- **pairs**：map转为一个二元组集合 `List<Pair>`；
+- **kv**：对象或map转为一个键值对集合 `List<KeyValue>`。
 
 ### 例子
 
@@ -416,29 +409,29 @@ or id in (
 ```sql
 select * from test.user where id = 1
  or id in (
-    :_for.id_0_7, 
-    :_for.id_0_8, 
-    :_for.id_0_9, 
-    :_for.id_0_10, 
-    :_for.id_0_11
+    :_for._id_0_7, 
+    :_for._id_0_8, 
+    :_for._id_0_9, 
+    :_for._id_0_10, 
+    :_for._id_0_11
 )
 ```
 
 ```json
 {
   "_for": {
-    "id_0_0": 1,
-    "id_0_2": 3,
+    "_id_0_0": 1,
+    "_id_0_2": 3,
     "id_0_1": 2,
-    "id_0_10": 11,
-    "id_0_11": 12,
-    "id_0_4": 5,
-    "id_0_3": 4,
-    "id_0_6": 7,
-    "id_0_5": 6,
-    "id_0_8": 9,
-    "id_0_7": 8,
-    "id_0_9": 10
+    "_id_0_10": 11,
+    "_id_0_11": 12,
+    "_id_0_4": 5,
+    "_id_0_3": 4,
+    "_id_0_6": 7,
+    "_id_0_5": 6,
+    "_id_0_8": 9,
+    "_id_0_7": 8,
+    "_id_0_9": 10
   }
 }
 ```
@@ -477,9 +470,9 @@ where id = :id;
 ```sql
 update test.user
 set
-    address = :_for.set_0_0.value,
-    name = :_for.set_0_1.value,
-    age = :_for.set_0_2.value
+    address = :_for._set_0_0.value,
+    name = :_for._set_0_1.value,
+    age = :_for._set_0_2.value
 where id = :id
 ```
 
@@ -487,15 +480,15 @@ where id = :id
 {
   "id": 10,
   "_for": {
-    "set_0_2": {
+    "_set_0_2": {
       "key": "age",
       "value": 30
     },
-    "set_0_1": {
+    "_set_0_1": {
       "key": "name",
       "value": "abc"
     },
-    "set_0_0": {
+    "_set_0_0": {
       "key": "address",
       "value": "kunming"
     }
@@ -505,7 +498,7 @@ where id = :id
 
 说明：
 
-- `:data` 对应的值是一个map对象，经过 `pairs` [管道](#管道)后变成了一个**二元组集合**，所以可以用于 for 表达式；
+- `:sets` 对应的值是一个map对象，经过 `kv` [管道](#管道)后变成了一个**键值对集合**，所以可以用于 for 表达式；
 - `${set.key}` 是字符串模版占位符，每次迭代时就提前进行了格式化，所以不需要 `_for.` 前缀。
 
 根据不同数据库进行判断来拼接适合的sql：

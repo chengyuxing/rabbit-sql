@@ -28,7 +28,7 @@ a.id, a.name, a.date;
 /*[ooooooooo]*/
 select count(*),
        count(*) filter ( where grade > 90 )               greate,
-       -- #if :_databaseId != blank 90
+       -- #if :_databaseId != blank
         count(*) filter ( where grade < 90 and grade > 60) good,
        -- #fi
        count(*) filter ( where grade < 60 )               bad

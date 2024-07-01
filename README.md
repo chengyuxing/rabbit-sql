@@ -35,7 +35,7 @@ Maven central
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.11.1</version>
+    <version>7.11.2</version>
 </dependency>
 ```
 
@@ -370,8 +370,6 @@ Implement  `com.github.chengyuxing.common.script.IPipe`  interface and add to [X
 
 Here is about dynamic generate **named parameter sql**,  **named parameter** will be     prepare compile to `?`  to keep safe.
 
-:warning: Prefix  **_for.** in `for` body is an identity to **generate named parameter unique index automatically**, for generate correct named parameter.
-
 **for** is useful at sql `in` statement, it can be build prepared sql:
 
 ```sql
@@ -379,7 +377,7 @@ Here is about dynamic generate **named parameter sql**,  **named parameter** wil
 select * from test.user where id = 1
 -- #for id of :ids delimiter ', ' open ' or id in (' close ')'
     -- #if :id >= 8
-    :_for.id
+    :id
     -- #fi
 -- #done
 ```
@@ -392,7 +390,7 @@ select * from test.user where id = 1
 or id in (
     -- #for id of :ids delimiter ', '
         -- #if :id >= 8
-        :_for.id
+        :id
         -- #fi
     -- #done
     )
@@ -409,29 +407,29 @@ example above will be generate sql and variables:
 ```sql
 select * from test.user where id = 1
  or id in (
-    :_for._id_0_7, 
-    :_for._id_0_8, 
-    :_for._id_0_9, 
-    :_for._id_0_10, 
-    :_for._id_0_11
+    :_for.id_0_7, 
+    :_for.id_0_8, 
+    :_for.id_0_9, 
+    :_for.id_0_10, 
+    :_for.id_0_11
 )
 ```
 
 ```json
 {
   "_for": {
-    "_id_0_0": 1,
-    "_id_0_2": 3,
-    "_id_0_1": 2,
-    "_id_0_10": 11,
-    "_id_0_11": 12,
-    "_id_0_4": 5,
-    "_id_0_3": 4,
-    "_id_0_6": 7,
-    "_id_0_5": 6,
-    "_id_0_8": 9,
-    "_id_0_7": 8,
-    "_id_0_9": 10
+    "id_0_0": 1,
+    "id_0_2": 3,
+    "id_0_1": 2,
+    "id_0_10": 11,
+    "id_0_11": 12,
+    "id_0_4": 5,
+    "id_0_3": 4,
+    "id_0_6": 7,
+    "id_0_5": 6,
+    "id_0_8": 9,
+    "id_0_7": 8,
+    "id_0_9": 10
   }
 }
 ```
@@ -440,7 +438,6 @@ For a few special places to explain:
 
 - If for loop result is not empty, `open` means `or id in(` will prepend to result, `close` means `)` will append to result;
 - Variable starts with `:` in sql means it's a named parameter which will prepare compile;
-- Prefix `_for.` is special variable name in for loop body, it's necessary to follow the rule when use for-variable for named parameter, for auto generate named parameter with unique index correctly.
 
 **for** work with `update` statement sets part:
 
@@ -449,7 +446,7 @@ For a few special places to explain:
 update test.user
 set
 -- #for set of :sets | kv delimiter ', '
-    ${set.key} = :_for.set.value
+    ${set.key} = :set.value
 -- #done
 where id = :id;
 ```
@@ -457,7 +454,7 @@ where id = :id;
 ```json
 {
   "id": 10,
-  "data": {
+  "sets": {
     "name": "abc",
     "age": 30,
     "address": "kunming"
@@ -470,9 +467,9 @@ example above will generate sql and variables:
 ```sql
 update test.user
 set
-  address = :_for._set_0_0.value,
-  name = :_for._set_0_1.value,
-  age = :_for._set_0_2.value
+  address = :_for.set_0_0.value,
+  name = :_for.set_0_1.value,
+  age = :_for.set_0_2.value
 where id = :id
 ```
 
@@ -480,15 +477,15 @@ where id = :id
 {
   "id": 10,
   "_for": {
-    "_set_0_2": {
+    "set_0_2": {
       "key": "age",
       "value": 30
     },
-    "_set_0_1": {
+    "set_0_1": {
       "key": "name",
       "value": "abc"
     },
-    "_set_0_0": {
+    "set_0_0": {
       "key": "address",
       "value": "kunming"
     }
@@ -499,7 +496,6 @@ where id = :id
 Explain:
 
 - `:sets` is a map, it convert to `List<KeyValue>` by pipe `kv`, so it can be work with for expression;
-- `${set.key}` is string template holder, it's formatting on each loop, so prefix `_for.` is not required.
 
 Concat different sql statement by database name:
 

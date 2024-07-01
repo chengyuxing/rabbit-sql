@@ -35,7 +35,7 @@ Maven 中央仓库
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.11.1</version>
+    <version>7.11.2</version>
 </dependency>
 ```
 
@@ -370,8 +370,6 @@ C --pipeN--> D[...]
 
 以下的例子主要以动态生成**命名参数sql**来展开进行讲解，**命名参数**最终都会被进行预编译为 `?` ，避免sql注入的风险。
 
-:warning: for循环体中的 **_for.**  前缀主要就是为**识别命名参数进行自动编号**，以生成正确且唯一的命名参数。
-
 **for**标签特别是在构建sql的 `in` 语句时且需要达到预编译sql的效果时特别有用：
 
 ```sql
@@ -379,7 +377,7 @@ C --pipeN--> D[...]
 select * from test.user where id = 1
 -- #for id of :ids delimiter ', ' open ' or id in (' close ')'
     -- #if :id >= 8
-    :_for.id
+    :id
     -- #fi
 -- #done
 ```
@@ -392,7 +390,7 @@ select * from test.user where id = 1
 or id in (
     -- #for id of :ids delimiter ', '
         -- #if :id >= 8
-        :_for.id
+        :id
         -- #fi
     -- #done
     )
@@ -409,29 +407,29 @@ or id in (
 ```sql
 select * from test.user where id = 1
  or id in (
-    :_for._id_0_7, 
-    :_for._id_0_8, 
-    :_for._id_0_9, 
-    :_for._id_0_10, 
-    :_for._id_0_11
+    :_for.id_0_7, 
+    :_for.id_0_8, 
+    :_for.id_0_9, 
+    :_for.id_0_10, 
+    :_for.id_0_11
 )
 ```
 
 ```json
 {
   "_for": {
-    "_id_0_0": 1,
-    "_id_0_2": 3,
+    "id_0_0": 1,
+    "id_0_2": 3,
     "id_0_1": 2,
-    "_id_0_10": 11,
-    "_id_0_11": 12,
-    "_id_0_4": 5,
-    "_id_0_3": 4,
-    "_id_0_6": 7,
-    "_id_0_5": 6,
-    "_id_0_8": 9,
-    "_id_0_7": 8,
-    "_id_0_9": 10
+    "id_0_10": 11,
+    "id_0_11": 12,
+    "id_0_4": 5,
+    "id_0_3": 4,
+    "id_0_6": 7,
+    "id_0_5": 6,
+    "id_0_8": 9,
+    "id_0_7": 8,
+    "id_0_9": 10
   }
 }
 ```
@@ -440,7 +438,6 @@ select * from test.user where id = 1
 
 - 当有满足项时，`open` 会在前面加上 `or id in(` , `close` 会在后面加上 `)` , 反之则不会加；
 - 在sql中以 `:` 开头的变量名，意味着这是一个将会进行预编译的命名参数；
-- 前缀 `_for.` 是 `for` 表达式中特殊的变量名，使用本 for 中的变量用于命名参数，那么必须以此前缀开头，然后在解析的过程中为此命名参数自动进行编号，确保达到预期的效果；
 
 **for**也可以用来构建`update`语句：
 
@@ -449,7 +446,7 @@ select * from test.user where id = 1
 update test.user
 set
 -- #for set of :sets | kv delimiter ', '
-    ${set.key} = :_for.set.value
+    ${set.key} = :set.value
 -- #done
 where id = :id;
 ```
@@ -457,7 +454,7 @@ where id = :id;
 ```json
 {
   "id": 10,
-  "data": {
+  "sets": {
     "name": "abc",
     "age": 30,
     "address": "kunming"
@@ -470,9 +467,9 @@ where id = :id;
 ```sql
 update test.user
 set
-    address = :_for._set_0_0.value,
-    name = :_for._set_0_1.value,
-    age = :_for._set_0_2.value
+    address = :_for.set_0_0.value,
+    name = :_for.set_0_1.value,
+    age = :_for.set_0_2.value
 where id = :id
 ```
 
@@ -480,15 +477,15 @@ where id = :id
 {
   "id": 10,
   "_for": {
-    "_set_0_2": {
+    "set_0_2": {
       "key": "age",
       "value": 30
     },
-    "_set_0_1": {
+    "set_0_1": {
       "key": "name",
       "value": "abc"
     },
-    "_set_0_0": {
+    "set_0_0": {
       "key": "address",
       "value": "kunming"
     }
@@ -499,7 +496,6 @@ where id = :id
 说明：
 
 - `:sets` 对应的值是一个map对象，经过 `kv` [管道](#管道)后变成了一个**键值对集合**，所以可以用于 for 表达式；
-- `${set.key}` 是字符串模版占位符，每次迭代时就提前进行了格式化，所以不需要 `_for.` 前缀。
 
 根据不同数据库进行判断来拼接适合的sql：
 

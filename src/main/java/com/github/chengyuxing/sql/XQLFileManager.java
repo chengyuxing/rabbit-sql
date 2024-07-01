@@ -9,6 +9,7 @@ import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.sql.exceptions.DuplicateException;
 import com.github.chengyuxing.sql.support.TemplateFormatter;
+import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.utils.SqlHighlighter;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.slf4j.Logger;
@@ -69,9 +70,7 @@ import static com.github.chengyuxing.common.utils.StringUtil.containsAnyIgnoreCa
  */
 public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(XQLFileManager.class);
-    //language=RegExp
     public static final Pattern NAME_PATTERN = Pattern.compile("/\\*\\s*\\[\\s*(?<name>\\S+)\\s*]\\s*\\*/");
-    //language=RegExp
     public static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+)\\s*}\\s*\\*/");
     public static final String SQL_DESC_START = "/*#";
     public static final String SQL_DESC_END = "#*/";
@@ -721,7 +720,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     public class DynamicSqlParser extends FlowControlParser {
         public static final String FOR_VARS_KEY = "_for";
-        public static final String VAR_PREFIX = FOR_VARS_KEY + ".";
+        public static final String VAR_PREFIX = FOR_VARS_KEY + '.';
 
         public DynamicSqlParser(String sql) {
             super(sql);
@@ -742,7 +741,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
          * <blockquote>
          * <pre>
          * -- #for user,idx of :users delimiter ', '
-         *    :_for.user
+         *    :user
          * -- #done
          * </pre>
          * </blockquote>
@@ -765,16 +764,46 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
          */
         @Override
         protected String forLoopBodyFormatter(int forIndex, int varIndex, String varName, String idxName, String body, Map<String, Object> args) {
-            String formatted = SqlUtil.formatSql(body, args, templateFormatter);
-            if (!varName.isEmpty()) {
-                // e.g _for.item  ->  _for._item_0_1
-                String varParam = VAR_PREFIX + forVarKey(varName, forIndex, varIndex);
-                formatted = formatted.replace(VAR_PREFIX + varName, varParam);
+            String formatted = body;
+            if (body.contains("${")) {
+                formatted = SqlUtil.formatSql(body, args, templateFormatter);
             }
-            if (!idxName.isEmpty()) {
-                // e.g _for.idx  ->  _for._idx_0_1
-                String idxParam = VAR_PREFIX + forVarKey(idxName, forIndex, varIndex);
-                formatted = formatted.replace(VAR_PREFIX + idxName, idxParam);
+            if (formatted.contains(namedParamPrefix + varName) || formatted.contains(namedParamPrefix + idxName)) {
+                StringBuilder sb = new StringBuilder();
+                Pattern p = new SqlGenerator(namedParamPrefix).getNamedParamPattern();
+                Matcher m = p.matcher(formatted);
+                int lastMatchEnd = 0;
+                while (m.find()) {
+                    sb.append(formatted, lastMatchEnd, m.start());
+                    lastMatchEnd = m.end();
+                    String name = m.group(1);
+                    if (Objects.isNull(name)) {
+                        continue;
+                    }
+                    if (name.equals(varName) || name.equals(idxName)) {
+                        sb.append(namedParamPrefix)
+                                .append(VAR_PREFIX)
+                                .append(forVarKey(name, forIndex, varIndex));
+                        continue;
+                    }
+                    // -- #for item of :data | kv
+                    //  ${item.key} = :item.value
+                    //-- #done
+                    // --------------------------
+                    // name: item.value
+                    // varName: item
+                    if (name.startsWith(varName + '.')) {
+                        String suffix = name.substring(varName.length());
+                        sb.append(namedParamPrefix)
+                                .append(VAR_PREFIX)
+                                .append(forVarKey(varName, forIndex, varIndex))
+                                .append(suffix);
+                        continue;
+                    }
+                    sb.append(m.group());
+                }
+                sb.append(formatted.substring(lastMatchEnd));
+                formatted = sb.toString();
             }
             return formatted;
         }

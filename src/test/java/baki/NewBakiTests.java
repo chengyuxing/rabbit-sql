@@ -3,6 +3,7 @@ package baki;
 import baki.entity.AnotherUser;
 import baki.entity.User;
 import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.Baki;
 import com.github.chengyuxing.sql.BakiDao;
@@ -117,6 +118,20 @@ public class NewBakiTests {
                 .ignoreNull()
                 .saveEntity(user);
         System.out.println(i);
+    }
+
+    @Test
+    public void testUpdate2() {
+        DataRow res = baki.of("&new.update").execute(Args.of(
+                "id", 11,
+                "sets", Args.of(
+                        "name", "chengyuxing",
+                        "age", 31,
+                        "address", "kunming",
+                        "photo", new FileResource("file:///Users/chengyuxing/Downloads/niwo.png").getInputStream()
+                )
+        ));
+        System.out.println(res);
     }
 
     @Test

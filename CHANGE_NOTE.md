@@ -1,5 +1,11 @@
 # change note
 
+## 7.11.2
+
+- Fixed `#for-#done` missing pipes verify bug.
+- `#for-#done` loop sql body named parameter parsing optimized.
+- `#for-#done` removed named parameter prefix `_for.`.
+
 ## 7.11.1
 
 - Support verify invalid nest expression.

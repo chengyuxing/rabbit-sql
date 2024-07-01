@@ -8,6 +8,7 @@ import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.io.FileResource;
+import com.github.chengyuxing.common.script.expression.Patterns;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.PagedResource;
@@ -29,6 +30,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class NonBakiTests {
     @Test
@@ -261,5 +263,27 @@ public class NonBakiTests {
         XQLFileManagerConfig config = new XQLFileManagerConfig();
         config.loadYaml(new FileResource("xql-file-manager.old.yml"));
         System.out.println(config);
+    }
+
+    @Test
+    public void testR() {
+        String a = "id = :id.item and id <> :id3uij and id > :id::id";
+        Pattern p = new SqlGenerator(':').getNamedParamPattern();
+        System.out.println(p.pattern());
+        StringBuilder sb = new StringBuilder();
+        Matcher m = p.matcher(a);
+        int lastMatchEnd = 0;
+        while (m.find()) {
+            String name = m.group(1);
+            sb.append(a, lastMatchEnd, m.start());
+            if (name != null && name.equals("id")) {
+                sb.append("_for.").append(name).append("_0_1");
+            } else {
+                sb.append(m.group());
+            }
+            lastMatchEnd = m.end();
+        }
+        sb.append(a.substring(lastMatchEnd));
+        System.out.println(sb);
     }
 }

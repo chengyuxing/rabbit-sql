@@ -2,10 +2,10 @@
 select *
 from test.user
 where id = 1
--- #for id of :ids delimiter ', ' open ' or id in (' close ')'
+-- #for id, idx of :ids delimiter ', ' open ' or id in (' close ')'
       -- #if :id | isOdd == true
-    :_for.id
-        -- #fi
+        :id, :idx
+     -- #fi
 -- #done
 ;
 
@@ -18,7 +18,7 @@ insert into test.user (name, age, address, dt)
 values (
         -- #for item of :users delimiter ', '
             -- #if :item <> blank
-            :_for.item
+            :item
             -- #fi
         -- #done
        )
@@ -27,8 +27,8 @@ values (
 /*[update]*/
 update test.user
 set
--- #for pair of :data | pairs delimiter ', '
-${pair.item1} = :_for.pair.item2
+-- #for item of :sets | kv delimiter ', '
+${item.key} = :item.value
 -- #done
 where id = :id;
 

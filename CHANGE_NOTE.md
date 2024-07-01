@@ -1,5 +1,9 @@
 # change note
 
+## 7.11.3
+
+- Fixed dynamic sql parsing number token bug.
+
 ## 7.11.2
 
 - Fixed `#for-#done` missing pipes verify bug.

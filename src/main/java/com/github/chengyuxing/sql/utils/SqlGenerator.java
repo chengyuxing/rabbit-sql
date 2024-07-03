@@ -102,7 +102,7 @@ public class SqlGenerator {
         if (fullSql.lastIndexOf(namedParamPrefix) < 0) {
             return Pair.of(fullSql, Collections.emptyMap());
         }
-        Map<String, List<Integer>> indexMap = new HashMap<>();
+        Map<String, List<Integer>> indexMap = new LinkedHashMap<>();
         StringBuilder parsedSql = new StringBuilder();
         Matcher matcher = namedParamPattern.matcher(fullSql);
         int index = 1;

@@ -1,5 +1,9 @@
 # change note
 
+## 7.11.4
+
+- Some optimized.
+
 ## 7.11.3
 
 - Fixed dynamic sql parsing number token bug.

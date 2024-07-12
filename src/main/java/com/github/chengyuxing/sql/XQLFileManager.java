@@ -7,6 +7,7 @@ import com.github.chengyuxing.common.script.exception.ScriptSyntaxException;
 import com.github.chengyuxing.common.script.expression.IPipe;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.ReflectUtil;
+import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.exceptions.DuplicateException;
 import com.github.chengyuxing.sql.support.TemplateFormatter;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
@@ -347,7 +348,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                 sqlContent = SqlUtil.formatSql(sqlContent, templates, templateFormatter);
                 sqlContent = SqlUtil.formatSql(sqlContent, constants, templateFormatter);
                 // remove empty line.
-                sql.setContent(sqlContent.replaceAll("\\s*\r?\n", NEW_LINE));
+                sql.setContent(StringUtil.removeEmptyLine(sqlContent));
             }
         }
     }

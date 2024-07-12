@@ -727,7 +727,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         }
 
         @Override
-        public Map<String, IPipe<?>> getPipes() {
+        protected Map<String, IPipe<?>> getPipes() {
             return getPipeInstances();
         }
 

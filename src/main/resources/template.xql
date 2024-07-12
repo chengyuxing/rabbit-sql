@@ -27,8 +27,8 @@ select *
 from test.user
 where id = 1
 -- #for id of :ids delimiter ', ' open ' or id in (' close ')'
-      -- #if :id > 0
-    :_for.id
--- #fi
+    -- #if :id > 0
+    :id
+    -- #fi
 -- #done
 ;

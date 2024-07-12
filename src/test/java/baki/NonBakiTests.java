@@ -38,6 +38,7 @@ public class NonBakiTests {
         XQLFileManager xqlFileManager = new XQLFileManager();
         xqlFileManager.setDatabaseId("oracle");
         xqlFileManager.add("pgsql/other.sql");
+        xqlFileManager.add("http://localhost:8080/share/cyx.xql");
         xqlFileManager.init();
         System.out.println("---");
         System.out.println(xqlFileManager.get("other.ooooooooo", Args.of()));
@@ -100,7 +101,7 @@ public class NonBakiTests {
     }
 
     static final String query = "select t.id || 'number' || 'age:age,name:cyx', '{\"name\":\"user\"}'::jsonb from test.user where id =:integer::integer and id >:idc or id < :idc and name=text :username";
-    static final String insert = "insert into test.user(idd,name,id,age,address) values (?id,?name::integer,?idd::float,integer ?age,date ?address)";
+    static final String insert = "insert into test.user(idd,name,id,age,address) values (*id,*name::integer,*idd::float,integer *age,date *address)";
 
     @Test
     public void testPs3() {
@@ -116,7 +117,8 @@ public class NonBakiTests {
 
     @Test
     public void test23() {
-        SqlGenerator sqlGenerator = new SqlGenerator('?');
+        SqlGenerator sqlGenerator = new SqlGenerator('*');
+        System.out.println(sqlGenerator.getNamedParamPattern());
         Pair<String, Map<String, List<Integer>>> sqla = sqlGenerator.generatePreparedSql(insert, Args.of("id", 12,
                 "name", "chengyuxing",
                 "idd", 16,

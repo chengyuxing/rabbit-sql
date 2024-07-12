@@ -36,7 +36,8 @@ public final class SqlHighlighter {
         SINGLE_QUOTE_STRING,
         LINE_ANNOTATION,
         BLOCK_ANNOTATION,
-        NAMED_PARAMETER
+        NAMED_PARAMETER,
+        OTHER
     }
 
     /**
@@ -121,6 +122,8 @@ public final class SqlHighlighter {
                         // symbol '*' highlight
                     } else if (word.equals("*")) {
                         replacement = replacer.apply(TAG.ASTERISK, word);
+                    } else {
+                        replacement = replacer.apply(TAG.OTHER, word);
                     }
                 }
                 sb.append(replacement);

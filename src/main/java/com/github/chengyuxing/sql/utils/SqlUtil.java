@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
  */
 public class SqlUtil {
     //language=RegExp
-    public static final Pattern STR_PATTERN = Pattern.compile("'[^']*'", Pattern.MULTILINE);
+    public static final Pattern STR_PATTERN = Pattern.compile("'(''|[^'])*'", Pattern.MULTILINE);
     //language=RegExp
     public static final Pattern SQL_ERR_COMMA_WHERE = Pattern.compile(",\\s*(where\\W+)", Pattern.CASE_INSENSITIVE);
     //language=RegExp

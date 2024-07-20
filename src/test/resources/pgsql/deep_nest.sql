@@ -79,7 +79,7 @@ from test.region t
        --#else
             and t.ff3 = :ff and id in
             -- #for item  of :list  delimiter ',' open '(' close ')'
-                :_for.item
+                :item
             -- #done
        --#fi
     --#break

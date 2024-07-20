@@ -74,7 +74,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public static final Pattern NAME_PATTERN = Pattern.compile("/\\*\\s*\\[\\s*(?<name>\\S+)\\s*]\\s*\\*/");
     public static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+)\\s*}\\s*\\*/");
     public static final String SQL_DESC_START = "/*#";
-    public static final String SQL_DESC_END = "#*/";
     public static final String XQL_DESC_QUOTE = "@@@";
     public static final String PROPERTIES = "xql-file-manager.properties";
     public static final String YML = "xql-file-manager.yml";
@@ -180,20 +179,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * Put sql resource persistent.
-     *
-     * @param alias        file alias
-     * @param filename     file name
-     * @param fileResource file resource
-     * @throws IOException        if file not exists
-     * @throws DuplicateException if duplicate sql fragment name found in 1 sql file
-     * @throws URISyntaxException if file uri syntax error
-     */
-    protected void putResource(String alias, String filename, FileResource fileResource) throws IOException, URISyntaxException {
-        resources.put(alias, parse(alias, filename, fileResource));
-    }
-
-    /**
      * Parse sql file to structured resource.
      *
      * @param alias        file alias
@@ -208,7 +193,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         Map<String, Sql> entry = new LinkedHashMap<>();
         String xqlDesc = "";
         try (BufferedReader reader = fileResource.getBufferedReader(Charset.forName(charset))) {
-            String blockName = "";
+            String blockName = null;
             List<String> descriptionBuffer = new ArrayList<>();
             List<String> sqlBodyBuffer = new ArrayList<>();
             String line;
@@ -233,49 +218,72 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     }
                     continue;
                 }
-                if (trimLine.startsWith(SQL_DESC_START)) {
-                    if (trimLine.endsWith(SQL_DESC_END)) {
-                        String description = trimLine.substring(3, trimLine.length() - 3);
-                        if (!description.trim().isEmpty()) {
-                            descriptionBuffer.add(description);
-                        }
-                        continue;
-                    }
-                    String descriptionStart = trimLine.substring(3);
-                    if (!descriptionStart.trim().isEmpty()) {
-                        descriptionBuffer.add(descriptionStart);
-                    }
-                    String descLine;
-                    while ((descLine = reader.readLine()) != null) {
-                        if (descLine.trim().endsWith(SQL_DESC_END)) {
-                            String descriptionEnd = descLine.substring(0, descLine.lastIndexOf(SQL_DESC_END));
-                            if (!descriptionEnd.trim().isEmpty()) {
-                                descriptionBuffer.add(descriptionEnd);
+                if (trimLine.startsWith("/*")) {
+                    // /*#...#*/
+                    if (trimLine.startsWith(SQL_DESC_START)) {
+                        if (trimLine.endsWith("*/")) {
+                            String description = trimLine.substring(3, trimLine.length() - 2);
+                            if (description.endsWith("#")) {
+                                description = description.substring(0, description.length() - 1);
                             }
-                            break;
+                            if (!description.trim().isEmpty()) {
+                                descriptionBuffer.add(description);
+                            }
+                            continue;
                         }
-                        descriptionBuffer.add(descLine);
-                    }
-                    continue;
-                }
-                if (xqlDesc.isEmpty()) {
-                    if (trimLine.equals(XQL_DESC_QUOTE)) {
-                        StringJoiner descSb = new StringJoiner(NEW_LINE);
-                        String annoLine;
-                        while ((annoLine = reader.readLine()) != null) {
-                            String trimAnnoLine = annoLine.trim();
-                            if (trimAnnoLine.equals(XQL_DESC_QUOTE)) {
+                        String descriptionStart = trimLine.substring(3);
+                        if (!descriptionStart.trim().isEmpty()) {
+                            descriptionBuffer.add(descriptionStart);
+                        }
+                        String descLine;
+                        while ((descLine = reader.readLine()) != null) {
+                            if (descLine.trim().endsWith("*/")) {
+                                String descriptionEnd = descLine.substring(0, descLine.lastIndexOf("*/"));
+                                if (descriptionEnd.endsWith("#")) {
+                                    descriptionEnd = descriptionEnd.substring(0, descriptionEnd.length() - 1);
+                                }
+                                if (!descriptionEnd.trim().isEmpty()) {
+                                    descriptionBuffer.add(descriptionEnd);
+                                }
                                 break;
                             }
-                            descSb.add(trimAnnoLine);
+                            descriptionBuffer.add(descLine);
+                        }
+                        continue;
+                    }
+
+                    // @@@
+                    // ...
+                    // @@@
+                    if (Objects.isNull(blockName)) {
+                        StringJoiner descSb = new StringJoiner(NEW_LINE);
+                        String a;
+                        descBlock:
+                        while ((a = reader.readLine()) != null) {
+                            String ta = a.trim();
+                            if (ta.endsWith("*/")) {
+                                break;
+                            }
+                            if (ta.equals(XQL_DESC_QUOTE)) {
+                                String b;
+                                while ((b = reader.readLine()) != null) {
+                                    String tb = b.trim();
+                                    if (tb.equals(XQL_DESC_QUOTE)) {
+                                        break;
+                                    }
+                                    if (tb.endsWith("*/")) {
+                                        break descBlock;
+                                    }
+                                    descSb.add(tb);
+                                }
+                            }
                         }
                         xqlDesc = descSb.toString();
-                        continue;
                     }
                 }
                 // exclude single line annotation except expression keywords
                 if (!trimLine.startsWith("--") || trimExpressionLine(trimLine).matches(FlowControlLexer.KEYWORDS_PATTERN)) {
-                    if (!blockName.isEmpty()) {
+                    if (!StringUtil.isEmpty(blockName)) {
                         sqlBodyBuffer.add(line);
                         if (trimLine.endsWith(delimiter)) {
                             String sql = String.join(NEW_LINE, sqlBodyBuffer);
@@ -299,7 +307,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                 }
             }
             // if last part of sql is not ends with delimiter symbol
-            if (!blockName.isEmpty()) {
+            if (!StringUtil.isEmpty(blockName)) {
                 String lastSql = String.join(NEW_LINE, sqlBodyBuffer);
                 //noinspection DuplicatedCode
                 String lastDesc = String.join(NEW_LINE, descriptionBuffer);
@@ -421,11 +429,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                             long oldLastModified = resource.getLastModified();
                             long lastModified = fr.getLastModified();
                             if (oldLastModified > 0 && oldLastModified != lastModified) {
-                                putResource(alias, filename, fr);
+                                resources.put(alias, parse(alias, filename, fr));
                                 log.debug("reload modified sql file: {}", filename);
                             }
                         } else {
-                            putResource(alias, filename, fr);
+                            resources.put(alias, parse(alias, filename, fr));
                         }
                     }
                 } else {

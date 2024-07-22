@@ -18,6 +18,7 @@
 #*/
 select *
 from test.user
+-- inner join test.tb on 1 = 1
 where
 
     ${cnd}

@@ -281,28 +281,25 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                         xqlDesc = descSb.toString();
                     }
                 }
-                // exclude single line annotation except expression keywords
-                if (!trimLine.startsWith("--") || trimExpressionLine(trimLine).matches(FlowControlLexer.KEYWORDS_PATTERN)) {
-                    if (!StringUtil.isEmpty(blockName)) {
-                        sqlBodyBuffer.add(line);
-                        if (trimLine.endsWith(delimiter)) {
-                            String sql = String.join(NEW_LINE, sqlBodyBuffer);
-                            sql = sql.substring(0, sql.lastIndexOf(delimiter)).trim();
-                            //noinspection DuplicatedCode
-                            String desc = String.join(NEW_LINE, descriptionBuffer);
-                            try {
-                                newDynamicSqlParser(sql).verify();
-                            } catch (ScriptSyntaxException e) {
-                                throw new ScriptSyntaxException("File: " + fileResource.getURL() + ", sql: '" + blockName + "' dynamic sql script syntax error.", e);
-                            }
-                            Sql sqlObj = new Sql(sql);
-                            sqlObj.setDescription(desc);
-                            entry.put(blockName, sqlObj);
-                            log.debug("scan {} to get sql({}) [{}.{}]：{}", filename, delimiter, alias, blockName, SqlHighlighter.highlightIfAnsiCapable(sql));
-                            blockName = "";
-                            sqlBodyBuffer.clear();
-                            descriptionBuffer.clear();
+                if (!StringUtil.isEmpty(blockName)) {
+                    sqlBodyBuffer.add(line);
+                    if (trimLine.endsWith(delimiter)) {
+                        String sql = String.join(NEW_LINE, sqlBodyBuffer);
+                        sql = sql.substring(0, sql.lastIndexOf(delimiter)).trim();
+                        //noinspection DuplicatedCode
+                        String desc = String.join(NEW_LINE, descriptionBuffer);
+                        try {
+                            newDynamicSqlParser(sql).verify();
+                        } catch (ScriptSyntaxException e) {
+                            throw new ScriptSyntaxException("File: " + fileResource.getURL() + ", sql: '" + blockName + "' dynamic sql script syntax error.", e);
                         }
+                        Sql sqlObj = new Sql(sql);
+                        sqlObj.setDescription(desc);
+                        entry.put(blockName, sqlObj);
+                        log.debug("scan {} to get sql({}) [{}.{}]：{}", filename, delimiter, alias, blockName, SqlHighlighter.highlightIfAnsiCapable(sql));
+                        blockName = "";
+                        sqlBodyBuffer.clear();
+                        descriptionBuffer.clear();
                     }
                 }
             }
@@ -314,12 +311,12 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                 try {
                     newDynamicSqlParser(lastSql).verify();
                 } catch (ScriptSyntaxException e) {
-                    throw new ScriptSyntaxException("File: " + fileResource.getURL() + ", sql: '" + blockName + "' dynamic sql script syntax error.", e);
+                    throw new ScriptSyntaxException("File: " + fileResource.getURL() + " -> '" + blockName + "' dynamic sql script syntax error.", e);
                 }
                 Sql sqlObj = new Sql(lastSql);
                 sqlObj.setDescription(lastDesc);
                 entry.put(blockName, sqlObj);
-                log.debug("scan {} to get sql({}) [{}.{}]：{}", filename, delimiter, alias, blockName, SqlHighlighter.highlightIfAnsiCapable(lastSql));
+                log.debug("scan {} to get sql({}) [{}.{}]: {}", filename, delimiter, alias, blockName, SqlHighlighter.highlightIfAnsiCapable(lastSql));
             }
         }
         if (!entry.isEmpty()) {

@@ -1,5 +1,9 @@
 # change note
 
+## 7.11.6
+
+- Some optimized.
+
 ## 7.11.5
 
 - Parsing sql file description optimized.

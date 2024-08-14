@@ -159,6 +159,14 @@ public abstract class QueryExecutor {
     public abstract Optional<DataRow> findFirst();
 
     /**
+     * Collect 1st optional row.
+     *
+     * @param pageQuery1st if true do page query 1st row, otherwise do {@link Stream#findFirst()}
+     * @return 1st optional row
+     */
+    public abstract Optional<DataRow> findFirst(boolean pageQuery1st);
+
+    /**
      * Check query result exists or not.
      *
      * @return true if exists or false

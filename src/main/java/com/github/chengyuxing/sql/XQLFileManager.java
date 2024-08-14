@@ -191,7 +191,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     public Resource parse(String alias, String filename, FileResource fileResource) throws IOException, URISyntaxException {
         Map<String, Sql> entry = new LinkedHashMap<>();
-        String xqlDesc = "";
+        StringJoiner xqlDesc = new StringJoiner(NEW_LINE);
         try (BufferedReader reader = fileResource.getBufferedReader(Charset.forName(charset))) {
             String blockName = null;
             List<String> descriptionBuffer = new ArrayList<>();
@@ -251,12 +251,13 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                         }
                         continue;
                     }
-
                     // @@@
                     // ...
                     // @@@
                     if (Objects.isNull(blockName)) {
-                        StringJoiner descSb = new StringJoiner(NEW_LINE);
+                        if (trimLine.endsWith("*/")) {
+                            continue;
+                        }
                         String a;
                         descBlock:
                         while ((a = reader.readLine()) != null) {
@@ -274,11 +275,10 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                                     if (tb.endsWith("*/")) {
                                         break descBlock;
                                     }
-                                    descSb.add(tb);
+                                    xqlDesc.add(tb);
                                 }
                             }
                         }
-                        xqlDesc = descSb.toString();
                     }
                 }
                 if (!StringUtil.isEmpty(blockName)) {
@@ -325,7 +325,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         Resource resource = new Resource(alias, filename);
         resource.setEntry(Collections.unmodifiableMap(entry));
         resource.setLastModified(fileResource.getLastModified());
-        resource.setDescription(xqlDesc);
+        resource.setDescription(xqlDesc.toString().trim());
         return resource;
     }
 

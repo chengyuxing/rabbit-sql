@@ -1,5 +1,9 @@
 # change note
 
+## 7.11.8
+
+- Fixed dynamic sql #for-#done bug.
+
 ## 7.11.7
 
 - Fixed XQL File Manager parsing block annotation bug.

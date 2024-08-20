@@ -784,6 +784,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     lastMatchEnd = m.end();
                     String name = m.group(1);
                     if (Objects.isNull(name)) {
+                        sb.append(m.group());
                         continue;
                     }
                     if (name.equals(varName) || name.equals(idxName)) {

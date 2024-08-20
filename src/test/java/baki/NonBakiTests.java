@@ -26,6 +26,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -287,5 +288,14 @@ public class NonBakiTests {
         }
         sb.append(a.substring(lastMatchEnd));
         System.out.println(sb);
+    }
+
+    @Test
+    public void testX() {
+        XQLFileManager xqlFileManager=new XQLFileManager();
+        String sql = "--#for id of :list delimiter ' or '\n"+
+                "t.id like '%' || :iad || '%'\n"+
+                "--#done";
+        System.out.println(xqlFileManager.parseDynamicSql(sql, Args.of("list", Arrays.asList("a", "b", "c"))));
     }
 }

@@ -245,7 +245,8 @@ public class NewBakiTests {
     @Test
     public void testCall3() {
         baki.query("select * from test.user")
-                .pageable(1, 3)
+                .args("page", 1, "size", 4)
+                .pageable()
                 .collect()
                 .getData()
                 .forEach(System.out::println);

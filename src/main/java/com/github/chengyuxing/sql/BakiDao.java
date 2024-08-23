@@ -88,6 +88,14 @@ public class BakiDao extends JdbcSupport implements Baki {
      * otherwise {@code xql-file-manager.yml}
      */
     private boolean autoXFMConfig = false;
+    /**
+     * Page query page number argument key.
+     */
+    private String pageKey = "page";
+    /**
+     * Page query page size argument key.
+     */
+    private String sizeKey = "size";
 
     /**
      * Constructs a new BakiDao with initial datasource.
@@ -155,6 +163,18 @@ public class BakiDao extends JdbcSupport implements Baki {
             public IPageable pageable(int page, int size) {
                 IPageable iPageable = new SimplePageable(sql, page, size);
                 return iPageable.args(args);
+            }
+
+            @Override
+            public IPageable pageable(String pageKey, String sizeKey) {
+                int page = (int) args.get(pageKey);
+                int size = (int) args.get(sizeKey);
+                return pageable(page, size);
+            }
+
+            @Override
+            public IPageable pageable() {
+                return pageable(pageKey, sizeKey);
             }
 
             @Override
@@ -382,6 +402,22 @@ public class BakiDao extends JdbcSupport implements Baki {
     @Override
     public String databaseId() {
         return this.databaseId;
+    }
+
+    public String getPageKey() {
+        return pageKey;
+    }
+
+    public void setPageKey(String pageKey) {
+        this.pageKey = pageKey;
+    }
+
+    public String getSizeKey() {
+        return sizeKey;
+    }
+
+    public void setSizeKey(String sizeKey) {
+        this.sizeKey = sizeKey;
     }
 
     /**

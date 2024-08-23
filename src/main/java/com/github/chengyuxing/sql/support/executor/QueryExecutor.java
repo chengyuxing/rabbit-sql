@@ -2,6 +2,7 @@ package com.github.chengyuxing.sql.support.executor;
 
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.Args;
+import com.github.chengyuxing.sql.BakiDao;
 import com.github.chengyuxing.sql.page.IPageable;
 
 import java.util.*;
@@ -119,6 +120,28 @@ public abstract class QueryExecutor {
      * @return IPageable instance
      */
     public abstract IPageable pageable(int page, int size);
+
+    /**
+     * Convert state to page query.
+     *
+     * @param pageKey page number key name which in args
+     * @param sizeKey page size key name which in args
+     * @return IPageable instance
+     * @see #pageable(int, int)
+     */
+    public abstract IPageable pageable(String pageKey, String sizeKey);
+
+    /**
+     * Convert state to page query.
+     * <ul>
+     *     <li>Default page number key: {@link BakiDao#getPageKey()}</li>
+     *     <li>Default page size key: {@link BakiDao#getSizeKey()}</li>
+     * </ul>
+     *
+     * @return IPageable instance
+     * @see #pageable(String, String)
+     */
+    public abstract IPageable pageable();
 
     /**
      * Collect 1st row by page query.

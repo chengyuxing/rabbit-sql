@@ -172,6 +172,14 @@ public class BakiDao extends JdbcSupport implements Baki {
                 return pageable(page, size);
             }
 
+            /**
+             * {@inheritDoc}
+             * <ul>
+             *     <li>Default page number key: {@link BakiDao#getPageKey()}</li>
+             *     <li>Default page size key: {@link BakiDao#getSizeKey()}</li>
+             * </ul>
+             * @return IPageable instance
+             */
             @Override
             public IPageable pageable() {
                 return pageable(pageKey, sizeKey);

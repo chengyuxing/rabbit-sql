@@ -589,9 +589,9 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     @Override
     protected Pair<String, Map<String, Object>> parseSql(String sql, Map<String, ?> args) {
-        Map<String, Object> data = new HashMap<>();
+        Map<String, Object> myArgs = new HashMap<>();
         if (Objects.nonNull(args)) {
-            data.putAll(args);
+            myArgs.putAll(args);
         }
         String trimSql = SqlUtil.trimEnd(sql.trim());
         if (trimSql.startsWith("&")) {
@@ -600,29 +600,29 @@ public class BakiDao extends JdbcSupport implements Baki {
                     log.warn("please set 'reloadXqlOnGet' to false in production environment for improve concurrency.");
                     xqlFileManager.init();
                 }
-                Pair<String, Map<String, Object>> result = xqlFileManager.get(trimSql.substring(1), data);
+                Pair<String, Map<String, Object>> result = xqlFileManager.get(trimSql.substring(1), myArgs);
                 trimSql = afterParseDynamicSql.handle(result.getItem1());
                 // #for expression temp variables stored in _for variable.
                 if (!result.getItem2().isEmpty()) {
-                    data.put(XQLFileManager.DynamicSqlParser.FOR_VARS_KEY, result.getItem2());
+                    myArgs.put(XQLFileManager.DynamicSqlParser.FOR_VARS_KEY, result.getItem2());
                 }
             } else {
                 throw new NullPointerException("can not find property 'xqlFileManager'.");
             }
         }
         if (trimSql.contains("${")) {
-            trimSql = SqlUtil.formatSql(trimSql, data, sqlGenerator.getTemplateFormatter());
+            trimSql = SqlUtil.formatSql(trimSql, myArgs, sqlGenerator.getTemplateFormatter());
             if (Objects.nonNull(xqlFileManager)) {
                 trimSql = SqlUtil.formatSql(trimSql, xqlFileManager.getConstants(), sqlGenerator.getTemplateFormatter());
             }
         }
         if (Objects.nonNull(sqlInterceptor)) {
-            boolean request = sqlInterceptor.preHandle(trimSql, data, metaData);
+            boolean request = sqlInterceptor.preHandle(trimSql, myArgs, metaData);
             if (!request) {
-                throw new IllegalSqlException("permission denied, reject to execute sql.\nSQL: " + trimSql + "\nArgs: " + data);
+                throw new IllegalSqlException("permission denied, reject to execute sql.\nSQL: " + trimSql + "\nArgs: " + myArgs);
             }
         }
-        return Pair.of(trimSql, data);
+        return Pair.of(trimSql, myArgs);
     }
 
     @Override

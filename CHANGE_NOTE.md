@@ -1,5 +1,9 @@
 # change note
 
+## 7.11.9
+
+- New method: `BakiDao#setPageKey`, `BakiDao#setSizeKey`, `QueryExecutor#pageable`.
+
 ## 7.11.8
 
 - Fixed dynamic sql #for-#done bug.

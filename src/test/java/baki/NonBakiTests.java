@@ -8,7 +8,6 @@ import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.io.FileResource;
-import com.github.chengyuxing.common.script.expression.Patterns;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.PagedResource;
@@ -16,7 +15,6 @@ import com.github.chengyuxing.sql.XQLFileManager;
 import com.github.chengyuxing.sql.XQLFileManagerConfig;
 import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
-import com.github.chengyuxing.sql.types.Variable;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.utils.SqlHighlighter;
 import com.github.chengyuxing.sql.utils.SqlUtil;
@@ -78,9 +76,9 @@ public class NonBakiTests {
                 "from test.score where id::number = :id*/;";
 
         SqlGenerator sqlGenerator = new SqlGenerator(':');
-        Pair<String, Map<String, List<Integer>>> pair = sqlGenerator.generatePreparedSql(sql, Collections.emptyMap());
-        System.out.println(pair.getItem1());
-        System.out.println(pair.getItem2());
+        SqlGenerator.GeneratedSqlMetaData pair = sqlGenerator.generatePreparedSql(sql, Collections.emptyMap());
+        System.out.println(pair.getNamedParamSql());
+        System.out.println(pair.getResultSql());
 
         Matcher m = sqlGenerator.getNamedParamPattern().matcher(sql);
         while (m.find()) {
@@ -107,26 +105,26 @@ public class NonBakiTests {
     @Test
     public void testPs3() {
         SqlGenerator sqlGenerator = new SqlGenerator(':');
-        Pair<String, Map<String, List<Integer>>> pair1 = sqlGenerator.generatePreparedSql(query, Args.of(
+        SqlGenerator.GeneratedSqlMetaData pair1 = sqlGenerator.generatePreparedSql(query, Args.of(
                 "id", 25,
                 "idc", 15,
                 "username", "cyx"
         ));
-        System.out.println(pair1.getItem1());
-        System.out.println(pair1.getItem2());
+        System.out.println(pair1.getArgs());
+        System.out.println(pair1.getResultSql());
     }
 
     @Test
     public void test23() {
         SqlGenerator sqlGenerator = new SqlGenerator('*');
         System.out.println(sqlGenerator.getNamedParamPattern());
-        Pair<String, Map<String, List<Integer>>> sqla = sqlGenerator.generatePreparedSql(insert, Args.of("id", 12,
+        SqlGenerator.GeneratedSqlMetaData sqla = sqlGenerator.generatePreparedSql(insert, Args.of("id", 12,
                 "name", "chengyuxing",
                 "idd", 16,
                 "age", 30,
                 "address", LocalDateTime.now()));
-        System.out.println(sqla.getItem1());
-        System.out.println(sqla.getItem2());
+        System.out.println(sqla.getArgs());
+        System.out.println(sqla.getResultSql());
     }
 
     @Test

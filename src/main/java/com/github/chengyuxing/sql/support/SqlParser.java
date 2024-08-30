@@ -1,8 +1,6 @@
 package com.github.chengyuxing.sql.support;
 
 import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.common.tuple.Quadruple;
-import com.github.chengyuxing.common.tuple.Tuples;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
 
 import java.util.List;
@@ -58,16 +56,15 @@ public abstract class SqlParser {
      *
      * @param sql  named parameter sql
      * @param args args
-     * @return [prepared sql, ordered arg names, args map，named parameter sql]
+     * @return GeneratedSqlMetaData
      */
-    protected Quadruple<String, Map<String, List<Integer>>, Map<String, Object>, String> prepare(String sql, Map<String, ?> args) {
+    protected SqlGenerator.GeneratedSqlMetaData prepare(String sql, Map<String, ?> args) {
         // try to generate full named parameter sql.
         Pair<String, Map<String, Object>> result = parseSql(sql, args);
         String parsedSql = result.getItem1();
         Map<String, Object> parsedData = result.getItem2();
 
         // convert named parameter sql to prepared sql.
-        Pair<String, Map<String, List<Integer>>> p = sqlGenerator().generatePreparedSql(parsedSql, parsedData);
-        return Tuples.of(p.getItem1(), p.getItem2(), parsedData, parsedSql);
+        return sqlGenerator().generatePreparedSql(parsedSql, parsedData);
     }
 }

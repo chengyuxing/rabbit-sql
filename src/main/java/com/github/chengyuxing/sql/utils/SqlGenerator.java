@@ -1,8 +1,6 @@
 package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.script.expression.Patterns;
-import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.common.tuple.Tuples;
 import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.support.NamedParamFormatter;
@@ -57,6 +55,65 @@ public class SqlGenerator {
     }
 
     /**
+     * Generated sql meta data.
+     */
+    public static final class GeneratedSqlMetaData {
+        private final String namedParamSql;
+        private final String resultSql;
+        private final Map<String, List<Integer>> argNameIndexMapping;
+        private final Map<String, ?> args;
+
+        /**
+         * Construct a new GeneratedSqlMetaData instance.
+         *
+         * @param namedParamSql       named parameter sql
+         * @param resultSql           prepared sql or normal sql
+         * @param argNameIndexMapping prepared sql arg name index mapping
+         * @param args                args
+         */
+        public GeneratedSqlMetaData(String namedParamSql, String resultSql, Map<String, List<Integer>> argNameIndexMapping, Map<String, ?> args) {
+            this.namedParamSql = namedParamSql;
+            this.resultSql = resultSql;
+            this.argNameIndexMapping = argNameIndexMapping;
+            this.args = args;
+        }
+
+        public String getNamedParamSql() {
+            return namedParamSql;
+        }
+
+        public String getResultSql() {
+            return resultSql;
+        }
+
+        public Map<String, List<Integer>> getArgNameIndexMapping() {
+            return argNameIndexMapping;
+        }
+
+        public Map<String, ?> getArgs() {
+            return args;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof GeneratedSqlMetaData)) return false;
+
+            GeneratedSqlMetaData that = (GeneratedSqlMetaData) o;
+            return Objects.equals(getNamedParamSql(), that.getNamedParamSql()) && Objects.equals(getResultSql(), that.getResultSql()) && Objects.equals(getArgNameIndexMapping(), that.getArgNameIndexMapping()) && Objects.equals(getArgs(), that.getArgs());
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Objects.hashCode(getNamedParamSql());
+            result = 31 * result + Objects.hashCode(getResultSql());
+            result = 31 * result + Objects.hashCode(getArgNameIndexMapping());
+            result = 31 * result + Objects.hashCode(getArgs());
+            return result;
+        }
+    }
+
+    /**
      * Generate prepared sql by named parameter sql, e.g.
      * <p>before: </p>
      * <blockquote>
@@ -69,9 +126,9 @@ public class SqlGenerator {
      *
      * @param sql  named parameter sql
      * @param args data of named parameter
-     * @return [prepared sql, ordered arg names]
+     * @return GeneratedSqlMetaData
      */
-    public Pair<String, Map<String, List<Integer>>> generatePreparedSql(final String sql, Map<String, ?> args) {
+    public GeneratedSqlMetaData generatePreparedSql(final String sql, Map<String, ?> args) {
         return parseNamedParameterSql(sql, args, true);
     }
 
@@ -85,7 +142,7 @@ public class SqlGenerator {
      * @see #setTemplateFormatter(TemplateFormatter)
      */
     public String generateSql(final String sql, Map<String, ?> args) {
-        return parseNamedParameterSql(sql, args, false).getItem1();
+        return parseNamedParameterSql(sql, args, false).getResultSql();
     }
 
     /**
@@ -94,13 +151,13 @@ public class SqlGenerator {
      * @param sql     named parameter sql
      * @param args    data of named parameter
      * @param prepare prepare or not
-     * @return [prepare/normal sql，ordered arg names]
+     * @return GeneratedSqlMetaData
      */
-    protected Pair<String, Map<String, List<Integer>>> parseNamedParameterSql(final String sql, Map<String, ?> args, boolean prepare) {
+    protected GeneratedSqlMetaData parseNamedParameterSql(final String sql, Map<String, ?> args, boolean prepare) {
         // resolve the sql string template first
         String fullSql = SqlUtil.formatSql(sql, args, templateFormatter);
         if (fullSql.lastIndexOf(namedParamPrefix) < 0) {
-            return Pair.of(fullSql, Collections.emptyMap());
+            return new GeneratedSqlMetaData(sql, fullSql, Collections.emptyMap(), args);
         }
         Map<String, List<Integer>> indexMap = new HashMap<>();
         StringBuilder parsedSql = new StringBuilder();
@@ -128,7 +185,7 @@ public class SqlGenerator {
             lastMatchEnd = matcher.end();
         }
         parsedSql.append(fullSql.substring(lastMatchEnd));
-        return Tuples.of(parsedSql.toString(), indexMap);
+        return new GeneratedSqlMetaData(sql, parsedSql.toString(), indexMap, args);
     }
 
     /**
@@ -227,7 +284,7 @@ public class SqlGenerator {
         }
         Map<String, Object> sets = new HashMap<>();
         // pick out named parameter from where condition.
-        Set<String> whereFields = generatePreparedSql(where, args).getItem2().keySet();
+        Set<String> whereFields = generatePreparedSql(where, args).getArgNameIndexMapping().keySet();
         // for build correct update sets excludes the arg which in where condition.
         // where id = :id
         for (Map.Entry<String, ?> e : args.entrySet()) {

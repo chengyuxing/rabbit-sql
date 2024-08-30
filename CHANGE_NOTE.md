@@ -1,5 +1,9 @@
 # change note
 
+## 7.11.10
+
+- Some optimized.
+
 ## 7.11.9
 
 - New method: `BakiDao#setPageKey`, `BakiDao#setSizeKey`, `QueryExecutor#pageable`.

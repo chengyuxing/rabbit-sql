@@ -286,12 +286,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     if (trimLine.endsWith(delimiter)) {
                         String sql = String.join(NEW_LINE, sqlBodyBuffer);
                         sql = sql.substring(0, sql.lastIndexOf(delimiter)).trim();
-                        //noinspection DuplicatedCode
                         String desc = String.join(NEW_LINE, descriptionBuffer);
                         try {
                             newDynamicSqlParser(sql).verify();
                         } catch (ScriptSyntaxException e) {
-                            throw new ScriptSyntaxException("File: " + fileResource.getURL() + ", sql: '" + blockName + "' dynamic sql script syntax error.", e);
+                            throw new ScriptSyntaxException("File: " + fileResource.getURL() + " -> '" + blockName + "' dynamic sql script syntax error.", e);
                         }
                         Sql sqlObj = new Sql(sql);
                         sqlObj.setDescription(desc);
@@ -306,7 +305,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             // if last part of sql is not ends with delimiter symbol
             if (!StringUtil.isEmpty(blockName)) {
                 String lastSql = String.join(NEW_LINE, sqlBodyBuffer);
-                //noinspection DuplicatedCode
                 String lastDesc = String.join(NEW_LINE, descriptionBuffer);
                 try {
                     newDynamicSqlParser(lastSql).verify();
@@ -623,14 +621,14 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         if (!containsAnyIgnoreCase(sql, FlowControlLexer.KEYWORDS)) {
             return Pair.of(sql, Collections.emptyMap());
         }
-        Map<String, Object> newArgs = new HashMap<>();
+        Map<String, Object> myArgs = new HashMap<>();
         if (Objects.nonNull(args)) {
-            newArgs.putAll(args);
+            myArgs.putAll(args);
         }
-        newArgs.put("_parameter", args);
-        newArgs.put("_databaseId", databaseId);
+        myArgs.put("_parameter", args);
+        myArgs.put("_databaseId", databaseId);
         DynamicSqlParser parser = newDynamicSqlParser(sql);
-        String parsedSql = parser.parse(newArgs);
+        String parsedSql = parser.parse(myArgs);
         String fixedSql = SqlUtil.repairSyntaxError(parsedSql);
         return Pair.of(fixedSql, parser.getForContextVars());
     }
@@ -669,20 +667,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         } finally {
             lock.unlock();
         }
-    }
-
-    /**
-     * Trim line annotation for detect dynamic sql script expression.
-     *
-     * @param line current line
-     * @return script expression or other line
-     */
-    protected String trimExpressionLine(String line) {
-        String lt = line.trim();
-        if (lt.startsWith("--")) {
-            return lt.substring(2);
-        }
-        return line;
     }
 
     /**
@@ -815,9 +799,19 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             return formatted;
         }
 
+        /**
+         * Trim line annotation for detect dynamic sql script expression.
+         *
+         * @param line current line
+         * @return script expression or other line
+         */
         @Override
         protected String trimExpressionLine(String line) {
-            return XQLFileManager.this.trimExpressionLine(line);
+            String lt = line.trim();
+            if (lt.startsWith("--")) {
+                return lt.substring(2);
+            }
+            return line;
         }
     }
 

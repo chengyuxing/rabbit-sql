@@ -39,7 +39,17 @@ public final class PagedResource<T> {
      * @return empty PagedResource
      */
     public static <T> PagedResource<T> empty() {
-        return of(null, Collections.emptyList());
+        return of(new PageHelper() {
+            @Override
+            public String pagedSql(String sql) {
+                return "";
+            }
+
+            @Override
+            public Args<Integer> pagedArgs() {
+                return Args.of();
+            }
+        }, Collections.emptyList());
     }
 
     /**

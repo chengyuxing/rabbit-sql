@@ -18,4 +18,3 @@ select ${hobby} from test.user;
 
 /*[queryUsers]*/
 select * from public.user ${where}
-;

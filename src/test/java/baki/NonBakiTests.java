@@ -290,10 +290,21 @@ public class NonBakiTests {
 
     @Test
     public void testX() {
-        XQLFileManager xqlFileManager=new XQLFileManager();
-        String sql = "--#for id of :list delimiter ' or '\n"+
-                "t.id like '%' || :iad || '%'\n"+
+        XQLFileManager xqlFileManager = new XQLFileManager();
+        String sql = "--#for id of :list delimiter ' or '\n" +
+                "t.id like '%' || :iad || '%'\n" +
                 "--#done";
         System.out.println(xqlFileManager.parseDynamicSql(sql, Args.of("list", Arrays.asList("a", "b", "c"))));
+    }
+
+    @Test
+    public void testC() {
+        XQLFileManager config = new XQLFileManager("xql-file-manager-oracle.yml");
+        config.init();
+        config.foreach((k, r) -> {
+            r.getEntry().forEach((n, sql) -> {
+                System.out.println(n + " -> " + sql.getContent());
+            });
+        });
     }
 }

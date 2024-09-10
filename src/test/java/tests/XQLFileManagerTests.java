@@ -34,7 +34,7 @@ public class XQLFileManagerTests {
 
     @Test
     public void test4() throws IOException, URISyntaxException {
-        XQLFileManager xqlFileManager = new XQLFileManager(new HashMap<>());
+        XQLFileManager xqlFileManager = new XQLFileManager();
         xqlFileManager.add("a", "pgsql/deep_nest.sql");
         xqlFileManager.init();
 

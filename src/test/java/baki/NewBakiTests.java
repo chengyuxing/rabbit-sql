@@ -37,7 +37,8 @@ public class NewBakiTests {
         dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
         dataSource.setUsername("chengyuxing");
 
-        XQLFileManager xqlFileManager = new XQLFileManager(Args.of("new", "pgsql/new_for.sql"));
+        XQLFileManager xqlFileManager = new XQLFileManager();
+        xqlFileManager.add("new", "pgsql/new_for.sql");
         xqlFileManager.setPipes(Args.of("isOdd", "baki.pipes.IsOdd"));
         xqlFileManager.setConstants(Args.of("db", "test"));
 

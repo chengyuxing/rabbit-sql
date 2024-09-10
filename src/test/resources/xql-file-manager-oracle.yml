@@ -5,7 +5,7 @@
 # Configure 'src/main/resources/xql-file-manager.yml' to enable the rabbit-sql plugin.
 # https://github.com/chengyuxing/rabbit-sql/blob/master/XQL_FILE_MANAGER.md
 
-database-id: &db postgresql
+database-id: &db pgsql
 
 # 1. 先检查databaseId属性是否不为null
 # 2. init之前先检查files的文件路径中是否包含 postgresql/ 或 /postgresql/ 的路径
@@ -15,7 +15,7 @@ database-id: &db postgresql
 constants:
 
 files:
-  foo: !path [ *db, a.xql ]
+  foo: !path [ *db, nest.sql ]
 #  bar: b.xql
 
 #delimiter: ;

@@ -130,18 +130,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * Constructs a new XQLFileManager with initial sql file map.
-     *
-     * @param files sql file: [alias, file path name]
-     */
-    public XQLFileManager(Map<String, String> files) {
-        if (files == null) {
-            return;
-        }
-        this.files = new LinkedHashMap<>(files);
-    }
-
-    /**
      * Add a sql file.
      *
      * @param alias    file alias
@@ -287,15 +275,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                         String sql = String.join(NEW_LINE, sqlBodyBuffer);
                         sql = sql.substring(0, sql.lastIndexOf(delimiter)).trim();
                         String desc = String.join(NEW_LINE, descriptionBuffer);
-                        try {
-                            newDynamicSqlParser(sql).verify();
-                        } catch (ScriptSyntaxException e) {
-                            throw new ScriptSyntaxException("File: " + fileResource.getURL() + " -> '" + blockName + "' dynamic sql script syntax error.", e);
-                        }
-                        Sql sqlObj = new Sql(sql);
-                        sqlObj.setDescription(desc);
-                        entry.put(blockName, sqlObj);
-                        log.debug("scan {} to get sql({}) [{}.{}]：{}", filename, delimiter, alias, blockName, SqlHighlighter.highlightIfAnsiCapable(sql));
+                        entry.put(blockName, scanSql(alias, filename, blockName, sql, desc));
                         blockName = "";
                         sqlBodyBuffer.clear();
                         descriptionBuffer.clear();
@@ -306,15 +286,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             if (!StringUtil.isEmpty(blockName)) {
                 String lastSql = String.join(NEW_LINE, sqlBodyBuffer);
                 String lastDesc = String.join(NEW_LINE, descriptionBuffer);
-                try {
-                    newDynamicSqlParser(lastSql).verify();
-                } catch (ScriptSyntaxException e) {
-                    throw new ScriptSyntaxException("File: " + fileResource.getURL() + " -> '" + blockName + "' dynamic sql script syntax error.", e);
-                }
-                Sql sqlObj = new Sql(lastSql);
-                sqlObj.setDescription(lastDesc);
-                entry.put(blockName, sqlObj);
-                log.debug("scan {} to get sql({}) [{}.{}]: {}", filename, delimiter, alias, blockName, SqlHighlighter.highlightIfAnsiCapable(lastSql));
+                entry.put(blockName, scanSql(alias, filename, blockName, lastSql, lastDesc));
             }
         }
         if (!entry.isEmpty()) {
@@ -325,6 +297,28 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         resource.setLastModified(fileResource.getLastModified());
         resource.setDescription(xqlDesc.toString().trim());
         return resource;
+    }
+
+    /**
+     * Scan sql object.
+     *
+     * @param alias     alias
+     * @param filename  sql file name
+     * @param blockName sql fragment name
+     * @param sql       sql content
+     * @param desc      sql description
+     * @return sql object
+     */
+    protected Sql scanSql(String alias, String filename, String blockName, String sql, String desc) {
+        try {
+            newDynamicSqlParser(sql).verify();
+        } catch (ScriptSyntaxException e) {
+            throw new ScriptSyntaxException("File: " + filename + " -> '" + blockName + "' dynamic sql script syntax error.", e);
+        }
+        Sql sqlObj = new Sql(sql);
+        sqlObj.setDescription(desc);
+        log.debug("scan {} to get sql({}) [{}.{}]：{}", filename, delimiter, alias, blockName, SqlHighlighter.highlightIfAnsiCapable(sql));
+        return sqlObj;
     }
 
     /**

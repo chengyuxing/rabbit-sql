@@ -46,7 +46,6 @@ public class XQLFileManagerConfig {
      * @param configLocation config location path
      */
     public XQLFileManagerConfig(String configLocation) {
-        this();
         FileResource resource = new FileResource(configLocation);
         if (configLocation.endsWith(".yml")) {
             loadYaml(resource);

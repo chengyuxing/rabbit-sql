@@ -94,7 +94,7 @@ public abstract class JdbcSupport extends SqlParser {
             }
             statement = null;
             releaseConnection(connection, getDataSource());
-            throw new UncheckedSqlException("execute sql: [" + sql + "]", e);
+            throw new UncheckedSqlException("execute sql:\n" + sql, e);
         } finally {
             try {
                 JdbcUtil.closeStatement(statement);
@@ -189,7 +189,7 @@ public abstract class JdbcSupport extends SqlParser {
                 return DataRow.of("result", count, "type", "DD(M)L");
             });
         } catch (Exception e) {
-            throw new RuntimeException("prepare sql error:\n[" + sql + "]\n" + myArgs, e);
+            throw new RuntimeException("prepare sql error:\n" + sql + "\n" + myArgs, e);
         }
     }
 
@@ -247,7 +247,7 @@ public abstract class JdbcSupport extends SqlParser {
                         action.accept(JdbcUtil.createDataRow(names, resultSet));
                         return true;
                     } catch (SQLException ex) {
-                        throw new UncheckedSqlException("reading result set of query: [" + preparedSql + "]\nerror.", ex);
+                        throw new UncheckedSqlException("reading result set of query:\n" + preparedSql + "\nerror.", ex);
                     }
                 }
             }, false).onClose(close);
@@ -259,7 +259,7 @@ public abstract class JdbcSupport extends SqlParser {
                     ex.addSuppressed(e);
                 }
             }
-            throw new RuntimeException("\nstreaming query error: \n[" + sql + "]\n[" + preparedSql + "]\n" + myArgs, ex);
+            throw new RuntimeException("streaming query error:\n" + preparedSql + "\n" + myArgs, ex);
         }
     }
 
@@ -356,7 +356,7 @@ public abstract class JdbcSupport extends SqlParser {
                 return result.build().flatMapToInt(IntStream::of).sum();
             });
         } catch (Exception e) {
-            throw new RuntimeException("prepare sql error:\n[" + sql + "]\n", e);
+            throw new RuntimeException("prepare sql error:\n" + sql, e);
         }
     }
 
@@ -390,7 +390,7 @@ public abstract class JdbcSupport extends SqlParser {
                 return sc.executeUpdate();
             });
         } catch (Exception e) {
-            throw new RuntimeException("prepare sql error:\n[" + sql + "]\n" + myArgs, e);
+            throw new RuntimeException("prepare sql error:\n" + sql + "\n" + myArgs, e);
         }
     }
 
@@ -477,7 +477,7 @@ public abstract class JdbcSupport extends SqlParser {
             }
             statement = null;
             releaseConnection(connection, getDataSource());
-            throw new UncheckedSqlException("execute procedure error: \n[" + procedure + "]\n" + args, e);
+            throw new UncheckedSqlException("execute procedure error:\n" + procedure + "\n" + args, e);
         } finally {
             try {
                 JdbcUtil.closeStatement(statement);

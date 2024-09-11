@@ -307,4 +307,10 @@ public class NonBakiTests {
             });
         });
     }
+
+    @Test
+    public void testRR() {
+        PagedResource<DataRow> resource = PagedResource.empty();
+        System.out.println(resource);
+    }
 }

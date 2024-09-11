@@ -269,7 +269,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                         }
                     }
                 }
-                if (!StringUtil.isEmpty(blockName)) {
+                if (Objects.nonNull(blockName) && !blockName.isEmpty()) {
                     sqlBodyBuffer.add(line);
                     if (trimLine.endsWith(delimiter)) {
                         String sql = String.join(NEW_LINE, sqlBodyBuffer);

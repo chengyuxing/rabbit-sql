@@ -1,5 +1,9 @@
 # change note
 
+## 7.11.12
+
+- Some optimized.
+
 ## 7.11.11
 
 - Some optimized.

@@ -12,8 +12,8 @@ import java.util.function.BiFunction;
  * @param <T> data type
  */
 public final class PagedResource<T> {
-    private PageHelper pager;
-    private List<T> data;
+    private final PageHelper pager;
+    private final List<T> data;
 
     public PagedResource(PageHelper pager, List<T> data) {
         this.pager = pager;
@@ -69,14 +69,6 @@ public final class PagedResource<T> {
      */
     public <R> R to(BiFunction<PageHelper, List<T>, R> converter) {
         return converter.apply(pager, data);
-    }
-
-    void setData(List<T> data) {
-        this.data = data;
-    }
-
-    void setPager(PageHelper pager) {
-        this.pager = pager;
     }
 
     public List<T> getData() {

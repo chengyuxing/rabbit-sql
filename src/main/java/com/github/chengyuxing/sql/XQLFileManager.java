@@ -518,16 +518,13 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @return true if exists or false
      */
     public boolean contains(String name) {
-        int dotIdx = name.lastIndexOf(".");
-        if (dotIdx < 1) {
-            throw new IllegalArgumentException("Invalid sql reference name, please follow <alias>.<sqlName> format.");
+        try {
+            getSqlObject(name);
+            return true;
+        } catch (NoSuchElementException e) {
+            log.warn(e.getMessage());
+            return false;
         }
-        String alias = name.substring(0, dotIdx);
-        if (resources.containsKey(alias)) {
-            String sqlName = name.substring(dotIdx + 1);
-            return getResource(alias).getEntry().containsKey(sqlName);
-        }
-        return false;
     }
 
     /**

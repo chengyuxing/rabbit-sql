@@ -1,5 +1,9 @@
 # change note
 
+## 7.11.13
+
+- New method: `BakiDao#sqlWatcher`.
+
 ## 7.11.12
 
 - Some optimized.

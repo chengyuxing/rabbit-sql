@@ -68,6 +68,10 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     private AfterParseDynamicSql afterParseDynamicSql;
     /**
+     * Sql watcher.
+     */
+    private SqlWatcher sqlWatcher;
+    /**
      * XQL file manager.
      */
     private XQLFileManager xqlFileManager;
@@ -114,6 +118,8 @@ public class BakiDao extends JdbcSupport implements Baki {
         this.sqlGenerator = new SqlGenerator(namedParamPrefix);
         this.statementValueHandler = (ps, index, value, metaData) -> JdbcUtil.setStatementValue(ps, index, value);
         this.afterParseDynamicSql = sql -> sql;
+        this.sqlWatcher = (sql, args, requestTime, finishTime) -> {
+        };
         using(c -> {
             try {
                 this.metaData = c.getMetaData();
@@ -428,6 +434,12 @@ public class BakiDao extends JdbcSupport implements Baki {
         this.sizeKey = sizeKey;
     }
 
+    public void setSqlWatcher(SqlWatcher sqlWatcher) {
+        if (Objects.nonNull(sqlWatcher)) {
+            this.sqlWatcher = sqlWatcher;
+        }
+    }
+
     /**
      * Simple page helper implementation.
      */
@@ -652,6 +664,11 @@ public class BakiDao extends JdbcSupport implements Baki {
     @Override
     protected void doHandleStatementValue(PreparedStatement ps, int index, Object value) throws SQLException {
         statementValueHandler.handle(ps, index, value, metaData);
+    }
+
+    @Override
+    protected void watchSql(String sql, Object args, long startTime, long endTime) {
+        sqlWatcher.watch(sql, args, startTime, endTime);
     }
 
     public SqlGenerator getSqlGenerator() {

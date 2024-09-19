@@ -9,6 +9,7 @@ import com.github.chengyuxing.sql.Baki;
 import com.github.chengyuxing.sql.BakiDao;
 import com.github.chengyuxing.sql.XQLFileManager;
 import com.github.chengyuxing.sql.support.SqlInterceptor;
+import com.github.chengyuxing.sql.support.SqlWatcher;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
 import com.github.chengyuxing.sql.types.OUTParamType;
 import com.github.chengyuxing.sql.types.Param;
@@ -51,6 +52,7 @@ public class NewBakiTests {
             }
             JdbcUtil.setStatementValue(ps, index, value);
         });
+        bakiDao.setSqlWatcher(new SqlWatcher.SqlWatchLogger());
 
         baki = bakiDao;
     }

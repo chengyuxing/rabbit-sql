@@ -316,6 +316,7 @@ public abstract class JdbcSupport extends SqlParser {
         }
         long startTime = System.currentTimeMillis();
         Statement s = null;
+        Throwable reason = null;
         Connection connection = getConnection();
         try {
             s = connection.createStatement();
@@ -346,6 +347,7 @@ public abstract class JdbcSupport extends SqlParser {
             }
             s = null;
             releaseConnection(connection, getDataSource());
+            reason = e;
             throw new UncheckedSqlException("execute batch error.", e);
         } finally {
             try {
@@ -354,6 +356,7 @@ public abstract class JdbcSupport extends SqlParser {
                 log.error("close statement error.", e);
             }
             releaseConnection(connection, getDataSource());
+            watchSql(String.join("###", sqls), null, startTime, System.currentTimeMillis(), reason);
         }
     }
 
@@ -369,10 +372,12 @@ public abstract class JdbcSupport extends SqlParser {
         if (batchSize < 1) {
             throw new IllegalArgumentException("batchSize must greater than 0.");
         }
+        long startTime = System.currentTimeMillis();
         Map<String, ?> first = args.iterator().next();
         SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepare(sql, first);
         final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
         final String preparedSql = sqlMetaData.getResultSql();
+        Throwable reason = null;
         try {
             debugSql(sqlMetaData.getNamedParamSql(), args);
             return execute(preparedSql, ps -> {
@@ -392,7 +397,10 @@ public abstract class JdbcSupport extends SqlParser {
                 return result.build().flatMapToInt(IntStream::of).sum();
             });
         } catch (Exception e) {
+            reason = e;
             throw new RuntimeException("prepare sql error:\n" + sql, e);
+        } finally {
+            watchSql(sql, args, startTime, System.currentTimeMillis(), reason);
         }
     }
 

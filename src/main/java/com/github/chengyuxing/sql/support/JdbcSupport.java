@@ -77,8 +77,18 @@ public abstract class JdbcSupport extends SqlParser {
      * @param startTime connection request start time
      * @param endTime   finish execute time
      */
-    protected void watchSql(String sql, Object args, long startTime, long endTime) {
+    protected void watchSql(String sql, Object args, long startTime, long endTime, Throwable throwable) {
 
+    }
+
+    /**
+     * jdbc execute sql timeout.
+     *
+     * @return time out (seconds)
+     * @see Statement#setQueryTimeout(int)
+     */
+    protected int queryTimeout() {
+        return 0;
     }
 
     /**
@@ -181,14 +191,16 @@ public abstract class JdbcSupport extends SqlParser {
      * @throws UncheckedSqlException sql execute error
      */
     public DataRow execute(final String sql, Map<String, ?> args) {
+        long startTime = System.currentTimeMillis();
         SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepare(sql, args);
         final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
         final String preparedSql = sqlMetaData.getResultSql();
         final Map<String, ?> myArgs = sqlMetaData.getArgs();
+        Throwable reason = null;
         try {
             debugSql(sqlMetaData.getNamedParamSql(), Collections.singletonList(myArgs));
-            long startTime = System.currentTimeMillis();
-            DataRow result = execute(preparedSql, ps -> {
+            return execute(preparedSql, ps -> {
+                ps.setQueryTimeout(queryTimeout());
                 setPreparedSqlArgs(ps, myArgs, argNames);
                 boolean isQuery = ps.execute();
                 printSqlConsole(ps);
@@ -201,10 +213,11 @@ public abstract class JdbcSupport extends SqlParser {
                 int count = ps.getUpdateCount();
                 return DataRow.of("result", count, "type", "DD(M)L");
             });
-            watchSql(sql, myArgs, startTime, System.currentTimeMillis());
-            return result;
         } catch (Exception e) {
+            reason = e;
             throw new RuntimeException("prepare sql error:\n" + sql + "\n" + myArgs, e);
+        } finally {
+            watchSql(sql, myArgs, startTime, System.currentTimeMillis(), reason);
         }
     }
 
@@ -233,13 +246,14 @@ public abstract class JdbcSupport extends SqlParser {
      * @throws UncheckedSqlException sql execute error
      */
     public Stream<DataRow> executeQueryStream(final String sql, Map<String, ?> args) {
+        long startTime = System.currentTimeMillis();
         SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepare(sql, args);
         final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
         final String preparedSql = sqlMetaData.getResultSql();
         final Map<String, ?> myArgs = sqlMetaData.getArgs();
         UncheckedCloseable close = null;
+        Throwable reason = null;
         try {
-            long startTime = System.currentTimeMillis();
             Connection connection = getConnection();
             // if this query is not in transaction, it's connection managed by Stream
             // if transaction is active connection will not be close when read stream to the end in 'try-with-resource' block
@@ -247,11 +261,12 @@ public abstract class JdbcSupport extends SqlParser {
             debugSql(sqlMetaData.getNamedParamSql(), Collections.singletonList(myArgs));
             //noinspection SqlSourceToSinkFlow
             PreparedStatement ps = connection.prepareStatement(preparedSql);
+            ps.setQueryTimeout(queryTimeout());
             close = close.nest(ps);
             setPreparedSqlArgs(ps, myArgs, argNames);
             ResultSet resultSet = ps.executeQuery();
             close = close.nest(resultSet);
-            Stream<DataRow> result = StreamSupport.stream(new Spliterators.AbstractSpliterator<DataRow>(Long.MAX_VALUE, Spliterator.ORDERED) {
+            return StreamSupport.stream(new Spliterators.AbstractSpliterator<DataRow>(Long.MAX_VALUE, Spliterator.ORDERED) {
                 final String[] names = JdbcUtil.createNames(resultSet, preparedSql);
 
                 @Override
@@ -267,8 +282,6 @@ public abstract class JdbcSupport extends SqlParser {
                     }
                 }
             }, false).onClose(close);
-            watchSql(sql, myArgs, startTime, System.currentTimeMillis());
-            return result;
         } catch (Exception ex) {
             if (close != null) {
                 try {
@@ -277,7 +290,10 @@ public abstract class JdbcSupport extends SqlParser {
                     ex.addSuppressed(e);
                 }
             }
+            reason = ex;
             throw new RuntimeException("streaming query error:\n" + preparedSql + "\n" + myArgs, ex);
+        } finally {
+            watchSql(sql, myArgs, startTime, System.currentTimeMillis(), reason);
         }
     }
 
@@ -297,8 +313,8 @@ public abstract class JdbcSupport extends SqlParser {
         if (sqls.isEmpty()) {
             return 0;
         }
-        Statement s = null;
         long startTime = System.currentTimeMillis();
+        Statement s = null;
         Connection connection = getConnection();
         try {
             s = connection.createStatement();
@@ -320,7 +336,6 @@ public abstract class JdbcSupport extends SqlParser {
             }
             result.add(s.executeBatch());
             s.clearBatch();
-            watchSql(String.join("###", sqls), null, startTime, System.currentTimeMillis());
             return result.build().flatMapToInt(IntStream::of).sum();
         } catch (SQLException e) {
             try {
@@ -359,8 +374,7 @@ public abstract class JdbcSupport extends SqlParser {
         final String preparedSql = sqlMetaData.getResultSql();
         try {
             debugSql(sqlMetaData.getNamedParamSql(), args);
-            long startTime = System.currentTimeMillis();
-            int effects = execute(preparedSql, ps -> {
+            return execute(preparedSql, ps -> {
                 final Stream.Builder<int[]> result = Stream.builder();
                 int i = 1;
                 for (Map<String, ?> item : args) {
@@ -376,8 +390,6 @@ public abstract class JdbcSupport extends SqlParser {
                 ps.clearBatch();
                 return result.build().flatMapToInt(IntStream::of).sum();
             });
-            watchSql(sql, args, startTime, System.currentTimeMillis());
-            return effects;
         } catch (Exception e) {
             throw new RuntimeException("prepare sql error:\n" + sql, e);
         }
@@ -399,24 +411,27 @@ public abstract class JdbcSupport extends SqlParser {
      * @return affect row count
      */
     public int executeUpdate(final String sql, Map<String, ?> args) {
+        long startTime = System.currentTimeMillis();
         SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepare(sql, args);
         final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
         final String preparedSql = sqlMetaData.getResultSql();
         final Map<String, ?> myArgs = sqlMetaData.getArgs();
+        Throwable reason = null;
         try {
             debugSql(sqlMetaData.getNamedParamSql(), Collections.singletonList(myArgs));
-            long startTime = System.currentTimeMillis();
-            int effects = execute(preparedSql, sc -> {
+            return execute(preparedSql, sc -> {
+                sc.setQueryTimeout(queryTimeout());
                 if (myArgs.isEmpty()) {
                     return sc.executeUpdate();
                 }
                 setPreparedSqlArgs(sc, myArgs, argNames);
                 return sc.executeUpdate();
             });
-            watchSql(sql, myArgs, startTime, System.currentTimeMillis());
-            return effects;
         } catch (Exception e) {
+            reason = e;
             throw new RuntimeException("prepare sql error:\n" + sql + "\n" + myArgs, e);
+        } finally {
+            watchSql(sql, myArgs, startTime, System.currentTimeMillis(), reason);
         }
     }
 
@@ -443,16 +458,18 @@ public abstract class JdbcSupport extends SqlParser {
      * @throws UncheckedSqlException execute procedure error
      */
     public DataRow executeCallStatement(final String procedure, Map<String, Param> args) {
+        long startTime = System.currentTimeMillis();
         SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepare(procedure, args);
         final String executeSql = sqlMetaData.getResultSql();
         final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
-        CallableStatement statement = null;
-        long startTime = System.currentTimeMillis();
         Connection connection = getConnection();
+        CallableStatement statement = null;
+        Throwable reason = null;
         try {
             debugSql(sqlMetaData.getNamedParamSql(), Collections.singletonList(args));
             //noinspection SqlSourceToSinkFlow
             statement = connection.prepareCall(executeSql);
+            statement.setQueryTimeout(queryTimeout());
             List<String> outNames = new ArrayList<>();
             if (!args.isEmpty()) {
                 setPreparedStoreArgs(statement, args, argNames);
@@ -495,7 +512,6 @@ public abstract class JdbcSupport extends SqlParser {
                     }
                 }
             }
-            watchSql(procedure, args, startTime, System.currentTimeMillis());
             return DataRow.of(outNames.toArray(new String[0]), values);
         } catch (SQLException e) {
             try {
@@ -504,6 +520,7 @@ public abstract class JdbcSupport extends SqlParser {
                 e.addSuppressed(ex);
             }
             statement = null;
+            reason = e;
             releaseConnection(connection, getDataSource());
             throw new UncheckedSqlException("execute procedure error:\n" + procedure + "\n" + args, e);
         } finally {
@@ -513,6 +530,7 @@ public abstract class JdbcSupport extends SqlParser {
                 log.error("close statement error.", e);
             }
             releaseConnection(connection, getDataSource());
+            watchSql(procedure, args, startTime, System.currentTimeMillis(), reason);
         }
     }
 

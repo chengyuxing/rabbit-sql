@@ -100,6 +100,10 @@ public class BakiDao extends JdbcSupport implements Baki {
      * Page query page size argument key.
      */
     private String sizeKey = "size";
+    /**
+     * Jdbc execute sql timeout({@link Statement#setQueryTimeout(int)}).
+     */
+    private int queryTimeout = 0;
 
     /**
      * Constructs a new BakiDao with initial datasource.
@@ -118,7 +122,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         this.sqlGenerator = new SqlGenerator(namedParamPrefix);
         this.statementValueHandler = (ps, index, value, metaData) -> JdbcUtil.setStatementValue(ps, index, value);
         this.afterParseDynamicSql = sql -> sql;
-        this.sqlWatcher = (sql, args, requestTime, finishTime) -> {
+        this.sqlWatcher = (sql, args, requestTime, finishTime, throwable) -> {
         };
         using(c -> {
             try {
@@ -440,6 +444,12 @@ public class BakiDao extends JdbcSupport implements Baki {
         }
     }
 
+    public void setQueryTimeout(int queryTimeout) {
+        if (queryTimeout > 0) {
+            this.queryTimeout = queryTimeout;
+        }
+    }
+
     /**
      * Simple page helper implementation.
      */
@@ -667,8 +677,13 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    protected void watchSql(String sql, Object args, long startTime, long endTime) {
-        sqlWatcher.watch(sql, args, startTime, endTime);
+    protected void watchSql(String sql, Object args, long startTime, long endTime, Throwable throwable) {
+        sqlWatcher.watch(sql, args, startTime, endTime, throwable);
+    }
+
+    @Override
+    protected int queryTimeout() {
+        return queryTimeout;
     }
 
     public SqlGenerator getSqlGenerator() {

@@ -275,7 +275,7 @@ public class NewBakiTests {
     public void testCall2() {
         baki.of("{:res = call test.sum(:a, :b)}")
                 .call(Args.of("res", Param.OUT(OUTParamType.INTEGER))
-                        .add("a", Param.IN(34))
+                        .add("a", Param.IN(3400))
                         .add("b", Param.IN(56)))
                 .getOptional("res")
                 .ifPresent(System.out::println);

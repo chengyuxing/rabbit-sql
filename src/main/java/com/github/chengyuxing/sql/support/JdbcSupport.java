@@ -76,6 +76,7 @@ public abstract class JdbcSupport extends SqlParser {
      * @param args      args
      * @param startTime connection request start time
      * @param endTime   finish execute time
+     * @param throwable throwable
      */
     protected void watchSql(String sql, Object args, long startTime, long endTime, Throwable throwable) {
 

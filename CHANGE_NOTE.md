@@ -1,5 +1,9 @@
 # change note
 
+## 7.11.15
+
+- Some optimized.
+
 ## 7.11.14
 
 - New method: `BakiDao#queryTimeout`.

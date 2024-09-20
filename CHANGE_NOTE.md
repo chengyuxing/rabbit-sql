@@ -1,5 +1,9 @@
 # change note
 
+## 7.11.14
+
+- New method: `BakiDao#queryTimeout`.
+
 ## 7.11.13
 
 - New method: `BakiDao#sqlWatcher`.

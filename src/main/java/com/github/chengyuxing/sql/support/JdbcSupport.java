@@ -70,7 +70,7 @@ public abstract class JdbcSupport extends SqlParser {
     protected abstract void doHandleStatementValue(PreparedStatement ps, int index, Object value) throws SQLException;
 
     /**
-     * Sql watcher
+     * Sql watcher.
      *
      * @param sql       sql
      * @param args      args
@@ -83,12 +83,14 @@ public abstract class JdbcSupport extends SqlParser {
     }
 
     /**
-     * jdbc execute sql timeout.
+     * Jdbc execute sql timeout.
      *
+     * @param sql  sql
+     * @param args args
      * @return time out (seconds)
      * @see Statement#setQueryTimeout(int)
      */
-    protected int queryTimeout() {
+    protected int queryTimeout(String sql, Map<String, ?> args) {
         return 0;
     }
 
@@ -201,7 +203,7 @@ public abstract class JdbcSupport extends SqlParser {
         try {
             debugSql(sqlMetaData.getNamedParamSql(), Collections.singletonList(myArgs));
             return execute(preparedSql, ps -> {
-                ps.setQueryTimeout(queryTimeout());
+                ps.setQueryTimeout(queryTimeout(sql, myArgs));
                 setPreparedSqlArgs(ps, myArgs, argNames);
                 boolean isQuery = ps.execute();
                 printSqlConsole(ps);
@@ -262,7 +264,7 @@ public abstract class JdbcSupport extends SqlParser {
             debugSql(sqlMetaData.getNamedParamSql(), Collections.singletonList(myArgs));
             //noinspection SqlSourceToSinkFlow
             PreparedStatement ps = connection.prepareStatement(preparedSql);
-            ps.setQueryTimeout(queryTimeout());
+            ps.setQueryTimeout(queryTimeout(sql, myArgs));
             close = close.nest(ps);
             setPreparedSqlArgs(ps, myArgs, argNames);
             ResultSet resultSet = ps.executeQuery();
@@ -429,7 +431,7 @@ public abstract class JdbcSupport extends SqlParser {
         try {
             debugSql(sqlMetaData.getNamedParamSql(), Collections.singletonList(myArgs));
             return execute(preparedSql, sc -> {
-                sc.setQueryTimeout(queryTimeout());
+                sc.setQueryTimeout(queryTimeout(sql, myArgs));
                 if (myArgs.isEmpty()) {
                     return sc.executeUpdate();
                 }
@@ -478,7 +480,7 @@ public abstract class JdbcSupport extends SqlParser {
             debugSql(sqlMetaData.getNamedParamSql(), Collections.singletonList(args));
             //noinspection SqlSourceToSinkFlow
             statement = connection.prepareCall(executeSql);
-            statement.setQueryTimeout(queryTimeout());
+            statement.setQueryTimeout(queryTimeout(procedure, args));
             List<String> outNames = new ArrayList<>();
             if (!args.isEmpty()) {
                 setPreparedStoreArgs(statement, args, argNames);

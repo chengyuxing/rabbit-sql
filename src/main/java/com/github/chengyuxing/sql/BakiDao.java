@@ -101,9 +101,9 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     private String sizeKey = "size";
     /**
-     * Jdbc execute sql timeout({@link Statement#setQueryTimeout(int)}).
+     * Jdbc execute sql timeout({@link Statement#setQueryTimeout(int)}) handler.
      */
-    private int queryTimeout = 0;
+    private QueryTimeoutHandler queryTimeoutHandler;
 
     /**
      * Constructs a new BakiDao with initial datasource.
@@ -124,6 +124,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         this.afterParseDynamicSql = sql -> sql;
         this.sqlWatcher = (sql, args, requestTime, finishTime, throwable) -> {
         };
+        this.queryTimeoutHandler = (sql, args) -> 0;
         using(c -> {
             try {
                 this.metaData = c.getMetaData();
@@ -444,9 +445,9 @@ public class BakiDao extends JdbcSupport implements Baki {
         }
     }
 
-    public void setQueryTimeout(int queryTimeout) {
-        if (queryTimeout > 0) {
-            this.queryTimeout = queryTimeout;
+    public void setQueryTimeoutHandler(QueryTimeoutHandler queryTimeoutHandler) {
+        if (Objects.nonNull(queryTimeoutHandler)) {
+            this.queryTimeoutHandler = queryTimeoutHandler;
         }
     }
 
@@ -682,8 +683,8 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    protected int queryTimeout() {
-        return queryTimeout;
+    protected int queryTimeout(String sql, Map<String, ?> args) {
+        return queryTimeoutHandler.handle(sql, args);
     }
 
     public SqlGenerator getSqlGenerator() {

@@ -11,22 +11,23 @@ public interface SqlWatcher {
     /**
      * Watch sql execution information.
      *
-     * @param sql       sql
+     * @param sourceSql source sql
+     * @param targetSql target sql
      * @param args      args
      * @param startTime connection request time
      * @param endTime   execute finish time
      * @param throwable throwable
      */
-    void watch(String sql, Object args, long startTime, long endTime, Throwable throwable);
+    void watch(String sourceSql, String targetSql, Object args, long startTime, long endTime, Throwable throwable);
 
     class SqlWatchLogger implements SqlWatcher {
         private static final Logger log = LoggerFactory.getLogger(SqlWatchLogger.class);
         private static final String PREFIX = "SQL-WATCHER";
 
         @Override
-        public void watch(String sql, Object args, long startTime, long endTime, Throwable throwable) {
+        public void watch(String sourceSql, String targetSql, Object args, long startTime, long endTime, Throwable throwable) {
             double spent = (endTime - startTime) / 1000.0;
-            log.info("{}: {}, SPENT: {} sec.", PREFIX, sql, spent);
+            log.info("{}: {}, SPENT: {} sec.", PREFIX, sourceSql, spent);
         }
     }
 }

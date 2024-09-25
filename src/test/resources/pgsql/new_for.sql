@@ -40,3 +40,6 @@ where id = 3
    or id = 9
 -- #fi
 ;
+
+/*[qqq]*/
+select * from test.user;

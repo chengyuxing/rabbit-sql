@@ -247,7 +247,7 @@ public class NewBakiTests {
 
     @Test
     public void testCall3() {
-        baki.query("select * from test.user")
+        baki.query("&new.qqq")
                 .args("page", 1, "size", 4)
                 .pageable()
                 .collect()

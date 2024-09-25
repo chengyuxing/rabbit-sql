@@ -61,7 +61,9 @@ public abstract class SaveExecutor<T> {
      *
      * @return SaveExecutor
      * @see PreparedStatement#executeBatch()
+     * @deprecated
      */
+    @Deprecated
     public SaveExecutor<T> fast() {
         this.fast = true;
         return this;
@@ -73,7 +75,9 @@ public abstract class SaveExecutor<T> {
      * @param enableFast enable fast mode or not
      * @return SaveExecutor
      * @see #fast()
+     * @deprecated
      */
+    @Deprecated
     public SaveExecutor<T> fast(boolean enableFast) {
         this.fast = enableFast;
         return this;

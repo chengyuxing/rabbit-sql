@@ -70,19 +70,6 @@ public abstract class JdbcSupport extends SqlParser {
     protected abstract void doHandleStatementValue(PreparedStatement ps, int index, Object value) throws SQLException;
 
     /**
-     * Sql watcher.
-     *
-     * @param sql       sql
-     * @param args      args
-     * @param startTime connection request start time
-     * @param endTime   finish execute time
-     * @param throwable throwable
-     */
-    protected void watchSql(String sql, Object args, long startTime, long endTime, Throwable throwable) {
-
-    }
-
-    /**
      * Jdbc execute sql timeout.
      *
      * @param sql  sql
@@ -194,12 +181,10 @@ public abstract class JdbcSupport extends SqlParser {
      * @throws UncheckedSqlException sql execute error
      */
     public DataRow execute(final String sql, Map<String, ?> args) {
-        long startTime = System.currentTimeMillis();
         SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepare(sql, args);
         final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
         final String preparedSql = sqlMetaData.getResultSql();
         final Map<String, ?> myArgs = sqlMetaData.getArgs();
-        Throwable reason = null;
         try {
             debugSql(sqlMetaData.getNamedParamSql(), Collections.singletonList(myArgs));
             return execute(preparedSql, ps -> {
@@ -217,10 +202,7 @@ public abstract class JdbcSupport extends SqlParser {
                 return DataRow.of("result", count, "type", "DD(M)L");
             });
         } catch (Exception e) {
-            reason = e;
             throw new RuntimeException("prepare sql error:\n" + sql + "\n" + myArgs, e);
-        } finally {
-            watchSql(sql, myArgs, startTime, System.currentTimeMillis(), reason);
         }
     }
 
@@ -249,13 +231,11 @@ public abstract class JdbcSupport extends SqlParser {
      * @throws UncheckedSqlException sql execute error
      */
     public Stream<DataRow> executeQueryStream(final String sql, Map<String, ?> args) {
-        long startTime = System.currentTimeMillis();
         SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepare(sql, args);
         final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
         final String preparedSql = sqlMetaData.getResultSql();
         final Map<String, ?> myArgs = sqlMetaData.getArgs();
         UncheckedCloseable close = null;
-        Throwable reason = null;
         try {
             Connection connection = getConnection();
             // if this query is not in transaction, it's connection managed by Stream
@@ -293,10 +273,7 @@ public abstract class JdbcSupport extends SqlParser {
                     ex.addSuppressed(e);
                 }
             }
-            reason = ex;
             throw new RuntimeException("streaming query error:\n" + preparedSql + "\n" + myArgs, ex);
-        } finally {
-            watchSql(sql, myArgs, startTime, System.currentTimeMillis(), reason);
         }
     }
 
@@ -316,9 +293,7 @@ public abstract class JdbcSupport extends SqlParser {
         if (sqls.isEmpty()) {
             return 0;
         }
-        long startTime = System.currentTimeMillis();
         Statement s = null;
-        Throwable reason = null;
         Connection connection = getConnection();
         try {
             s = connection.createStatement();
@@ -349,7 +324,6 @@ public abstract class JdbcSupport extends SqlParser {
             }
             s = null;
             releaseConnection(connection, getDataSource());
-            reason = e;
             throw new UncheckedSqlException("execute batch error.", e);
         } finally {
             try {
@@ -358,7 +332,6 @@ public abstract class JdbcSupport extends SqlParser {
                 log.error("close statement error.", e);
             }
             releaseConnection(connection, getDataSource());
-            watchSql(String.join("###", sqls), null, startTime, System.currentTimeMillis(), reason);
         }
     }
 
@@ -374,12 +347,10 @@ public abstract class JdbcSupport extends SqlParser {
         if (batchSize < 1) {
             throw new IllegalArgumentException("batchSize must greater than 0.");
         }
-        long startTime = System.currentTimeMillis();
         Map<String, ?> first = args.iterator().next();
         SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepare(sql, first);
         final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
         final String preparedSql = sqlMetaData.getResultSql();
-        Throwable reason = null;
         try {
             debugSql(sqlMetaData.getNamedParamSql(), args);
             return execute(preparedSql, ps -> {
@@ -399,10 +370,7 @@ public abstract class JdbcSupport extends SqlParser {
                 return result.build().flatMapToInt(IntStream::of).sum();
             });
         } catch (Exception e) {
-            reason = e;
             throw new RuntimeException("prepare sql error:\n" + sql, e);
-        } finally {
-            watchSql(sql, args, startTime, System.currentTimeMillis(), reason);
         }
     }
 
@@ -422,12 +390,10 @@ public abstract class JdbcSupport extends SqlParser {
      * @return affect row count
      */
     public int executeUpdate(final String sql, Map<String, ?> args) {
-        long startTime = System.currentTimeMillis();
         SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepare(sql, args);
         final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
         final String preparedSql = sqlMetaData.getResultSql();
         final Map<String, ?> myArgs = sqlMetaData.getArgs();
-        Throwable reason = null;
         try {
             debugSql(sqlMetaData.getNamedParamSql(), Collections.singletonList(myArgs));
             return execute(preparedSql, sc -> {
@@ -439,10 +405,7 @@ public abstract class JdbcSupport extends SqlParser {
                 return sc.executeUpdate();
             });
         } catch (Exception e) {
-            reason = e;
             throw new RuntimeException("prepare sql error:\n" + sql + "\n" + myArgs, e);
-        } finally {
-            watchSql(sql, myArgs, startTime, System.currentTimeMillis(), reason);
         }
     }
 
@@ -469,13 +432,11 @@ public abstract class JdbcSupport extends SqlParser {
      * @throws UncheckedSqlException execute procedure error
      */
     public DataRow executeCallStatement(final String procedure, Map<String, Param> args) {
-        long startTime = System.currentTimeMillis();
         SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepare(procedure, args);
         final String executeSql = sqlMetaData.getResultSql();
         final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
         Connection connection = getConnection();
         CallableStatement statement = null;
-        Throwable reason = null;
         try {
             debugSql(sqlMetaData.getNamedParamSql(), Collections.singletonList(args));
             //noinspection SqlSourceToSinkFlow
@@ -531,7 +492,6 @@ public abstract class JdbcSupport extends SqlParser {
                 e.addSuppressed(ex);
             }
             statement = null;
-            reason = e;
             releaseConnection(connection, getDataSource());
             throw new UncheckedSqlException("execute procedure error:\n" + procedure + "\n" + args, e);
         } finally {
@@ -541,7 +501,6 @@ public abstract class JdbcSupport extends SqlParser {
                 log.error("close statement error.", e);
             }
             releaseConnection(connection, getDataSource());
-            watchSql(procedure, args, startTime, System.currentTimeMillis(), reason);
         }
     }
 

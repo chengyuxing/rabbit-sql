@@ -1,5 +1,10 @@
 # change note
 
+## 7.11.17
+
+- `SaveExecutor#fast` departed;
+- Some optimized.
+
 ## 7.11.16
 
 - Some optimized.

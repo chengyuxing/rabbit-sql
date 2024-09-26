@@ -442,9 +442,12 @@ public abstract class JdbcSupport extends SqlParser {
             //noinspection SqlSourceToSinkFlow
             statement = connection.prepareCall(executeSql);
             statement.setQueryTimeout(queryTimeout(procedure, args));
+            setPreparedStoreArgs(statement, args, argNames);
+            boolean hasResults = statement.execute();
+            printSqlConsole(statement);
+
             List<String> outNames = new ArrayList<>();
             if (!args.isEmpty()) {
-                setPreparedStoreArgs(statement, args, argNames);
                 for (String name : argNames.keySet()) {
                     if (args.containsKey(name)) {
                         ParamMode mode = args.get(name).getParamMode();
@@ -454,17 +457,28 @@ public abstract class JdbcSupport extends SqlParser {
                     }
                 }
             }
-            statement.execute();
-            printSqlConsole(statement);
+
             if (outNames.isEmpty()) {
-                ResultSet resultSet = statement.getResultSet();
-                List<DataRow> dataRows = JdbcUtil.createDataRows(resultSet, "", -1);
-                JdbcUtil.closeResultSet(resultSet);
-                if (dataRows.isEmpty()) {
-                    return DataRow.of();
-                }
-                return DataRow.of("result", dataRows);
+                DataRow results = new DataRow();
+                int i = 0;
+                do {
+                    if (hasResults) {
+                        ResultSet resultSet = statement.getResultSet();
+                        List<DataRow> dataRows = JdbcUtil.createDataRows(resultSet, "", -1);
+                        results.put("result" + i, dataRows);
+                        JdbcUtil.closeResultSet(resultSet);
+                    } else {
+                        int updCnt = statement.getUpdateCount();
+                        if (updCnt != -1) {
+                            results.put("result" + i, updCnt);
+                        }
+                    }
+                    i++;
+                    hasResults = statement.getMoreResults();
+                } while (hasResults || statement.getUpdateCount() != -1);
+                return results;
             }
+
             Object[] values = new Object[outNames.size()];
             int resultIndex = 0;
             for (Map.Entry<String, List<Integer>> e : argNames.entrySet()) {

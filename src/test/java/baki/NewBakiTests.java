@@ -239,10 +239,10 @@ public class NewBakiTests {
 
     @Test
     public void testCall() {
-        baki.of("{call test.mvn_dependencies_query(:keyword)}")
-                .call(Args.of("keyword", Param.IN("chengyuxing")))
-                .<List<DataRow>>getFirstAs()
-                .forEach(System.out::println);
+        Object res = baki.of("{call test.mvn_dependencies_query(:keyword)}")
+                .call(Args.of("keyword", Param.IN("chengyuxing")));
+
+        System.out.println(res);
     }
 
     @Test
@@ -275,7 +275,7 @@ public class NewBakiTests {
     public void testCall2() {
         baki.of("{:res = call test.sum(:a, :b)}")
                 .call(Args.of("res", Param.OUT(OUTParamType.INTEGER))
-                        .add("a", Param.IN(3400))
+                        .add("a", Param.IN(34))
                         .add("b", Param.IN(56)))
                 .getOptional("res")
                 .ifPresent(System.out::println);

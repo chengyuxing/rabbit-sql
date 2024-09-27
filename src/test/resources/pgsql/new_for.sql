@@ -4,23 +4,24 @@ from test.user
 where id = 1
 -- #for id, idx of :ids delimiter ', ' open ' or id in (' close ')'
       -- #if :id | isOdd == true
-        :id, :idx
-     -- #fi
+    :id, :idx
+-- #fi
 -- #done
 ;
 
 /*[queryTemp]*/
-select * from ${db}.${tableName} limit 4
+select *
+from ${db}.${tableName} limit 4
 ;
 
 /*[insert]*/
 insert into test.user (name, age, address, dt)
 values (
-        -- #for item of :users delimiter ', '
-            -- #if :item <> blank
-            :item
-            -- #fi
-        -- #done
+           -- #for item of :users delimiter ', '
+           -- #if :item <> blank
+           :item
+           -- #fi
+           -- #done
        )
 ;
 
@@ -42,4 +43,23 @@ where id = 3
 ;
 
 /*[qqq]*/
-select * from test.user;
+select *
+from test.user;
+
+/*[queryAllGuests]*/
+select *
+from test.guest
+;
+
+/*[queryOneGuest]*/
+select *
+from test.guest
+;
+
+/*[maven_dependencies_query]*/
+{call test.mvn_dependencies_query(:keywords)}
+;
+
+/*[sum]*/
+{:res = call test.sum(:a, :b)}
+;

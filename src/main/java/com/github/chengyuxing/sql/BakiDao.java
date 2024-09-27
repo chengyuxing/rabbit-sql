@@ -4,7 +4,12 @@ import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.anno.Alias;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.tuple.Pair;
+import com.github.chengyuxing.common.utils.ObjectUtil;
+import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
+import com.github.chengyuxing.sql.anno.Arg;
+import com.github.chengyuxing.sql.anno.XQL;
+import com.github.chengyuxing.sql.anno.XQLMapper;
 import com.github.chengyuxing.sql.datasource.DataSourceUtil;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
 import com.github.chengyuxing.sql.exceptions.IllegalSqlException;
@@ -29,6 +34,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.*;
 import java.sql.*;
 import java.util.*;
 import java.util.function.Function;
@@ -48,6 +55,7 @@ import java.util.stream.Stream;
 public class BakiDao extends JdbcSupport implements Baki {
     private final static Logger log = LoggerFactory.getLogger(BakiDao.class);
     private final DataSource dataSource;
+    private XQLInvocationHandler xqlInvocationHandler;
     private DatabaseMetaData metaData;
     private String databaseId;
     private SqlGenerator sqlGenerator;
@@ -120,6 +128,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * Initialize default configuration properties.
      */
     protected void init() {
+        this.xqlInvocationHandler = new XQLInvocationHandler();
         this.sqlGenerator = new SqlGenerator(namedParamPrefix);
         this.statementValueHandler = (ps, index, value, metaData) -> JdbcUtil.setStatementValue(ps, index, value);
         this.afterParseDynamicSql = sql -> sql;
@@ -135,6 +144,25 @@ public class BakiDao extends JdbcSupport implements Baki {
                 throw new UncheckedSqlException("initialize metadata error.", e);
             }
         });
+    }
+
+    /**
+     * Returns the mapper interface proxy instance.
+     *
+     * @param clazz mapper interface
+     * @param <T>   interface type
+     * @return interface instance
+     * @throws IllegalAccessException not interface or has no @XQLMapper
+     */
+    @SuppressWarnings("unchecked")
+    public <T> T registerXQLMapper(Class<T> clazz) throws IllegalAccessException {
+        if (!clazz.isInterface()) {
+            throw new IllegalAccessException("Not interface: " + clazz.getName());
+        }
+        if (!clazz.isAnnotationPresent(XQLMapper.class)) {
+            throw new IllegalAccessException(clazz + " should be annotated with @" + XQLMapper.class.getSimpleName());
+        }
+        return (T) Proxy.newProxyInstance(this.getClass().getClassLoader(), new Class[]{clazz}, xqlInvocationHandler);
     }
 
     @Override
@@ -179,8 +207,11 @@ public class BakiDao extends JdbcSupport implements Baki {
 
             @Override
             public IPageable pageable(String pageKey, String sizeKey) {
-                int page = (int) args.get(pageKey);
-                int size = (int) args.get(sizeKey);
+                Integer page = (Integer) args.get(pageKey);
+                Integer size = (Integer) args.get(sizeKey);
+                if (page == null || size == null) {
+                    throw new IllegalArgumentException("page or size is null");
+                }
                 return pageable(page, size);
             }
 
@@ -470,6 +501,240 @@ public class BakiDao extends JdbcSupport implements Baki {
         }
     }
 
+    @SuppressWarnings("SqlSourceToSinkFlow")
+    public class XQLInvocationHandler implements InvocationHandler {
+        private final ClassLoader classLoader = this.getClass().getClassLoader();
+        private final Map<XQL.Type, SqlInvokeHandler> handlers = new HashMap<>();
+
+        @Override
+        public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+            Class<?> clazz = method.getDeclaringClass();
+            String xqlFileAlias = clazz.getDeclaredAnnotation(XQLMapper.class).value();
+            XQL.Type sqlType = XQL.Type.QUERY;
+            String sqlName = method.getName();
+
+            if (method.isAnnotationPresent(XQL.class)) {
+                XQL annotation = method.getDeclaredAnnotation(XQL.class);
+                if (!annotation.value().trim().isEmpty()) {
+                    sqlName = annotation.value();
+                }
+                sqlType = annotation.type();
+            }
+            XQLFileManager.Resource xqlResource = getXqlFileManager().getResource(xqlFileAlias);
+            if (xqlResource == null) {
+                throw new IllegalAccessException("XQL file alias '" + xqlFileAlias + "' not found at: " + clazz.getName());
+            }
+            if (!xqlResource.getEntry().containsKey(sqlName)) {
+                throw new IllegalAccessException("SQL name [" + sqlName + "] not found at: " + clazz.getName() + "#" + method.getName());
+            }
+            String sqlRef = "&" + xqlFileAlias + "." + sqlName;
+            return doInvoke(sqlType, sqlRef, args, method);
+        }
+
+        /**
+         * Do invoke.
+         *
+         * @param sqlType sql type
+         * @param sqlRef  sql reference
+         * @param args    args
+         * @param method  method
+         * @return any
+         * @throws Throwable throwable
+         */
+        protected Object doInvoke(XQL.Type sqlType, String sqlRef, Object[] args, Method method) throws Throwable {
+            Class<?> returnType = method.getReturnType();
+            Class<?> returnGenericType = getReturnGenericType(method);
+            Object myArgs = resolveArgs(method, args);
+            if (handlers.containsKey(sqlType)) {
+                SqlInvokeHandler handler = handlers.get(sqlType);
+                return handler.handle(BakiDao.this, sqlRef, myArgs, method, returnType, returnGenericType);
+            }
+            switch (sqlType) {
+                case QUERY:
+                    return handleQuery(sqlRef, myArgs, method, returnType, returnGenericType);
+                case INSERT:
+                case UPDATE:
+                case DELETE:
+                case DDL:
+                    return handleModify(sqlRef, myArgs, method, returnType);
+                case PROCEDURE:
+                case FUNCTION:
+                    return handleProcedure(sqlRef, myArgs, method, returnType);
+                case PLSQL:
+                    return handlePlsql(sqlRef, myArgs, method, returnType);
+                default:
+                    return null;
+            }
+        }
+
+        public void addHandler(XQL.Type sqlType, SqlInvokeHandler handler) {
+            handlers.put(sqlType, handler);
+        }
+
+        protected DataRow handlePlsql(String sqlRef, Object args, Method method, Class<?> returnType) {
+            if (!Map.class.isAssignableFrom(returnType)) {
+                throw new IllegalStateException(method.getName() + " return type must be Map");
+            }
+            //noinspection unchecked
+            return of(sqlRef).execute((Map<String, Object>) args);
+        }
+
+        protected int handleModify(String sqlRef, Object args, Method method, Class<?> returnType) {
+            if (returnType != Integer.class && returnType != int.class) {
+                throw new IllegalStateException(method.getName() + " return type must be Integer or int");
+            }
+            if (args instanceof Map) {
+                //noinspection unchecked
+                return of(sqlRef).execute((Map<String, Object>) args).getFirstAs();
+            }
+            if (args instanceof Collection) {
+                List<Map<String, Object>> myArgsList = new ArrayList<>();
+                for (Object arg : (Collection<?>) args) {
+                    if (arg instanceof Map) {
+                        //noinspection unchecked
+                        myArgsList.add((Map<String, Object>) arg);
+                        continue;
+                    }
+                    if (!arg.getClass().getName().startsWith("java.")) {
+                        myArgsList.add(ObjectUtil.entity2map(arg, HashMap::new));
+                        continue;
+                    }
+                    throw new IllegalArgumentException(method.getName() + " unsupported arg type: " + arg.getClass().getName());
+                }
+                return of(sqlRef).executeBatch(myArgsList);
+            }
+            throw new IllegalArgumentException(method.getName() + " args must be Map or Collection");
+        }
+
+        protected DataRow handleProcedure(String sqlRef, Object args, Method method, Class<?> returnType) {
+            if (!Map.class.isAssignableFrom(returnType)) {
+                throw new IllegalStateException(method.getName() + " return type must be map or DataRow");
+            }
+            if (args instanceof Collection) {
+                throw new IllegalArgumentException(method.getName() + " args must not be Collection");
+            }
+            Map<String, Param> myPaArgs = new HashMap<>();
+            //noinspection unchecked
+            for (Map.Entry<String, Object> entry : ((Map<String, Object>) args).entrySet()) {
+                myPaArgs.put(entry.getKey(), (Param) entry.getValue());
+            }
+            return of(sqlRef).call(myPaArgs);
+        }
+
+        protected Object handleQuery(String sqlRef, Object args, Method method, Class<?> returnType, Class<?> genericType) throws Throwable {
+            if (args instanceof Collection) {
+                throw new IllegalArgumentException(method.getName() + " args must not be Collection");
+            }
+            @SuppressWarnings("unchecked") QueryExecutor qe = query(sqlRef).args((Map<String, Object>) args);
+            if (returnType == Stream.class) {
+                return qe.stream().map(dataRowMapping(genericType));
+            }
+            if (returnType == List.class) {
+                try (Stream<DataRow> s = qe.stream()) {
+                    return s.map(dataRowMapping(genericType)).collect(Collectors.toList());
+                }
+            }
+            if (Map.class.isAssignableFrom(returnType)) {
+                return qe.findFirstRow();
+            }
+            if (returnType == Optional.class) {
+                return qe.findFirst().map(dataRowMapping(genericType));
+            }
+            if (returnType == IPageable.class) {
+                return qe.pageable();
+            }
+            if (returnType == PagedResource.class) {
+                return qe.pageable().collect(dataRowMapping(genericType));
+            }
+            if (!returnType.getName().startsWith("java.")) {
+                return qe.findFirstEntity(returnType);
+            }
+            return null;
+        }
+
+        /**
+         * Get method first return generic type
+         *
+         * @param method method
+         * @return generic type
+         * @throws ClassNotFoundException java bean entity class not found
+         */
+        protected Class<?> getReturnGenericType(Method method) throws ClassNotFoundException {
+            Class<?> genericType = null;
+            Type genericReturnType = method.getGenericReturnType();
+            if (genericReturnType instanceof ParameterizedType) {
+                Type[] actualTypeArguments = ((ParameterizedType) genericReturnType).getActualTypeArguments();
+                if (actualTypeArguments.length == 1) {
+                    Type actualTypeArgument = actualTypeArguments[0];
+                    if (actualTypeArgument instanceof ParameterizedType) {
+                        genericType = (Class<?>) ((ParameterizedType) actualTypeArgument).getRawType();
+                    } else {
+                        genericType = classLoader.loadClass(actualTypeArgument.getTypeName());
+                    }
+                }
+            }
+            return genericType;
+        }
+
+        /**
+         * DataRow mapping function.
+         *
+         * @param genericType method return generic type
+         * @return function
+         */
+        protected Function<DataRow, Object> dataRowMapping(Class<?> genericType) {
+            return d -> {
+                if (genericType.isAssignableFrom(d.getClass())) {
+                    return d;
+                }
+                return ObjectUtil.map2entity(d, genericType);
+            };
+        }
+
+        /**
+         * Resolve args to Map or Collection.
+         *
+         * @param method method
+         * @param args   args
+         * @return Map or Collection
+         */
+        protected Object resolveArgs(Method method, Object[] args) {
+            Parameter[] parameters = method.getParameters();
+            if (parameters.length == 0) {
+                return Collections.emptyMap();
+            }
+            if (parameters.length == 1) {
+                Annotation[] annotations = parameters[0].getAnnotations();
+                if (annotations.length == 0) {
+                    Object arg = args[0];
+                    if (arg instanceof Map || arg instanceof Collection) {
+                        return arg;
+                    }
+                    if (!ReflectUtil.isBasicType(arg)) {
+                        return ObjectUtil.entity2map(arg, HashMap::new);
+                    }
+                }
+            }
+
+            Map<String, Object> myArgs = new HashMap<>();
+            for (int i = 0; i < parameters.length; i++) {
+                Parameter parameter = parameters[i];
+                Annotation[] annotations = parameter.getAnnotations();
+                if (annotations.length == 0) {
+                    throw new IllegalArgumentException(parameter.getName() + " has no @" + Arg.class.getSimpleName());
+                }
+                for (Annotation annotation : annotations) {
+                    if (annotation instanceof Arg) {
+                        String argName = ((Arg) annotation).value();
+                        myArgs.put(argName, args[i]);
+                        break;
+                    }
+                }
+            }
+            return myArgs;
+        }
+    }
+
     /**
      * Simple page helper implementation.
      */
@@ -699,6 +964,10 @@ public class BakiDao extends JdbcSupport implements Baki {
     @Override
     protected int queryTimeout(String sql, Map<String, ?> args) {
         return queryTimeoutHandler.handle(sql, args);
+    }
+
+    public XQLInvocationHandler getXqlInvocationHandler() {
+        return xqlInvocationHandler;
     }
 
     public SqlGenerator getSqlGenerator() {

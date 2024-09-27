@@ -4,20 +4,13 @@ import baki.entity.AnotherUser;
 import baki.entity.User;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.io.FileResource;
-import com.github.chengyuxing.sql.Args;
-import com.github.chengyuxing.sql.Baki;
-import com.github.chengyuxing.sql.BakiDao;
-import com.github.chengyuxing.sql.XQLFileManager;
-import com.github.chengyuxing.sql.support.SqlInterceptor;
+import com.github.chengyuxing.sql.*;
 import com.github.chengyuxing.sql.support.SqlWatcher;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
 import com.github.chengyuxing.sql.types.OUTParamType;
 import com.github.chengyuxing.sql.types.Param;
-import com.github.chengyuxing.sql.types.Variable;
 import com.github.chengyuxing.sql.utils.JdbcUtil;
-import com.github.chengyuxing.sql.utils.SqlUtil;
 import com.zaxxer.hikari.HikariDataSource;
-import org.checkerframework.checker.units.qual.A;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -55,6 +48,39 @@ public class NewBakiTests {
         bakiDao.setSqlWatcher(new SqlWatcher.SqlWatchLogger());
 
         baki = bakiDao;
+    }
+
+    @Test
+    public void proxyTest1() throws IllegalAccessException {
+        HomeMapper homeMapper = bakiDao.registerXQLMapper(HomeMapper.class);
+        homeMapper.queryAllGuests().forEach(System.out::println);
+    }
+
+    @Test
+    public void testProcyTest2() throws IllegalAccessException {
+        HomeMapper homeMapper = bakiDao.registerXQLMapper(HomeMapper.class);
+        DataRow row = homeMapper.mavenDependenciesQuery(Param.IN("chengyuxing"));
+        System.out.println(row);
+        DataRow row1 = homeMapper.sum(Param.IN(10), Param.IN(31), Param.OUT(OUTParamType.INTEGER));
+        System.out.println(row1);
+    }
+
+    @Test
+    public void testPlsql() {
+        DataRow row = baki.of("do\n" +
+                "$$\n" +
+                "    declare\n" +
+                "        x    integer[];\n" +
+                "        nums integer[] := array [[1,2,3],[4,5,6],[7,8,9]];\n" +
+                "    begin\n" +
+                "        foreach x slice 1 in array nums\n" +
+                "            loop\n" +
+                "                raise warning 'num:%',x;\n" +
+                "            end loop;\n" +
+                "    end;\n" +
+                "\n" +
+                "$$;").execute();
+        System.out.println(row);
     }
 
     @Test

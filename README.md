@@ -517,7 +517,7 @@ where id = 3
 
 ## Interface-Mapping
 
-Supports registered **xql** file mapping to interface which annotated with `@XQLMapper`, do some sql operation by invoke dynamic proxy method, e.g **query** .
+Supports registered **xql** file mapping(`BakiDao#proxyXQLMapper`) to interface which annotated with `@XQLMapper`, do some sql operation by invoke dynamic proxy method, e.g **query** .
 
 `example.xql`
 
@@ -556,15 +556,15 @@ By default, all methods behaviors are **query** (`Type.query`) and sql name mapp
 
 | Return Type                                            | sql Type（Type）                  | Remark                  |
 | ------------------------------------------------------ | --------------------------------- | ----------------------- |
-| `List<DataRow|Map<String,Object>|<JavaBean>>`          | query                             |                         |
-| `Stream<DataRow|Map<String,Object>|<JavaBean>>`        | query                             |                         |
-| `Optional<DataRow|Map<String,Object>|<JavaBean>>`      | query                             |                         |
+| `List<DataRow/Map<String,Object>/<JavaBean>>`          | query                             |                         |
+| `Stream<DataRow/Map<String,Object>/<JavaBean>>`        | query                             |                         |
+| `Optional<DataRow/Map<String,Object>/<JavaBean>>`      | query                             |                         |
 | `Map<String,Object>`                                   | query                             |                         |
-| `PagedResource<DataRow|Map<String,Object>|<JavaBean>>` | query                             | `@CountQuery`(optional) |
+| `PagedResource<DataRow/Map<String,Object>/<JavaBean>>` | query                             | `@CountQuery`(optional) |
 | `IPageable`                                            | query                             | `@CountQuery`(optional) |
 | `<JavaBean>`                                           | query                             |                         |
 | `DataRow`                                              | query, procedure, function, plsql |                         |
-| `int|Integer`                                          | insert, update, delete, ddl       |                         |
+| `int/Integer`                                          | insert, update, delete, ddl       |                         |
 
 If the method annotated with special annotations, method will not mapping to xql file sql name, it just execute by the itself:
 

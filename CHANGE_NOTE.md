@@ -1,5 +1,10 @@
 # change note
 
+## 7.11.18
+
+- New method: `BakiDao#proxyXQLMapper`;
+- Add support for interface mapping to xql file.
+
 ## 7.11.17
 
 - `SaveExecutor#fast` departed;

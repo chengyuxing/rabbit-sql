@@ -14,7 +14,7 @@
 
 ## 前言
 
-这仅仅只是一个小巧的工具，对**JDBC**进行了一个轻量的封装，提供一些基本操作，以追求简单稳定高效为目标（查询接口以手写sql为主），此库基本功能如下：
+这是一个轻量级的持久层框架，对**JDBC**进行了一个轻量的封装，提供一些基本操作，以追求简单稳定高效为目标（查询接口以手写sql为主），此库基本功能如下：
 
 - 基本[接口](#BakiDao)增删改查；
 - 简单[分页查询](#分页查询)；
@@ -25,6 +25,7 @@
 - [代码与sql分离](#XQLFileManager)；
 - [sql片段复用](#XQLFileManager)；
 - [动态sql](#动态SQL)；
+- [接口映射](#接口映射)；
 - 支持spring-boot框架。
 
 ## Maven dependency (jdk1.8+)
@@ -35,7 +36,7 @@ Maven 中央仓库
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.11.17</version>
+    <version>7.11.18</version>
 </dependency>
 ```
 
@@ -513,6 +514,64 @@ where id = 3
 ```
 
 - 内置变量名 `_databaseId` 值为当前数据库的名称。
+
+## 接口映射
+
+支持已注册到**XQLFileManager**的**xql**文件映射（`BakiDao#proxyXQLMapper`）到标记了注解`@XQLMapper`的接口，通过动态代理调用方法来执行相应的查询等操作。
+
+`example.xql`
+
+```sql
+/*[queryGuests]*/
+select * from test.guest where id = :id;
+
+/*[addGuest]*/
+insert into test.guest(name, address, age)values (:name, :address, :age);
+```
+
+`ExampleMapper.java`
+
+```java
+@XQLMapper("example")
+public interface ExampleMapper {
+  List<DataRow> queryGuests(Map<String, Object> args);
+  
+  @XQL(value = "queryGuests")
+  Optional<Guest> findById(@Arg("id") int id);
+  
+  @XQL(type = Type.insert)
+  int addGuest(DataRow dataRow);
+  
+  @Insert("test.guest")
+  int addGuests(List<DataRow> dataRows);
+}
+```
+
+默认情况下，所有方法均为查询（`Type.query`），并且**SQL名字**和**接口方法**一一对应，如果不对应的情况下，使用注解`@XQL(value = "sql名",type = Type.insert)` 来指定具体的sql名字和覆盖默认的查询行为，接口方法定义需遵循如下规范：
+
+**参数类型**：
+
+- 参数字典：`DataRow|Map<String,Object>|<JavaBean>`
+- 参数列表：使用注解 `@Arg` 标记每个参数的名字
+
+| 返回类型                                               | sql类型（Type）                   | 备注                  |
+| ------------------------------------------------------ | --------------------------------- | --------------------- |
+| `List<DataRow|Map<String,Object>|<JavaBean>>`          | query                             |                       |
+| `Stream<DataRow|Map<String,Object>|<JavaBean>>`        | query                             |                       |
+| `Optional<DataRow|Map<String,Object>|<JavaBean>>`      | query                             |                       |
+| `Map<String,Object>`                                   | query                             |                       |
+| `PagedResource<DataRow|Map<String,Object>|<JavaBean>>` | query                             | `@CountQuery`（可选） |
+| `IPageable`                                            | query                             | `@CountQuery`（可选） |
+| `<JavaBean>`                                           | query                             |                       |
+| `DataRow`                                              | query, procedure, function, plsql |                       |
+| `int|Integer`                                          | insert, update, delete, ddl       |                       |
+
+如果接口方法标记了以下特殊注解，将忽略接口的映射关系，并执行此注解的具体操作：
+
+- `@Insert`
+-  `@Update`
+- `@Delete`
+-  `@Procedure`
 
 ## 附录
 

@@ -12,11 +12,15 @@ import java.lang.annotation.*;
 public @interface Delete {
     /**
      * Table name.
+     *
+     * @return table name
      */
     String value();
 
     /**
      * Where condition.
+     *
+     * @return condition
      */
     String where();
 }

@@ -12,21 +12,29 @@ import java.lang.annotation.*;
 public @interface Update {
     /**
      * Table name.
+     *
+     * @return table name
      */
     String value();
 
     /**
      * Where condition.
+     *
+     * @return condition
      */
     String where();
 
     /**
      * Ignore null value of data key.
+     *
+     * @return ignore or not
      */
     boolean ignoreNull() default false;
 
     /**
      * Ignore data key if table all fields not contains key.
+     *
+     * @return safe or not
      */
     boolean safe() default false;
 }

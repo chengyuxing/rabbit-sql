@@ -12,6 +12,8 @@ import java.lang.annotation.*;
 public @interface Procedure {
     /**
      * Procedure or function name.
+     *
+     * @return procedure or function name
      */
     String value();
 }

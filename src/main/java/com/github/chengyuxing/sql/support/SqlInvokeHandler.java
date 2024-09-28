@@ -10,7 +10,7 @@ public interface SqlInvokeHandler {
      * Handle sql execution result
      *
      * @param bakiDao           BakiDao
-     * @param sqlRef            sql reference (&alias.sqlName)
+     * @param sqlRef            sql reference (&amp;alias.sqlName)
      * @param args              args
      * @param method            invoked method
      * @param returnType        method return type

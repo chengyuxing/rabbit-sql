@@ -12,6 +12,8 @@ import java.lang.annotation.*;
 public @interface CountQuery {
     /**
      * Count query name.
+     *
+     * @return query name
      */
     String value();
 }

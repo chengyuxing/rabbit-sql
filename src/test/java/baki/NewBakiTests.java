@@ -52,13 +52,13 @@ public class NewBakiTests {
 
     @Test
     public void proxyTest1() throws IllegalAccessException {
-        HomeMapper homeMapper = bakiDao.registerXQLMapper(HomeMapper.class);
+        HomeMapper homeMapper = bakiDao.proxyXQLMapper(HomeMapper.class);
         homeMapper.queryAllGuests().forEach(System.out::println);
     }
 
     @Test
     public void testProcyTest2() throws IllegalAccessException {
-        HomeMapper homeMapper = bakiDao.registerXQLMapper(HomeMapper.class);
+        HomeMapper homeMapper = bakiDao.proxyXQLMapper(HomeMapper.class);
         DataRow row = homeMapper.mavenDependenciesQuery(Param.IN("chengyuxing"));
         System.out.println(row);
         DataRow row1 = homeMapper.sum(Param.IN(10), Param.IN(31), Param.OUT(OUTParamType.INTEGER));

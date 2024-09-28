@@ -556,15 +556,15 @@ public interface ExampleMapper {
 
 | 返回类型                                               | sql类型（Type）                   | 备注                  |
 | ------------------------------------------------------ | --------------------------------- | --------------------- |
-| `List<DataRow|Map<String,Object>|<JavaBean>>`          | query                             |                       |
-| `Stream<DataRow|Map<String,Object>|<JavaBean>>`        | query                             |                       |
-| `Optional<DataRow|Map<String,Object>|<JavaBean>>`      | query                             |                       |
+| `List<DataRow/Map<String,Object>/<JavaBean>>`          | query                             |                       |
+| `Stream<DataRow/Map<String,Object>/<JavaBean>>`        | query                             |                       |
+| `Optional<DataRow/Map<String,Object>/<JavaBean>>`      | query                             |                       |
 | `Map<String,Object>`                                   | query                             |                       |
-| `PagedResource<DataRow|Map<String,Object>|<JavaBean>>` | query                             | `@CountQuery`（可选） |
+| `PagedResource<DataRow/Map<String,Object>/<JavaBean>>` | query                             | `@CountQuery`（可选） |
 | `IPageable`                                            | query                             | `@CountQuery`（可选） |
 | `<JavaBean>`                                           | query                             |                       |
 | `DataRow`                                              | query, procedure, function, plsql |                       |
-| `int|Integer`                                          | insert, update, delete, ddl       |                       |
+| `int/Integer`                                          | insert, update, delete, ddl       |                       |
 
 如果接口方法标记了以下特殊注解，将忽略接口的映射关系，并执行此注解的具体操作：
 

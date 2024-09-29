@@ -1,5 +1,9 @@
 # change note
 
+# 7.11.19
+
+- Mapper support detect method name to execute sql.
+
 ## 7.11.18
 
 - New method: `BakiDao#proxyXQLMapper`;

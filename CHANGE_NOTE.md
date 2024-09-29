@@ -1,5 +1,9 @@
 # change note
 
+# 7.11.20
+
+- Some optimized.
+
 # 7.11.19
 
 - Mapper support detect method name to execute sql.

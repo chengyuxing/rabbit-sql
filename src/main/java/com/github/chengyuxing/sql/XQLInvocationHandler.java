@@ -23,7 +23,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
     // language=Regexp
     public static final String QUERY_PATTERN = "^(?:select|query|find|get|fetch|search)[^a-z]\\w*";
     // language=Regexp
-    public static final String INSERT_PATTERN = "^(?:insert|add|append)[^a-z]\\w*";
+    public static final String INSERT_PATTERN = "^(?:insert|save|add|append)[^a-z]\\w*";
     // language=Regexp
     public static final String UPDATE_PATTERN = "^(?:update|modify|change)[^a-z]\\w*";
     // language=Regexp

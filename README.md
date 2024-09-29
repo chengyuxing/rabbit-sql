@@ -36,7 +36,7 @@ Maven central
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.11.19</version>
+    <version>7.11.20</version>
 </dependency>
 ```
 
@@ -547,7 +547,15 @@ public interface ExampleMapper {
 }
 ```
 
-By default, all methods behaviors are **query** (`Type.query`) and sql name mapping to method name if matched, otherwise use `@XQL(value = "sql name",type = Type.insert)` annotate method to specify the sql name and modify the default query behave, methods must follow the rules:
+By default, all methods behaviors are depends on method prefix and sql name mapping to method name if matched, otherwise use `@XQL(value = "sql name",type = Type.insert)` annotate method to specify the sql name and modify the default query behave, methods must follow the rules:
+
+| sql类型            | 方法前缀                                |
+| ------------------ | --------------------------------------- |
+| select             | select\|query\|find\|get\|fetch\|search |
+| insert             | insert\|save\|add\|append               |
+| update             | update\|modify\|change                  |
+| delete             | delete\|remove                          |
+| procedure/function | call\|proc\|func                        |
 
 **Argument type:**
 

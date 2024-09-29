@@ -8,5 +8,6 @@ public enum Type {
     procedure,
     function,
     ddl,
-    plsql
+    plsql,
+    unset
 }

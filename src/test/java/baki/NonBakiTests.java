@@ -12,6 +12,7 @@ import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.PagedResource;
 import com.github.chengyuxing.sql.XQLFileManager;
 import com.github.chengyuxing.sql.XQLFileManagerConfig;
+import com.github.chengyuxing.sql.annotation.XQLMapper;
 import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
@@ -41,6 +42,11 @@ public class NonBakiTests {
         System.out.println(xqlFileManager.get("other.ooooooooo", Args.of()));
         System.out.println("---");
         System.out.println(xqlFileManager.get("other.other", Args.of("id", 1, "name", "null")));
+    }
+
+    @Test
+    public void testS() {
+        System.out.println(XQLMapper.class.getName());
     }
 
     @Test

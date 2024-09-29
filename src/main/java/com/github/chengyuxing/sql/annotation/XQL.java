@@ -4,7 +4,7 @@ import java.lang.annotation.*;
 
 /**
  * Specify the method if method name not equals to sql fragment name
- * or method behaviour is not do query.
+ * or method behaviour is not detected.
  */
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)

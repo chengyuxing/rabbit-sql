@@ -20,6 +20,17 @@ import java.util.stream.Stream;
 
 @SuppressWarnings("SqlSourceToSinkFlow")
 public abstract class XQLInvocationHandler implements InvocationHandler {
+    // language=Regexp
+    public static final String QUERY_PATTERN = "^(?:select|query|find|get|fetch|search)[^a-z]\\w*";
+    // language=Regexp
+    public static final String INSERT_PATTERN = "^(?:insert|add|append)[^a-z]\\w*";
+    // language=Regexp
+    public static final String UPDATE_PATTERN = "^(?:update|modify|change)[^a-z]\\w*";
+    // language=Regexp
+    public static final String DELETE_PATTERN = "^(?:delete|remove)[^a-z]\\w*";
+    // language=Regexp
+    public static final String CALL_PATTERN = "^(?:call|proc|func)[^a-z]\\w*";
+
     private final ClassLoader classLoader = this.getClass().getClassLoader();
 
     protected abstract BakiDao baki();
@@ -46,7 +57,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
         String alias = clazz.getDeclaredAnnotation(XQLMapper.class).value();
         String sqlName = method.getName();
 
-        Type sqlType = Type.query;
+        Type sqlType = detectSQLTypeByMethodPrefix(sqlName);
 
         if (method.isAnnotationPresent(XQL.class)) {
             XQL xql = method.getDeclaredAnnotation(XQL.class);
@@ -77,20 +88,40 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
             case insert:
             case update:
             case delete:
-            case ddl:
                 return handleModify(sqlRef, myArgs, method, returnType);
             case procedure:
             case function:
                 return handleProcedure(sqlRef, myArgs, method, returnType);
+            case ddl:
             case plsql:
-                return handlePlsql(sqlRef, myArgs, method, returnType);
+            case unset:
+                return handleNormal(sqlRef, myArgs, method, returnType);
             default:
-                return null;
+                throw new IllegalAccessException("SQL type [" + sqlType + "] not supported");
         }
     }
 
     protected Map<Type, SqlInvokeHandler> handlers() {
         return baki().getXqlMappingHandlers();
+    }
+
+    protected Type detectSQLTypeByMethodPrefix(String method) {
+        if (method.matches(QUERY_PATTERN)) {
+            return Type.query;
+        }
+        if (method.matches(INSERT_PATTERN)) {
+            return Type.insert;
+        }
+        if (method.matches(UPDATE_PATTERN)) {
+            return Type.update;
+        }
+        if (method.matches(DELETE_PATTERN)) {
+            return Type.delete;
+        }
+        if (method.matches(CALL_PATTERN)) {
+            return Type.procedure;
+        }
+        return Type.unset;
     }
 
     @SuppressWarnings("unchecked")
@@ -129,7 +160,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
         return null;
     }
 
-    protected DataRow handlePlsql(String sqlRef, Object args, Method method, Class<?> returnType) {
+    protected DataRow handleNormal(String sqlRef, Object args, Method method, Class<?> returnType) {
         if (!Map.class.isAssignableFrom(returnType)) {
             throw new IllegalStateException(method.getName() + " return type must be Map");
         }

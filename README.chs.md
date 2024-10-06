@@ -8,8 +8,6 @@
 
 你不喜欢xml，不喜欢xml和接口强绑定？
 
-你不喜欢工具帮你生成实体和大量的接口文件？
-
 你不喜欢在代码中拼接[动态sql](#动态SQL)？
 
 ## 前言
@@ -565,11 +563,13 @@ public interface ExampleMapper {
 | 返回类型                                               | sql类型（Type）                   | 备注                  |
 | ------------------------------------------------------ | --------------------------------- | --------------------- |
 | `List<DataRow/Map<String,Object>/<JavaBean>>`          | query                             |                       |
+| `Set<DataRow/Map<String,Object>/<JavaBean>>`           | query                             |                       |
 | `Stream<DataRow/Map<String,Object>/<JavaBean>>`        | query                             |                       |
 | `Optional<DataRow/Map<String,Object>/<JavaBean>>`      | query                             |                       |
 | `Map<String,Object>`                                   | query                             |                       |
 | `PagedResource<DataRow/Map<String,Object>/<JavaBean>>` | query                             | `@CountQuery`（可选） |
 | `IPageable`                                            | query                             | `@CountQuery`（可选） |
+| `Long`, `Integer`, `Double`                            | query                             |                       |
 | `<JavaBean>`                                           | query                             |                       |
 | `DataRow`                                              | query, procedure, function, plsql |                       |
 | `int/Integer`                                          | insert, update, delete, ddl       |                       |
@@ -580,6 +580,7 @@ public interface ExampleMapper {
 -  `@Update`
 - `@Delete`
 -  `@Procedure`
+-  `@Function`
 
 ## 附录
 

@@ -8,8 +8,6 @@ Language: English | [简体中文](README.chs.md)
 
 You don't like sql in xml, don't like xml binding to interfaces?
 
-You don't like tools auto generate too many entities and interfaces file?
-
 You don't like writing [dynamic sql](#Dynamic-sql) in java code?
 
 ## Introducing
@@ -549,7 +547,7 @@ public interface ExampleMapper {
 
 By default, all methods behaviors are depends on method prefix and sql name mapping to method name if matched, otherwise use `@XQL(value = "sql name",type = Type.insert)` annotate method to specify the sql name and modify the default query behave, methods must follow the rules:
 
-| sql类型            | 方法前缀                                |
+| Sql type           | Method prefix                           |
 | ------------------ | --------------------------------------- |
 | select             | select\|query\|find\|get\|fetch\|search |
 | insert             | insert\|save\|add\|append               |
@@ -565,11 +563,13 @@ By default, all methods behaviors are depends on method prefix and sql name mapp
 | Return Type                                            | sql Type（Type）                  | Remark                  |
 | ------------------------------------------------------ | --------------------------------- | ----------------------- |
 | `List<DataRow/Map<String,Object>/<JavaBean>>`          | query                             |                         |
+| `Set<DataRow/Map<String,Object>/<JavaBean>>`           | query                             |                         |
 | `Stream<DataRow/Map<String,Object>/<JavaBean>>`        | query                             |                         |
 | `Optional<DataRow/Map<String,Object>/<JavaBean>>`      | query                             |                         |
 | `Map<String,Object>`                                   | query                             |                         |
 | `PagedResource<DataRow/Map<String,Object>/<JavaBean>>` | query                             | `@CountQuery`(optional) |
 | `IPageable`                                            | query                             | `@CountQuery`(optional) |
+| `Long`, `Integer`, `Double`                            | query                             |                         |
 | `<JavaBean>`                                           | query                             |                         |
 | `DataRow`                                              | query, procedure, function, plsql |                         |
 | `int/Integer`                                          | insert, update, delete, ddl       |                         |
@@ -580,6 +580,7 @@ If the method annotated with special annotations, method will not mapping to xql
 -  `@Update`
 - `@Delete`
 -  `@Procedure`
+-  `@Function`
 
 ## Appendix
 

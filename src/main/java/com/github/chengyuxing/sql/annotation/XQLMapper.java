@@ -3,7 +3,7 @@ package com.github.chengyuxing.sql.annotation;
 import java.lang.annotation.*;
 
 /**
- * Mark an interface is a registered xql file mapper.
+ * Mark an interface as a registered xql file mapper.
  * <p>Method behaviors priority:</p>
  * <ol>
  *     <li>Annotated with {@link Insert @Insert}

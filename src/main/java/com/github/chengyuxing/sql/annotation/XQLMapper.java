@@ -6,7 +6,12 @@ import java.lang.annotation.*;
  * Mark an interface is a registered xql file mapper.
  * <p>Method behaviors priority:</p>
  * <ol>
- *     <li>Annotated with {@link Insert @Insert} {@link Update @Update} {@link Delete @Delete} {@link Procedure @Procedure}</li>
+ *     <li>Annotated with {@link Insert @Insert}
+ *     {@link Update @Update}
+ *     {@link Delete @Delete}
+ *     {@link Procedure @Procedure}
+ *     {@link Function @Function}
+ *     </li>
  *     <li>Annotated with {@link XQL @XQL}(type = {@link Type ...})</li>
  *     <li>Method name pattern:
  *     <ul>

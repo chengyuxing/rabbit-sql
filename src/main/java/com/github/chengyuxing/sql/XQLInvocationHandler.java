@@ -208,6 +208,20 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
                 return s.map(dataRowMapping(genericType)).collect(Collectors.toList());
             }
         }
+        if (returnType == Set.class) {
+            try (Stream<DataRow> s = qe.stream()) {
+                return s.map(dataRowMapping(genericType)).collect(Collectors.toSet());
+            }
+        }
+        if (returnType == int.class || returnType == Integer.class) {
+            return qe.findFirstRow().getInt(0);
+        }
+        if (returnType == long.class || returnType == Long.class) {
+            return qe.findFirstRow().getLong(0);
+        }
+        if (returnType == double.class || returnType == Double.class) {
+            return qe.findFirstRow().getDouble(0);
+        }
         if (Map.class.isAssignableFrom(returnType)) {
             return qe.findFirstRow();
         }

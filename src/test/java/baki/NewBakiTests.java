@@ -53,7 +53,9 @@ public class NewBakiTests {
     @Test
     public void proxyTest1() throws IllegalAccessException {
         HomeMapper homeMapper = bakiDao.proxyXQLMapper(HomeMapper.class);
-        homeMapper.queryAllGuests().forEach(System.out::println);
+//        homeMapper.queryAllGuests().forEach(System.out::println);
+        int i = homeMapper.now();
+        System.out.println(i);
     }
 
     @Test

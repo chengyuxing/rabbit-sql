@@ -42,6 +42,9 @@ import java.lang.annotation.*;
  *     {@link com.github.chengyuxing.common.DataRow DataRow}
  *     {@link com.github.chengyuxing.sql.page.IPageable Ipageable}
  *     {@link com.github.chengyuxing.sql.PagedResource PagedResource}
+ *     {@link Integer}
+ *     {@link Long}
+ *     {@link Double}
  *     {@code <Java Bean>}</li>
  *     <li>insert, update, delete: {@code int} {@link Integer}</li>
  *     <li>procedure, function, ddl, plsql: {@link java.util.Map Map} {@link com.github.chengyuxing.common.DataRow DataRow}</li>

@@ -13,6 +13,10 @@ import java.util.Map;
 @XQLMapper("new")
 public interface HomeMapper {
 
+    default int now() {
+        return 1;
+    }
+
     @XQL(type = Type.function)
     DataRow sum(@Arg("a") Param a, @Arg("b") Param b, @Arg("res") Param res);
 

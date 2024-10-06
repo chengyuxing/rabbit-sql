@@ -54,6 +54,11 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
             return handleProcedure(procedure.value(), myArgs, method, returnType);
         }
 
+        if (method.isAnnotationPresent(com.github.chengyuxing.sql.annotation.Function.class)) {
+            com.github.chengyuxing.sql.annotation.Function function = method.getDeclaredAnnotation(com.github.chengyuxing.sql.annotation.Function.class);
+            return handleProcedure(function.value(), myArgs, method, returnType);
+        }
+
         String alias = clazz.getDeclaredAnnotation(XQLMapper.class).value();
         String sqlName = method.getName();
 

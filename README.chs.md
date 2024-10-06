@@ -36,7 +36,7 @@ Maven 中央仓库
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.11.20</version>
+    <version>7.12.0</version>
 </dependency>
 ```
 

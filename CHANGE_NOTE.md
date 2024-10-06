@@ -1,5 +1,9 @@
 # change note
 
+# 7.12.0
+- Mapper add return type `Set`, `Long`, `Double`
+- Add @Function
+
 # 7.11.20
 
 - Some optimized.

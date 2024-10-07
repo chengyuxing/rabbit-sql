@@ -4,13 +4,9 @@
 [![Maven][badge:maven]][maven-repository]
 [![Version][badge:version]][versions]
 
-<img src="imgs/pluginIcon.svg" style="width:180px;" />
+<img src="imgs/pluginIcon.svg" style="width:220px;" />
 
 Language: English | [简体中文](README.chs.md)
-
-You don't like sql in xml, don't like xml binding to interfaces?
-
-You don't like writing [dynamic sql](#Dynamic-sql) in java code?
 
 ## Introducing
 
@@ -62,9 +58,9 @@ There are two ways, Baki interface oriented and xql mapping interface oriented, 
 ### Init
 
 ```java
-dataSource=new HikariDataSource();
+Datasource datasource = new HikariDataSource();
 ...
-BakiDao baki=new BakiDao(dataSource);
+BakiDao baki = new BakiDao(dataSource);
 
 XQLFileManager xqlFileManager = new XQLFileManager();
 ...
@@ -109,13 +105,13 @@ public interface ExampleMapper {
 
 By default, all methods behaviors are depends on method prefix and sql name mapping to method name if matched, otherwise use `@XQL(value = "sql name",type = Type.insert)` annotate method to specify the sql name and modify the default query behave, methods must follow the rules:
 
-| Sql type           | Method prefix                           |
-| ------------------ | --------------------------------------- |
-| select             | select\|query\|find\|get\|fetch\|search |
-| insert             | insert\|save\|add\|append               |
-| update             | update\|modify\|change                  |
-| delete             | delete\|remove                          |
-| procedure/function | call\|proc\|func                        |
+| Sql type             | Method prefix                                     |
+| -------------------- | ------------------------------------------------- |
+| select               | select \| query \| find \| get \| fetch \| search |
+| insert               | insert \| save \| add \| append                   |
+| update               | update \| modify \| change                        |
+| delete               | delete \| remove                                  |
+| procedure / function | call \| proc \| func                              |
 
 **Argument type:**
 
@@ -172,7 +168,7 @@ click X href "#XQLFileManager" "go to defenition"
 
 ```java
 try(Stream<DataRow> fruits = baki.query("select * from fruit").stream()){
-        fruits.limit(10).forEach(System.out::println);
+        fruits.forEach(System.out::println);
         }
 ```
 

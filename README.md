@@ -40,11 +40,19 @@ This is a lightweight persistence layer framework, wrapper of **jdbc**. simple, 
 - compatible with spring jdbc transaction；
 - compatible mybatis、spring-data-jpaand so on to use transaction together；
 
+![](imgs/project-init.png)
+
 Get some usage from [document](https://github.com/chengyuxing/rabbit-sql-spring-boot-starter).
 
 ## IDEA-plugin-support
 
-Plugin marketplace: [Rabbit sql](https://plugins.jetbrains.com/plugin/21403-rabbit-sql) and [documentation](https://github.com/chengyuxing/rabbit-sql-plugin#readme).
+Dynamic sql test:
+
+![](imgs/execute-dynamic-sql.png)
+
+Xql interface mapper generate:
+
+![](imgs/xql-mapper-generate.png)Plugin marketplace: [Rabbit sql](https://plugins.jetbrains.com/plugin/21403-rabbit-sql) and [documentation](https://github.com/chengyuxing/rabbit-sql-plugin#readme).
 
 ## Quick start
 

@@ -40,9 +40,19 @@
 - 兼容spring jdbc事务；
 - 兼容mybatis、spring-data-jpa等同时进行事务处理；
 
+![](imgs/project-init.png)
+
 具体使用方法和配置可以参考[文档](https://github.com/chengyuxing/rabbit-sql-spring-boot-starter)。
 
 ## IDEA插件支持
+
+动态sql测试：
+
+![](imgs/execute-dynamic-sql.png)
+
+xql接口代码生成：
+
+![](imgs/xql-mapper-generate.png)
 
 插件商店搜索 [Rabbit sql](https://plugins.jetbrains.com/plugin/21403-rabbit-sql)，帮助文档：[Rabbit sql plugin](https://github.com/chengyuxing/rabbit-sql-plugin/blob/main/README.chs.md)。
 

@@ -59,7 +59,7 @@ xql接口代码生成：
 
 ## 快速上手
 
-有两种方法，面向Baki接口和面向xql映射接口，同时使用也并不冲突。
+有两种方式，面向Baki接口和面向xql映射接口，同时使用也并不冲突。
 
 ### 初始化
 
@@ -676,7 +676,7 @@ order by id;
 
 - **new XQLFileManager()**
 
-  如果源路径 `.../src/main/resources/`下有文件 `xql-file-manager.properties` 或 `xql-file-manager.yml` 则根据此文件进行配置项初始化，如果同时存在，优先读取 `xql-file-manager.yml`。
+  如果源路径 `.../src/main/resources/`下有文件 `xql-file-manager.yml` 则根据此文件进行配置项初始化。
 
   初始化默认可选配置项：
   
@@ -703,28 +703,6 @@ order by id;
   database-id:
   ```
   
-  `xql-file-manager.properties`
-  
-  ```properties
-  # Format: multi xql file configure the custom alias, e.g.
-  files.dt=data.sql
-  files.sys=system.sql
-  
-  pipes.upper=org.example.Upper
-  
-  constants=
-  
-  # Multi sql fragment delimiter symbol in xql file, ';' is the default also standard.
-  # Notice: if your sql fragment is ddl or procedure, maybe one fragment contains
-  # more ';' and it's not a delimiter, you have to change delimiter to another like ';;'.
-  delimiter=;
-  
-  # UTF-8 is the default.
-  charset=UTF-8
-  # for plugin
-  namedParamPrefix=:
-  databaseId=
-  ```
 
 #### 配置项
 

@@ -677,7 +677,7 @@ order by id;
 
 - **new XQLFileManager()**
 
-  If source root `.../src/main/resources` contains file what is named `xql-file-manager.properties` or `xql-file-manager.yml`, optional properties will be init by this file, if both exists, `xql-file-manager.yml` go first,
+  If source root `.../src/main/resources` contains file what is named `xql-file-manager.yml`, optional properties will be init by this file.
 
   Default options:
   
@@ -703,27 +703,6 @@ order by id;
   named-param-prefix: ':'
   ```
   
-   `sql-file-manager.properties` 
-  
-  ```properties
-  # Format: multi xql file configure the custom alias,  e.g.
-  files.dt=data.sql
-  files.sys=system.sql
-  
-  pipes.upper=org.example.Upper
-  
-  constants=
-  
-  # Multi sql fragment delimiter symbol in xql file, ';' is the default also standard.
-  # Notice: if your sql fragment is ddl or procedure, maybe one fragment contains
-  # more ';' and it's not a delimiter, you have to change delimiter to another like ';;'.
-  delimiter=;
-  
-  # UTF-8 is the default.
-  charset=UTF-8
-  # for plugin
-  namedParamPrefix=:
-  ```
 
 #### Options
 

@@ -12,25 +12,21 @@ You don't like writing [dynamic sql](#Dynamic-sql) in java code?
 
 ## Introducing
 
-This is a lightweight persistence layer framework, wrapper of **jdbc**, support some basic operation. simple, stable and efficient as the goal(query operation accept sql statement mainly), some features following:
+This is a lightweight persistence layer framework, wrapper of **jdbc**. simple, stable and efficient as the goal, some features following:
 
 - Basic operation for insert, delete, update, query;
-- simple [pageable query](#Paging);
-- [stream query](#Stream-query)(java8 **Stream**);
+- [pageable query](#Paging);
 - [execute procedure/function](#Procedure);
 - simple [transaction](#Transaction);
 - [prepare sql](#Prepare-SQL);
 - [sql in file](#XQLFileManager);
-- [sql fragment reuse](#XQLFileManager);
 - [dynamic sql](#Dynamic-SQL);
 - [interface mapping](#Interface-Mapping)
-- support **spring-boot** framework.
 
 ## Maven dependency (jdk1.8+)
 
-Maven central
-
 ```xml
+<!-- Maven central -->
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
@@ -41,7 +37,6 @@ Maven central
 ## Spring-Boot(2.7+) support
 
 - support rabbit-sql autoconfigure；
-- support `application.yml` auto complete；
 - compatible with spring jdbc transaction；
 - compatible mybatis、spring-data-jpaand so on to use transaction together；
 
@@ -59,11 +54,13 @@ Plugin marketplace: [Rabbit sql](https://plugins.jetbrains.com/plugin/21403-rabb
 dataSource=new HikariDataSource();
 ...
 BakiDao baki=new BakiDao(dataSource);
+
+XQLFileManager xqlFileManager = new XQLFileManager();
+...
+baki.setXqlFileManager(xqlFileManager);
 ```
 
 ### Query
-
-Use [baki](#BakiDao)'s  `query` operation，`query` returns a **query executor**，support some return type like：`Stream`，`Optional` and so on.
 
 ```java
 baki.query("select … where id = :id").arg("id", "1")
@@ -153,12 +150,6 @@ I'm going to focus here on the update operation, use [baki](#BakiDao)'s  `update
 - **safe** property: get all table fields before execute update, and remove updated data fields which not exist in table fields;
 
   > Notice, recommend do not use this property for improve performance if you 100% fully know the data you need will be updated.
-  >
-  > Same as **insert** operation.
-
-- **fast** property: in fact, `jdbc batch execute` is invoked.
-
-  > Batch size is 1000.
   >
   > Same as **insert** operation.
 

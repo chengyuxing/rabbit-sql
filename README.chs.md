@@ -6,31 +6,27 @@
 
 语言：[English](README.md) | 简体中文
 
-你不喜欢xml，不喜欢xml和接口强绑定？
+你不喜欢xml，不喜欢xml和接口**强**绑定？
 
 你不喜欢在代码中拼接[动态sql](#动态SQL)？
 
 ## 前言
 
-这是一个轻量级的持久层框架，对**JDBC**进行了一个轻量的封装，提供一些基本操作，以追求简单稳定高效为目标（查询接口以手写sql为主），此库基本功能如下：
+这是一个轻量级的持久层框架，对**JDBC**进行了一个轻量的封装，以追求简单稳定高效为目标，此库基本功能如下：
 
 - 基本[接口](#BakiDao)增删改查；
-- 简单[分页查询](#分页查询)；
-- [流查询](#流查询)（java8的**Stream**）；
+- [分页查询](#分页查询)；
 - [执行存储过程/函数](#调用存储过程函数)；
 - 简单的[事务](#事务)；
 - [预编译sql](#预编译SQL)；
 - [代码与sql分离](#XQLFileManager)；
-- [sql片段复用](#XQLFileManager)；
 - [动态sql](#动态SQL)；
 - [接口映射](#接口映射)；
-- 支持spring-boot框架。
 
 ## Maven dependency (jdk1.8+)
 
-Maven 中央仓库
-
 ```xml
+<!-- Maven 中央仓库 -->
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
@@ -41,7 +37,6 @@ Maven 中央仓库
 ## Spring-Boot(2.7+)支持
 
 - 支持rabbit-sql自动装配；
-- 支持application.yml配置项自动完成提示；
 - 兼容spring jdbc事务；
 - 兼容mybatis、spring-data-jpa等同时进行事务处理；
 
@@ -59,11 +54,13 @@ Maven 中央仓库
 dataSource=new HikariDataSource();
 ...
 BakiDao baki=new BakiDao(dataSource);
+
+XQLFileManager xqlFileManager = new XQLFileManager();
+...
+baki.setXqlFileManager(xqlFileManager);
 ```
 
 ### 查询
-
-查询一般使用[baki](#BakiDao)提供的 `query` 方法，`query` 返回一个**查询执行器**，提供了一些常用的结果返回类型，例如：`Stream`，`Optional` 等。
 
 ```java
 baki.query("select … where id = :id").arg("id", "1")
@@ -148,17 +145,11 @@ baki.of("{call test.fun_query(:c::refcursor)}")
 
 ### 更新&插入&删除
 
-这里主要着重讲一下更新操作，更新一般使用[baki](#BakiDao)提供的 `update` 方法，`update` 返回一个**更新执行器**，具体说下几个细节：
+更新一般使用[baki](#BakiDao)提供的 `update` 方法，`update` 返回一个**更新执行器**，具体说下几个细节：
 
 - **safe**属性：在更新数据之前先获取要插入表的所有字段，并将要更新数据中的不存在的表字段的数据过滤，最终生成的update语句只包含表中存在的字段；
 
   > 需要注意，如果100%确定自己要插入的数据无误，可以不调用此属性，以提高性能；
-  >
-  > 同样适用于**插入**操作。
-
-- **fast**属性：底层调用的是jdbc的批量执行。
-
-  > 每次批量大小为1000.
   >
   > 同样适用于**插入**操作。
 

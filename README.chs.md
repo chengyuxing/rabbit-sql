@@ -4,6 +4,8 @@
 [![Maven][badge:maven]][maven-repository]
 [![Version][badge:version]][versions]
 
+<img src="imgs/pluginIcon.svg" style="width:180px;" />
+
 语言：[English](README.md) | 简体中文
 
 你不喜欢xml，不喜欢xml和接口**强**绑定？
@@ -15,7 +17,6 @@
 这是一个轻量级的持久层框架，对**JDBC**进行了一个轻量的封装，以追求简单稳定高效为目标，此库基本功能如下：
 
 - 基本[接口](#BakiDao)增删改查；
-- [分页查询](#分页查询)；
 - [执行存储过程/函数](#调用存储过程函数)；
 - 简单的[事务](#事务)；
 - [预编译sql](#预编译SQL)；
@@ -58,6 +59,8 @@ xql接口代码生成：
 
 ## 快速上手
 
+有两种方法，面向Baki接口和面向xql映射接口，同时使用也并不冲突。
+
 ### 初始化
 
 ```java
@@ -70,7 +73,82 @@ XQLFileManager xqlFileManager = new XQLFileManager();
 baki.setXqlFileManager(xqlFileManager);
 ```
 
-### 查询
+### 接口映射
+
+```java
+ExampleMapper mapper = baki.proxyXQLMapper(ExampleMapper.class)
+```
+
+支持已注册到**XQLFileManager**的**xql**文件映射（`BakiDao#proxyXQLMapper`）到标记了注解`@XQLMapper`的接口，通过动态代理调用方法来执行相应的查询等操作。
+
+`example.xql`
+
+```sql
+/*[queryGuests]*/
+select * from test.guest where id = :id;
+
+/*[addGuest]*/
+insert into test.guest(name, address, age)values (:name, :address, :age);
+```
+
+`ExampleMapper.java`
+
+```java
+@XQLMapper("example")
+public interface ExampleMapper {
+  List<DataRow> queryGuests(Map<String, Object> args);
+  
+  @XQL(value = "queryGuests")
+  Optional<Guest> findById(@Arg("id") int id);
+  
+  @XQL(type = Type.insert)
+  int addGuest(DataRow dataRow);
+  
+  @Insert("test.guest")
+  int addGuests(List<DataRow> dataRows);
+}
+```
+
+默认情况下，所有方法均根据前缀来确定执行类型，并且**SQL名字**和**接口方法**一一对应，如果不对应的情况下，使用注解`@XQL(value = "sql名",type = Type.insert)` 来指定具体的sql名字和覆盖默认的查询行为，接口方法定义需遵循如下规范：
+
+| sql类型            | 方法前缀                                |
+| ------------------ | --------------------------------------- |
+| select             | select\|query\|find\|get\|fetch\|search |
+| insert             | insert\|save\|add\|append               |
+| update             | update\|modify\|change                  |
+| delete             | delete\|remove                          |
+| procedure/function | call\|proc\|func                        |
+
+**参数类型**：
+
+- 参数字典：`DataRow|Map<String,Object>|<JavaBean>`
+- 参数列表：使用注解 `@Arg` 标记每个参数的名字
+
+| 返回类型                                               | sql类型（Type）                   | 备注                  |
+| ------------------------------------------------------ | --------------------------------- | --------------------- |
+| `List<DataRow/Map<String,Object>/<JavaBean>>`          | query                             |                       |
+| `Set<DataRow/Map<String,Object>/<JavaBean>>`           | query                             |                       |
+| `Stream<DataRow/Map<String,Object>/<JavaBean>>`        | query                             |                       |
+| `Optional<DataRow/Map<String,Object>/<JavaBean>>`      | query                             |                       |
+| `Map<String,Object>`                                   | query                             |                       |
+| `PagedResource<DataRow/Map<String,Object>/<JavaBean>>` | query                             | `@CountQuery`（可选） |
+| `IPageable`                                            | query                             | `@CountQuery`（可选） |
+| `Long`, `Integer`, `Double`                            | query                             |                       |
+| `<JavaBean>`                                           | query                             |                       |
+| `DataRow`                                              | query, procedure, function, plsql |                       |
+| `int/Integer`                                          | insert, update, delete, ddl       |                       |
+
+如果接口方法标记了以下特殊注解，将忽略接口的映射关系，并执行此注解的具体操作：
+
+- `@Insert`
+- `@Update`
+- `@Delete`
+- `@Procedure`
+- `@Function`
+
+### Baki
+
+#### 查询
 
 ```java
 baki.query("select … where id = :id").arg("id", "1")
@@ -90,9 +168,9 @@ click X href "#XQLFileManager" "go to defenition"
 
 > 除了可以传入一个sql语句以外，还支持以 `&` 符号开头的格式，这代表获取并执行[sql文件管理器](#XQLFileManager)中的一条sql。
 
-#### 示例
+**示例**
 
-##### 流查询
+- 流查询
 
 ```java
 try(Stream<DataRow> fruits = baki.query("select * from fruit").stream()){
@@ -102,7 +180,7 @@ try(Stream<DataRow> fruits = baki.query("select * from fruit").stream()){
 
 > 只有当进行终端操作时才会真正的开始执行查询，推荐使用 **try-with-resource** 语句进行包裹，在查询完成后将自动释放连接对象。
 
-##### 分页查询
+- 分页查询
 
 默认的分页查询将自动根据数据库生成**分页查询语句**和生成 **count** 查询语句。
 
@@ -115,7 +193,7 @@ PagedResource<DataRow> resource = baki.query("select ... where id < :id")
                 .collect();
 ```
 
-##### 自定义分页查询
+- 自定义分页查询
 
 `/pgsql/data.sql`
 
@@ -141,7 +219,7 @@ PagedResource<DataRow> res = baki.query("&data.custom_paged")
 >
 > **count** 查询语句也需要用户主动传入。 
 
-##### 调用存储过程/函数
+#### 调用存储过程/函数
 
 ```java
 baki.of("{call test.fun_query(:c::refcursor)}")
@@ -153,7 +231,7 @@ baki.of("{call test.fun_query(:c::refcursor)}")
 
 > 如果是**postgresql**数据库，返回值有游标需要使用[事务](#事务)进行包裹。
 
-### 更新&插入&删除
+#### 更新&插入&删除
 
 更新一般使用[baki](#BakiDao)提供的 `update` 方法，`update` 返回一个**更新执行器**，具体说下几个细节：
 
@@ -165,7 +243,7 @@ baki.of("{call test.fun_query(:c::refcursor)}")
 
 `update` 方法第二个参数 `where`，如果不包含参数占位符，那么条件都是固定的，所有数据都将根据一个固定的条件执行更新，如果是包含参数占位符，例如： `id = :id` ，那么需要更新的数据中必须包含 `id` 参数值，每条数据将动态的根据此 `id` 进行更新。
 
-##### 示例
+**示例**
 
 数据：`[{name: 'cyx', 'age': 29, id: 13}, ...]`；
 
@@ -183,9 +261,6 @@ update ... set name = :name, age = :age where id = :id;
 
 ```java
 Tx.using(() -> {
-  baki.update(...);
-  baki.delete(...);
-  baki.insert(...);
   ......
 });
 ```
@@ -513,75 +588,6 @@ where id = 3
 ```
 
 - 内置变量名 `_databaseId` 值为当前数据库的名称。
-
-## 接口映射
-
-支持已注册到**XQLFileManager**的**xql**文件映射（`BakiDao#proxyXQLMapper`）到标记了注解`@XQLMapper`的接口，通过动态代理调用方法来执行相应的查询等操作。
-
-`example.xql`
-
-```sql
-/*[queryGuests]*/
-select * from test.guest where id = :id;
-
-/*[addGuest]*/
-insert into test.guest(name, address, age)values (:name, :address, :age);
-```
-
-`ExampleMapper.java`
-
-```java
-@XQLMapper("example")
-public interface ExampleMapper {
-  List<DataRow> queryGuests(Map<String, Object> args);
-  
-  @XQL(value = "queryGuests")
-  Optional<Guest> findById(@Arg("id") int id);
-  
-  @XQL(type = Type.insert)
-  int addGuest(DataRow dataRow);
-  
-  @Insert("test.guest")
-  int addGuests(List<DataRow> dataRows);
-}
-```
-
-默认情况下，所有方法均根据前缀来确定执行类型，并且**SQL名字**和**接口方法**一一对应，如果不对应的情况下，使用注解`@XQL(value = "sql名",type = Type.insert)` 来指定具体的sql名字和覆盖默认的查询行为，接口方法定义需遵循如下规范：
-
-| sql类型            | 方法前缀                                |
-| ------------------ | --------------------------------------- |
-| select             | select\|query\|find\|get\|fetch\|search |
-| insert             | insert\|save\|add\|append               |
-| update             | update\|modify\|change                  |
-| delete             | delete\|remove                          |
-| procedure/function | call\|proc\|func                        |
-
-**参数类型**：
-
-- 参数字典：`DataRow|Map<String,Object>|<JavaBean>`
-- 参数列表：使用注解 `@Arg` 标记每个参数的名字
-
-| 返回类型                                               | sql类型（Type）                   | 备注                  |
-| ------------------------------------------------------ | --------------------------------- | --------------------- |
-| `List<DataRow/Map<String,Object>/<JavaBean>>`          | query                             |                       |
-| `Set<DataRow/Map<String,Object>/<JavaBean>>`           | query                             |                       |
-| `Stream<DataRow/Map<String,Object>/<JavaBean>>`        | query                             |                       |
-| `Optional<DataRow/Map<String,Object>/<JavaBean>>`      | query                             |                       |
-| `Map<String,Object>`                                   | query                             |                       |
-| `PagedResource<DataRow/Map<String,Object>/<JavaBean>>` | query                             | `@CountQuery`（可选） |
-| `IPageable`                                            | query                             | `@CountQuery`（可选） |
-| `Long`, `Integer`, `Double`                            | query                             |                       |
-| `<JavaBean>`                                           | query                             |                       |
-| `DataRow`                                              | query, procedure, function, plsql |                       |
-| `int/Integer`                                          | insert, update, delete, ddl       |                       |
-
-如果接口方法标记了以下特殊注解，将忽略接口的映射关系，并执行此注解的具体操作：
-
-- `@Insert`
--  `@Update`
-- `@Delete`
--  `@Procedure`
--  `@Function`
 
 ## 附录
 

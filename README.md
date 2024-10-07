@@ -17,7 +17,6 @@ You don't like writing [dynamic sql](#Dynamic-sql) in java code?
 This is a lightweight persistence layer framework, wrapper of **jdbc**. simple, stable and efficient as the goal, some features following:
 
 - Basic operation for insert, delete, update, query;
-- [pageable query](#Paging);
 - [execute procedure/function](#Procedure);
 - simple [transaction](#Transaction);
 - [prepare sql](#Prepare-SQL);
@@ -58,6 +57,8 @@ Xql interface mapper generate:
 
 ## Quick start
 
+There are two ways, Baki interface oriented and xql mapping interface oriented, that are compatible with each other.
+
 ### Init
 
 ```java
@@ -70,7 +71,82 @@ XQLFileManager xqlFileManager = new XQLFileManager();
 baki.setXqlFileManager(xqlFileManager);
 ```
 
-### Query
+### Interface-Mapping
+
+```java
+ExampleMapper mapper = baki.proxyXQLMapper(ExampleMapper.class)
+```
+
+Supports registered **xql** file mapping(`BakiDao#proxyXQLMapper`) to interface which annotated with `@XQLMapper`, do some sql operation by invoke dynamic proxy method, e.g **query** .
+
+`example.xql`
+
+```sql
+/*[queryGuests]*/
+select * from test.guest where id = :id;
+
+/*[addGuest]*/
+insert into test.guest(name, address, age)values (:name, :address, :age);
+```
+
+`ExampleMapper.java`
+
+```java
+@XQLMapper("example")
+public interface ExampleMapper {
+  List<DataRow> queryGuests(Map<String, Object> args);
+  
+  @XQL(value = "queryGuests")
+  Optional<Guest> findById(@Arg("id") int id);
+  
+  @XQL(type = Type.insert)
+  int addGuest(DataRow dataRow);
+  
+  @Insert("test.guest")
+  int addGuests(List<DataRow> dataRows);
+}
+```
+
+By default, all methods behaviors are depends on method prefix and sql name mapping to method name if matched, otherwise use `@XQL(value = "sql name",type = Type.insert)` annotate method to specify the sql name and modify the default query behave, methods must follow the rules:
+
+| Sql type           | Method prefix                           |
+| ------------------ | --------------------------------------- |
+| select             | select\|query\|find\|get\|fetch\|search |
+| insert             | insert\|save\|add\|append               |
+| update             | update\|modify\|change                  |
+| delete             | delete\|remove                          |
+| procedure/function | call\|proc\|func                        |
+
+**Argument type:**
+
+- **Argument dictionary**: `DataRow|Map<String,Object>|<JavaBean>`
+- **Argument List**: Each argument annotated with `@Arg`
+
+| Return Type                                            | sql Type（Type）                  | Remark                  |
+| ------------------------------------------------------ | --------------------------------- | ----------------------- |
+| `List<DataRow/Map<String,Object>/<JavaBean>>`          | query                             |                         |
+| `Set<DataRow/Map<String,Object>/<JavaBean>>`           | query                             |                         |
+| `Stream<DataRow/Map<String,Object>/<JavaBean>>`        | query                             |                         |
+| `Optional<DataRow/Map<String,Object>/<JavaBean>>`      | query                             |                         |
+| `Map<String,Object>`                                   | query                             |                         |
+| `PagedResource<DataRow/Map<String,Object>/<JavaBean>>` | query                             | `@CountQuery`(optional) |
+| `IPageable`                                            | query                             | `@CountQuery`(optional) |
+| `Long`, `Integer`, `Double`                            | query                             |                         |
+| `<JavaBean>`                                           | query                             |                         |
+| `DataRow`                                              | query, procedure, function, plsql |                         |
+| `int/Integer`                                          | insert, update, delete, ddl       |                         |
+
+If the method annotated with special annotations, method will not mapping to xql file sql name, it just execute by the itself:
+
+- `@Insert`
+- `@Update`
+- `@Delete`
+- `@Procedure`
+- `@Function`
+
+### Baki
+
+#### Query
 
 ```java
 baki.query("select … where id = :id").arg("id", "1")
@@ -90,9 +166,9 @@ click X href "#XQLFileManager" "go to defenition"
 
 > Except accept sql statement, also support accept sql by name, name start with `&` to get sql from [sql file manager](#XQLFileManager).
 
-#### Example
+**Example**
 
-##### Stream-query
+- Stream-query
 
 ```java
 try(Stream<DataRow> fruits = baki.query("select * from fruit").stream()){
@@ -102,7 +178,7 @@ try(Stream<DataRow> fruits = baki.query("select * from fruit").stream()){
 
 > Query will not truly execute until invoke **Stream terminal operation**(e.g `foreach()` ), use jdk7 **try-with-resource** to release connection when query complete.
 
-##### Paging
+- Paging
 
 Default pageable query will auto generate **paging statement** and **count** statement by database.
 
@@ -115,7 +191,7 @@ PagedResource<DataRow> resource = baki.query("select ... where id < :id")
                 .collect();
 ```
 
-##### Custom paging
+- Custom paging
 
 `/pgsql/data.sql`
 
@@ -141,7 +217,7 @@ PagedResource<DataRow> res = baki.query("&data.custom_paged")
 >
 > **count** statement is required now.
 
-##### Procedure
+#### Procedure
 
 ```java
 baki.of("{call test.fun_query(:c::refcursor)}")
@@ -153,7 +229,7 @@ baki.of("{call test.fun_query(:c::refcursor)}")
 
 > If **postgresql**, you must use transaction when returns cursor.
 
-### Update & Insert & Delete
+#### Update & Insert & Delete
 
 I'm going to focus here on the update operation, use [baki](#BakiDao)'s  `update` operation, `update` returns an **update executor**，some details following:
 
@@ -165,7 +241,7 @@ I'm going to focus here on the update operation, use [baki](#BakiDao)'s  `update
 
 The 2nd arg `where` of `update` operation, condition is static if statement not contains named parameter, all data will be updated on static condition; if statement contains named parameter like: `id = :id` , all data will be updated dynamically by every id parameter value.
 
-##### Example
+**Example**
 
 Data:`[{name: 'cyx', 'age': 29, id: 13}, ...]`;
 
@@ -183,9 +259,6 @@ Use of transactions follows thread isolation:
 
 ```java
 Tx.using(() -> {
-  baki.update(...);
-  baki.delete(...);
-  baki.insert(...);
   ......
 });
 ```
@@ -513,75 +586,6 @@ where id = 3
 ```
 
 - Built-In variable `_databaseId` is current database name.
-
-## Interface-Mapping
-
-Supports registered **xql** file mapping(`BakiDao#proxyXQLMapper`) to interface which annotated with `@XQLMapper`, do some sql operation by invoke dynamic proxy method, e.g **query** .
-
-`example.xql`
-
-```sql
-/*[queryGuests]*/
-select * from test.guest where id = :id;
-
-/*[addGuest]*/
-insert into test.guest(name, address, age)values (:name, :address, :age);
-```
-
-`ExampleMapper.java`
-
-```java
-@XQLMapper("example")
-public interface ExampleMapper {
-  List<DataRow> queryGuests(Map<String, Object> args);
-  
-  @XQL(value = "queryGuests")
-  Optional<Guest> findById(@Arg("id") int id);
-  
-  @XQL(type = Type.insert)
-  int addGuest(DataRow dataRow);
-  
-  @Insert("test.guest")
-  int addGuests(List<DataRow> dataRows);
-}
-```
-
-By default, all methods behaviors are depends on method prefix and sql name mapping to method name if matched, otherwise use `@XQL(value = "sql name",type = Type.insert)` annotate method to specify the sql name and modify the default query behave, methods must follow the rules:
-
-| Sql type           | Method prefix                           |
-| ------------------ | --------------------------------------- |
-| select             | select\|query\|find\|get\|fetch\|search |
-| insert             | insert\|save\|add\|append               |
-| update             | update\|modify\|change                  |
-| delete             | delete\|remove                          |
-| procedure/function | call\|proc\|func                        |
-
-**Argument type:**
-
-- **Argument dictionary**: `DataRow|Map<String,Object>|<JavaBean>`
-- **Argument List**: Each argument annotated with `@Arg`
-
-| Return Type                                            | sql Type（Type）                  | Remark                  |
-| ------------------------------------------------------ | --------------------------------- | ----------------------- |
-| `List<DataRow/Map<String,Object>/<JavaBean>>`          | query                             |                         |
-| `Set<DataRow/Map<String,Object>/<JavaBean>>`           | query                             |                         |
-| `Stream<DataRow/Map<String,Object>/<JavaBean>>`        | query                             |                         |
-| `Optional<DataRow/Map<String,Object>/<JavaBean>>`      | query                             |                         |
-| `Map<String,Object>`                                   | query                             |                         |
-| `PagedResource<DataRow/Map<String,Object>/<JavaBean>>` | query                             | `@CountQuery`(optional) |
-| `IPageable`                                            | query                             | `@CountQuery`(optional) |
-| `Long`, `Integer`, `Double`                            | query                             |                         |
-| `<JavaBean>`                                           | query                             |                         |
-| `DataRow`                                              | query, procedure, function, plsql |                         |
-| `int/Integer`                                          | insert, update, delete, ddl       |                         |
-
-If the method annotated with special annotations, method will not mapping to xql file sql name, it just execute by the itself:
-
-- `@Insert`
--  `@Update`
-- `@Delete`
--  `@Procedure`
--  `@Function`
 
 ## Appendix
 

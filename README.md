@@ -4,6 +4,8 @@
 [![Maven][badge:maven]][maven-repository]
 [![Version][badge:version]][versions]
 
+<img src="imgs/pluginicon.svg" style="width:180px;" />
+
 Language: English | [简体中文](README.chs.md)
 
 You don't like sql in xml, don't like xml binding to interfaces?

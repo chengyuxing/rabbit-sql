@@ -10,7 +10,7 @@ Language: English | [简体中文](README.chs.md)
 
 ## Introducing
 
-This is a lightweight persistence layer framework, wrapper of **jdbc**. simple, stable and efficient as the goal, some features following:
+This is a lightweight persistence layer framework, provides a complete database operation solution, through encapsulation and abstraction, simplifies the complexity of database access, but also provides flexibility and scalability for developers. simple, stable and efficient as the goal, some features following:
 
 - Basic operation for insert, delete, update, query;
 - [execute procedure/function](#Procedure);

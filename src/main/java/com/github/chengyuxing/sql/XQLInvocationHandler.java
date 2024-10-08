@@ -34,6 +34,10 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
 
     protected abstract BakiDao baki();
 
+    protected Map<Type, SqlInvokeHandler> userHandlers() {
+        return baki().getXqlMappingHandlers();
+    }
+
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         Class<?> clazz = method.getDeclaringClass();
@@ -81,8 +85,8 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
 
         String sqlRef = "&" + alias + "." + sqlName;
 
-        if (handlers().containsKey(sqlType)) {
-            SqlInvokeHandler handler = handlers().get(sqlType);
+        if (userHandlers().containsKey(sqlType)) {
+            SqlInvokeHandler handler = userHandlers().get(sqlType);
             return handler.handle(baki(), sqlRef, myArgs, method, returnType, returnGenericType);
         }
 
@@ -103,10 +107,6 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
             default:
                 throw new IllegalAccessException("SQL type [" + sqlType + "] not supported");
         }
-    }
-
-    protected Map<Type, SqlInvokeHandler> handlers() {
-        return baki().getXqlMappingHandlers();
     }
 
     protected Type detectSQLTypeByMethodPrefix(String method) {

@@ -10,7 +10,6 @@ import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.github.chengyuxing.common.utils.CollectionUtil.containsIgnoreCase;
 import static com.github.chengyuxing.sql.utils.SqlUtil.*;
 
 /**
@@ -199,13 +198,11 @@ public class SqlGenerator {
         if (keysScope == null || keysScope.isEmpty()) {
             return data.keySet();
         }
-        String[] fieldArr = keysScope.toArray(new String[0]);
+        String[] keysScopeArray = keysScope.toArray(new String[0]);
         Set<String> set = new HashSet<>();
         for (String k : data.keySet()) {
-            if (StringUtil.equalsAnyIgnoreCase(k, fieldArr)) {
-                if (!containsIgnoreCase(set, k)) {
-                    set.add(k);
-                }
+            if (StringUtil.equalsAnyIgnoreCase(k, keysScopeArray)) {
+                set.add(k);
             }
         }
         return set;
@@ -288,7 +285,7 @@ public class SqlGenerator {
         // for build correct update sets excludes the arg which in where condition.
         // where id = :id
         for (Map.Entry<String, ?> e : args.entrySet()) {
-            if (!containsIgnoreCase(whereFields, e.getKey())) {
+            if (!whereFields.contains(e.getKey())) {
                 sets.put(e.getKey(), e.getValue());
             }
         }

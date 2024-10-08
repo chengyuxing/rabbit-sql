@@ -18,7 +18,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@SuppressWarnings("SqlSourceToSinkFlow")
 public abstract class XQLInvocationHandler implements InvocationHandler {
     // language=Regexp
     public static final String QUERY_PATTERN = "^(?:select|query|find|get|fetch|search)[^a-z]\\w*";

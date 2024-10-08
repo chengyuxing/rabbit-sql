@@ -27,7 +27,7 @@
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.12.0</version>
+    <version>7.12.1</version>
 </dependency>
 ```
 

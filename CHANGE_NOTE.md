@@ -1,5 +1,9 @@
 # change note
 
+# 7.12.2
+
+- Optimized.
+
 # 7.12.1
 
 - Optimized.

@@ -47,11 +47,11 @@ spring:
 
 1. Create [xql-file-manager.yml][xql-file-manager] in `.../src/main/resources` by using plugin quickly generate:
 
-   ![](/Users/chengyuxing/IdeaProjects/rabbit-sql/imgs/bp/bp1.png)
+   ![](imgs/bp/bp1.png)
 
 2. Create xql files by using plugin and automatically register [xql-file-manager.yml][xql-file-manager] to reduce the error rate of manual configuration.
 
-   ![](/Users/chengyuxing/IdeaProjects/rabbit-sql/imgs/bp/bp2.png)
+   ![](imgs/bp/bp2.png)
 
 **Project structure**:
 
@@ -79,7 +79,7 @@ spring:
 
 - Create SQL Template by using plugin:
 
-  ![](/Users/chengyuxing/IdeaProjects/rabbit-sql/imgs/bp/bp3.png)
+  ![](imgs/bp/bp3.png)
 
 ```sql
 /*[findAllUsers]*/
@@ -101,7 +101,7 @@ SELECT * FROM users WHERE id = :id;
 
 - Create tag template language by **live template** provided by plugin, typing `xql` keyword to get suggestions:
 
-  ![](/Users/chengyuxing/IdeaProjects/rabbit-sql/imgs/bp/bp4.png)
+  ![](imgs/bp/bp4.png)
 
 **Example**:
 
@@ -122,7 +122,7 @@ select * from users where
 
 When the SQL is written, Quickly generate **interface** and **documentation** by using plugin, it can be reduce repetitive operations and increase efficiency:
 
-![](/Users/chengyuxing/IdeaProjects/rabbit-sql/imgs/bp/bp5.png)
+![](imgs/bp/bp5.png)
 
 > Return Types: Check the type you want to return, some SQL in some cases have reuse needs to return different types of requirements.
 >
@@ -134,9 +134,9 @@ When the SQL is written, Quickly generate **interface** and **documentation** by
 
 - `@XQLMapper(...)` Indicates that this is a mapping interface and specifies the specific xql file alias.
 
-![](/Users/chengyuxing/IdeaProjects/rabbit-sql/imgs/bp/bp6.png)
+![](imgs/bp/bp6.png)
 
-> <img src="/Users/chengyuxing/IdeaProjects/rabbit-sql/imgs/bp/xql.svg" style="width:25px;" /> The navigation icon on the left indicates that the sql and method mapping is successful.
+> <img src="imgs/bp/xql.svg" style="width:25px;" /> The navigation icon on the left indicates that the sql and method mapping is successful.
 >
 > Reuse one SQL which has the different return types, the plugin will generate the method that format is **SQL Name + Return Type**.
 >
@@ -289,7 +289,7 @@ Effective use of [plugin][plugin] for [dynamic SQL][dynamic-sql] testing to ensu
 
 - Click **4**th step action to rollback transaction when test finished, to avoid data modification problems caused by the execution of non-query statements.
 
-  ![](/Users/chengyuxing/IdeaProjects/rabbit-sql/imgs/bp/bp7.png)
+  ![](imgs/bp/bp7.png)
 
 ## Security Best practice
 

@@ -6,9 +6,11 @@
 
 <img src="imgs/pluginIcon.svg" style="width:220px;" />
 
-语言：[English](README.md) | 简体中文
+语言：[English](https://github.com/chengyuxing/rabbit-sql) | 简体中文
 
 ## 介绍
+
+查看[最佳实践](https://github.com/chengyuxing/rabbit-sql/blob/master/BEST_PRACTICE.chs.md)来快速开始。
 
 这是一个轻量级的持久层框架，提供了完整的数据库操作解决方案，通过封装和抽象，简化了数据库访问的复杂性，同时也为开发者提供了灵活性和可扩展性，以追求简单稳定高效为目标，此库基本功能如下：
 

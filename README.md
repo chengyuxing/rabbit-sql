@@ -6,9 +6,11 @@
 
 <img src="imgs/pluginIcon.svg" style="width:220px;" />
 
-Language: English | [简体中文](README.chs.md)
+Language: English | [简体中文](https://github.com/chengyuxing/rabbit-sql/blob/master/README.chs.md)
 
 ## Introducing
+
+Get [Best practice](https://github.com/chengyuxing/rabbit-sql/blob/master/BEST_PRACTICE.md) to quick start.
 
 This is a lightweight persistence layer framework, provides a complete database operation solution, through encapsulation and abstraction, simplifies the complexity of database access, but also provides flexibility and scalability for developers. simple, stable and efficient as the goal, some features following:
 

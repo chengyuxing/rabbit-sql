@@ -326,7 +326,7 @@ Effective use of [plugin][plugin] for [dynamic SQL][dynamic-sql] testing to ensu
 
 ## Reference
 
-- [快速上手 demo][demo]
+- [Quickstart demo][demo]
 - [[Github] rabbit-sql][rabbit-sql-md]
 - [[Github] rabbit-sql-spring-boot-starter][rabbit-sql-sbt-md]
 - [[Gitee] rabbit-sql][gitee-rabbit-sql-md]

@@ -326,6 +326,7 @@ baki.of("&<sql名>").executeBatch(...);
 
 ## 参考
 
+- [Quickstart demo][demo]
 - [[Github] rabbit-sql 文档][rabbit-sql-md]
 - [[Github] rabbit-sql-spring-boot-starter 文档][rabbit-sql-sbt-md]
 - [[Gitee] rabbit-sql 文档][gitee-rabbit-sql-md]
@@ -345,3 +346,4 @@ baki.of("&<sql名>").executeBatch(...);
 [gitee-rabbit-sql-md]:https://gitee.com/cyxo/rabbit-sql/blob/master/README.chs.md
 [gitee-rabbit-sql-sbt-md]:https://gitee.com/cyxo/rabbit-sql-spring-boot-starter/blob/main/README.chs.md
 [springboot-org]:https://spring.io/projects/spring-boot#learn
+[demo]:https://github.com/chengyuxing/rabbit-sql-quickstart

@@ -109,13 +109,13 @@ public interface ExampleMapper {
 
 默认情况下，所有方法均根据前缀来确定执行类型，并且**SQL名字**和**接口方法**一一对应，如果不对应的情况下，使用注解`@XQL(value = "sql名",type = Type.insert)` 来指定具体的sql名字和覆盖默认的查询行为，接口方法定义需遵循如下规范：
 
-| sql类型              | 方法前缀                                          |
-| -------------------- | ------------------------------------------------- |
-| select               | select \| query \| find \| get \| fetch \| search |
-| insert               | insert \| save \| add \| append                   |
-| update               | update \| modify \| change                        |
-| delete               | delete \| remove                                  |
-| procedure / function | call \| proc \| func                              |
+| sql类型              | 方法前缀                                                  |
+| -------------------- | --------------------------------------------------------- |
+| select               | select \| query \| find \| get \| fetch \| search \| list |
+| insert               | insert \| save \| add \| append \| create                 |
+| update               | update \| modify \| change                                |
+| delete               | delete \| remove                                          |
+| procedure / function | call \| proc \| func                                      |
 
 **参数类型**：
 

@@ -107,13 +107,13 @@ public interface ExampleMapper {
 
 By default, all methods behaviors are depends on method prefix and sql name mapping to method name if matched, otherwise use `@XQL(value = "sql name",type = Type.insert)` annotate method to specify the sql name and modify the default query behave, methods must follow the rules:
 
-| Sql type             | Method prefix                                     |
-| -------------------- | ------------------------------------------------- |
-| select               | select \| query \| find \| get \| fetch \| search |
-| insert               | insert \| save \| add \| append                   |
-| update               | update \| modify \| change                        |
-| delete               | delete \| remove                                  |
-| procedure / function | call \| proc \| func                              |
+| Sql type             | Method prefix                                              |
+| -------------------- | ---------------------------------------------------------- |
+| select               | select \| query \| find \| get \| fetch \| search \|create |
+| insert               | insert \| save \| add \| append \|create                   |
+| update               | update \| modify \| change                                 |
+| delete               | delete \| remove                                           |
+| procedure / function | call \| proc \| func                                       |
 
 **Argument type:**
 

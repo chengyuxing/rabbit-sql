@@ -317,7 +317,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         }
         Sql sqlObj = new Sql(sql);
         sqlObj.setDescription(desc);
-        log.debug("scan {} to get sql({}) [{}.{}]：{}", filename, delimiter, alias, blockName, SqlHighlighter.highlightIfAnsiCapable(sql));
+        log.debug("scan({}) {} to get sql [{}.{}]: {}", delimiter, filename, alias, blockName, SqlHighlighter.highlightIfAnsiCapable(sql));
         return sqlObj;
     }
 

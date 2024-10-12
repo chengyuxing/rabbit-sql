@@ -157,32 +157,11 @@ public abstract class QueryExecutor {
     public abstract <T> T findFirstEntity(Class<T> entityClass);
 
     /**
-     * Collect 1st optional row by page query.
-     * <p>Notice: different with {@link  QueryExecutor#stream() stream().findFirst()}:</p>
-     *     <ul>
-     *         <li>{@link  QueryExecutor#stream() stream().findFirst()}：execute source query and get 1st row, it will takes many time if condition not limit;</li>
-     *         <li>{@code findFirst()}：execute page query, limit 1 row.</li>
-     *     </ul>
-     * <p>e.g. postgresql, source:</p>
-     * <blockquote>
-     * <pre>select * from users</pre>
-     * </blockquote>
-     * <p>target: </p>
-     * <blockquote>
-     * <pre>select * from users limit 1 offset 0</pre>
-     * </blockquote>
+     * Collect 1st optional row.
      *
      * @return 1st optional row
      */
     public abstract Optional<DataRow> findFirst();
-
-    /**
-     * Collect 1st optional row.
-     *
-     * @param pageQuery1st if true do page query 1st row, otherwise do {@link Stream#findFirst()}
-     * @return 1st optional row
-     */
-    public abstract Optional<DataRow> findFirst(boolean pageQuery1st);
 
     /**
      * Check query result exists or not.

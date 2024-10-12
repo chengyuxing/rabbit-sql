@@ -232,27 +232,6 @@ public class BakiDao extends JdbcSupport implements Baki {
 
             @Override
             public Optional<DataRow> findFirst() {
-                return findFirst(true);
-            }
-
-            @Override
-            public Optional<DataRow> findFirst(boolean pageQuery1st) {
-                if (pageQuery1st) {
-                    PageHelper pageHelper = defaultPager();
-                    pageHelper.init(1, 1, 1);
-                    Map<String, Integer> pagedArgs = pageHelper.pagedArgs();
-                    if (Objects.nonNull(pagedArgs)) {
-                        args.putAll(pagedArgs);
-                    }
-                    Pair<String, Map<String, Object>> result = parseSql(sql, args);
-                    String pagedSql = pageHelper.pagedSql(result.getItem1());
-
-                    return watchSql(sql, pagedSql, args, () -> {
-                        try (Stream<DataRow> s = executeQueryStream(pagedSql, result.getItem2())) {
-                            return s.peek(d -> d.remove(PageHelper.ROW_NUM_KEY)).findFirst();
-                        }
-                    });
-                }
                 try (Stream<DataRow> s = stream()) {
                     return s.findFirst();
                 }

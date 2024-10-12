@@ -504,6 +504,10 @@ public class BakiDao extends JdbcSupport implements Baki {
         xqlMappingHandlers.put(type, handler);
     }
 
+    public QueryCacheManager getQueryCacheManager() {
+        return queryCacheManager;
+    }
+
     public void setQueryCacheManager(QueryCacheManager queryCacheManager) {
         this.queryCacheManager = queryCacheManager;
     }

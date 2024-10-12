@@ -34,32 +34,30 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
 
     protected abstract BakiDao baki();
 
-    protected Map<Type, SqlInvokeHandler> userHandlers() {
-        return baki().getXqlMappingHandlers();
-    }
-
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         Class<?> clazz = method.getDeclaringClass();
         Class<?> returnType = method.getReturnType();
         Class<?> returnGenericType = getReturnGenericType(method);
 
+        final BakiDao baki = baki();
+
         Object myArgs = resolveArgs(method, args);
 
         if (method.isAnnotationPresent(Insert.class) ||
                 method.isAnnotationPresent(Update.class) ||
                 method.isAnnotationPresent(Delete.class)) {
-            return handleNotXqlMappingMethod(myArgs, method, returnType);
+            return handleNotXqlMappingMethod(baki, myArgs, method, returnType);
         }
 
         if (method.isAnnotationPresent(Procedure.class)) {
             Procedure procedure = method.getDeclaredAnnotation(Procedure.class);
-            return handleProcedure(procedure.value(), myArgs, method, returnType);
+            return handleProcedure(baki, procedure.value(), myArgs, method, returnType);
         }
 
         if (method.isAnnotationPresent(com.github.chengyuxing.sql.annotation.Function.class)) {
             com.github.chengyuxing.sql.annotation.Function function = method.getDeclaredAnnotation(com.github.chengyuxing.sql.annotation.Function.class);
-            return handleProcedure(function.value(), myArgs, method, returnType);
+            return handleProcedure(baki, function.value(), myArgs, method, returnType);
         }
 
         String alias = clazz.getDeclaredAnnotation(XQLMapper.class).value();
@@ -75,7 +73,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
             sqlType = xql.type();
         }
 
-        XQLFileManager.Resource xqlResource = baki().getXqlFileManager().getResource(alias);
+        XQLFileManager.Resource xqlResource = baki.getXqlFileManager().getResource(alias);
         if (xqlResource == null) {
             throw new IllegalAccessException("XQL file alias '" + alias + "' not found at: " + clazz.getName());
         }
@@ -85,25 +83,25 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
 
         String sqlRef = "&" + alias + "." + sqlName;
 
-        if (userHandlers().containsKey(sqlType)) {
-            SqlInvokeHandler handler = userHandlers().get(sqlType);
-            return handler.handle(baki(), sqlRef, myArgs, method, returnType, returnGenericType);
+        if (baki.getXqlMappingHandlers().containsKey(sqlType)) {
+            SqlInvokeHandler handler = baki.getXqlMappingHandlers().get(sqlType);
+            return handler.handle(baki, sqlRef, myArgs, method, returnType, returnGenericType);
         }
 
         switch (sqlType) {
             case query:
-                return handleQuery(alias, sqlName, myArgs, method, returnType, returnGenericType);
+                return handleQuery(baki, alias, sqlName, myArgs, method, returnType, returnGenericType);
             case insert:
             case update:
             case delete:
-                return handleModify(sqlRef, myArgs, method, returnType);
+                return handleModify(baki, sqlRef, myArgs, method, returnType);
             case procedure:
             case function:
-                return handleProcedure(sqlRef, myArgs, method, returnType);
+                return handleProcedure(baki, sqlRef, myArgs, method, returnType);
             case ddl:
             case plsql:
             case unset:
-                return handleNormal(sqlRef, myArgs, method, returnType);
+                return handleNormal(baki, sqlRef, myArgs, method, returnType);
             default:
                 throw new IllegalAccessException("SQL type [" + sqlType + "] not supported");
         }
@@ -129,13 +127,13 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
     }
 
     @SuppressWarnings("unchecked")
-    protected Object handleNotXqlMappingMethod(Object myArgs, Method method, Class<?> returnType) {
+    protected Object handleNotXqlMappingMethod(BakiDao baki, Object myArgs, Method method, Class<?> returnType) {
         if (returnType != Integer.class && returnType != int.class) {
             throw new IllegalStateException(method.getName() + " return type must be Integer or int");
         }
         if (method.isAnnotationPresent(Insert.class)) {
             Insert insert = method.getDeclaredAnnotation(Insert.class);
-            SaveExecutor<Object> e = baki().insert(insert.value())
+            SaveExecutor<Object> e = baki.insert(insert.value())
                     .ignoreNull(insert.ignoreNull())
                     .safe(insert.safe());
             if (myArgs instanceof Collection) {
@@ -145,7 +143,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
         }
         if (method.isAnnotationPresent(Update.class)) {
             Update update = method.getDeclaredAnnotation(Update.class);
-            SaveExecutor<Object> e = baki().update(update.value(), update.where())
+            SaveExecutor<Object> e = baki.update(update.value(), update.where())
                     .ignoreNull(update.ignoreNull())
                     .safe(update.safe());
             if (myArgs instanceof Collection) {
@@ -155,7 +153,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
         }
         if (method.isAnnotationPresent(Delete.class)) {
             Delete delete = method.getDeclaredAnnotation(Delete.class);
-            SaveExecutor<Object> e = baki().delete(delete.value(), delete.where());
+            SaveExecutor<Object> e = baki.delete(delete.value(), delete.where());
             if (myArgs instanceof Collection) {
                 return e.save((Collection<? extends Map<String, ?>>) myArgs);
             }
@@ -164,27 +162,27 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
         return null;
     }
 
-    protected DataRow handleNormal(String sqlRef, Object args, Method method, Class<?> returnType) {
+    protected DataRow handleNormal(BakiDao baki, String sqlRef, Object args, Method method, Class<?> returnType) {
         if (!Map.class.isAssignableFrom(returnType)) {
             throw new IllegalStateException(method.getName() + " return type must be Map");
         }
         //noinspection unchecked
-        return baki().of(sqlRef).execute((Map<String, Object>) args);
+        return baki.of(sqlRef).execute((Map<String, Object>) args);
     }
 
-    protected int handleModify(String sqlRef, Object args, Method method, Class<?> returnType) {
+    protected int handleModify(BakiDao baki, String sqlRef, Object args, Method method, Class<?> returnType) {
         if (returnType != Integer.class && returnType != int.class) {
             throw new IllegalStateException(method.getName() + " return type must be Integer or int");
         }
         if (args instanceof Map) {
             //noinspection unchecked
-            return baki().of(sqlRef).execute((Map<String, Object>) args).getFirstAs();
+            return baki.of(sqlRef).execute((Map<String, Object>) args).getFirstAs();
         }
         //noinspection unchecked
-        return baki().of(sqlRef).executeBatch((Collection<? extends Map<String, ?>>) args);
+        return baki.of(sqlRef).executeBatch((Collection<? extends Map<String, ?>>) args);
     }
 
-    protected DataRow handleProcedure(String sqlRef, Object args, Method method, Class<?> returnType) {
+    protected DataRow handleProcedure(BakiDao baki, String sqlRef, Object args, Method method, Class<?> returnType) {
         if (!Map.class.isAssignableFrom(returnType)) {
             throw new IllegalStateException(method.getName() + " return type must be map or DataRow");
         }
@@ -196,14 +194,14 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
         for (Map.Entry<String, Object> entry : ((Map<String, Object>) args).entrySet()) {
             myPaArgs.put(entry.getKey(), (Param) entry.getValue());
         }
-        return baki().of(sqlRef).call(myPaArgs);
+        return baki.of(sqlRef).call(myPaArgs);
     }
 
-    protected Object handleQuery(String alias, String sqlName, Object args, Method method, Class<?> returnType, Class<?> genericType) {
+    protected Object handleQuery(BakiDao baki, String alias, String sqlName, Object args, Method method, Class<?> returnType, Class<?> genericType) {
         if (args instanceof Collection) {
             throw new IllegalArgumentException(method.getName() + " args must not be Collection");
         }
-        @SuppressWarnings("unchecked") QueryExecutor qe = baki().query("&" + alias + "." + sqlName).args((Map<String, Object>) args);
+        @SuppressWarnings("unchecked") QueryExecutor qe = baki.query("&" + alias + "." + sqlName).args((Map<String, Object>) args);
         if (returnType == Stream.class) {
             return qe.stream().map(dataRowMapping(genericType));
         }

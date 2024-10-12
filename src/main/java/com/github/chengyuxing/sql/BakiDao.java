@@ -50,6 +50,7 @@ import java.util.stream.Stream;
 public class BakiDao extends JdbcSupport implements Baki {
     private final static Logger log = LoggerFactory.getLogger(BakiDao.class);
     private final Map<Type, SqlInvokeHandler> xqlMappingHandlers = new HashMap<>();
+    private final Object queryCacheLock = new Object();
     private final DataSource dataSource;
     private DatabaseMetaData metaData;
     private String databaseId;
@@ -175,12 +176,19 @@ public class BakiDao extends JdbcSupport implements Baki {
             log.debug("Hits cache({}, {}), returns data from cache.", key, params);
             return cache;
         }
-        List<DataRow> prepareCache = new ArrayList<>();
-        Stream<DataRow> queryStream = executeQueryStream(sql, params)
-                .peek(prepareCache::add)
-                .onClose(() -> queryCacheManager.put(key, params, prepareCache));
-        log.debug("Put data({}, {}) to cache.", key, params);
-        return queryStream;
+        synchronized (queryCacheLock) {
+            cache = queryCacheManager.get(key, params);
+            if (Objects.nonNull(cache)) {
+                log.debug("Hits cache({}, {}) after lock, returns data from cache.", key, params);
+                return cache;
+            }
+            List<DataRow> prepareCache = new ArrayList<>();
+            Stream<DataRow> queryStream = executeQueryStream(sql, params)
+                    .peek(prepareCache::add)
+                    .onClose(() -> queryCacheManager.put(key, params, prepareCache));
+            log.debug("Put data({}, {}) to cache.", key, params);
+            return queryStream;
+        }
     }
 
     @Override

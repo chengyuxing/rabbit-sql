@@ -1,5 +1,13 @@
 # change note
 
+# 7.12.3
+
+- Add keyword `create` for insert, `list` for select.
+- Pageable page sql optimized.
+- `QueryExecutor#findFirst` remove page query 1st row, just find first.
+- New `QueryCacheManager` interface for `QueryExecutor`.
+- `BakiDao#executeQueryStreamWithCache` optimized.
+
 # 7.12.2
 
 - Optimized.

@@ -1,5 +1,9 @@
 # change note
 
+# 7.12.4
+
+- `XQLInvocationHandler` optimized.
+
 # 7.12.3
 
 - Add keyword `create` for insert, `list` for select.

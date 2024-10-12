@@ -156,12 +156,36 @@ public class BakiDao extends JdbcSupport implements Baki {
         });
     }
 
+    /**
+     * Caches the query result if necessary.
+     *
+     * @param key    cache key
+     * @param sql    sql name or sql string
+     * @param params params
+     * @return query result
+     */
+    protected Stream<DataRow> executeQueryStreamWithCache(String key, String sql, Map<String, Object> params) {
+        if (Objects.isNull(queryCacheManager) || !queryCacheManager.isAvailable(key, params)) {
+            return executeQueryStream(sql, params);
+        }
+        Stream<DataRow> cache = queryCacheManager.get(key, params);
+        if (Objects.nonNull(cache)) {
+            log.debug("Hits cache({}, {}), returns data from cache.", key, params);
+            return cache;
+        }
+        List<DataRow> prepareCache = new ArrayList<>();
+        Stream<DataRow> queryStream = executeQueryStream(sql, params).peek(prepareCache::add);
+        queryCacheManager.put(key, params, prepareCache);
+        log.debug("Put cache({}, {}).", key, params);
+        return queryStream;
+    }
+
     @Override
     public QueryExecutor query(String sql) {
         return new QueryExecutor(sql) {
             @Override
             public Stream<DataRow> stream() {
-                return watchSql(sql, sql, args, () -> executeQueryStream(sql, args));
+                return watchSql(sql, sql, args, () -> executeQueryStreamWithCache(sql, sql, args));
             }
 
             @Override
@@ -201,7 +225,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 Integer page = (Integer) args.get(pageKey);
                 Integer size = (Integer) args.get(sizeKey);
                 if (page == null || size == null) {
-                    throw new IllegalArgumentException("page or size is null");
+                    throw new IllegalArgumentException("page or size is null.");
                 }
                 return pageable(page, size);
             }
@@ -410,6 +434,9 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @return any
      */
     protected <T> T watchSql(String sourceSql, String targetSql, Object args, Supplier<T> supplier) {
+        if (Objects.isNull(sqlWatcher)) {
+            return supplier.get();
+        }
         long startTime = System.currentTimeMillis();
         Throwable throwable = null;
         try {
@@ -460,9 +487,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     public void setSqlWatcher(SqlWatcher sqlWatcher) {
-        if (Objects.nonNull(sqlWatcher)) {
-            this.sqlWatcher = sqlWatcher;
-        }
+        this.sqlWatcher = sqlWatcher;
     }
 
     public void setQueryTimeoutHandler(QueryTimeoutHandler queryTimeoutHandler) {
@@ -477,6 +502,10 @@ public class BakiDao extends JdbcSupport implements Baki {
 
     public void registerXqlMappingHandler(Type type, SqlInvokeHandler handler) {
         xqlMappingHandlers.put(type, handler);
+    }
+
+    public void setQueryCacheManager(QueryCacheManager queryCacheManager) {
+        this.queryCacheManager = queryCacheManager;
     }
 
     /**
@@ -502,13 +531,13 @@ public class BakiDao extends JdbcSupport implements Baki {
             Map<String, Object> myArgs = result.getItem2();
             if (count == null) {
                 String cq = countQuery == null ? sqlGenerator.generateCountQuery(query) : countQuery;
-                List<DataRow> cnRows = watchSql(recordQuery, cq, myArgs, () -> execute(cq, myArgs)).getFirstAs();
-                Object cn = cnRows.get(0).getFirst();
-                if (cn instanceof Integer) {
-                    count = (Integer) cn;
-                } else {
-                    count = Integer.parseInt(cn.toString());
-                }
+                count = watchSql(recordQuery, cq, myArgs, () -> {
+                    try (Stream<DataRow> s = executeQueryStreamWithCache(recordQuery, cq, myArgs)) {
+                        return s.findFirst()
+                                .map(d -> d.getInt(0))
+                                .orElse(0);
+                    }
+                });
             }
 
             PageHelper pageHelper = null;
@@ -529,7 +558,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             String executeQuery = disablePageSql ? query : pageHelper.pagedSql(query);
             final PageHelper finalPageHelper = pageHelper;
             return watchSql(recordQuery, executeQuery, myArgs, () -> {
-                try (Stream<DataRow> s = executeQueryStream(executeQuery, myArgs)) {
+                try (Stream<DataRow> s = executeQueryStreamWithCache(recordQuery, executeQuery, myArgs)) {
                     List<T> list = s.peek(d -> d.remove(PageHelper.ROW_NUM_KEY))
                             .map(mapper)
                             .collect(Collectors.toList());
@@ -652,7 +681,9 @@ public class BakiDao extends JdbcSupport implements Baki {
                     xqlFileManager.init();
                 }
                 Pair<String, Map<String, Object>> result = xqlFileManager.get(trimSql.substring(1), myArgs);
-                trimSql = afterParseDynamicSql.handle(result.getItem1());
+                if (Objects.nonNull(afterParseDynamicSql)) {
+                    trimSql = afterParseDynamicSql.handle(result.getItem1());
+                }
                 // #for expression temp variables stored in _for variable.
                 if (!result.getItem2().isEmpty()) {
                     myArgs.put(XQLFileManager.DynamicSqlParser.FOR_VARS_KEY, result.getItem2());
@@ -728,8 +759,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     public void setAfterParseDynamicSql(AfterParseDynamicSql afterParseDynamicSql) {
-        if (Objects.nonNull(afterParseDynamicSql))
-            this.afterParseDynamicSql = afterParseDynamicSql;
+        this.afterParseDynamicSql = afterParseDynamicSql;
     }
 
     public void setXqlFileManager(XQLFileManager xqlFileManager) {

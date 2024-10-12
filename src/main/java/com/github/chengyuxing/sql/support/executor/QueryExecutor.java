@@ -67,7 +67,6 @@ public abstract class QueryExecutor {
      * Collect result to Stream.
      *
      * @return Stream query result
-     * @see com.github.chengyuxing.sql.support.JdbcSupport#executeQueryStream(String, Map) executeQueryStream(String, Map)
      */
     public abstract Stream<DataRow> stream();
 

@@ -109,6 +109,8 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     private QueryTimeoutHandler queryTimeoutHandler;
 
+    private QueryCacheManager queryCacheManager;
+
     /**
      * Constructs a new BakiDao with initial datasource.
      *
@@ -125,9 +127,6 @@ public class BakiDao extends JdbcSupport implements Baki {
     protected void init() {
         this.sqlGenerator = new SqlGenerator(namedParamPrefix);
         this.statementValueHandler = (ps, index, value, metaData) -> JdbcUtil.setStatementValue(ps, index, value);
-        this.afterParseDynamicSql = sql -> sql;
-        this.sqlWatcher = (sourceSql, targetSql, args, startTime, endTime, throwable) -> {
-        };
         this.queryTimeoutHandler = (sql, args) -> 0;
         using(c -> {
             try {

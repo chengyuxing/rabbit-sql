@@ -326,6 +326,7 @@ public class XQLFileManagerConfig {
      * @param namedParamPrefix named parameter prefix
      */
     public void setNamedParamPrefix(Character namedParamPrefix) {
+        checkLoading();
         if (Objects.nonNull(namedParamPrefix) && namedParamPrefix != ' ') {
             this.namedParamPrefix = namedParamPrefix;
         }

@@ -7,10 +7,10 @@ import com.github.chengyuxing.sql.page.PageHelper;
  * <p>Oracle page helper, e.g.</p>
  * <blockquote>
  * <pre>SELECT *
- * FROM (SELECT t.*, ROWNUM RN_4_RABBIT
+ * FROM (SELECT t.*, ROWNUM {@link #ROW_NUM_KEY}
  *       FROM (...) t
  *       WHERE ROWNUM &lt;= :{@link #END_NUM_KEY})
- *  WHERE RN_4_RABBIT &gt;= :{@link  #START_NUM_KEY}</pre>
+ *  WHERE {@link #ROW_NUM_KEY} &gt;= :{@link  #START_NUM_KEY}</pre>
  * </blockquote>
  *
  * @see #pagedArgs()
@@ -32,8 +32,8 @@ public class OraclePageHelper extends PageHelper {
         return "SELECT *\n" +
                 "FROM (SELECT t.*, ROWNUM " + ROW_NUM_KEY + "\n" +
                 "          FROM (" + sql + ") t\n" +
-                "          WHERE ROWNUM <= " + end() + ")\n" +
-                " WHERE " + ROW_NUM_KEY + " >= " + start();
+                "          WHERE ROWNUM <= :" + END_NUM_KEY + ")\n" +
+                " WHERE " + ROW_NUM_KEY + " >= :" + START_NUM_KEY;
     }
 
     @Override

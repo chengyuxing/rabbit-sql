@@ -14,7 +14,7 @@ import com.github.chengyuxing.sql.page.PageHelper;
  */
 public class MysqlPageHelper extends PageHelper {
 
-    public int start() {
+    public int limit() {
         return (pageNumber - 1) * pageSize;
     }
 
@@ -27,11 +27,11 @@ public class MysqlPageHelper extends PageHelper {
 
     @Override
     public String pagedSql(String sql) {
-        return sql + " limit " + start() + ", " + size();
+        return sql + " limit :" + START_NUM_KEY + ", :" + END_NUM_KEY;
     }
 
     @Override
     public Args<Integer> pagedArgs() {
-        return Args.of(START_NUM_KEY, start()).add(END_NUM_KEY, size());
+        return Args.of(START_NUM_KEY, limit()).add(END_NUM_KEY, size());
     }
 }

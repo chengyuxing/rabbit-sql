@@ -44,7 +44,7 @@ where id = 3
 
 /*[qqq]*/
 select *
-from test.user;
+from test.guest;
 
 /*[queryAllGuests]*/
 select *

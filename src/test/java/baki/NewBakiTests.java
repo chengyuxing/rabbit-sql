@@ -2,7 +2,6 @@ package baki;
 
 import baki.entity.AnotherUser;
 import baki.entity.User;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.io.FileResource;
@@ -24,10 +23,7 @@ import java.nio.file.Paths;
 import java.sql.CallableStatement;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Stream;
 
 public class NewBakiTests {
@@ -59,9 +55,14 @@ public class NewBakiTests {
 
         bakiDao.setQueryCacheManager(new QueryCacheManager() {
             @Override
-            public Stream<DataRow> get(String sql, Map<String, Object> params) {
+            public String uniqueKey(String sql, Map<String, Object> args) {
+                return sql + "_" + Objects.hash(sql, args);
+            }
+
+            @Override
+            public Stream<DataRow> get(String key) {
                 try {
-                    Path path = Paths.get("/Users/chengyuxing/Downloads/" + sql + params.hashCode() + ".data");
+                    Path path = Paths.get("/Users/chengyuxing/Downloads/" + key + ".data");
                     if (!Files.exists(path)) {
                         return null;
                     }
@@ -74,17 +75,17 @@ public class NewBakiTests {
             }
 
             @Override
-            public void put(String sql, Map<String, Object> params, List<DataRow> value) {
+            public void put(String key, List<DataRow> value) {
                 try {
                     byte[] cache = json.writeValueAsBytes(value);
-                    Files.write(Paths.get("/Users/chengyuxing/Downloads/" + sql + params.hashCode() + ".data"), cache);
+                    Files.write(Paths.get("/Users/chengyuxing/Downloads/" + key + ".data"), cache);
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
             }
 
             @Override
-            public boolean isAvailable(String sql, Map<String, Object> params) {
+            public boolean isAvailable(String sql, Map<String, Object> args) {
                 return true;
             }
         });

@@ -33,6 +33,7 @@ import org.slf4j.LoggerFactory;
 import javax.sql.DataSource;
 import java.sql.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -50,7 +51,7 @@ import java.util.stream.Stream;
 public class BakiDao extends JdbcSupport implements Baki {
     private final static Logger log = LoggerFactory.getLogger(BakiDao.class);
     private final Map<Type, SqlInvokeHandler> xqlMappingHandlers = new HashMap<>();
-    private final Object queryCacheLock = new Object();
+    private final Map<String, Object> queryCacheLocks = new ConcurrentHashMap<>();
     private final DataSource dataSource;
     private DatabaseMetaData metaData;
     private String databaseId;
@@ -162,31 +163,33 @@ public class BakiDao extends JdbcSupport implements Baki {
     /**
      * Caches the query result if necessary.
      *
-     * @param key    cache key
-     * @param sql    sql name or sql string
-     * @param params params
+     * @param key  cache key
+     * @param sql  sql name or sql string
+     * @param args args
      * @return query result
      */
-    protected Stream<DataRow> executeQueryStreamWithCache(String key, String sql, Map<String, Object> params) {
-        if (Objects.isNull(queryCacheManager) || !queryCacheManager.isAvailable(key, params)) {
-            return executeQueryStream(sql, params);
+    protected Stream<DataRow> executeQueryStreamWithCache(String key, String sql, Map<String, Object> args) {
+        if (Objects.isNull(queryCacheManager) || !queryCacheManager.isAvailable(key, args)) {
+            return executeQueryStream(sql, args);
         }
-        Stream<DataRow> cache = queryCacheManager.get(key, params);
+        String uniqueKey = queryCacheManager.uniqueKey(key, args);
+        Stream<DataRow> cache = queryCacheManager.get(uniqueKey);
         if (Objects.nonNull(cache)) {
-            log.debug("Hits cache({}, {}), returns data from cache.", key, params);
+            log.debug("Hits cache({}, {}), returns data from cache.", key, args);
             return cache;
         }
-        synchronized (queryCacheLock) {
-            cache = queryCacheManager.get(key, params);
+        Object lock = queryCacheLocks.computeIfAbsent(uniqueKey, k -> new Object());
+        synchronized (lock) {
+            cache = queryCacheManager.get(uniqueKey);
             if (Objects.nonNull(cache)) {
-                log.debug("Hits cache({}, {}) after lock, returns data from cache.", key, params);
+                log.debug("Hits cache({}, {}) after lock, returns data from cache.", key, args);
                 return cache;
             }
             List<DataRow> prepareCache = new ArrayList<>();
-            Stream<DataRow> queryStream = executeQueryStream(sql, params)
+            Stream<DataRow> queryStream = executeQueryStream(sql, args)
                     .peek(prepareCache::add)
-                    .onClose(() -> queryCacheManager.put(key, params, prepareCache));
-            log.debug("Put data({}, {}) to cache.", key, params);
+                    .onClose(() -> queryCacheManager.put(uniqueKey, prepareCache));
+            log.debug("Put query result({}, {}) to cache.", key, args);
             return queryStream;
         }
     }
@@ -521,6 +524,15 @@ public class BakiDao extends JdbcSupport implements Baki {
 
     public void setQueryCacheManager(QueryCacheManager queryCacheManager) {
         this.queryCacheManager = queryCacheManager;
+    }
+
+    /**
+     * Could be cleared if necessary.
+     *
+     * @return query cache locks object.
+     */
+    public Map<String, Object> getQueryCacheLocks() {
+        return queryCacheLocks;
     }
 
     /**

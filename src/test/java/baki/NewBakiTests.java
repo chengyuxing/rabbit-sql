@@ -2,9 +2,12 @@ package baki;
 
 import baki.entity.AnotherUser;
 import baki.entity.User;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.sql.*;
+import com.github.chengyuxing.sql.support.QueryCacheManager;
 import com.github.chengyuxing.sql.support.SqlWatcher;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
 import com.github.chengyuxing.sql.types.OUTParamType;
@@ -14,16 +17,23 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.sql.CallableStatement;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
 
 public class NewBakiTests {
     private static BakiDao bakiDao;
     private static Baki baki;
+    private static final ObjectMapper json = new ObjectMapper();
 
     @BeforeClass
     public static void init() {
@@ -46,6 +56,38 @@ public class NewBakiTests {
             JdbcUtil.setStatementValue(ps, index, value);
         });
         bakiDao.setSqlWatcher(new SqlWatcher.SqlWatchLogger());
+
+        bakiDao.setQueryCacheManager(new QueryCacheManager() {
+            @Override
+            public Stream<DataRow> get(String sql, Map<String, Object> params) {
+                try {
+                    Path path = Paths.get("/Users/chengyuxing/Downloads/" + sql + params.hashCode() + ".data");
+                    if (!Files.exists(path)) {
+                        return null;
+                    }
+                    List<DataRow> cache = json.readerForListOf(DataRow.class)
+                            .readValue(Files.newInputStream(path));
+                    return cache.stream();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            @Override
+            public void put(String sql, Map<String, Object> params, List<DataRow> value) {
+                try {
+                    byte[] cache = json.writeValueAsBytes(value);
+                    Files.write(Paths.get("/Users/chengyuxing/Downloads/" + sql + params.hashCode() + ".data"), cache);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            @Override
+            public boolean isAvailable(String sql, Map<String, Object> params) {
+                return true;
+            }
+        });
 
         baki = bakiDao;
     }

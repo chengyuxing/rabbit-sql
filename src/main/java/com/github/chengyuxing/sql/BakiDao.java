@@ -108,7 +108,9 @@ public class BakiDao extends JdbcSupport implements Baki {
      * Jdbc execute sql timeout({@link Statement#setQueryTimeout(int)}) handler.
      */
     private QueryTimeoutHandler queryTimeoutHandler;
-
+    /**
+     * Query cache manager.
+     */
     private QueryCacheManager queryCacheManager;
 
     /**
@@ -174,9 +176,10 @@ public class BakiDao extends JdbcSupport implements Baki {
             return cache;
         }
         List<DataRow> prepareCache = new ArrayList<>();
-        Stream<DataRow> queryStream = executeQueryStream(sql, params).peek(prepareCache::add);
-        queryCacheManager.put(key, params, prepareCache);
-        log.debug("Put cache({}, {}).", key, params);
+        Stream<DataRow> queryStream = executeQueryStream(sql, params)
+                .peek(prepareCache::add)
+                .onClose(() -> queryCacheManager.put(key, params, prepareCache));
+        log.debug("Put data({}, {}) to cache.", key, params);
         return queryStream;
     }
 
@@ -677,16 +680,17 @@ public class BakiDao extends JdbcSupport implements Baki {
         if (Objects.nonNull(args)) {
             myArgs.putAll(args);
         }
-        String trimSql = SqlUtil.trimEnd(sql.trim());
-        if (trimSql.startsWith("&")) {
+        String mySql = SqlUtil.trimEnd(sql.trim());
+        if (mySql.startsWith("&")) {
             if (Objects.nonNull(xqlFileManager)) {
                 if (reloadXqlOnGet) {
                     log.warn("please set 'reloadXqlOnGet' to false in production environment for improve concurrency.");
                     xqlFileManager.init();
                 }
-                Pair<String, Map<String, Object>> result = xqlFileManager.get(trimSql.substring(1), myArgs);
+                Pair<String, Map<String, Object>> result = xqlFileManager.get(mySql.substring(1), myArgs);
+                mySql = result.getItem1();
                 if (Objects.nonNull(afterParseDynamicSql)) {
-                    trimSql = afterParseDynamicSql.handle(result.getItem1());
+                    mySql = afterParseDynamicSql.handle(mySql);
                 }
                 // #for expression temp variables stored in _for variable.
                 if (!result.getItem2().isEmpty()) {
@@ -696,19 +700,19 @@ public class BakiDao extends JdbcSupport implements Baki {
                 throw new NullPointerException("can not find property 'xqlFileManager'.");
             }
         }
-        if (trimSql.contains("${")) {
-            trimSql = SqlUtil.formatSql(trimSql, myArgs, sqlGenerator.getTemplateFormatter());
+        if (mySql.contains("${")) {
+            mySql = SqlUtil.formatSql(mySql, myArgs, sqlGenerator.getTemplateFormatter());
             if (Objects.nonNull(xqlFileManager)) {
-                trimSql = SqlUtil.formatSql(trimSql, xqlFileManager.getConstants(), sqlGenerator.getTemplateFormatter());
+                mySql = SqlUtil.formatSql(mySql, xqlFileManager.getConstants(), sqlGenerator.getTemplateFormatter());
             }
         }
         if (Objects.nonNull(sqlInterceptor)) {
-            boolean request = sqlInterceptor.preHandle(trimSql, myArgs, metaData);
+            boolean request = sqlInterceptor.preHandle(mySql, myArgs, metaData);
             if (!request) {
-                throw new IllegalSqlException("permission denied, reject to execute sql.\nSQL: " + trimSql + "\nArgs: " + myArgs);
+                throw new IllegalSqlException("permission denied, reject to execute sql.\nSQL: " + mySql + "\nArgs: " + myArgs);
             }
         }
-        return Pair.of(trimSql, myArgs);
+        return Pair.of(mySql, myArgs);
     }
 
     @Override

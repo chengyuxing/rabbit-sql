@@ -12,10 +12,12 @@ import java.util.stream.Stream;
 public interface QueryCacheManager {
     /**
      * Get cache.
+     * <p>Notice: Do not return an empty stream if the cache does not exist.
+     * To trigger the execution of a database query, null must be returned.</p>
      *
      * @param sql    sql name
      * @param params params
-     * @return cache
+     * @return cache or null
      */
     Stream<DataRow> get(String sql, Map<String, Object> params);
 

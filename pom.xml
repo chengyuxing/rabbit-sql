@@ -8,7 +8,7 @@
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
     <packaging>jar</packaging>
-    <version>7.12.4</version>
+    <version>7.12.5</version>
     <name>rabbit-sql</name>
     <url>https://github.com/chengyuxing/rabbit-sql</url>
 

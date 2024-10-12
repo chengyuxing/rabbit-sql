@@ -27,7 +27,7 @@ Create maven project.
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql-spring-boot-starter</artifactId>
-    <version>2.11.4</version>
+    <version>2.11.5</version>
 </dependency>
 ```
 
@@ -244,7 +244,7 @@ baki.of("&<sql name>").executeBatch(...);
 
 For the same queries that are frequently executed, you are advised to use application-layer cache or database query cache to reduce repeated SQL requests and improve system response speed.
 
-Implement interface: `com.github.chengyuxing.sql.support.QueryCacheManager` to create cache layer and registered to `BakiDao#setQueryCacheManager` .
+Implement interface: `com.github.chengyuxing.sql.support.QueryCacheManager` to create cache layer and invoke `BakiDao#setQueryCacheManager`  to enable the cache support.
 
 ##### SQL optimization
 

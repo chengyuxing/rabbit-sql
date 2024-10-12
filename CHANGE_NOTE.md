@@ -1,5 +1,9 @@
 # change note
 
+# 7.12.5
+
+- `QueryCacheManager` optimized.
+
 # 7.12.4
 
 - `XQLInvocationHandler` optimized.

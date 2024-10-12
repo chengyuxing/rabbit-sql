@@ -29,7 +29,7 @@ This is a lightweight persistence layer framework, provides a complete database 
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.12.4</version>
+    <version>7.12.5</version>
 </dependency>
 ```
 

@@ -29,7 +29,7 @@
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.12.5</version>
+    <version>7.12.6</version>
 </dependency>
 ```
 
@@ -609,7 +609,9 @@ where id = 3
 
 ##### autoXFMConfig
 
-自动根据数据库名称加载合适的配置文件，默认值为：`false`。
+默认值为：`false`
+
+自动根据数据库名称加载合适的配置文件。
 
 如果为 `true` ，根据数据库名称自动寻找合适的 `xql-file-manager-*.yml`，数据库名称来自于 **jdbc驱动** `DatabaseMetaData#getDatabaseProductName().toLowerCase()`。
 
@@ -630,6 +632,74 @@ sql 拦截器，默认值为：
 ```java
 (ps, index, value, metaData) -> JdbcUtil.setStatementValue(ps, index, value)
 ```
+
+##### globalPageHelperProvider
+
+默认值：`null`
+
+全局分页帮助提供程序，如果内置的无法满足当前数据库，则实现此类来进行覆盖或扩展。
+
+##### afterParseDynamicSql
+
+默认值：`null`
+
+当解析完成动态sql时，在真正执行之前，来进行二次处理。
+
+##### sqlWatcher
+
+默认值：`null`
+
+SQL执行观察者，查看每条sql的执行情况，如执行耗时等。
+
+##### xqlFileManager
+
+默认值：`null`
+
+XQL文件管理器，支持统一管理SQL，根据SQL名来获取SQL执行，解析动态SQL，支持接口映射等。
+
+##### batchSize
+
+默认值：1000
+
+JDBC底层执行批量操作每次提交数据数量。
+
+##### namedParamPrefix
+
+默认值：`:`
+
+预编译SQL命名参数前缀，用来标记预编译参数占位符，最终被编译为 `?` 。
+
+##### reloadXqlOnGet
+
+默认值：`false`
+
+每次根据名字从 [XQLFileManager](#XQLFileManager) 取SQL执行之前，都重新初始化解析一遍已更改的XQL文件。
+
+##### pageKey
+
+默认值：`page`
+
+内部分页查询**页码**默认的参数名。
+
+##### sizeKey
+
+默认值：`size`
+
+内部分页查询**每页条数**默认的参数名。
+
+##### queryTimeoutHandler
+
+默认值：0
+
+查询超时处理器，当查询超时，将抛出异常，具体实现效果取决于JDBC驱动：`Statement#setQueryTimeout(int)` 。
+
+##### queryCacheManager
+
+默认值：`null`
+
+查询缓存管理器，缓存查询结果，以提高性能，提高并发，降低数据库压力。
+
+合理制定缓存的自动过期策略，以免数据更新不及时。
 
 ### XQLFileManager
 
@@ -704,19 +774,37 @@ order by id;
 
 #### 配置项
 
-- **files**
+##### files
 
-  sql文件字典集合，键为别名，值为sql文件名，可通过 `别名.sql名` 来获取sql，如上例子：`my.query`；
+sql文件字典集合，键为别名，值为sql文件名，可通过 `别名.sql名` 来获取sql，如上例子：`my.query`；
 
-- **pipeInstances/pipes**
+##### pipeInstances
 
-  自定义[管道](#管道)字典集合，**key**为管道名，**value**为管道类名，用于动态sql脚本的参数值，通过添加实现自定义的管道来增强[动态sql表达式](#表达式脚本)的功能；
+##### pipes
 
-- **delimiter**
+自定义[管道](#管道)字典集合，**key**为管道名，**value**为管道类名，用于动态sql脚本的参数值，通过添加实现自定义的管道来增强[动态sql表达式](#表达式脚本)的功能；
 
-  sql文件 **"k-v"** 结构分隔符，**默认是单个分号（;）**遵循标准sql文件多段sql分隔符，但是有一种情况，如果sql文件内有plsql：**create function...** 或 **create procedure...**等， 内部会包含多段sql多个分号，为防止解析异常，单独设置自定义的分隔符:
+##### delimiter
 
-  - 例如（ `;;` ）双分号，也是标准sql所支持的, **并且支持仅扫描已命名的sql**。
+sql文件 **"k-v"** 结构分隔符，**默认是单个分号（;）**遵循标准sql文件多段sql分隔符，但是有一种情况，如果sql文件内有plsql：**create function...** 或 **create procedure...**等， 内部会包含多段sql多个分号，为防止解析异常，单独设置自定义的分隔符:
+
+- 例如（ `;;` ）双分号，也是标准sql所支持的, **并且支持仅扫描已命名的sql**。
+
+##### constants
+
+字符串模版常量池，如果SQL中有 `${name}` 的模版占位符，则从常量池中查找，如果找到就替换。
+
+##### charset
+
+解析XQL文件所使用的编码，默认：`UTF-8`。
+
+##### namedParamPrefix
+
+主要作用于插件解析执行命名参数动态SQL。
+
+##### databaseId
+
+主要作用于插件解析执行动态SQL时的参数。
 
 
 [badge:maven]:https://img.shields.io/maven-central/v/com.github.chengyuxing/rabbit-sql

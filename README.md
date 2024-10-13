@@ -29,7 +29,7 @@ This is a lightweight persistence layer framework, provides a complete database 
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.12.5</version>
+    <version>7.12.6</version>
 </dependency>
 ```
 
@@ -607,7 +607,9 @@ Default implement of interface **Baki**, support some basic operation.
 
 ##### autoXFMConfig
 
-Auto load xql file manager config by database name, default: `false` .
+Default: `false`
+
+Auto load xql file manager config by database name.
 
 If `true`, find the suitable `xql-file-manager-*.yml` by database name, database name depends on **jdbc driver** `DatabaseMetaData#getDatabaseProductName().toLowerCase()` .
 
@@ -628,6 +630,74 @@ Custom prepared sql statement parameter value handler, default:
 ```java
 (ps, index, value, metaData) -> JdbcUtil.setStatementValue(ps, index, value)
 ```
+
+##### globalPageHelperProvider
+
+Default: `null`
+
+Global paging help provider that implements this class to override or extend if the built-in does not satisfy the current database.
+
+##### afterParseDynamicSql
+
+Default: `null`
+
+When the dynamic sql is parsed, secondary processing is performed before it is actually executed.
+
+##### sqlWatcher
+
+Default: `null`
+
+SQL Execution observer to view the execution of each sql, such as the execution time.
+
+##### xqlFileManager
+
+Default: `null`
+
+XQL file manager, support unified management of SQL, according to the SQL name to obtain SQL execution, parsing dynamic SQL, support interface mapping, etc.
+
+##### batchSize
+
+Default: 1000
+
+The JDBC low-level batch operation executes the number of data submitted each time.
+
+##### namedParamPrefix
+
+默认值：`:`
+
+Prepared SQL named parameter prefix, used to mark the prepared parameter placeholder, and finally compiled to `?` .
+
+##### reloadXqlOnGet
+
+Default: `false`
+
+Each time the SQL is fetched from the [XQLFileManager](XQLFileManager) by name and executed, the changed XQL file is initialized again.
+
+##### pageKey
+
+Default: `page`
+
+Internal paging Query Page number Default parameter name.
+
+##### sizeKey
+
+Default: `size`
+
+Internal paging Indicates the default parameter name for querying the number of entries per page.
+
+##### queryTimeoutHandler
+
+Default: 0
+
+Query timeout handler, when the query times out, will throw an exception, the specific implementation effect depends on the JDBC driver: `Statement#setQueryTimeout(int)` 。
+
+##### queryCacheManager
+
+Default: `null`
+
+The query cache manager caches query results to improve performance, increase concurrency, and reduce database stress.
+
+Make a reasonable automatic cache expiration policy to prevent data from being updated in time.
 
 ### XQLFileManager
 
@@ -704,19 +774,37 @@ order by id;
 
 #### Options
 
-- **files**
+##### files
 
-  Sql file mapping dictionary, key is alias, value is sql file name, you can get sql statement  by `alias.your_sql_name` when sql file added, as above example: `my.sql`;
+Sql file mapping dictionary, key is alias, value is sql file name, you can get sql statement  by `alias.your_sql_name` when sql file added, as above example: `my.sql`;
 
-- **pipeInstances/pipes**
+##### pipeInstances
 
-  Custom [pipe](#Pipe) dictionary, **key** is pipe name, **value** is pipe class, for dynamic sql expression's value, get more [dynamic sql expression](#Expression-script)'s features by implement custom pipe;
+##### pipes
 
-- **delimiter**
+Custom [pipe](#Pipe) dictionary, **key** is pipe name, **value** is pipe class, for dynamic sql expression's value, get more [dynamic sql expression](#Expression-script)'s features by implement custom pipe;
 
-  Sql file **"k-v"** structure delimiter **default `;`**, follows standard multi sql structure delimiter by `;`, but there is a condition, if you have plsql in file  e.g. `create function...` or `create procedure...`, it will be multi sql statement in one sql object, you need specific custom delimiter for resolve correctly:
+##### delimiter
 
-  - e.g ( `;;`) double semicolon.
+Sql file **"k-v"** structure delimiter **default `;`**, follows standard multi sql structure delimiter by `;`, but there is a condition, if you have plsql in file  e.g. `create function...` or `create procedure...`, it will be multi sql statement in one sql object, you need specific custom delimiter for resolve correctly:
+
+- e.g ( `;;`) double semicolon.
+
+##### constants
+
+String template constant pool. If there is a template placeholder for `${name}` in the SQL, look it up from the constant pool and replace it if found.
+
+##### charset
+
+Encoding used to parse XQL files, default: `UTF-8`。
+
+##### namedParamPrefix
+
+It mainly works with plug-in parsing to perform named parameter dynamic SQL.
+
+##### databaseId
+
+The main effect is that the plug-in parses parameters when executing dynamic SQL.
 
 
 [badge:maven]:https://img.shields.io/maven-central/v/com.github.chengyuxing/rabbit-sql

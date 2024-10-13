@@ -6,6 +6,7 @@ import com.github.chengyuxing.common.MostDateTime;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.ReflectUtil;
+import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.BakiDao;
 import com.github.chengyuxing.sql.XQLFileManager;
@@ -38,6 +39,11 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class Tests {
+
+    @Test
+    public void testHash() {
+        System.out.println(StringUtil.hash("","MD5"));
+    }
 
     @Test
     public void page() throws Exception {

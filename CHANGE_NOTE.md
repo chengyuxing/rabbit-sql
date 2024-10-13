@@ -1,5 +1,10 @@
 # change note
 
+# 7.12.6
+
+- `QueryCacheManager` optimized.
+- debug log optimized.
+
 # 7.12.5
 
 - `QueryCacheManager` optimized.

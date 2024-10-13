@@ -521,8 +521,9 @@ public abstract class JdbcSupport extends SqlParser {
     /**
      * Debug executed sql and args.
      *
-     * @param sql  sql
-     * @param args args
+     * @param sqlName sql name
+     * @param sql     sql
+     * @param args    args
      */
     protected void debugSql(String sqlName, String sql, Collection<? extends Map<String, ?>> args) {
         if (log.isDebugEnabled()) {

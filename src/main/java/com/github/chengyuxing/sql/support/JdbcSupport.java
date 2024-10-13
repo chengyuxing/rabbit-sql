@@ -186,7 +186,7 @@ public abstract class JdbcSupport extends SqlParser {
         final String preparedSql = sqlMetaData.getResultSql();
         final Map<String, ?> myArgs = sqlMetaData.getArgs();
         try {
-            debugSql(sqlMetaData.getNamedParamSql(), Collections.singletonList(myArgs));
+            debugSql(sql, sqlMetaData.getNamedParamSql(), Collections.singletonList(myArgs));
             return execute(preparedSql, ps -> {
                 ps.setQueryTimeout(queryTimeout(sql, myArgs));
                 setPreparedSqlArgs(ps, myArgs, argNames);
@@ -241,7 +241,7 @@ public abstract class JdbcSupport extends SqlParser {
             // if this query is not in transaction, it's connection managed by Stream
             // if transaction is active connection will not be close when read stream to the end in 'try-with-resource' block
             close = UncheckedCloseable.wrap(() -> releaseConnection(connection, getDataSource()));
-            debugSql(sqlMetaData.getNamedParamSql(), Collections.singletonList(myArgs));
+            debugSql(sql, sqlMetaData.getNamedParamSql(), Collections.singletonList(myArgs));
             //noinspection SqlSourceToSinkFlow
             PreparedStatement ps = connection.prepareStatement(preparedSql);
             ps.setQueryTimeout(queryTimeout(sql, myArgs));
@@ -304,7 +304,7 @@ public abstract class JdbcSupport extends SqlParser {
                     continue;
                 }
                 String parsedSql = parseSql(sql, Collections.emptyMap()).getItem1();
-                debugSql(parsedSql, Collections.emptyList());
+                debugSql(sql, parsedSql, Collections.emptyList());
                 //noinspection SqlSourceToSinkFlow
                 s.addBatch(parsedSql);
                 if (i % batchSize == 0) {
@@ -352,7 +352,7 @@ public abstract class JdbcSupport extends SqlParser {
         final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
         final String preparedSql = sqlMetaData.getResultSql();
         try {
-            debugSql(sqlMetaData.getNamedParamSql(), args);
+            debugSql(sql, sqlMetaData.getNamedParamSql(), args);
             return execute(preparedSql, ps -> {
                 final Stream.Builder<int[]> result = Stream.builder();
                 int i = 1;
@@ -395,7 +395,7 @@ public abstract class JdbcSupport extends SqlParser {
         final String preparedSql = sqlMetaData.getResultSql();
         final Map<String, ?> myArgs = sqlMetaData.getArgs();
         try {
-            debugSql(sqlMetaData.getNamedParamSql(), Collections.singletonList(myArgs));
+            debugSql(sql, sqlMetaData.getNamedParamSql(), Collections.singletonList(myArgs));
             return execute(preparedSql, sc -> {
                 sc.setQueryTimeout(queryTimeout(sql, myArgs));
                 if (myArgs.isEmpty()) {
@@ -438,7 +438,7 @@ public abstract class JdbcSupport extends SqlParser {
         Connection connection = getConnection();
         CallableStatement statement = null;
         try {
-            debugSql(sqlMetaData.getNamedParamSql(), Collections.singletonList(args));
+            debugSql(procedure, sqlMetaData.getNamedParamSql(), Collections.singletonList(args));
             //noinspection SqlSourceToSinkFlow
             statement = connection.prepareCall(executeSql);
             statement.setQueryTimeout(queryTimeout(procedure, args));
@@ -524,9 +524,11 @@ public abstract class JdbcSupport extends SqlParser {
      * @param sql  sql
      * @param args args
      */
-    protected void debugSql(String sql, Collection<? extends Map<String, ?>> args) {
+    protected void debugSql(String sqlName, String sql, Collection<? extends Map<String, ?>> args) {
         if (log.isDebugEnabled()) {
-            log.debug("SQL: {}", SqlHighlighter.highlightIfAnsiCapable(sql));
+            log.debug("SQL{}: {}",
+                    sqlName.trim().startsWith("&") ? "(" + sqlName + ")" : "",
+                    SqlHighlighter.highlightIfAnsiCapable(sql));
             for (Map<String, ?> arg : args) {
                 StringJoiner sb = new StringJoiner(", ", "{", "}");
                 arg.forEach((k, v) -> {

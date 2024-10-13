@@ -55,11 +55,6 @@ public class NewBakiTests {
 
         bakiDao.setQueryCacheManager(new QueryCacheManager() {
             @Override
-            public String uniqueKey(String sql, Map<String, Object> args) {
-                return sql + "_" + Objects.hash(sql, args);
-            }
-
-            @Override
             public Stream<DataRow> get(String key) {
                 try {
                     Path path = Paths.get("/Users/chengyuxing/Downloads/" + key + ".data");

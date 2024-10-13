@@ -1,9 +1,11 @@
 package com.github.chengyuxing.sql.support;
 
 import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.common.utils.StringUtil;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
@@ -14,11 +16,17 @@ public interface QueryCacheManager {
      * Unique key for the cache.
      * <p>It is necessary to ensure uniqueness to avoid cache clutter.</p>
      *
-     * @param sql  sql name
+     * @param sql  sql name or sql string
      * @param args args
      * @return the unique key
      */
-    String uniqueKey(String sql, Map<String, Object> args);
+    default String uniqueKey(String sql, Map<String, Object> args) {
+        String argsStr = Objects.nonNull(args) ? "@" + StringUtil.hash(args.toString(), "MD5") : "";
+        if (sql.startsWith("&")) {
+            return sql + argsStr;
+        }
+        return "unnamed" + argsStr;
+    }
 
     /**
      * Get cache.
@@ -39,20 +47,11 @@ public interface QueryCacheManager {
     void put(String uniqueKey, List<DataRow> value);
 
     /**
-     * Invalidate cache.
-     *
-     * @param sql  sql name
-     * @param args args
-     */
-    default void invalidate(String sql, Map<String, Object> args) {
-    }
-
-    /**
      * Check the sql matches the conditions or not, if matches,
-     * {@link #put(String, List) put} and {@link #get(String) get} will be enabling.
+     * cache operations {@link #put(String, List) put} and {@link #get(String) get} will be enabling.
      *
-     * @param sql  sql name
-     * @param args params
+     * @param sql  sql name or sql string
+     * @param args args
      * @return true or false
      */
     boolean isAvailable(String sql, Map<String, Object> args);

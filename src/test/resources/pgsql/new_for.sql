@@ -48,6 +48,12 @@ from test.guest;
 
 /*[queryAllGuests]*/
 select *
+from test.guest limit :limit
+offset :offset
+;
+
+/*[queryAllGuestsCount]*/
+select count(*)
 from test.guest
 ;
 

@@ -479,6 +479,33 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
+     * Decode sql reference to alias and sql name.
+     *
+     * @param sqlReference sql reference name ({@code <alias>.<sqlName>})
+     * @return alias and sql name
+     */
+    public static Pair<String, String> decodeSqlReference(String sqlReference) {
+        int dotIdx = sqlReference.lastIndexOf(".");
+        if (dotIdx < 1) {
+            throw new IllegalArgumentException("Invalid sql reference name, please follow <alias>.<sqlName> format.");
+        }
+        String alias = sqlReference.substring(0, dotIdx);
+        String name = sqlReference.substring(dotIdx + 1);
+        return Pair.of(alias, name);
+    }
+
+    /**
+     * Encode alias and sql name to sql reference name.
+     *
+     * @param alias xql file alias
+     * @param name  sql name
+     * @return sql reference name
+     */
+    public static String encodeSqlReference(String alias, String name) {
+        return alias + "." + name;
+    }
+
+    /**
      * Foreach all sql resource.
      *
      * @param consumer (alias, resource) -&gt; void
@@ -494,7 +521,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     public Set<String> names() {
         Set<String> names = new HashSet<>();
-        foreach((k, r) -> r.getEntry().keySet().forEach(n -> names.add(k + "." + n)));
+        foreach((k, r) -> r.getEntry().keySet().forEach(n -> names.add(encodeSqlReference(k, n))));
         return names;
     }
 
@@ -509,22 +536,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             i += resource.getEntry().size();
         }
         return i;
-    }
-
-    /**
-     * Check resources contains sql fragment or not.
-     *
-     * @param name sql reference name ({@code <alias>.<sqlName>})
-     * @return true if exists or false
-     */
-    public boolean contains(String name) {
-        try {
-            getSqlObject(name);
-            return true;
-        } catch (NoSuchElementException e) {
-            log.warn(e.getMessage());
-            return false;
-        }
     }
 
     /**
@@ -547,6 +558,21 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
+     * Check resources contains sql fragment or not.
+     *
+     * @param name sql reference name ({@code <alias>.<sqlName>})
+     * @return true if exists or false
+     */
+    public boolean contains(String name) {
+        Pair<String, String> p = decodeSqlReference(name);
+        Resource resource = resources.get(p.getItem1());
+        if (Objects.isNull(resource)) {
+            return false;
+        }
+        return resource.getEntry().containsKey(p.getItem2());
+    }
+
+    /**
      * Get a sql object.
      *
      * @param name sql reference name ({@code <alias>.<sqlName>})
@@ -555,19 +581,16 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @throws IllegalArgumentException if sql reference name format error
      */
     public Sql getSqlObject(String name) {
-        int dotIdx = name.lastIndexOf(".");
-        if (dotIdx < 1) {
-            throw new IllegalArgumentException("Invalid sql reference name, please follow <alias>.<sqlName> format.");
+        Pair<String, String> p = decodeSqlReference(name);
+        Resource resource = getResource(p.getItem1());
+        if (Objects.isNull(resource)) {
+            throw new NoSuchElementException(String.format("Resource with alias [%s] not found.", p.getItem1()));
         }
-        String alias = name.substring(0, dotIdx);
-        if (resources.containsKey(alias)) {
-            Map<String, Sql> e = getResource(alias).getEntry();
-            String sqlName = name.substring(dotIdx + 1);
-            if (e.containsKey(sqlName)) {
-                return e.get(sqlName);
-            }
+        Sql sql = resource.getEntry().get(p.getItem2());
+        if (Objects.isNull(sql)) {
+            throw new NoSuchElementException(String.format("no SQL named [%s] was found.", p.getItem2()));
         }
-        throw new NoSuchElementException(String.format("no SQL named [%s] was found.", name));
+        return sql;
     }
 
     /**

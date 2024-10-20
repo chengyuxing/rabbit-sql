@@ -53,37 +53,37 @@ public class NewBakiTests {
         });
         bakiDao.setSqlWatcher(new SqlWatcher.SqlWatchLogger());
 
-        bakiDao.setQueryCacheManager(new QueryCacheManager() {
-            @Override
-            public Stream<DataRow> get(String key) {
-                try {
-                    Path path = Paths.get("/Users/chengyuxing/Downloads/" + key + ".data");
-                    if (!Files.exists(path)) {
-                        return null;
-                    }
-                    List<DataRow> cache = json.readerForListOf(DataRow.class)
-                            .readValue(Files.newInputStream(path));
-                    return cache.stream();
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
-            @Override
-            public void put(String key, List<DataRow> value) {
-                try {
-                    byte[] cache = json.writeValueAsBytes(value);
-                    Files.write(Paths.get("/Users/chengyuxing/Downloads/" + key + ".data"), cache);
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
-            @Override
-            public boolean isAvailable(String sql, Map<String, Object> args) {
-                return true;
-            }
-        });
+//        bakiDao.setQueryCacheManager(new QueryCacheManager() {
+//            @Override
+//            public Stream<DataRow> get(String key) {
+//                try {
+//                    Path path = Paths.get("/Users/chengyuxing/Downloads/" + key + ".data");
+//                    if (!Files.exists(path)) {
+//                        return null;
+//                    }
+//                    List<DataRow> cache = json.readerForListOf(DataRow.class)
+//                            .readValue(Files.newInputStream(path));
+//                    return cache.stream();
+//                } catch (IOException e) {
+//                    throw new RuntimeException(e);
+//                }
+//            }
+//
+//            @Override
+//            public void put(String key, List<DataRow> value) {
+//                try {
+//                    byte[] cache = json.writeValueAsBytes(value);
+//                    Files.write(Paths.get("/Users/chengyuxing/Downloads/" + key + ".data"), cache);
+//                } catch (IOException e) {
+//                    throw new RuntimeException(e);
+//                }
+//            }
+//
+//            @Override
+//            public boolean isAvailable(String sql, Map<String, Object> args) {
+//                return true;
+//            }
+//        });
 
         baki = bakiDao;
     }
@@ -92,8 +92,10 @@ public class NewBakiTests {
     public void proxyTest1() throws IllegalAccessException {
         HomeMapper homeMapper = bakiDao.proxyXQLMapper(HomeMapper.class);
 //        homeMapper.queryAllGuests().forEach(System.out::println);
-        int i = homeMapper.now();
-        System.out.println(i);
+        PagedResource<DataRow> res = homeMapper.queryAllGuests(1, 3);
+        System.out.println(res);
+//        int i = homeMapper.now();
+//        System.out.println(i);
     }
 
     @Test

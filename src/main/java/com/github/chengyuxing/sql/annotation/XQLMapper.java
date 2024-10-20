@@ -57,6 +57,7 @@ import java.lang.annotation.*;
  *
  * @see XQL @XQL
  * @see CountQuery @CountQuery
+ * @see PageableConfig @PageableConfig
  */
 @Target(ElementType.TYPE)
 @Retention(RetentionPolicy.RUNTIME)

@@ -5,6 +5,8 @@ import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.sql.annotation.*;
 import com.github.chengyuxing.sql.page.IPageable;
+import com.github.chengyuxing.sql.page.PageHelper;
+import com.github.chengyuxing.sql.page.PageHelperProvider;
 import com.github.chengyuxing.sql.support.SqlInvokeHandler;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
 import com.github.chengyuxing.sql.support.executor.SaveExecutor;
@@ -75,13 +77,13 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
 
         XQLFileManager.Resource xqlResource = baki.getXqlFileManager().getResource(alias);
         if (xqlResource == null) {
-            throw new IllegalAccessException("XQL file alias '" + alias + "' not found at: " + clazz.getName());
+            throw new IllegalAccessException("XQL file alias '" + alias + "' not found at: " + clazz);
         }
         if (!xqlResource.getEntry().containsKey(sqlName)) {
-            throw new IllegalAccessException("SQL name [" + sqlName + "] not found at: " + clazz.getName() + "#" + method.getName());
+            throw new IllegalAccessException("SQL name [" + sqlName + "] not found at: " + clazz + "#" + method.getName());
         }
 
-        String sqlRef = "&" + alias + "." + sqlName;
+        String sqlRef = "&" + XQLFileManager.encodeSqlReference(alias, sqlName);
 
         if (baki.getXqlMappingHandlers().containsKey(sqlType)) {
             SqlInvokeHandler handler = baki.getXqlMappingHandlers().get(sqlType);
@@ -103,7 +105,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
             case unset:
                 return handleNormal(baki, sqlRef, myArgs, method, returnType);
             default:
-                throw new IllegalAccessException("SQL type [" + sqlType + "] not supported");
+                throw new IllegalAccessException(method.getDeclaringClass() + "#" + method.getName() + " SQL type [" + sqlType + "] not supported");
         }
     }
 
@@ -129,7 +131,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
     @SuppressWarnings("unchecked")
     protected Object handleNotXqlMappingMethod(BakiDao baki, Object myArgs, Method method, Class<?> returnType) {
         if (returnType != Integer.class && returnType != int.class) {
-            throw new IllegalStateException(method.getName() + " return type must be Integer or int");
+            throw new IllegalStateException(method.getDeclaringClass() + "#" + method.getName() + " return type must be Integer or int");
         }
         if (method.isAnnotationPresent(Insert.class)) {
             Insert insert = method.getDeclaredAnnotation(Insert.class);
@@ -164,7 +166,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
 
     protected DataRow handleNormal(BakiDao baki, String sqlRef, Object args, Method method, Class<?> returnType) {
         if (!Map.class.isAssignableFrom(returnType)) {
-            throw new IllegalStateException(method.getName() + " return type must be Map");
+            throw new IllegalStateException(method.getDeclaringClass() + "#" + method.getName() + " return type must be Map");
         }
         //noinspection unchecked
         return baki.of(sqlRef).execute((Map<String, Object>) args);
@@ -172,7 +174,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
 
     protected int handleModify(BakiDao baki, String sqlRef, Object args, Method method, Class<?> returnType) {
         if (returnType != Integer.class && returnType != int.class) {
-            throw new IllegalStateException(method.getName() + " return type must be Integer or int");
+            throw new IllegalStateException(method.getDeclaringClass() + "#" + method.getName() + " return type must be Integer or int");
         }
         if (args instanceof Map) {
             //noinspection unchecked
@@ -184,10 +186,10 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
 
     protected DataRow handleProcedure(BakiDao baki, String sqlRef, Object args, Method method, Class<?> returnType) {
         if (!Map.class.isAssignableFrom(returnType)) {
-            throw new IllegalStateException(method.getName() + " return type must be map or DataRow");
+            throw new IllegalStateException(method.getDeclaringClass() + "#" + method.getName() + " return type must be map or DataRow");
         }
         if (args instanceof Collection) {
-            throw new IllegalArgumentException(method.getName() + " args must not be Collection");
+            throw new IllegalArgumentException(method.getDeclaringClass() + "#" + method.getName() + " args must not be Collection");
         }
         Map<String, Param> myPaArgs = new HashMap<>();
         //noinspection unchecked
@@ -199,9 +201,9 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
 
     protected Object handleQuery(BakiDao baki, String alias, String sqlName, Object args, Method method, Class<?> returnType, Class<?> genericType) {
         if (args instanceof Collection) {
-            throw new IllegalArgumentException(method.getName() + " args must not be Collection");
+            throw new IllegalArgumentException(method.getDeclaringClass() + "#" + method.getName() + " args must not be Collection");
         }
-        @SuppressWarnings("unchecked") QueryExecutor qe = baki.query("&" + alias + "." + sqlName).args((Map<String, Object>) args);
+        @SuppressWarnings("unchecked") QueryExecutor qe = baki.query("&" + XQLFileManager.encodeSqlReference(alias, sqlName)).args((Map<String, Object>) args);
         if (returnType == Stream.class) {
             return qe.stream().map(dataRowMapping(genericType));
         }
@@ -231,24 +233,52 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
             return qe.findFirst().map(dataRowMapping(genericType));
         }
         if (returnType == IPageable.class) {
-            if (method.isAnnotationPresent(CountQuery.class)) {
-                CountQuery countQuery = method.getDeclaredAnnotation(CountQuery.class);
-                return qe.pageable().count("&" + alias + "." + countQuery.value());
-            }
-            return qe.pageable();
+            return configurePageable(alias, qe, method);
         }
         if (returnType == PagedResource.class) {
-            if (method.isAnnotationPresent(CountQuery.class)) {
-                CountQuery countQuery = method.getDeclaredAnnotation(CountQuery.class);
-                return qe.pageable().count("&" + alias + "." + countQuery.value())
-                        .collect(dataRowMapping(genericType));
-            }
-            return qe.pageable().collect(dataRowMapping(genericType));
+            return configurePageable(alias, qe, method).collect(dataRowMapping(genericType));
         }
         if (!returnType.getName().startsWith("java.")) {
             return qe.findFirstEntity(returnType);
         }
         return null;
+    }
+
+    protected IPageable configurePageable(String alias, QueryExecutor qe, Method method) {
+        IPageable pageable = qe.pageable();
+        String count = null;
+        if (method.isAnnotationPresent(CountQuery.class)) {
+            CountQuery countQuery = method.getDeclaredAnnotation(CountQuery.class);
+            count = "&" + XQLFileManager.encodeSqlReference(alias, countQuery.value());
+            pageable.count(count);
+        }
+        if (method.isAnnotationPresent(PageableConfig.class)) {
+            PageableConfig pageableConfig = method.getDeclaredAnnotation(PageableConfig.class);
+            String[] startEnd = pageableConfig.disableDefaultPageSql();
+            Class<? extends PageHelperProvider> pageHelpProviderCls = pageableConfig.pageHelper();
+            if (startEnd.length > 0) {
+                if (Objects.isNull(count)) {
+                    throw new IllegalStateException(method.getDeclaringClass() + "#" + method.getName() + " has no @" + CountQuery.class.getSimpleName() + ", property disableDefaultPageSql must work with @" + CountQuery.class.getSimpleName());
+                }
+                pageable.disableDefaultPageSql(count)
+                        .rewriteDefaultPageArgs(pageArgs -> {
+                            pageArgs.updateKey(PageHelper.START_NUM_KEY, startEnd[0]);
+                            if (startEnd.length > 1) {
+                                pageArgs.updateKey(PageHelper.END_NUM_KEY, startEnd[1]);
+                            }
+                            return pageArgs;
+                        });
+            }
+            if (!pageHelpProviderCls.getName().equals(PageHelperProvider.class.getName())) {
+                try {
+                    pageable.pageHelper(ReflectUtil.getInstance(pageHelpProviderCls));
+                } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
+                         InvocationTargetException e) {
+                    throw new IllegalArgumentException(method.getDeclaringClass() + "#" + method.getName(), e);
+                }
+            }
+        }
+        return pageable;
     }
 
     /**
@@ -317,7 +347,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
                             myArgs.add(ObjectUtil.entity2map(arg, HashMap::new));
                             continue;
                         }
-                        throw new IllegalArgumentException(method.getName() + " unsupported arg type: " + arg.getClass().getName());
+                        throw new IllegalArgumentException(method.getDeclaringClass() + "." + method.getName() + " unsupported arg type: " + arg.getClass().getName());
                     }
                     return myArgs;
                 }
@@ -335,7 +365,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
             Parameter parameter = parameters[i];
             Annotation[] annotations = parameter.getDeclaredAnnotations();
             if (annotations.length == 0) {
-                throw new IllegalArgumentException(parameter.getName() + " has no @" + Arg.class.getSimpleName());
+                throw new IllegalArgumentException(method.getDeclaringClass() + "#" + method.getName() + "#" + parameter.getName() + " has no @" + Arg.class.getSimpleName());
             }
             for (Annotation annotation : annotations) {
                 if (annotation instanceof Arg) {

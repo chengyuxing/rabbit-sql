@@ -25,6 +25,10 @@ public interface HomeMapper {
 
     List<DataRow> queryAllGuests();
 
+    @CountQuery("queryAllGuestsCount")
+    @PageableConfig(disableDefaultPageSql = {"limit", "offset"})
+    PagedResource<DataRow> queryAllGuests(@Arg("page") int page, @Arg("size") int size);
+
     @CountQuery("queryGuestsCount")
     PagedResource<Map<String, Object>> queryOneGuest(@Arg("page") int page, @Arg("size") int size);
 

@@ -40,8 +40,8 @@ import static com.github.chengyuxing.common.utils.StringUtil.containsAnyIgnoreCa
  * SQL file and follow the strict SQL file syntax.</p>
  * <p>File type supports: {@code .xql}, {@code .sql}, suffix {@code .xql} means this file is
  * {@code XQLFileManager} default file type.</p>
- * <p>File path support {@link FileResource URI and classpath}.</p>
- * Notice: <a href="https://plugins.jetbrains.com/plugin/21403-rabbit-sql/introduction/execute-dynamic-sql">Rabbit-SQL IDEA Plugin</a> only support detect {@code .xql} file.
+ * <p>File path support {@link FileResource URI and classpath} with environment variable ({@link System#getenv()}) e.g. {@code https://server/home.xql?token=${env.TOKEN}} .</p>
+ * <p>Notice: <a href="https://plugins.jetbrains.com/plugin/21403-rabbit-sql/introduction/execute-dynamic-sql">Rabbit-SQL IDEA Plugin</a> only support detect {@code .xql} file.</p>
  * <h3>File content structure</h3>
  * <p>{@code key-value} format, key is sql name, value is sql statement,  e.g.</p>
  * <blockquote>

@@ -75,7 +75,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+)\\s*}\\s*\\*/");
     public static final String SQL_DESC_START = "/*#";
     public static final String XQL_DESC_QUOTE = "@@@";
-    public static final String PROPERTIES = "xql-file-manager.properties";
     public static final String YML = "xql-file-manager.yml";
     /**
      * Template ({@code ${key}}) formatter.
@@ -88,26 +87,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     private volatile boolean initialized;
 
     /**
-     * Constructs a new XQLFileManager.<br>
-     * If <code>classpath</code> exists files：
-     * <ol>
-     *     <li><code>xql-file-manager.yml</code></li>
-     *     <li><code>xql-file-manager.properties</code></li>
-     * </ol>
-     * load {@code .yml} first otherwise {@code .properties}.
+     * Constructs a new XQLFileManager.
      *
      * @see XQLFileManagerConfig
      */
     public XQLFileManager() {
-        FileResource resource = new FileResource(YML);
-        if (resource.exists()) {
-            loadYaml(resource);
-            return;
-        }
-        resource = new FileResource(PROPERTIES);
-        if (resource.exists()) {
-            loadProperties(resource);
-        }
     }
 
     /**

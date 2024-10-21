@@ -35,13 +35,13 @@ public class XQLFileManagerConfig {
     protected volatile boolean loading;
 
     /**
-     * 配置项构造器
+     * Constructs a new XQLFileManagerConfig.
      */
     public XQLFileManagerConfig() {
     }
 
     /**
-     * Constructs a XQLFileManagerConfig with config location.
+     * Constructs a new XQLFileManagerConfig with config location.
      *
      * @param configLocation config location path
      */

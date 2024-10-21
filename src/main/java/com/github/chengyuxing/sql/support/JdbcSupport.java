@@ -545,7 +545,7 @@ public abstract class JdbcSupport extends SqlParser {
     }
 
     /**
-     * Print sql log, e.g postgresql：
+     * Print sql log, e.g. postgresql：
      * <blockquote><pre>
      * raise notice 'my console.';</pre>
      * </blockquote>

@@ -159,10 +159,16 @@ public class NewBakiTests {
 
     @Test
     public void testQu() {
-        baki.query("select * from test.user")
+        // language=sql
+        baki.query("select * from test.guest")
                 .stream()
                 .map(d -> d.toEntity(AnotherUser.class))
                 .forEach(System.out::println);
+    }
+
+    @Test
+    public void testDuplicateExp() {
+        baki.insert("test.guest").save(Args.of("id", 1));
     }
 
     @Test

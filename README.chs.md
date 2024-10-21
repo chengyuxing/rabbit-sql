@@ -29,7 +29,7 @@
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.12.6</version>
+    <version>7.12.7</version>
 </dependency>
 ```
 
@@ -668,12 +668,6 @@ JDBC底层执行批量操作每次提交数据数量。
 默认值：`:`
 
 预编译SQL命名参数前缀，用来标记预编译参数占位符，最终被编译为 `?` 。
-
-##### reloadXqlOnGet
-
-默认值：`false`
-
-每次根据名字从 [XQLFileManager](#XQLFileManager) 取SQL执行之前，都重新初始化解析一遍已更改的XQL文件。
 
 ##### pageKey
 

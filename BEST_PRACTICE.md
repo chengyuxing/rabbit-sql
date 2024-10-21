@@ -27,7 +27,7 @@ Create maven project.
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql-spring-boot-starter</artifactId>
-    <version>2.11.6</version>
+    <version>2.11.7</version>
 </dependency>
 ```
 
@@ -126,7 +126,7 @@ When the SQL is written, Quickly generate **interface** and **documentation** by
 
 > Return Types: Check the type you want to return, some SQL in some cases have reuse needs to return different types of requirements.
 >
-> T: By default, `DataRow` and `Map` are built-in Return Generic Type, if java bean you want to return the **fully qualified class name** is necessary, e.g `org.example.entity.User` .
+> T: By default, `DataRow` and `Map` are built-in Return Generic Type, if java bean you want to return the **fully qualified class name** is necessary, e.g. `org.example.entity.User` .
 >
 > **Generate Code...** can be repeatedly clicked , each time the last configuration is recorded.
 

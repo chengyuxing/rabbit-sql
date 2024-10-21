@@ -29,7 +29,7 @@ This is a lightweight persistence layer framework, provides a complete database 
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>7.12.6</version>
+    <version>7.12.7</version>
 </dependency>
 ```
 
@@ -174,7 +174,7 @@ try(Stream<DataRow> fruits = baki.query("select * from fruit").stream()){
         }
 ```
 
-> Query will not truly execute until invoke **Stream terminal operation**(e.g `foreach()` ), use jdk7 **try-with-resource** to release connection when query complete.
+> Query will not truly execute until invoke **Stream terminal operation**(e.g. `foreach()` ), use jdk7 **try-with-resource** to release connection when query complete.
 
 - Paging
 
@@ -667,12 +667,6 @@ The JDBC low-level batch operation executes the number of data submitted each ti
 
 Prepared SQL named parameter prefix, used to mark the prepared parameter placeholder, and finally compiled to `?` .
 
-##### reloadXqlOnGet
-
-Default: `false`
-
-Each time the SQL is fetched from the [XQLFileManager](XQLFileManager) by name and executed, the changed XQL file is initialized again.
-
 ##### pageKey
 
 Default: `page`
@@ -788,7 +782,7 @@ Custom [pipe](#Pipe) dictionary, **key** is pipe name, **value** is pipe class, 
 
 Sql file **"k-v"** structure delimiter **default `;`**, follows standard multi sql structure delimiter by `;`, but there is a condition, if you have plsql in file  e.g. `create function...` or `create procedure...`, it will be multi sql statement in one sql object, you need specific custom delimiter for resolve correctly:
 
-- e.g ( `;;`) double semicolon.
+- e.g. ( `;;`) double semicolon.
 
 ##### constants
 

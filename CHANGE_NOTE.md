@@ -1,5 +1,13 @@
 # change note
 
+# 7.12.7
+
+- Remove `BakiDao#reloadXqlOnGet`.
+- Remove empty constructor default load config.
+- Interface mapper support `@PageableConfig`. 
+- Interface mapper proxy instance throw exception optimized. 
+- `XQLFileManager#contains` optimized.
+
 # 7.12.6
 
 - `QueryCacheManager` optimized.

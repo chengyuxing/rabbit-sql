@@ -9,7 +9,7 @@ import java.util.Map;
 /**
  * <h2>Support parse named parameter sql</h2>
  * <p>Named parameter prefix symbol depends on implementation of {@link #sqlGenerator()}.</p>
- * Named parameter format e.g if named parameter prefix is '{@code :}' :
+ * Named parameter format e.g. if named parameter prefix is '{@code :}' :
  * <ul>
  *     <li>{@code :name} (jdbc standard named parameter format, it will parsed to '{@code ?}').</li>
  * </ul>

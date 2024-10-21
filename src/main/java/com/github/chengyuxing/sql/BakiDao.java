@@ -90,10 +90,6 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     private char namedParamPrefix = ':';
     /**
-     * If XQL file changed, XQL file will reload when {@link #parseSql(String, Map)} invoke always.
-     */
-    private boolean reloadXqlOnGet = false;
-    /**
      * Load {@code xql-file-manager-}{@link #databaseId() databaseId}{@code .yml} first if exists,
      * otherwise {@code xql-file-manager.yml}
      */
@@ -132,7 +128,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         this.sqlGenerator = new SqlGenerator(namedParamPrefix);
         this.statementValueHandler = (ps, index, value, metaData) -> JdbcUtil.setStatementValue(ps, index, value);
         this.queryTimeoutHandler = (sql, args) -> 0;
-        using(c -> {
+        this.using(c -> {
             try {
                 this.metaData = c.getMetaData();
                 this.databaseId = this.metaData.getDatabaseProductName().toLowerCase();
@@ -703,10 +699,6 @@ public class BakiDao extends JdbcSupport implements Baki {
         String mySql = SqlUtil.trimEnd(sql.trim());
         if (mySql.startsWith("&")) {
             if (Objects.nonNull(xqlFileManager)) {
-                if (reloadXqlOnGet) {
-                    log.warn("please set 'reloadXqlOnGet' to false in production environment for improve concurrency.");
-                    xqlFileManager.init();
-                }
                 Pair<String, Map<String, Object>> result = xqlFileManager.get(mySql.substring(1), myArgs);
                 mySql = result.getItem1();
                 if (Objects.nonNull(afterParseDynamicSql)) {
@@ -824,14 +816,6 @@ public class BakiDao extends JdbcSupport implements Baki {
     public void setNamedParamPrefix(char namedParamPrefix) {
         this.namedParamPrefix = namedParamPrefix;
         this.sqlGenerator = new SqlGenerator(this.namedParamPrefix);
-    }
-
-    public boolean isReloadXqlOnGet() {
-        return reloadXqlOnGet;
-    }
-
-    public void setReloadXqlOnGet(boolean reloadXqlOnGet) {
-        this.reloadXqlOnGet = reloadXqlOnGet;
     }
 
     public boolean isAutoXFMConfig() {

@@ -327,7 +327,7 @@
 
 ## 7.8.6
 
-- new field: `BakiDao#afterParseDynamicSql`;
+- new field: `BakiDao#sqlParseChecker`;
 - Some optimized.
 
 ## 7.8.5

@@ -316,6 +316,7 @@ public class NewBakiTests {
     public void testCall3() {
         baki.query("&new.qqq")
                 .args("page", 1, "size", 4)
+                .arg("orderBy", "id desc")
                 .pageable()
                 .collect()
                 .getData()

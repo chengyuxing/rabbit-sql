@@ -639,7 +639,7 @@ sql 拦截器，默认值为：
 
 全局分页帮助提供程序，如果内置的无法满足当前数据库，则实现此类来进行覆盖或扩展。
 
-##### afterParseDynamicSql
+##### sqlParseChecker
 
 默认值：`null`
 

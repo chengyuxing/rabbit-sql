@@ -1,7 +1,7 @@
 package com.github.chengyuxing.sql.plugins;
 
 @FunctionalInterface
-public interface AfterParseDynamicSql {
+public interface SqlParseChecker {
     /**
      * Do something for sql.
      *

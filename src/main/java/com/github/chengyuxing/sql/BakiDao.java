@@ -73,7 +73,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     /**
      * Do something after parse dynamic sql.
      */
-    private AfterParseDynamicSql afterParseDynamicSql;
+    private SqlParseChecker sqlParseChecker;
     /**
      * Sql watcher.
      */
@@ -532,6 +532,10 @@ public class BakiDao extends JdbcSupport implements Baki {
         return queryCacheLocks;
     }
 
+    public void setSqlParseChecker(SqlParseChecker sqlParseChecker) {
+        this.sqlParseChecker = sqlParseChecker;
+    }
+
     /**
      * Simple page helper implementation.
      */
@@ -702,9 +706,6 @@ public class BakiDao extends JdbcSupport implements Baki {
             if (Objects.nonNull(xqlFileManager)) {
                 Pair<String, Map<String, Object>> result = xqlFileManager.get(mySql.substring(1), myArgs);
                 mySql = result.getItem1();
-                if (Objects.nonNull(afterParseDynamicSql)) {
-                    mySql = afterParseDynamicSql.handle(mySql);
-                }
                 // #for expression temp variables stored in _for variable.
                 if (!result.getItem2().isEmpty()) {
                     myArgs.put(XQLFileManager.DynamicSqlParser.FOR_VARS_KEY, result.getItem2());
@@ -718,6 +719,9 @@ public class BakiDao extends JdbcSupport implements Baki {
             if (Objects.nonNull(xqlFileManager)) {
                 mySql = SqlUtil.formatSql(mySql, xqlFileManager.getConstants(), sqlGenerator.getTemplateFormatter());
             }
+        }
+        if (Objects.nonNull(sqlParseChecker)) {
+            mySql = sqlParseChecker.handle(mySql);
         }
         if (Objects.nonNull(sqlInterceptor)) {
             boolean request = sqlInterceptor.preHandle(mySql, myArgs, metaData);
@@ -777,10 +781,6 @@ public class BakiDao extends JdbcSupport implements Baki {
     public void setStatementValueHandler(StatementValueHandler statementValueHandler) {
         if (Objects.nonNull(statementValueHandler))
             this.statementValueHandler = statementValueHandler;
-    }
-
-    public void setAfterParseDynamicSql(AfterParseDynamicSql afterParseDynamicSql) {
-        this.afterParseDynamicSql = afterParseDynamicSql;
     }
 
     public void setXqlFileManager(XQLFileManager xqlFileManager) {

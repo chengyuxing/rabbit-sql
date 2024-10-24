@@ -637,7 +637,7 @@ Default: `null`
 
 Global paging help provider that implements this class to override or extend if the built-in does not satisfy the current database.
 
-##### afterParseDynamicSql
+##### sqlParseChecker
 
 Default: `null`
 

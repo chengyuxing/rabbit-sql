@@ -44,7 +44,12 @@ where id = 3
 
 /*[qqq]*/
 select *
-from test.guest;
+from test.guest where
+-- #if :id != blank
+    id = :id
+-- #fi
+${orderBy}
+;
 
 /*[queryAllGuests]*/
 select *

@@ -1,4 +1,4 @@
-package com.github.chengyuxing.sql.support;
+package com.github.chengyuxing.sql.plugins;
 
 import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;

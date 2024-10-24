@@ -1,4 +1,4 @@
-package com.github.chengyuxing.sql.support;
+package com.github.chengyuxing.sql.plugins;
 
 @FunctionalInterface
 public interface AfterParseDynamicSql {

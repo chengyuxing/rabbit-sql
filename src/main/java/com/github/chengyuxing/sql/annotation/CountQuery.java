@@ -1,9 +1,11 @@
 package com.github.chengyuxing.sql.annotation;
 
+import com.github.chengyuxing.sql.page.IPageable;
+
 import java.lang.annotation.*;
 
 /**
- * Only work with method which return type is {@link com.github.chengyuxing.sql.page.IPageable IPageable}
+ * Only work with method which return type is {@link IPageable IPageable}
  * or {@link com.github.chengyuxing.sql.PagedResource PagedResource}
  */
 @Retention(RetentionPolicy.RUNTIME)

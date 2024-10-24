@@ -27,7 +27,7 @@
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql-spring-boot-starter</artifactId>
-    <version>2.11.8</version>
+    <version>2.12.0</version>
 </dependency>
 ```
 
@@ -245,7 +245,7 @@ baki.of("&<sql名>").executeBatch(...);
 
 针对频繁执行的相同查询，推荐使用应用层缓存或数据库查询缓存，减少重复 SQL 请求，提升系统响应速度。
 
-实现接口：`com.github.chengyuxing.sql.support.QueryCacheManager` 来实现自定义的缓存层，并注册到 `BakiDao#setQueryCacheManager` 来启用缓存。
+实现接口：`com.github.chengyuxing.sql.plugins.QueryCacheManager` 来实现自定义的缓存层，并注册到 `BakiDao#setQueryCacheManager` 来启用缓存。
 
 ##### SQL优化
 

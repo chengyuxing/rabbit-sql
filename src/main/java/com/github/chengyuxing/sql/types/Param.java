@@ -1,7 +1,5 @@
 package com.github.chengyuxing.sql.types;
 
-import com.github.chengyuxing.sql.support.IOutParam;
-
 /**
  * Store procedure/function parameter object.
  */

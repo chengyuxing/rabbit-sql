@@ -16,6 +16,7 @@ import com.github.chengyuxing.sql.page.impl.Db2PageHelper;
 import com.github.chengyuxing.sql.page.impl.MysqlPageHelper;
 import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
+import com.github.chengyuxing.sql.plugins.*;
 import com.github.chengyuxing.sql.support.*;
 import com.github.chengyuxing.sql.support.executor.EntitySaveExecutor;
 import com.github.chengyuxing.sql.support.executor.Executor;

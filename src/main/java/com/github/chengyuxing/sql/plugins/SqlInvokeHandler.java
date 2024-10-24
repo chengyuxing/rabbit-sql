@@ -1,6 +1,6 @@
-package com.github.chengyuxing.sql.support;
+package com.github.chengyuxing.sql.plugins;
 
-import com.github.chengyuxing.sql.BakiDao;
+import com.github.chengyuxing.sql.Baki;
 
 import java.lang.reflect.Method;
 
@@ -9,7 +9,7 @@ public interface SqlInvokeHandler {
     /**
      * Handle sql execution result
      *
-     * @param bakiDao           BakiDao
+     * @param baki              baki
      * @param sqlRef            sql reference (&amp;alias.sqlName)
      * @param args              args
      * @param method            invoked method
@@ -18,5 +18,5 @@ public interface SqlInvokeHandler {
      * @return execute result
      * @throws Throwable throwable
      */
-    Object handle(BakiDao bakiDao, String sqlRef, Object args, Method method, Class<?> returnType, Class<?> returnGenericType) throws Throwable;
+    Object handle(Baki baki, String sqlRef, Object args, Method method, Class<?> returnType, Class<?> returnGenericType) throws Throwable;
 }

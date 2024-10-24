@@ -1,4 +1,4 @@
-package com.github.chengyuxing.sql.support;
+package com.github.chengyuxing.sql.plugins;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

@@ -7,7 +7,7 @@ import com.github.chengyuxing.sql.annotation.*;
 import com.github.chengyuxing.sql.page.IPageable;
 import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.PageHelperProvider;
-import com.github.chengyuxing.sql.support.SqlInvokeHandler;
+import com.github.chengyuxing.sql.plugins.SqlInvokeHandler;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
 import com.github.chengyuxing.sql.support.executor.SaveExecutor;
 import com.github.chengyuxing.sql.types.Param;

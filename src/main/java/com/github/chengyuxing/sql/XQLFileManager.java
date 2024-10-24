@@ -9,7 +9,7 @@ import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.exceptions.DuplicateException;
-import com.github.chengyuxing.sql.support.TemplateFormatter;
+import com.github.chengyuxing.sql.plugins.TemplateFormatter;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.utils.SqlHighlighter;
 import com.github.chengyuxing.sql.utils.SqlUtil;
@@ -75,7 +75,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+)\\s*}\\s*\\*/");
     public static final String SQL_DESC_START = "/*#";
     public static final String XQL_DESC_QUOTE = "@@@";
-    public static final String YML = "xql-file-manager.yml";
+    public static final String YML = "xql-file-manager.yml.template";
     /**
      * Template ({@code ${key}}) formatter.
      * Default implementation: {@link SqlUtil#parseValue(Object, boolean) parseValue(value, boolean)}
@@ -548,6 +548,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @return true if exists or false
      */
     public boolean contains(String name) {
+        if (Objects.isNull(name)) return false;
         Pair<String, String> p = decodeSqlReference(name);
         Resource resource = resources.get(p.getItem1());
         if (Objects.isNull(resource)) {
@@ -565,6 +566,9 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @throws IllegalArgumentException if sql reference name format error
      */
     public Sql getSqlObject(String name) {
+        if (Objects.isNull(name)) {
+            throw new IllegalArgumentException("sql object name is null");
+        }
         Pair<String, String> p = decodeSqlReference(name);
         Resource resource = getResource(p.getItem1());
         if (Objects.isNull(resource)) {

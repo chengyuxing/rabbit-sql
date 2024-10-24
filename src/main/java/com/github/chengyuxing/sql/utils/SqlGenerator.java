@@ -3,8 +3,8 @@ package com.github.chengyuxing.sql.utils;
 import com.github.chengyuxing.common.script.expression.Patterns;
 import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
-import com.github.chengyuxing.sql.support.NamedParamFormatter;
-import com.github.chengyuxing.sql.support.TemplateFormatter;
+import com.github.chengyuxing.sql.plugins.NamedParamFormatter;
+import com.github.chengyuxing.sql.plugins.TemplateFormatter;
 
 import java.util.*;
 import java.util.regex.Matcher;

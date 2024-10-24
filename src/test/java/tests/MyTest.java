@@ -4,20 +4,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.*;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
-import com.github.chengyuxing.sql.support.IOutParam;
+import com.github.chengyuxing.sql.types.IOutParam;
 import com.github.chengyuxing.sql.transaction.Tx;
 import com.github.chengyuxing.sql.types.OUTParamType;
 import com.github.chengyuxing.sql.types.Param;
 import com.zaxxer.hikari.HikariDataSource;
 import func.FCondition;
 import func.FFilter;
-import oracle.jdbc.OracleTypes;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.postgresql.util.PGobject;
 
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
@@ -174,7 +171,6 @@ public class MyTest {
                 .add("bak", "ccc");
         baki.insert("test.tb").safe().save(args);
         baki.insert("test.tb")
-                .fast()
                 .safe()
                 .save(DataRow.of("ts", "2022-12-23 11:22:23", "tm", new Date(), "aaa", "bbb"));
     }

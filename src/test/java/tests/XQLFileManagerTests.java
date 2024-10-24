@@ -6,7 +6,6 @@ import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.XQLFileManager;
-import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.yaml.FeaturedConstructor;
 import org.junit.Test;
 import org.yaml.snakeyaml.Yaml;
@@ -58,7 +57,7 @@ public class XQLFileManagerTests {
     @Test
     public void test11() throws URISyntaxException, IOException {
         System.out.println(new FileResource("b.json").getLastModified());
-        System.out.println(new FileResource("template.xql").getLastModified());
+        System.out.println(new FileResource("home.xql.template").getLastModified());
         System.out.println("---");
         System.out.println(new FileResource("file:/Users/chengyuxing/IdeaProjects/rabbit-sql/src/test/resources/pgsql/data.sql").getLastModified());
         System.out.println(new FileResource("file:/Users/chengyuxing/IdeaProjects/rabbit-sql/src/test/resources/pgsql/nest.sql").getLastModified());

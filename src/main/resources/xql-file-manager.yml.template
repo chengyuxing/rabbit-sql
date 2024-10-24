@@ -1,0 +1,17 @@
+files:
+#  foo: !path [ main, a.xql ]
+#  bar: main/b.xql
+
+#constants:
+
+#delimiter: ;
+
+#charset: UTF-8
+
+#pipes:
+
+# The following properties work for plugin action (Execute Dynamic sql).
+
+#named-param-prefix: ':'
+
+#database-id:

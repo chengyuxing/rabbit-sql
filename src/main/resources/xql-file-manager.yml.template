@@ -10,8 +10,6 @@ files:
 
 #pipes:
 
-# The following properties work for plugin action (Execute Dynamic sql).
-
 #named-param-prefix: ':'
 
 #database-id:

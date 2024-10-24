@@ -228,7 +228,6 @@ public class NewBakiTests {
     @Test
     public void testDel() {
         int i = baki.delete("test.user", "id = :id")
-                .fast()
                 .save(Arrays.asList(
                         Args.of("id", 2100037),
                         Args.of("id", 2100038))
@@ -299,7 +298,7 @@ public class NewBakiTests {
         }
 
         int i;
-        i = baki.insert("test.user").fast().save(rows);
+        i = baki.insert("test.user").save(rows);
 
         System.out.println(i);
 
@@ -377,7 +376,6 @@ public class NewBakiTests {
         args.add(Args.of("name", "chengyuxing", "dt", 1000L));
         args.add(Args.of("name", "chengyuxing", "dt", LocalDateTime.now()));
         int i = baki.insert("test.user")
-                .fast()
                 .save(args);
         System.out.println(i);
     }

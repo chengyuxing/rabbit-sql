@@ -1,8 +1,6 @@
 package com.github.chengyuxing.sql.utils;
 
-import com.github.chengyuxing.common.MostDateTime;
 import com.github.chengyuxing.common.StringFormatter;
-import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.ReflectUtil;
@@ -10,9 +8,7 @@ import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.plugins.TemplateFormatter;
 import com.github.chengyuxing.sql.types.Variable;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.LocalTime;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -110,26 +106,19 @@ public class SqlUtil {
     }
 
     /**
-     * String value with single quotes.
-     *
-     * @param value string value
-     * @return string value with single quotes
-     */
-    public static String quote(String value) {
-        return "'" + value + "'";
-    }
-
-    /**
      * String value with single safe quotes.
      *
      * @param value string value
      * @return string value with single safe quotes
      */
     public static String safeQuote(String value) {
+        if (Objects.isNull(value)) {
+            return "null";
+        }
         if (value.contains("'")) {
             value = value.replace("'", "''");
         }
-        return quote(value);
+        return "'" + value + "'";
     }
 
     /**
@@ -138,62 +127,38 @@ public class SqlUtil {
      * @param obj object value
      * @return formatted string literal value
      */
-    public static String quoteFormatValue(Object obj) {
-        if (obj == null) {
+    public static String safeQuote(Object obj) {
+        if (Objects.isNull(obj)) {
             return "null";
         }
-        if (obj instanceof String) {
-            return safeQuote((String) obj);
-        }
-        if (obj instanceof Character) {
+        if (obj instanceof String || obj instanceof Character) {
             return safeQuote(obj.toString());
         }
         if (ReflectUtil.isBasicType(obj)) {
             return obj.toString();
         }
-        Class<?> clazz = obj.getClass();
-        if (Date.class.isAssignableFrom(clazz)) {
-            String dtStr = MostDateTime.of((Date) obj).toString("yyyy-MM-dd HH:mm:ss");
-            return "to_timestamp(" + quote(dtStr) + ", " + quote("yyyy-mm-dd hh24:mi:ss") + ")";
-        }
-        if (clazz == LocalDateTime.class) {
-            String dtStr = MostDateTime.of((LocalDateTime) obj).toString("yyyy-MM-dd HH:mm:ss");
-            return "to_timestamp(" + quote(dtStr) + ", " + quote("yyyy-mm-dd hh24:mi:ss") + ")";
-        }
-        if (clazz == LocalDate.class) {
-            String dtStr = MostDateTime.of((LocalDate) obj).toString("yyyy-MM-dd");
-            return "to_date(" + quote(dtStr) + ", " + quote("yyyy-mm-dd") + ")";
-        }
-        if (clazz == LocalTime.class) {
-            String dtStr = MostDateTime.of((LocalTime) obj).toString("yyyy-MM-dd HH:mm:ss");
-            return "to_timestamp(" + quote(dtStr) + ", " + quote("yyyy-mm-dd hh24:mi:ss") + ")";
-        }
-        if (clazz == byte[].class) {
-            return quote("blob:" + FileResource.formatFileSize((byte[]) obj));
-        }
-        // PostgreSQL array
-        if (Object[].class.isAssignableFrom(clazz)) {
-            return toPgArrayLiteral((Object[]) obj);
-        }
         return safeQuote(obj.toString());
     }
 
     /**
-     * Format object value for sql string.
+     * Parse object value to string literal.
      *
-     * @param value object/array value
+     * @param value object/array value and special value type: {@link Variable}
      * @param quote single quotes or not
      * @return string literal value
      */
-    public static String formatObject(Object value, boolean quote) {
+    public static String parseValue(Object value, boolean quote) {
         if (Objects.isNull(value)) {
             return "null";
+        }
+        if (value instanceof Variable) {
+            return ((Variable) value).stringLiteral();
         }
         Object[] values = ObjectUtil.toArray(value);
         StringJoiner sb = new StringJoiner(", ");
         if (quote) {
             for (Object v : values) {
-                sb.add(quoteFormatValue(v));
+                sb.add(safeQuote(v));
             }
         } else {
             for (Object v : values) {
@@ -205,40 +170,6 @@ public class SqlUtil {
             }
         }
         return sb.toString();
-    }
-
-    /**
-     * Parse object value to string literal.
-     *
-     * @param value object/array value and special value type: {@link Variable}
-     * @param quote single quotes or not
-     * @return string literal value
-     */
-    public static String parseValue(Object value, boolean quote) {
-        if (value instanceof Variable) {
-            return ((Variable) value).stringLiteral();
-        }
-        return formatObject(value, quote);
-    }
-
-    /**
-     * Convert array to PostgreSQL array string literal.
-     *
-     * @param values array
-     * @return array string literal
-     */
-    public static String toPgArrayLiteral(Object[] values) {
-        String[] res = new String[values.length];
-        for (int i = 0; i < res.length; i++) {
-            Object o = values[i];
-            if (o != null)
-                if (o instanceof String) {
-                    res[i] = safeQuote(o.toString());
-                } else {
-                    res[i] = o.toString();
-                }
-        }
-        return quote("{" + String.join(", ", res) + "}");
     }
 
     /**

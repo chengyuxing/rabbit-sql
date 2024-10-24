@@ -22,7 +22,6 @@ public class SqlGenerator {
      */
     private final Pattern namedParamPattern;
     /**
-     * Non-prepared Sql named parameter ({@code :key}) value formatter.
      * Default implementation: {@link SqlUtil#parseValue(Object, boolean) parseValue(value, true)}
      */
     private NamedParamFormatter namedParamFormatter = v -> parseValue(v, true);

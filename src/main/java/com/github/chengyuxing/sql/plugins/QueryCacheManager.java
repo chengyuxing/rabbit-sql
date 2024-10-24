@@ -25,7 +25,7 @@ public interface QueryCacheManager {
         if (sql.startsWith("&")) {
             return sql + argsStr;
         }
-        return "unnamed" + argsStr;
+        return StringUtil.hash(sql, "MD5") + argsStr;
     }
 
     /**

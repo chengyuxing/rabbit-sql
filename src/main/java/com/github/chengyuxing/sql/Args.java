@@ -3,16 +3,14 @@ package com.github.chengyuxing.sql;
 import com.github.chengyuxing.common.MapExtends;
 import com.github.chengyuxing.common.utils.ObjectUtil;
 
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.function.Function;
 
 /**
  * Simple sql args tool.
  *
  * @param <V> value type
  */
-public final class Args<V> extends HashMap<String, V> implements MapExtends<V> {
+public final class Args<V> extends HashMap<String, V> implements MapExtends<Args<V>, V> {
     /**
      * Constructs a new empty Args.
      */
@@ -61,46 +59,5 @@ public final class Args<V> extends HashMap<String, V> implements MapExtends<V> {
      */
     public static Args<Object> ofEntity(Object entity) {
         return ObjectUtil.entity2map(entity, i -> Args.of());
-    }
-
-    /**
-     * Add a key-value.
-     *
-     * @param k key
-     * @param v value
-     * @return Args instance
-     */
-    public Args<V> add(String k, V v) {
-        put(k, v);
-        return this;
-    }
-
-    /**
-     * Update a key name to another.
-     *
-     * @param oldKey old key name
-     * @param newKey new key name
-     */
-    public void updateKey(String oldKey, String newKey) {
-        if (containsKey(oldKey)) {
-            put(newKey, remove(oldKey));
-        }
-    }
-
-    /**
-     * Update all key name.
-     *
-     * @param updater (old key name) -&gt; (new key name)
-     */
-    public void updateKeys(Function<String, String> updater) {
-        Object[] keys = keySet().toArray();
-        for (Object key : keys) {
-            if (key == null) {
-                continue;
-            }
-            String newKey = updater.apply(key.toString());
-            put(newKey, remove(key));
-        }
-        Arrays.fill(keys, null);
     }
 }

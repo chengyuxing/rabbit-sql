@@ -75,7 +75,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public static final Pattern PART_PATTERN = Pattern.compile("/\\*\\s*\\{\\s*(?<part>\\S+)\\s*}\\s*\\*/");
     public static final String SQL_DESC_START = "/*#";
     public static final String XQL_DESC_QUOTE = "@@@";
-    public static final String YML = "xql-file-manager.yml.template";
+    public static final String YML = "xql-file-manager.yml";
     /**
      * Template ({@code ${key}}) formatter.
      * Default implementation: {@link SqlUtil#parseValue(Object, boolean) parseValue(value, boolean)}

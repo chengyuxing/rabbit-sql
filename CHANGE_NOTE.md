@@ -1,5 +1,9 @@
 # change note
 
+# 7.14.0
+
+- Fixed bugs.
+
 # 7.13.0
 
 - Some optimized.

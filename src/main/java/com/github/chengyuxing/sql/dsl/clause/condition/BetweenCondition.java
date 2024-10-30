@@ -16,7 +16,7 @@ public class BetweenCondition extends Condition<Object> {
         Pair<Object, Object> pair = (Pair<Object, Object>) value;
         String a = column + "__" + index + "_0";
         String b = column + "__" + index + "_1";
-        String statement = column + operator.getValue() + namedParamPrefix + a + StandardOperator.LOGIC_AND + namedParamPrefix + b;
+        String statement = column + operator.padWithSpace() + namedParamPrefix + a + StandardOperator.LOGIC_AND.padWithSpace() + namedParamPrefix + b;
         Map<String, Object> params = new HashMap<>();
         params.put(a, pair.getItem1());
         params.put(b, pair.getItem2());

@@ -28,4 +28,13 @@ public class Condition<T> implements Criteria {
     public String getKey(int index) {
         return column + "__" + index;
     }
+
+    @Override
+    public String toString() {
+        return "Condition{" +
+                "column='" + column + '\'' +
+                ", operator=" + operator +
+                ", value=" + value +
+                '}';
+    }
 }

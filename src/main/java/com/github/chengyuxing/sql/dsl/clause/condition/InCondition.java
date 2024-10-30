@@ -23,6 +23,6 @@ public class InCondition<T> extends Condition<Collection<T>> {
             sb.add(namedParamPrefix + key);
             params.put(key, values[i]);
         }
-        return Pair.of(column + operator.getValue() + sb, params);
+        return Pair.of(column + operator.padWithSpace() + sb, params);
     }
 }

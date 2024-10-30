@@ -9,7 +9,6 @@ import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.PageHelperProvider;
 import com.github.chengyuxing.sql.plugins.SqlInvokeHandler;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
-import com.github.chengyuxing.sql.support.executor.SaveExecutor;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.annotation.Type;
 
@@ -45,12 +44,6 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
         final BakiDao baki = baki();
 
         Object myArgs = resolveArgs(method, args);
-
-        if (method.isAnnotationPresent(Insert.class) ||
-                method.isAnnotationPresent(Update.class) ||
-                method.isAnnotationPresent(Delete.class)) {
-            return handleNotXqlMappingMethod(baki, myArgs, method, returnType);
-        }
 
         if (method.isAnnotationPresent(Procedure.class)) {
             Procedure procedure = method.getDeclaredAnnotation(Procedure.class);
@@ -126,42 +119,6 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
             return Type.procedure;
         }
         return Type.unset;
-    }
-
-    @SuppressWarnings("unchecked")
-    protected Object handleNotXqlMappingMethod(BakiDao baki, Object myArgs, Method method, Class<?> returnType) {
-        if (returnType != Integer.class && returnType != int.class) {
-            throw new IllegalStateException(method.getDeclaringClass() + "#" + method.getName() + " return type must be Integer or int");
-        }
-        if (method.isAnnotationPresent(Insert.class)) {
-            Insert insert = method.getDeclaredAnnotation(Insert.class);
-            SaveExecutor<Object> e = baki.insert(insert.value())
-                    .ignoreNull(insert.ignoreNull())
-                    .safe(insert.safe());
-            if (myArgs instanceof Collection) {
-                return e.save((Collection<? extends Map<String, ?>>) myArgs);
-            }
-            return e.save((Map<String, ?>) myArgs);
-        }
-        if (method.isAnnotationPresent(Update.class)) {
-            Update update = method.getDeclaredAnnotation(Update.class);
-            SaveExecutor<Object> e = baki.update(update.value(), update.where())
-                    .ignoreNull(update.ignoreNull())
-                    .safe(update.safe());
-            if (myArgs instanceof Collection) {
-                return e.save((Collection<? extends Map<String, ?>>) myArgs);
-            }
-            return e.save((Map<String, ?>) myArgs);
-        }
-        if (method.isAnnotationPresent(Delete.class)) {
-            Delete delete = method.getDeclaredAnnotation(Delete.class);
-            SaveExecutor<Object> e = baki.delete(delete.value(), delete.where());
-            if (myArgs instanceof Collection) {
-                return e.save((Collection<? extends Map<String, ?>>) myArgs);
-            }
-            return e.save((Map<String, ?>) myArgs);
-        }
-        return null;
     }
 
     protected DataRow handleNormal(BakiDao baki, String sqlRef, Object args, Method method, Class<?> returnType) {
@@ -316,7 +273,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
             if (genericType.isAssignableFrom(d.getClass())) {
                 return d;
             }
-            return ObjectUtil.map2entity(d, genericType);
+            return ObjectUtil.mapToEntity(d, genericType);
         };
     }
 
@@ -344,7 +301,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
                             continue;
                         }
                         if (!arg.getClass().getName().startsWith("java.")) {
-                            myArgs.add(ObjectUtil.entity2map(arg, HashMap::new));
+                            myArgs.add(ObjectUtil.entityToMap(arg, HashMap::new));
                             continue;
                         }
                         throw new IllegalArgumentException(method.getDeclaringClass() + "." + method.getName() + " unsupported arg type: " + arg.getClass().getName());
@@ -355,7 +312,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
                     return arg;
                 }
                 if (!ReflectUtil.isBasicType(arg)) {
-                    return ObjectUtil.entity2map(arg, HashMap::new);
+                    return ObjectUtil.entityToMap(arg, HashMap::new);
                 }
             }
         }

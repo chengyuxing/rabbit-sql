@@ -8,9 +8,7 @@ import java.lang.annotation.*;
  * Mark an interface as a registered xql file mapper.
  * <p>Method behaviors priority:</p>
  * <ol>
- *     <li>Annotated with {@link Insert @Insert}
- *     {@link Update @Update}
- *     {@link Delete @Delete}
+ *     <li>Annotated with
  *     {@link Procedure @Procedure}
  *     {@link Function @Function}
  *     </li>

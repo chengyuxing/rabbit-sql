@@ -3,6 +3,9 @@ package com.github.chengyuxing.sql.support.executor;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.page.IPageable;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Range;
 
 import java.util.*;
 import java.util.function.Function;
@@ -16,11 +19,11 @@ public abstract class QueryExecutor {
     protected Map<String, Object> args = new HashMap<>();
 
     /**
-     * Constructs a new QueryExecutor with 1 sql.
+     * Constructs a new Query with 1 sql.
      *
      * @param sql named parameter sql or sql name
      */
-    public QueryExecutor(String sql) {
+    public QueryExecutor(@NotNull String sql) {
         this.sql = sql;
     }
 
@@ -28,7 +31,7 @@ public abstract class QueryExecutor {
      * Overwrite and set new args.
      *
      * @param args args
-     * @return QueryExecutor
+     * @return Query
      * @see com.github.chengyuxing.sql.Args Args&lt;Object&gt;
      */
     public QueryExecutor args(Map<String, Object> args) {
@@ -42,7 +45,7 @@ public abstract class QueryExecutor {
      * Overwrite and set new args.
      *
      * @param keyValues multi pair of key-value data
-     * @return QueryExecutor
+     * @return Query
      */
     public QueryExecutor args(Object... keyValues) {
         if (keyValues.length > 0) {
@@ -56,7 +59,7 @@ public abstract class QueryExecutor {
      *
      * @param key   key
      * @param value value
-     * @return QueryExecutor
+     * @return Query
      */
     public QueryExecutor arg(String key, Object value) {
         this.args.put(key, value);
@@ -99,7 +102,7 @@ public abstract class QueryExecutor {
      * @return column structured data
      * @see DataRow#zip(Collection)
      */
-    public abstract DataRow zip();
+    public abstract @NotNull DataRow zip();
 
     /**
      * Convert state to page query.
@@ -117,7 +120,8 @@ public abstract class QueryExecutor {
      * @param size page size
      * @return IPageable instance
      */
-    public abstract IPageable pageable(int page, int size);
+    public abstract IPageable pageable(@Range(from = 1, to = Integer.MAX_VALUE) int page,
+                                       @Range(from = 1, to = Integer.MAX_VALUE) int size);
 
     /**
      * Convert state to page query.
@@ -127,7 +131,7 @@ public abstract class QueryExecutor {
      * @return IPageable instance
      * @see #pageable(int, int)
      */
-    public abstract IPageable pageable(String pageKey, String sizeKey);
+    public abstract IPageable pageable(@NotNull String pageKey, @NotNull String sizeKey);
 
     /**
      * Convert state to page query.
@@ -143,7 +147,7 @@ public abstract class QueryExecutor {
      * @return 1st row or empty row
      * @see #findFirst()
      */
-    public abstract DataRow findFirstRow();
+    public abstract @NotNull DataRow findFirstRow();
 
     /**
      * Collect 1st entity by page query.
@@ -153,7 +157,7 @@ public abstract class QueryExecutor {
      * @return 1st entity or null
      * @see #findFirst()
      */
-    public abstract <T> T findFirstEntity(Class<T> entityClass);
+    public abstract @Nullable <T> T findFirstEntity(Class<T> entityClass);
 
     /**
      * Collect 1st optional row.

@@ -13,6 +13,9 @@ import com.github.chengyuxing.sql.plugins.TemplateFormatter;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.utils.SqlHighlighter;
 import com.github.chengyuxing.sql.utils.SqlUtil;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Unmodifiable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,7 +103,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @param configLocation {@link FileResource config file}: supports {@code .yml} and {@code .properties}
      * @see XQLFileManagerConfig
      */
-    public XQLFileManager(String configLocation) {
+    public XQLFileManager(@NotNull String configLocation) {
         super(configLocation);
     }
 
@@ -109,7 +112,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      *
      * @param config xql file manager config
      */
-    public XQLFileManager(XQLFileManagerConfig config) {
+    public XQLFileManager(@NotNull XQLFileManagerConfig config) {
         config.copyStateTo(this);
     }
 
@@ -119,7 +122,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @param alias    file alias
      * @param fileName file path name
      */
-    public void add(String alias, String fileName) {
+    public void add(@NotNull String alias, @NotNull String fileName) {
         files.put(alias, fileName);
     }
 
@@ -129,7 +132,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @param fileName file path name
      * @return file alias
      */
-    public String add(String fileName) {
+    public String add(@NotNull String fileName) {
         String alias = FileResource.getFileName(fileName, false);
         add(alias, fileName);
         return alias;
@@ -140,7 +143,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      *
      * @param alias file alias
      */
-    public void remove(String alias) {
+    public void remove(@NotNull String alias) {
         lock.lock();
         try {
             files.remove(alias);
@@ -161,7 +164,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @throws DuplicateException if duplicate sql fragment name found in same sql file
      * @throws URISyntaxException if file uri syntax error
      */
-    public Resource parse(String alias, String filename, FileResource fileResource) throws IOException, URISyntaxException {
+    public @NotNull Resource parse(@NotNull String alias, @NotNull String filename, @NotNull FileResource fileResource) throws IOException, URISyntaxException {
         Map<String, Sql> entry = new LinkedHashMap<>();
         StringJoiner xqlDesc = new StringJoiner(NEW_LINE);
         try (BufferedReader reader = fileResource.getBufferedReader(Charset.forName(charset))) {
@@ -468,7 +471,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @param sqlReference sql reference name ({@code <alias>.<sqlName>})
      * @return alias and sql name
      */
-    public static Pair<String, String> decodeSqlReference(String sqlReference) {
+    public static @NotNull Pair<String, String> decodeSqlReference(@NotNull String sqlReference) {
         int dotIdx = sqlReference.lastIndexOf(".");
         if (dotIdx < 1) {
             throw new IllegalArgumentException("Invalid sql reference name, please follow <alias>.<sqlName> format.");
@@ -485,7 +488,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @param name  sql name
      * @return sql reference name
      */
-    public static String encodeSqlReference(String alias, String name) {
+    public static @NotNull String encodeSqlReference(@NotNull String alias, @NotNull String name) {
         return alias + "." + name;
     }
 
@@ -537,7 +540,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      *
      * @return unmodifiable sql resources
      */
-    public Map<String, Resource> getResources() {
+    public @NotNull @Unmodifiable Map<String, Resource> getResources() {
         return Collections.unmodifiableMap(resources);
     }
 
@@ -619,7 +622,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @param args dynamic sql script expression args
      * @return parsed sql and extra args calculated by {@code #for} expression if exists
      */
-    public Pair<String, Map<String, Object>> parseDynamicSql(String sql, Map<String, ?> args) {
+    public Pair<String, Map<String, Object>> parseDynamicSql(@NotNull String sql, @Nullable Map<String, ?> args) {
         if (!containsAnyIgnoreCase(sql, FlowControlLexer.KEYWORDS)) {
             return Pair.of(sql, Collections.emptyMap());
         }
@@ -677,7 +680,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @param sql sql
      * @return dynamic sql parser
      */
-    public DynamicSqlParser newDynamicSqlParser(String sql) {
+    public DynamicSqlParser newDynamicSqlParser(@NotNull String sql) {
         return new DynamicSqlParser(sql);
     }
 
@@ -685,7 +688,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         return templateFormatter;
     }
 
-    public void setTemplateFormatter(TemplateFormatter templateFormatter) {
+    public void setTemplateFormatter(@NotNull TemplateFormatter templateFormatter) {
         this.templateFormatter = templateFormatter;
     }
 
@@ -714,7 +717,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         public static final String FOR_VARS_KEY = "_for";
         public static final String VAR_PREFIX = FOR_VARS_KEY + '.';
 
-        public DynamicSqlParser(String sql) {
+        public DynamicSqlParser(@NotNull String sql) {
             super(sql);
         }
 
@@ -824,7 +827,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         private String content;
         private String description = "";
 
-        public Sql(String content) {
+        public Sql(@NotNull String content) {
             this.content = content;
         }
 
@@ -832,11 +835,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             this.content = content;
         }
 
-        public String getContent() {
+        public @NotNull String getContent() {
             return content;
         }
 
-        public String getDescription() {
+        public @NotNull String getDescription() {
             return description;
         }
 
@@ -868,10 +871,10 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         private final String alias;
         private final String filename;
         private long lastModified = -1;
-        private String description;
+        private String description = "";
         private Map<String, Sql> entry;
 
-        public Resource(String alias, String filename) {
+        public Resource(@NotNull String alias, @NotNull String filename) {
             this.alias = alias;
             this.filename = filename;
             this.entry = Collections.emptyMap();
@@ -893,7 +896,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             this.lastModified = lastModified;
         }
 
-        public String getDescription() {
+        public @NotNull String getDescription() {
             return description;
         }
 
@@ -901,7 +904,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             this.description = description;
         }
 
-        public Map<String, Sql> getEntry() {
+        public @NotNull @Unmodifiable Map<String, Sql> getEntry() {
             return entry;
         }
 

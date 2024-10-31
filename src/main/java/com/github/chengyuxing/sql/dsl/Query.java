@@ -6,11 +6,12 @@ import com.github.chengyuxing.sql.PagedResource;
 import com.github.chengyuxing.sql.dsl.clause.GroupBy;
 import com.github.chengyuxing.sql.dsl.clause.OrderBy;
 import com.github.chengyuxing.sql.dsl.clause.Where;
-import com.github.chengyuxing.sql.dsl.type.ColumnReference;
+import com.github.chengyuxing.sql.dsl.type.FieldReference;
 import com.github.chengyuxing.sql.page.PageHelperProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
+import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.List;
 import java.util.Map;
@@ -27,9 +28,9 @@ public interface Query<T, SELF extends Query<T, SELF>> {
 
     SELF orderBy(@NotNull Function<OrderBy<T>, OrderBy<T>> order);
 
-    SELF select(@NotNull List<ColumnReference<T>> columns);
+    SELF select(@NotNull List<FieldReference<T>> columns);
 
-    SELF peek(BiConsumer<String, Pair<String, Map<String, Object>>> consumer);
+    SELF peek(@NotNull BiConsumer<String, Pair<String, Map<String, Object>>> consumer);
 
     Stream<DataRow> toRowStream();
 
@@ -43,23 +44,23 @@ public interface Query<T, SELF extends Query<T, SELF>> {
 
     <R> R collect(@NotNull Collector<T, ?, R> collector);
 
-    Optional<T> findFirst();
+    @NotNull Optional<T> findFirst();
 
     @Nullable T getFirst();
 
-    PagedResource<T> toPagedResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
-                                     @Range(from = 1, to = Integer.MAX_VALUE) int size,
-                                     @Nullable PageHelperProvider pageHelperProvider);
-
-    PagedResource<T> toPagedResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
-                                     @Range(from = 1, to = Integer.MAX_VALUE) int size);
-
-    PagedResource<DataRow> toPagedRowResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
+    @NotNull PagedResource<T> toPagedResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
                                               @Range(from = 1, to = Integer.MAX_VALUE) int size,
                                               @Nullable PageHelperProvider pageHelperProvider);
 
-    PagedResource<DataRow> toPagedRowResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
+    @NotNull PagedResource<T> toPagedResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
                                               @Range(from = 1, to = Integer.MAX_VALUE) int size);
+
+    @NotNull PagedResource<DataRow> toPagedRowResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
+                                                       @Range(from = 1, to = Integer.MAX_VALUE) int size,
+                                                       @Nullable PageHelperProvider pageHelperProvider);
+
+    @NotNull PagedResource<DataRow> toPagedRowResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
+                                                       @Range(from = 1, to = Integer.MAX_VALUE) int size);
 
     boolean exists();
 
@@ -78,5 +79,7 @@ public interface Query<T, SELF extends Query<T, SELF>> {
 
     List<Map<String, Object>> toMaps();
 
-    @NotNull Pair<String, Map<String, Object>> getSql();
+    @NotNull
+    @Unmodifiable
+    Pair<String, Map<String, Object>> getSql();
 }

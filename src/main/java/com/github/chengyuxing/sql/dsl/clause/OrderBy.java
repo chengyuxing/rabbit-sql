@@ -1,7 +1,7 @@
 package com.github.chengyuxing.sql.dsl.clause;
 
 import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.sql.dsl.type.ColumnReference;
+import com.github.chengyuxing.sql.dsl.type.FieldReference;
 import com.github.chengyuxing.sql.dsl.type.OrderByType;
 import org.jetbrains.annotations.NotNull;
 
@@ -24,7 +24,7 @@ public abstract class OrderBy<T> extends ColumnHelper<T> {
         return this;
     }
 
-    public OrderBy<T> by(ColumnReference<T> column, OrderByType order) {
+    public OrderBy<T> by(FieldReference<T> column, OrderByType order) {
         return by(getColumnName(column), order);
     }
 
@@ -33,7 +33,7 @@ public abstract class OrderBy<T> extends ColumnHelper<T> {
         return this;
     }
 
-    public OrderBy<T> asc(ColumnReference<T> column) {
+    public OrderBy<T> asc(FieldReference<T> column) {
         return asc(getColumnName(column));
     }
 
@@ -42,7 +42,7 @@ public abstract class OrderBy<T> extends ColumnHelper<T> {
         return this;
     }
 
-    public OrderBy<T> desc(ColumnReference<T> column) {
+    public OrderBy<T> desc(FieldReference<T> column) {
         return desc(getColumnName(column));
     }
 

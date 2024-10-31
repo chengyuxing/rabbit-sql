@@ -2,7 +2,7 @@ package com.github.chengyuxing.sql.dsl.clause;
 
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.sql.dsl.clause.condition.*;
-import com.github.chengyuxing.sql.dsl.type.ColumnReference;
+import com.github.chengyuxing.sql.dsl.type.FieldReference;
 import com.github.chengyuxing.sql.dsl.type.Logic;
 import com.github.chengyuxing.sql.dsl.type.Operator;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
@@ -49,7 +49,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
     protected abstract Where<T> newInstance();
 
     @SafeVarargs
-    public final <E> Where<T> of(ColumnReference<T> column, @NotNull Operator operator, E value, Predicate<E>... predicates) {
+    public final <E> Where<T> of(FieldReference<T> column, @NotNull Operator operator, E value, Predicate<E>... predicates) {
         if (operator == Logic.AND || operator == Logic.OR) {
             throw new IllegalArgumentException("logic operator '" + operator.getValue() + "' invalid at this time");
         }
@@ -60,7 +60,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
     }
 
     @SafeVarargs
-    public final <E> Where<T> eq(ColumnReference<T> column, E value, Predicate<E>... predicates) {
+    public final <E> Where<T> eq(FieldReference<T> column, E value, Predicate<E>... predicates) {
         if (isConditionMatched(value, predicates)) {
             if (Objects.nonNull(value)) {
                 addCondition(column, EQ, value);
@@ -72,7 +72,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
     }
 
     @SafeVarargs
-    public final <E> Where<T> neq(ColumnReference<T> column, E value, Predicate<E>... predicates) {
+    public final <E> Where<T> neq(FieldReference<T> column, E value, Predicate<E>... predicates) {
         if (isConditionMatched(value, predicates)) {
             if (Objects.nonNull(value)) {
                 addCondition(column, NEQ, value);
@@ -84,7 +84,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
     }
 
     @SafeVarargs
-    public final <E> Where<T> gt(ColumnReference<T> column, E value, Predicate<E>... predicates) {
+    public final <E> Where<T> gt(FieldReference<T> column, E value, Predicate<E>... predicates) {
         if (isConditionMatched(value, predicates)) {
             addCondition(column, GT, value);
         }
@@ -92,7 +92,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
     }
 
     @SafeVarargs
-    public final <E> Where<T> lt(ColumnReference<T> column, E value, Predicate<E>... predicates) {
+    public final <E> Where<T> lt(FieldReference<T> column, E value, Predicate<E>... predicates) {
         if (isConditionMatched(value, predicates)) {
             addCondition(column, LT, value);
         }
@@ -100,7 +100,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
     }
 
     @SafeVarargs
-    public final <E> Where<T> gte(ColumnReference<T> column, E value, Predicate<E>... predicates) {
+    public final <E> Where<T> gte(FieldReference<T> column, E value, Predicate<E>... predicates) {
         if (isConditionMatched(value, predicates)) {
             addCondition(column, GTE, value);
         }
@@ -108,7 +108,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
     }
 
     @SafeVarargs
-    public final <E> Where<T> lte(ColumnReference<T> column, E value, Predicate<E>... predicates) {
+    public final <E> Where<T> lte(FieldReference<T> column, E value, Predicate<E>... predicates) {
         if (isConditionMatched(value, predicates)) {
             addCondition(column, LTE, value);
         }
@@ -116,7 +116,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
     }
 
     @SafeVarargs
-    public final <E, V extends Collection<E>> Where<T> in(ColumnReference<T> column, V values, Predicate<V>... predicates) {
+    public final <E, V extends Collection<E>> Where<T> in(FieldReference<T> column, V values, Predicate<V>... predicates) {
         if (isConditionMatched(values, predicates)) {
             criteria.add(new InCondition<>(getColumnName(column), IN, values));
         }
@@ -124,7 +124,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
     }
 
     @SafeVarargs
-    public final <E, V extends Collection<E>> Where<T> notIn(ColumnReference<T> column, V values, Predicate<V>... predicates) {
+    public final <E, V extends Collection<E>> Where<T> notIn(FieldReference<T> column, V values, Predicate<V>... predicates) {
         if (isConditionMatched(values, predicates)) {
             criteria.add(new InCondition<>(getColumnName(column), NOT_IN, values));
         }
@@ -132,7 +132,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
     }
 
     @SafeVarargs
-    public final <E> Where<T> between(ColumnReference<T> column, E a, E b, BiPredicate<E, E>... predicates) {
+    public final <E> Where<T> between(FieldReference<T> column, E a, E b, BiPredicate<E, E>... predicates) {
         if (isConditionMatched(a, b, predicates)) {
             criteria.add(new BetweenCondition(getColumnName(column), BETWEEN, Pair.of(a, b)));
         }
@@ -140,7 +140,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
     }
 
     @SafeVarargs
-    public final <E> Where<T> notBetween(ColumnReference<T> column, E a, E b, BiPredicate<E, E>... predicates) {
+    public final <E> Where<T> notBetween(FieldReference<T> column, E a, E b, BiPredicate<E, E>... predicates) {
         if (isConditionMatched(a, b, predicates)) {
             criteria.add(new BetweenCondition(getColumnName(column), NOT_BETWEEN, Pair.of(a, b)));
         }
@@ -148,7 +148,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
     }
 
     @SafeVarargs
-    public final Where<T> like(ColumnReference<T> column, @NotNull String value, Predicate<String>... predicates) {
+    public final Where<T> like(FieldReference<T> column, @NotNull String value, Predicate<String>... predicates) {
         if (isConditionMatched(value, predicates)) {
             addCondition(column, LIKE, "%" + value + "%");
         }
@@ -156,7 +156,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
     }
 
     @SafeVarargs
-    public final Where<T> notLike(ColumnReference<T> column, @NotNull String value, Predicate<String>... predicates) {
+    public final Where<T> notLike(FieldReference<T> column, @NotNull String value, Predicate<String>... predicates) {
         if (isConditionMatched(value, predicates)) {
             addCondition(column, NOT_LIKE, "%" + value + "%");
         }
@@ -164,7 +164,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
     }
 
     @SafeVarargs
-    public final Where<T> startsWith(ColumnReference<T> column, @NotNull String value, Predicate<String>... predicates) {
+    public final Where<T> startsWith(FieldReference<T> column, @NotNull String value, Predicate<String>... predicates) {
         if (isConditionMatched(value, predicates)) {
             addCondition(column, LIKE, value + "%");
         }
@@ -172,7 +172,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
     }
 
     @SafeVarargs
-    public final Where<T> notStartsWith(ColumnReference<T> column, @NotNull String value, Predicate<String>... predicates) {
+    public final Where<T> notStartsWith(FieldReference<T> column, @NotNull String value, Predicate<String>... predicates) {
         if (isConditionMatched(value, predicates)) {
             addCondition(column, NOT_LIKE, value + "%");
         }
@@ -180,7 +180,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
     }
 
     @SafeVarargs
-    public final Where<T> endsWith(ColumnReference<T> column, @NotNull String value, Predicate<String>... predicates) {
+    public final Where<T> endsWith(FieldReference<T> column, @NotNull String value, Predicate<String>... predicates) {
         if (isConditionMatched(value, predicates)) {
             addCondition(column, LIKE, "%" + value);
         }
@@ -188,21 +188,21 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
     }
 
     @SafeVarargs
-    public final Where<T> notEndsWith(ColumnReference<T> column, @NotNull String value, Predicate<String>... predicates) {
+    public final Where<T> notEndsWith(FieldReference<T> column, @NotNull String value, Predicate<String>... predicates) {
         if (isConditionMatched(value, predicates)) {
             addCondition(column, NOT_LIKE, "%" + value);
         }
         return this;
     }
 
-    public Where<T> isNull(ColumnReference<T> column, boolean... predicates) {
+    public Where<T> isNull(FieldReference<T> column, boolean... predicates) {
         if (isConditionMatched(predicates)) {
             addCondition(column, IS_NULL, null);
         }
         return this;
     }
 
-    public Where<T> isNotNull(ColumnReference<T> column, boolean... predicates) {
+    public Where<T> isNotNull(FieldReference<T> column, boolean... predicates) {
         if (isConditionMatched(predicates)) {
             addCondition(column, IS_NOT_NULL, null);
         }
@@ -247,7 +247,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
         return where;
     }
 
-    private void addCondition(ColumnReference<T> column, Operator operator, Object value) {
+    private void addCondition(FieldReference<T> column, Operator operator, Object value) {
         criteria.add(new Condition<>(getColumnName(column), operator, value));
     }
 

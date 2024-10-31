@@ -6,11 +6,20 @@ public class Condition<T> implements Criteria {
     protected final String column;
     protected final Operator operator;
     protected final T value;
+    protected final String valueKey;
 
     public Condition(String column, Operator operator, T value) {
         this.column = column;
         this.operator = operator;
         this.value = value;
+        this.valueKey = column;
+    }
+
+    public Condition(String column, Operator operator, T value, String valueKey) {
+        this.column = column;
+        this.operator = operator;
+        this.value = value;
+        this.valueKey = valueKey;
     }
 
     public String getColumn() {
@@ -26,7 +35,7 @@ public class Condition<T> implements Criteria {
     }
 
     public String getKey(int index) {
-        return column + "__" + index;
+        return valueKey + "__" + index;
     }
 
     @Override

@@ -2,6 +2,7 @@ package com.github.chengyuxing.sql.support.executor;
 
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.types.Param;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
 import java.util.List;
@@ -17,7 +18,7 @@ public interface Executor {
      * @return Query: List{@code <DataRow>}, DML: affected row count, DDL: 0
      * @see com.github.chengyuxing.sql.support.JdbcSupport#execute(String, Map) execute(String, Map)
      */
-    DataRow execute();
+    @NotNull DataRow execute();
 
     /**
      * Execute sql (ddl, dml, query or plsql).
@@ -26,7 +27,7 @@ public interface Executor {
      * @return Query: List{@code <DataRow>}, DML: affected row count, DDL: 0
      * @see com.github.chengyuxing.sql.support.JdbcSupport#execute(String, Map) execute(String, Map)
      */
-    DataRow execute(Map<String, ?> args);
+    @NotNull DataRow execute(Map<String, ?> args);
 
     /**
      * Batch execute non-prepared sql (dml, ddl).
@@ -59,5 +60,5 @@ public interface Executor {
      * @return DataRow
      * @see com.github.chengyuxing.sql.support.JdbcSupport#executeCallStatement(String, Map) executeCallStatement(String, Map)
      */
-    DataRow call(Map<String, Param> params);
+    @NotNull DataRow call(Map<String, Param> params);
 }

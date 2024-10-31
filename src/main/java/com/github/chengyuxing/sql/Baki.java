@@ -1,12 +1,14 @@
 package com.github.chengyuxing.sql;
 
-import com.github.chengyuxing.sql.support.executor.EntitySaveExecutor;
+import com.github.chengyuxing.sql.dsl.*;
+import com.github.chengyuxing.sql.dsl.type.ColumnReference;
 import com.github.chengyuxing.sql.support.executor.Executor;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
-import com.github.chengyuxing.sql.support.executor.SaveExecutor;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.util.Collection;
 import java.util.function.Function;
 
 /**
@@ -20,84 +22,60 @@ public interface Baki {
      * @param sql sql statement or sql name
      * @return Query executor
      */
-    QueryExecutor query(String sql);
+    QueryExecutor query(@NotNull String sql);
 
     /**
-     * Update executor.
-     * <p>Generate update statement by 1st row of data, e.g.</p>
-     * <p>args:</p>
-     * <blockquote>
-     * <pre>{id:14, name:'cyx', address:'kunming'}, {...}, ...
-     *  </pre></blockquote>
-     * <p>where condition：</p>
-     * <blockquote>
-     * <pre>id = :id</pre>
-     * </blockquote>
-     * <p>generated update statement：</p>
-     * <blockquote>
-     * <pre>update [table] set
-     * name = :name,
-     * address = :address
-     * where id = :id</pre>
-     * </blockquote>
-     * Notice: where condition must contain at least 1 named parameter and args must contain its value.
+     * Query.
      *
-     * @param tableName table name
-     * @param where     condition
-     * @param <T>       entity type
-     * @return Update executor
+     * @param clazz entity class
+     * @param <T>   entity type
+     * @return Query instance
+     * @see javax.persistence.Entity @Entity
      */
-    <T> SaveExecutor<T> update(String tableName, String where);
+    <T, SELF extends Query<T, SELF>> Query<T, SELF> query(@NotNull Class<T> clazz);
 
     /**
-     * Insert executor.
+     * Insert.
      *
-     * @param tableName table name
-     * @param <T>       entity type
-     * @return Insert executor
+     * @param entity entity
+     * @param <T>    entity type
+     * @return affected rows
+     * @see javax.persistence.Entity @Entity
      */
-    <T> SaveExecutor<T> insert(String tableName);
+    <T> int insert(@NotNull T entity);
 
     /**
-     * Delete executor.
-     * <p>Methods {@link SaveExecutor#safe() safe(boolean?)} and {@link SaveExecutor#ignoreNull() ignoreNull(boolean?)}
-     * were not implements, ignore please.</p>
+     * Batch insert.
      *
-     * @param tableName table name
-     * @param where     condition
-     * @param <T>       entity type
-     * @return Delete executor
+     * @param entities entities
+     * @param <T>      entity type
+     * @return affected rows
+     * @see javax.persistence.Entity @Entity
      */
-    <T> SaveExecutor<T> delete(String tableName, String where);
+    <T> int insert(@NotNull Collection<T> entities);
 
     /**
-     * Entity executor.
-     * <p>{@link com.github.chengyuxing.common.anno.Alias @Alias} is optional, use {@link com.github.chengyuxing.common.anno.Alias @Alias} if:</p>
-     * <ul>
-     *     <li>table name not equals entity class name.</li>
-     *     <li>column name not equals entity field name.</li>
-     * </ul>
-     * <blockquote><pre>
-     *     {@code @}Alias("test.user") // table name 'test.user'
-     *     public class User{
-     *        {@code @}Alias("name") // column name 'name'
-     *        private String userName;
-     *        private Integer age;  // column name 'age'
+     * Update.
      *
-     *        // getter...
-     *        // setter...
-     *     }
-     * </pre></blockquote>
-     *
-     * @param <T>         entity type
-     * @param entityClass entity class
-     * @return Entity Save Executor
-     * @see com.github.chengyuxing.common.anno.Alias @Alias
+     * @param entity entity
+     * @param <T>    entity type
+     * @return Update instance
+     * @see javax.persistence.Entity @Entity
      */
-    <T> EntitySaveExecutor<T> entity(Class<T> entityClass);
+    <T> Update<T> update(@NotNull T entity);
 
     /**
-     * Basic Executor.
+     * Delete.
+     *
+     * @param entity entity
+     * @param <T>    entity type
+     * @return Delete instance
+     * @see javax.persistence.Entity @Entity
+     */
+    <T> Delete<T> delete(@NotNull T entity);
+
+    /**
+     * Basic executor.
      *
      * @param sql Support：<ul>
      *            <li>ddl</li>
@@ -108,7 +86,7 @@ public interface Baki {
      *            </ul>
      * @return Basic executor
      */
-    Executor of(String sql);
+    Executor of(@NotNull String sql);
 
     /**
      * Get an auto-closeable connection.

@@ -1,7 +1,7 @@
 package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.utils.ObjectUtil;
-import com.github.chengyuxing.sql.dsl.type.ColumnReference;
+import com.github.chengyuxing.sql.dsl.type.FieldReference;
 
 import javax.persistence.Column;
 import java.beans.Introspector;
@@ -14,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 public final class EntityUtil {
-    private static final Map<ColumnReference<?>, String> columnCache = new ConcurrentHashMap<>();
+    private static final Map<FieldReference<?>, String> columnCache = new ConcurrentHashMap<>();
 
     public static <T extends Map<String, Object>, E> T entityToMap(E entity, Function<Integer, T> mapBuilder) {
         return ObjectUtil.entityToMap(entity, EntityUtil::getColumnName, mapBuilder);
@@ -35,15 +35,15 @@ public final class EntityUtil {
         return name;
     }
 
-    public static <T> String getFieldNameWithCache(ColumnReference<T> columnRef) {
-        return columnCache.computeIfAbsent(columnRef, EntityUtil::getFieldName);
+    public static <T> String getFieldNameWithCache(FieldReference<T> fieldRef) {
+        return columnCache.computeIfAbsent(fieldRef, EntityUtil::getFieldName);
     }
 
-    public static <T> String getFieldName(ColumnReference<T> columnRef) {
+    public static <T> String getFieldName(FieldReference<T> fieldRef) {
         try {
-            Method writeReplace = columnRef.getClass().getDeclaredMethod("writeReplace");
+            Method writeReplace = fieldRef.getClass().getDeclaredMethod("writeReplace");
             writeReplace.setAccessible(true);
-            SerializedLambda serializedLambda = (SerializedLambda) writeReplace.invoke(columnRef);
+            SerializedLambda serializedLambda = (SerializedLambda) writeReplace.invoke(fieldRef);
 
             String methodName = serializedLambda.getImplMethodName();
             if (methodName.startsWith("get") && methodName.length() > 3) {

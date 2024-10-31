@@ -11,7 +11,7 @@ import com.github.chengyuxing.sql.dsl.clause.Having;
 import com.github.chengyuxing.sql.dsl.clause.OrderBy;
 import com.github.chengyuxing.sql.dsl.clause.Where;
 import com.github.chengyuxing.sql.dsl.clause.condition.Criteria;
-import com.github.chengyuxing.sql.dsl.type.ColumnReference;
+import com.github.chengyuxing.sql.dsl.type.FieldReference;
 import com.github.chengyuxing.sql.dsl.type.OrderByType;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
 import com.github.chengyuxing.sql.exceptions.IllegalSqlException;
@@ -363,8 +363,8 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
 
             @Override
-            public SELF select(@NotNull List<ColumnReference<T>> columns) {
-                for (ColumnReference<T> column : columns) {
+            public SELF select(@NotNull List<FieldReference<T>> columns) {
+                for (FieldReference<T> column : columns) {
                     String columnName = EntityUtil.getFieldNameWithCache(column);
                     // excludes the field which annotated with @Transient
                     if (entityMeta.getColumns().containsKey(columnName)) {
@@ -376,9 +376,9 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
 
             @Override
-            public SELF peek(BiConsumer<String, Pair<String, Map<String, Object>>> consumer) {
+            public SELF peek(@NotNull BiConsumer<String, Pair<String, Map<String, Object>>> consumer) {
                 Triple<String, String, Map<String, Object>> query = createQuery();
-                consumer.accept(query.getItem1(), Pair.of(query.getItem2(), query.getItem3()));
+                consumer.accept(query.getItem1(), Pair.of(query.getItem2(), Collections.unmodifiableMap(query.getItem3())));
                 //noinspection unchecked
                 return (SELF) this;
             }
@@ -432,7 +432,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
 
             @Override
-            public Optional<T> findFirst() {
+            public @NotNull Optional<T> findFirst() {
                 try (Stream<T> s = toStream()) {
                     return s.findFirst();
                 }
@@ -444,9 +444,9 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
 
             @Override
-            public PagedResource<T> toPagedResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
-                                                    @Range(from = 1, to = Integer.MAX_VALUE) int size,
-                                                    @Nullable PageHelperProvider pageHelperProvider) {
+            public @NotNull PagedResource<T> toPagedResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
+                                                             @Range(from = 1, to = Integer.MAX_VALUE) int size,
+                                                             @Nullable PageHelperProvider pageHelperProvider) {
                 Triple<String, String, Map<String, Object>> query = createQuery();
                 return new SimplePageable(query.getItem1(), page, size)
                         .args(query.getItem3())
@@ -456,13 +456,13 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
 
             @Override
-            public PagedResource<T> toPagedResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
-                                                    @Range(from = 1, to = Integer.MAX_VALUE) int size) {
+            public @NotNull PagedResource<T> toPagedResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
+                                                             @Range(from = 1, to = Integer.MAX_VALUE) int size) {
                 return toPagedResource(page, size, null);
             }
 
             @Override
-            public PagedResource<DataRow> toPagedRowResource(@Range(from = 1, to = Integer.MAX_VALUE) int page, @Range(from = 1, to = Integer.MAX_VALUE) int size, @Nullable PageHelperProvider pageHelperProvider) {
+            public @NotNull PagedResource<DataRow> toPagedRowResource(@Range(from = 1, to = Integer.MAX_VALUE) int page, @Range(from = 1, to = Integer.MAX_VALUE) int size, @Nullable PageHelperProvider pageHelperProvider) {
                 String query;
                 String countQuery;
                 Map<String, Object> args;
@@ -497,7 +497,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
 
             @Override
-            public PagedResource<DataRow> toPagedRowResource(@Range(from = 1, to = Integer.MAX_VALUE) int page, @Range(from = 1, to = Integer.MAX_VALUE) int size) {
+            public @NotNull PagedResource<DataRow> toPagedRowResource(@Range(from = 1, to = Integer.MAX_VALUE) int page, @Range(from = 1, to = Integer.MAX_VALUE) int size) {
                 return toPagedRowResource(page, size, null);
             }
 
@@ -599,7 +599,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             @Override
             public @NotNull Pair<String, Map<String, Object>> getSql() {
                 Triple<String, String, Map<String, Object>> query = createQuery();
-                return Pair.of(query.getItem2(), query.getItem3());
+                return Pair.of(query.getItem2(), Collections.unmodifiableMap(query.getItem3()));
             }
         };
     }
@@ -800,7 +800,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public String databaseId() {
+    public @NotNull String databaseId() {
         return this.databaseId;
     }
 

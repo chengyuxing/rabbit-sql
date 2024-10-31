@@ -3,7 +3,7 @@ package com.github.chengyuxing.sql.dsl.clause;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.sql.dsl.clause.condition.*;
-import com.github.chengyuxing.sql.dsl.type.ColumnReference;
+import com.github.chengyuxing.sql.dsl.type.FieldReference;
 import com.github.chengyuxing.sql.dsl.type.Logic;
 import com.github.chengyuxing.sql.dsl.type.StandardAggFunction;
 import com.github.chengyuxing.sql.dsl.type.StandardOperator;
@@ -35,27 +35,27 @@ public abstract class Having<T> extends CriteriaBuilder<T> {
         return this;
     }
 
-    public Having<T> count(ColumnReference<T> column, StandardOperator operator, Object value) {
+    public Having<T> count(FieldReference<T> column, StandardOperator operator, Object value) {
         addCondition(StandardAggFunction.COUNT, getColumnName(column), operator, value);
         return this;
     }
 
-    public Having<T> sum(ColumnReference<T> column, StandardOperator operator, Object value) {
+    public Having<T> sum(FieldReference<T> column, StandardOperator operator, Object value) {
         addCondition(StandardAggFunction.SUM, getColumnName(column), operator, value);
         return this;
     }
 
-    public Having<T> avg(ColumnReference<T> column, StandardOperator operator, Object value) {
+    public Having<T> avg(FieldReference<T> column, StandardOperator operator, Object value) {
         addCondition(StandardAggFunction.AVG, getColumnName(column), operator, value);
         return this;
     }
 
-    public Having<T> min(ColumnReference<T> column, StandardOperator operator, Object value) {
+    public Having<T> min(FieldReference<T> column, StandardOperator operator, Object value) {
         addCondition(StandardAggFunction.MIN, getColumnName(column), operator, value);
         return this;
     }
 
-    public Having<T> max(ColumnReference<T> column, StandardOperator operator, Object value) {
+    public Having<T> max(FieldReference<T> column, StandardOperator operator, Object value) {
         addCondition(StandardAggFunction.MAX, getColumnName(column), operator, value);
         return this;
     }

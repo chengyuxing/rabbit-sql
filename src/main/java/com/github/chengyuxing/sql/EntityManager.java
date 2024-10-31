@@ -2,8 +2,6 @@ package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.sql.dsl.type.StandardOperator;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.persistence.*;
 import java.lang.reflect.Field;
@@ -13,7 +11,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class EntityManager implements AutoCloseable {
-    private static final Logger log = LoggerFactory.getLogger(EntityManager.class);
     private final Map<Class<?>, EntityMeta> classInformation = new ConcurrentHashMap<>();
     private final char namedParamPrefix;
 
@@ -41,6 +38,55 @@ public class EntityManager implements AutoCloseable {
 
     public char getNamedParamPrefix() {
         return namedParamPrefix;
+    }
+
+    private String checkTableName(Class<?> clazz) {
+        String tableName = clazz.getSimpleName().toLowerCase();
+        if (clazz.isAnnotationPresent(Table.class)) {
+            Table table = clazz.getAnnotation(Table.class);
+            if (!table.name().isEmpty()) {
+                tableName = table.name();
+            }
+            if (!table.schema().isEmpty()) {
+                tableName = table.schema() + "." + tableName;
+            }
+        }
+        return tableName;
+    }
+
+    private Map<String, ColumnMeta> checkColumns(Class<?> clazz) {
+        Map<String, ColumnMeta> columns = new HashMap<>();
+        try {
+            for (Field field : clazz.getDeclaredFields()) {
+                int modifiers = field.getModifiers();
+                if (Modifier.isFinal(modifiers) || Modifier.isStatic(modifiers)) {
+                    continue;
+                }
+                if (field.isAnnotationPresent(Transient.class)) {
+                    continue;
+                }
+                Method getter = ReflectUtil.getGetMethod(clazz, field);
+                Method setter = ReflectUtil.getSetMethod(clazz, field);
+                ColumnMeta columnMeta = new ColumnMeta(getter, setter, field.getType(), field.getAnnotation(Id.class));
+                String columnName = field.getName();
+                if (field.isAnnotationPresent(Column.class)) {
+                    columnMeta.setColumn(field.getAnnotation(Column.class));
+                    String name = field.getAnnotation(Column.class).name().trim();
+                    if (!name.isEmpty()) {
+                        columnName = name;
+                    }
+                }
+                columns.put(columnName, columnMeta);
+            }
+            return columns;
+        } catch (NoSuchMethodException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void close() throws Exception {
+        classInformation.clear();
     }
 
     public static final class EntityMeta {
@@ -195,54 +241,5 @@ public class EntityManager implements AutoCloseable {
         public void setColumn(Column column) {
             this.column = column;
         }
-    }
-
-    private String checkTableName(Class<?> clazz) {
-        String tableName = clazz.getSimpleName().toLowerCase();
-        if (clazz.isAnnotationPresent(Table.class)) {
-            Table table = clazz.getAnnotation(Table.class);
-            if (!table.name().isEmpty()) {
-                tableName = table.name();
-            }
-            if (!table.schema().isEmpty()) {
-                tableName = table.schema() + "." + tableName;
-            }
-        }
-        return tableName;
-    }
-
-    private Map<String, ColumnMeta> checkColumns(Class<?> clazz) {
-        Map<String, ColumnMeta> columns = new HashMap<>();
-        try {
-            for (Field field : clazz.getDeclaredFields()) {
-                int modifiers = field.getModifiers();
-                if (Modifier.isFinal(modifiers) || Modifier.isStatic(modifiers)) {
-                    continue;
-                }
-                if (field.isAnnotationPresent(Transient.class)) {
-                    continue;
-                }
-                Method getter = ReflectUtil.getGetMethod(clazz, field);
-                Method setter = ReflectUtil.getSetMethod(clazz, field);
-                ColumnMeta columnMeta = new ColumnMeta(getter, setter, field.getType(), field.getAnnotation(Id.class));
-                String columnName = field.getName();
-                if (field.isAnnotationPresent(Column.class)) {
-                    columnMeta.setColumn(field.getAnnotation(Column.class));
-                    String name = field.getAnnotation(Column.class).name().trim();
-                    if (!name.isEmpty()) {
-                        columnName = name;
-                    }
-                }
-                columns.put(columnName, columnMeta);
-            }
-            return columns;
-        } catch (NoSuchMethodException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @Override
-    public void close() throws Exception {
-        classInformation.clear();
     }
 }

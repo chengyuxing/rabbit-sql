@@ -8,6 +8,6 @@ import java.io.Serializable;
  * @param <T> entity type
  */
 @FunctionalInterface
-public interface ColumnReference<T> extends Serializable {
+public interface FieldReference<T> extends Serializable {
     Object apply(T t);
 }

@@ -2,7 +2,7 @@ package com.github.chengyuxing.sql.dsl.clause;
 
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.dsl.clause.condition.Criteria;
-import com.github.chengyuxing.sql.dsl.type.ColumnReference;
+import com.github.chengyuxing.sql.dsl.type.FieldReference;
 import com.github.chengyuxing.sql.dsl.type.StandardAggFunction;
 import org.jetbrains.annotations.NotNull;
 
@@ -31,35 +31,35 @@ public abstract class GroupBy<T> extends ColumnHelper<T> {
         return this;
     }
 
-    public GroupBy<T> count(ColumnReference<T> columnReference) {
-        addAggColumn(StandardAggFunction.COUNT, getColumnName(columnReference));
+    public GroupBy<T> count(FieldReference<T> fieldReference) {
+        addAggColumn(StandardAggFunction.COUNT, getColumnName(fieldReference));
         return this;
     }
 
-    public GroupBy<T> sum(ColumnReference<T> columnReference) {
-        addAggColumn(StandardAggFunction.SUM, getColumnName(columnReference));
+    public GroupBy<T> sum(FieldReference<T> fieldReference) {
+        addAggColumn(StandardAggFunction.SUM, getColumnName(fieldReference));
         return this;
     }
 
-    public GroupBy<T> max(ColumnReference<T> columnReference) {
-        addAggColumn(StandardAggFunction.MAX, getColumnName(columnReference));
+    public GroupBy<T> max(FieldReference<T> fieldReference) {
+        addAggColumn(StandardAggFunction.MAX, getColumnName(fieldReference));
         return this;
     }
 
-    public GroupBy<T> min(ColumnReference<T> columnReference) {
-        addAggColumn(StandardAggFunction.MIN, getColumnName(columnReference));
+    public GroupBy<T> min(FieldReference<T> fieldReference) {
+        addAggColumn(StandardAggFunction.MIN, getColumnName(fieldReference));
         return this;
     }
 
-    public GroupBy<T> avg(ColumnReference<T> columnReference) {
-        addAggColumn(StandardAggFunction.AVG, getColumnName(columnReference));
+    public GroupBy<T> avg(FieldReference<T> fieldReference) {
+        addAggColumn(StandardAggFunction.AVG, getColumnName(fieldReference));
         return this;
     }
 
     @SafeVarargs
-    public final GroupBy<T> by(ColumnReference<T> column, ColumnReference<T>... more) {
+    public final GroupBy<T> by(FieldReference<T> column, FieldReference<T>... more) {
         addSelectColumn(getColumnName(column));
-        for (ColumnReference<T> c : more) {
+        for (FieldReference<T> c : more) {
             addSelectColumn(getColumnName(c));
         }
         return this;

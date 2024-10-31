@@ -1,6 +1,6 @@
 package com.github.chengyuxing.sql.dsl.clause;
 
-import com.github.chengyuxing.sql.dsl.type.ColumnReference;
+import com.github.chengyuxing.sql.dsl.type.FieldReference;
 import com.github.chengyuxing.sql.dsl.type.Operator;
 import com.github.chengyuxing.sql.dsl.type.StandardOperator;
 import com.github.chengyuxing.sql.utils.EntityUtil;
@@ -21,8 +21,8 @@ public abstract class ColumnHelper<T> {
 
     protected abstract Set<String> operatorWhiteList();
 
-    protected @NotNull String getColumnName(@NotNull ColumnReference<T> columnReference) {
-        String fieldName = EntityUtil.getFieldNameWithCache(columnReference);
+    protected @NotNull String getColumnName(@NotNull FieldReference<T> fieldReference) {
+        String fieldName = EntityUtil.getFieldNameWithCache(fieldReference);
         try {
             Field field = clazz.getDeclaredField(fieldName);
             field.setAccessible(true);

@@ -5,17 +5,11 @@ import com.github.chengyuxing.sql.dsl.type.StandardOperator;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Objects;
-import java.util.StringJoiner;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class EntityManager implements AutoCloseable {
@@ -66,7 +60,7 @@ public class EntityManager implements AutoCloseable {
             this.tableName = tableName;
             this.columns = columns;
             this.primaryKey = checkPrimaryKey();
-            this.select = genSelect();
+            this.select = genSelect(this.columns.keySet());
             this.countSelect = genCountSelect();
             this.existsSelect = genExistSelect();
             this.insert = genInsert();
@@ -88,6 +82,10 @@ public class EntityManager implements AutoCloseable {
 
         public String getSelect() {
             return select;
+        }
+
+        public String getSelect(Set<String> columns) {
+            return genSelect(columns);
         }
 
         public String getCountSelect() {
@@ -119,12 +117,12 @@ public class EntityManager implements AutoCloseable {
             throw new IllegalStateException("Primary Key not found");
         }
 
-        private String genSelect() {
-            return "select " + String.join(", ", columns.keySet()) + " from " + tableName;
+        private String genSelect(Set<String> columns) {
+            return "select " + String.join(", ", columns) + " \nfrom " + tableName;
         }
 
         private String genCountSelect() {
-            return "select count(*) from " + tableName;
+            return "select count(*) \nfrom " + tableName;
         }
 
         private String genExistSelect() {
@@ -219,6 +217,9 @@ public class EntityManager implements AutoCloseable {
             for (Field field : clazz.getDeclaredFields()) {
                 int modifiers = field.getModifiers();
                 if (Modifier.isFinal(modifiers) || Modifier.isStatic(modifiers)) {
+                    continue;
+                }
+                if (field.isAnnotationPresent(Transient.class)) {
                     continue;
                 }
                 Method getter = ReflectUtil.getGetMethod(clazz, field);

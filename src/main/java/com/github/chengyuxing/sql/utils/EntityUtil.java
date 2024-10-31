@@ -6,6 +6,7 @@ import com.github.chengyuxing.sql.dsl.type.ColumnReference;
 import javax.persistence.Column;
 import java.beans.Introspector;
 import java.lang.invoke.SerializedLambda;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -15,31 +16,23 @@ import java.util.function.Function;
 public final class EntityUtil {
     private static final Map<ColumnReference<?>, String> columnCache = new ConcurrentHashMap<>();
 
-    public static <T extends Map<String, Object>, E> T entity2map(E entity, Function<Integer, T> mapBuilder) {
-        return ObjectUtil.entity2map(entity, f -> {
-            String name = f.getName();
-            if (f.isAnnotationPresent(Column.class)) {
-                String column = f.getAnnotation(Column.class).name();
-                if (!column.isEmpty()) {
-                    name = column;
-                }
-            }
-            return name;
-        }, mapBuilder);
+    public static <T extends Map<String, Object>, E> T entityToMap(E entity, Function<Integer, T> mapBuilder) {
+        return ObjectUtil.entityToMap(entity, EntityUtil::getColumnName, mapBuilder);
     }
 
-    public static <T> T map2entity(Map<String, Object> source, Class<T> entityClass) {
-        return ObjectUtil.map2entity(source, entityClass,
-                f -> {
-                    String name = f.getName();
-                    if (f.isAnnotationPresent(Column.class)) {
-                        String column = f.getAnnotation(Column.class).name();
-                        if (!column.isEmpty()) {
-                            name = column;
-                        }
-                    }
-                    return name;
-                }, null);
+    public static <T> T mapToEntity(Map<String, Object> source, Class<T> entityClass) {
+        return ObjectUtil.mapToEntity(source, entityClass, EntityUtil::getColumnName, null);
+    }
+
+    public static String getColumnName(Field field) {
+        String name = field.getName();
+        if (field.isAnnotationPresent(Column.class)) {
+            String column = field.getAnnotation(Column.class).name();
+            if (!column.isEmpty()) {
+                name = column;
+            }
+        }
+        return name;
     }
 
     public static <T> String getFieldNameWithCache(ColumnReference<T> columnRef) {

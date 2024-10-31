@@ -3,84 +3,80 @@ package com.github.chengyuxing.sql.dsl;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.sql.PagedResource;
+import com.github.chengyuxing.sql.dsl.clause.GroupBy;
+import com.github.chengyuxing.sql.dsl.clause.OrderBy;
 import com.github.chengyuxing.sql.dsl.clause.Where;
 import com.github.chengyuxing.sql.dsl.type.ColumnReference;
-import com.github.chengyuxing.sql.dsl.type.OrderByType;
 import com.github.chengyuxing.sql.page.PageHelperProvider;
-import com.github.chengyuxing.sql.utils.EntityUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
 
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.stream.Collector;
 import java.util.stream.Stream;
 
-public abstract class Query<T> extends Where<T, Query<T>> {
-    protected final List<Pair<String, OrderByType>> orders = new ArrayList<>();
+public interface Query<T, SELF extends Query<T, SELF>> {
+    SELF where(@NotNull Function<Where<T>, Where<T>> where);
 
-    public Query(Class<T> entityClass) {
-        super(entityClass);
-    }
+    SELF groupBy(@NotNull Function<GroupBy<T>, GroupBy<T>> group);
 
-    public Query<T> orderBy(@NotNull String column, OrderByType order) {
-        orders.add(Pair.of(column, order));
-        return this;
-    }
+    SELF orderBy(@NotNull Function<OrderBy<T>, OrderBy<T>> order);
 
-    public Query<T> orderBy(ColumnReference<T> column, OrderByType order) {
-        return orderBy(EntityUtil.getFieldNameWithCache(column), order);
-    }
+    SELF select(@NotNull List<ColumnReference<T>> columns);
 
-    public Query<T> orderByAsc(@NotNull String column) {
-        orders.add(Pair.of(column, OrderByType.ASC));
-        return this;
-    }
+    SELF peek(BiConsumer<String, Pair<String, Map<String, Object>>> consumer);
 
-    public Query<T> orderByAsc(ColumnReference<T> column) {
-        return orderByAsc(EntityUtil.getFieldNameWithCache(column));
-    }
+    Stream<DataRow> toRowStream();
 
-    public Query<T> orderByDesc(@NotNull String column) {
-        orders.add(Pair.of(column, OrderByType.DESC));
-        return this;
-    }
+    Stream<T> toStream();
 
-    public Query<T> orderByDesc(ColumnReference<T> column) {
-        return orderByDesc(EntityUtil.getFieldNameWithCache(column));
-    }
+    List<T> toList();
 
-    protected String buildOrders() {
-        if (orders.isEmpty()) {
-            return "";
-        }
-        StringJoiner joiner = new StringJoiner(", ");
-        for (Pair<String, OrderByType> order : orders) {
-            checkConditionField(order.getItem1());
-            joiner.add(order.getItem1() + " " + order.getItem2().name().toLowerCase());
-        }
-        return "\norder by " + joiner;
-    }
+    <R> List<R> toList(@NotNull Function<T, R> mapper);
 
-    public abstract Stream<T> toStream();
+    <R, V> R collect(@NotNull Function<T, V> func, @NotNull Collector<V, ?, R> collector);
 
-    public abstract List<T> toList();
+    <R> R collect(@NotNull Collector<T, ?, R> collector);
 
-    public abstract Optional<T> findFirst();
+    Optional<T> findFirst();
 
-    public abstract @Nullable T getFirst();
+    @Nullable T getFirst();
 
-    public abstract PagedResource<T> toPagedResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
-                                                     @Range(from = 1, to = Integer.MAX_VALUE) int size,
-                                                     @Nullable PageHelperProvider pageHelperProvider);
+    PagedResource<T> toPagedResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
+                                     @Range(from = 1, to = Integer.MAX_VALUE) int size,
+                                     @Nullable PageHelperProvider pageHelperProvider);
 
-    public abstract PagedResource<T> toPagedResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
-                                                     @Range(from = 1, to = Integer.MAX_VALUE) int size);
+    PagedResource<T> toPagedResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
+                                     @Range(from = 1, to = Integer.MAX_VALUE) int size);
 
-    public abstract boolean exists();
+    PagedResource<DataRow> toPagedRowResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
+                                              @Range(from = 1, to = Integer.MAX_VALUE) int size,
+                                              @Nullable PageHelperProvider pageHelperProvider);
 
-    public abstract @NotNull DataRow findFirstRow();
+    PagedResource<DataRow> toPagedRowResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
+                                              @Range(from = 1, to = Integer.MAX_VALUE) int size);
 
-    public abstract List<DataRow> toRows();
+    boolean exists();
 
-    public abstract List<Map<String, Object>> toMaps();
+    @Range(from = 0, to = Long.MAX_VALUE)
+    long count();
+
+    <R, V> R collectRow(@NotNull Function<DataRow, V> func, @NotNull Collector<V, ?, R> collector);
+
+    <R> R collectRow(@NotNull Collector<DataRow, ?, R> collector);
+
+    @NotNull Optional<DataRow> findFirstRow();
+
+    @NotNull DataRow getFirstRow();
+
+    List<DataRow> toRows();
+
+    List<Map<String, Object>> toMaps();
+
+    @NotNull Pair<String, Map<String, Object>> getSql();
 }

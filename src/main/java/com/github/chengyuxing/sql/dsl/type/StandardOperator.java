@@ -15,8 +15,6 @@ public enum StandardOperator implements Operator {
     NOT_BETWEEN("not between"),
     IS_NULL("is null"),
     IS_NOT_NULL("is not null"),
-    LOGIC_AND("and"),
-    LOGIC_OR("or"),
     ;
     private final String value;
 

@@ -1,9 +1,9 @@
 package com.github.chengyuxing.sql.dsl.clause;
 
 import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.dsl.clause.condition.*;
 import com.github.chengyuxing.sql.dsl.type.ColumnReference;
+import com.github.chengyuxing.sql.dsl.type.Logic;
 import com.github.chengyuxing.sql.dsl.type.Operator;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
 import org.jetbrains.annotations.NotNull;
@@ -18,7 +18,7 @@ import java.util.function.Predicate;
 
 import static com.github.chengyuxing.sql.dsl.type.StandardOperator.*;
 
-public abstract class Where<T> extends ColumnHelper<T> {
+public abstract class Where<T> extends CriteriaBuilder<T> {
     protected List<Criteria> criteria = new ArrayList<>();
 
     /**
@@ -48,11 +48,9 @@ public abstract class Where<T> extends ColumnHelper<T> {
      */
     protected abstract Where<T> newInstance();
 
-    protected abstract char namedParamPrefix();
-
     @SafeVarargs
     public final <E> Where<T> of(ColumnReference<T> column, @NotNull Operator operator, E value, Predicate<E>... predicates) {
-        if (operator == LOGIC_OR || operator == LOGIC_AND) {
+        if (operator == Logic.AND || operator == Logic.OR) {
             throw new IllegalArgumentException("logic operator '" + operator.getValue() + "' invalid at this time");
         }
         if (isConditionMatched(value, predicates)) {
@@ -242,7 +240,7 @@ public abstract class Where<T> extends ColumnHelper<T> {
      * @return where clause and params.
      */
     protected @NotNull @Unmodifiable Pair<String, Map<String, Object>> build() {
-        Pair<String, Map<String, Object>> where = build(new AtomicInteger(0), criteria, LOGIC_AND.padWithSpace(), 0);
+        Pair<String, Map<String, Object>> where = build(new AtomicInteger(0), criteria, Logic.AND, 0);
         if (!where.getItem1().isEmpty()) {
             return Pair.of("\nwhere " + where.getItem1(), Collections.unmodifiableMap(where.getItem2()));
         }
@@ -286,77 +284,5 @@ public abstract class Where<T> extends ColumnHelper<T> {
             }
         }
         return matched;
-    }
-
-    protected final @NotNull @Unmodifiable Pair<String, Map<String, Object>> build(AtomicInteger uniqueIndex, List<Criteria> criteriaList, String logicOperator, int identLevel) {
-        StringBuilder where = new StringBuilder();
-        String ident = StringUtil.repeat("    ", identLevel);
-        Map<String, Object> params = new HashMap<>();
-        for (int i = 0, j = criteriaList.size(); i < j; i++) {
-            Criteria criteria = criteriaList.get(i);
-            if (criteria instanceof Condition) {
-                @SuppressWarnings("unchecked") Condition<Object> condition = (Condition<Object>) criteria;
-
-                if (isIllegalColumn(condition.getColumn())) {
-                    throw new IllegalArgumentException("unexpected column: '" + condition.getColumn() + "' on condition: " + condition);
-                }
-
-                if (isIllegalOperator(condition.getOperator())) {
-                    throw new IllegalArgumentException("Illegal operator: '" + condition.getOperator().getValue() + "' at condition: " + condition + ", add trusted operator into operatorWhiteList");
-                }
-
-                int unique = uniqueIndex.getAndIncrement();
-
-                if (condition instanceof InCondition) {
-                    @SuppressWarnings({"rawtypes", "unchecked"}) Pair<String, Map<String, Object>> result = ((InCondition) condition).buildStatement(unique, namedParamPrefix());
-                    where.append(result.getItem1());
-                    params.putAll(result.getItem2());
-                } else if (condition instanceof BetweenCondition) {
-                    Pair<String, Map<String, Object>> result = ((BetweenCondition) condition).buildStatement(unique, namedParamPrefix());
-                    where.append(result.getItem1());
-                    params.putAll(result.getItem2());
-                } else {
-                    if (condition.getOperator() == IS_NULL || condition.getOperator() == IS_NOT_NULL) {
-                        where.append(condition.getColumn())
-                                .append(" ")
-                                .append(condition.getOperator().getValue());
-                    } else {
-                        String key = condition.getKey(unique);
-                        where.append(condition.getColumn())
-                                .append(condition.getOperator().padWithSpace())
-                                .append(namedParamPrefix()).append(key);
-                        params.put(key, condition.getValue());
-                    }
-                }
-            } else if (criteria instanceof AndGroup) {
-                List<Criteria> andGroup = ((AndGroup) criteria).getGroup();
-                if (!andGroup.isEmpty()) {
-                    Pair<String, Map<String, Object>> result = build(uniqueIndex, andGroup, LOGIC_AND.padWithSpace(), identLevel + 1);
-                    where.append("(").append(result.getItem1()).append(")");
-                    params.putAll(result.getItem2());
-                }
-            } else if (criteria instanceof OrGroup) {
-                List<Criteria> orGroup = ((OrGroup) criteria).getGroup();
-                if (!orGroup.isEmpty()) {
-                    Pair<String, Map<String, Object>> result = build(uniqueIndex, orGroup, LOGIC_OR.padWithSpace(), identLevel + 1);
-                    where.append("(").append(result.getItem1()).append(")");
-                    params.putAll(result.getItem2());
-                }
-            }
-
-            if (i < j - 1) {
-                where.append("\n").append(ident);
-                Criteria next = criteriaList.get(i + 1);
-                // set current logical operator where the next 'and' and 'or' group invoked
-                if (next instanceof AndGroup) {
-                    where.append(LOGIC_AND.padWithSpace());
-                } else if (next instanceof OrGroup) {
-                    where.append(LOGIC_OR.padWithSpace());
-                } else {
-                    where.append(logicOperator);
-                }
-            }
-        }
-        return Pair.of(where.toString(), params);
     }
 }

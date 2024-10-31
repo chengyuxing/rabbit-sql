@@ -293,7 +293,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public final <T, SELF extends Query<T, SELF>> Query<T, SELF> query(@NotNull Class<T> clazz) {
+    public <T, SELF extends Query<T, SELF>> Query<T, SELF> query(@NotNull Class<T> clazz) {
         EntityManager.EntityMeta entityMeta = entityManager.getEntityMeta(clazz);
         return new Query<T, SELF>() {
             private final Set<String> selectColumns = new LinkedHashSet<>();

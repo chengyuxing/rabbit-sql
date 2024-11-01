@@ -462,7 +462,9 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
 
             @Override
-            public @NotNull PagedResource<DataRow> toPagedRowResource(@Range(from = 1, to = Integer.MAX_VALUE) int page, @Range(from = 1, to = Integer.MAX_VALUE) int size, @Nullable PageHelperProvider pageHelperProvider) {
+            public @NotNull PagedResource<DataRow> toPagedRowResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
+                                                                      @Range(from = 1, to = Integer.MAX_VALUE) int size,
+                                                                      @Nullable PageHelperProvider pageHelperProvider) {
                 String query;
                 String countQuery;
                 Map<String, Object> args;
@@ -497,7 +499,8 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
 
             @Override
-            public @NotNull PagedResource<DataRow> toPagedRowResource(@Range(from = 1, to = Integer.MAX_VALUE) int page, @Range(from = 1, to = Integer.MAX_VALUE) int size) {
+            public @NotNull PagedResource<DataRow> toPagedRowResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
+                                                                      @Range(from = 1, to = Integer.MAX_VALUE) int size) {
                 return toPagedRowResource(page, size, null);
             }
 

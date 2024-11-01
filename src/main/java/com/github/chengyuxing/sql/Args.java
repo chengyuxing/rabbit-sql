@@ -2,8 +2,10 @@ package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.MapExtends;
 import com.github.chengyuxing.common.utils.ObjectUtil;
+import com.github.chengyuxing.sql.utils.EntityUtil;
 
 import java.util.HashMap;
+import java.util.Map;
 
 /**
  * Simple sql args tool.
@@ -15,6 +17,10 @@ public final class Args<V> extends HashMap<String, V> implements MapExtends<Args
      * Constructs a new empty Args.
      */
     public Args() {
+    }
+
+    public Args(int initialCapacity) {
+        super(initialCapacity);
     }
 
     /**
@@ -48,16 +54,28 @@ public final class Args<V> extends HashMap<String, V> implements MapExtends<Args
      * @return Args instance
      */
     public static Args<Object> of(Object... input) {
-        return ObjectUtil.pairs2map(i -> Args.of(), input);
+        return ObjectUtil.pairsToMap(i -> Args.of(), input);
     }
 
     /**
      * Returns an Args from standard java bean entity.
      *
-     * @param entity standard java bean.
+     * @param entity standard java bean with annotation {@link javax.persistence.Entity @Entity}.
      * @return Args instance
      */
-    public static Args<Object> ofEntity(Object entity) {
-        return ObjectUtil.entity2map(entity, i -> Args.of());
+    public static <T> Args<Object> ofEntity(T entity) {
+        return EntityUtil.entityToMap(entity, Args::new);
+    }
+
+    /**
+     * Returns an entity.
+     *
+     * @param entityClass standard java bean class with annotation {@link javax.persistence.Entity @Entity}.
+     * @param <E>         entity type
+     * @return entity
+     */
+    @SuppressWarnings("unchecked")
+    public <E> E toEntity(Class<E> entityClass) {
+        return EntityUtil.mapToEntity((Map<String, Object>) this, entityClass);
     }
 }

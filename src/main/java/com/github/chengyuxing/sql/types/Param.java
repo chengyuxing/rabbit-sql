@@ -5,7 +5,7 @@ package com.github.chengyuxing.sql.types;
  */
 public final class Param {
     private Object value;
-    private IOutParam type;
+    private OutParamType type;
     private ParamMode paramMode;
 
     /**
@@ -27,7 +27,7 @@ public final class Param {
      * @param type OUT parameter type
      * @return Param
      */
-    public static Param OUT(IOutParam type) {
+    public static Param OUT(OutParamType type) {
         Param param = new Param();
         param.type = type;
         param.paramMode = ParamMode.OUT;
@@ -41,7 +41,7 @@ public final class Param {
      * @param type  OUT parameter type
      * @return Param
      */
-    public static Param IN_OUT(Object value, IOutParam type) {
+    public static Param IN_OUT(Object value, OutParamType type) {
         Param param = new Param();
         param.paramMode = ParamMode.IN_OUT;
         param.type = type;
@@ -57,7 +57,7 @@ public final class Param {
         return paramMode;
     }
 
-    public IOutParam getType() {
+    public OutParamType getType() {
         return type;
     }
 

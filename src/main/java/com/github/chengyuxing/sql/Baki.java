@@ -1,7 +1,6 @@
 package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.sql.dsl.*;
-import com.github.chengyuxing.sql.dsl.type.ColumnReference;
 import com.github.chengyuxing.sql.support.executor.Executor;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
 import org.jetbrains.annotations.NotNull;
@@ -111,5 +110,5 @@ public interface Baki {
      *
      * @return database name
      */
-    String databaseId();
+    @NotNull String databaseId();
 }

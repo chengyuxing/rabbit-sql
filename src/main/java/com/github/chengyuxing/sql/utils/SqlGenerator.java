@@ -2,7 +2,6 @@ package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.script.expression.Patterns;
 import com.github.chengyuxing.common.utils.ObjectUtil;
-import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.plugins.NamedParamFormatter;
 import com.github.chengyuxing.sql.plugins.TemplateFormatter;
 
@@ -187,51 +186,23 @@ public class SqlGenerator {
     }
 
     /**
-     * Filter keys ignore case of data map if key not in custom keys scope.
-     *
-     * @param data      data map
-     * @param keysScope keys scope
-     * @return scoped key set
-     */
-    public Set<String> filterKeys(final Map<String, ?> data, List<String> keysScope) {
-        if (keysScope == null || keysScope.isEmpty()) {
-            return data.keySet();
-        }
-        String[] keysScopeArray = keysScope.toArray(new String[0]);
-        Set<String> set = new HashSet<>();
-        for (String k : data.keySet()) {
-            if (StringUtil.equalsAnyIgnoreCase(k, keysScopeArray)) {
-                set.add(k);
-            }
-        }
-        return set;
-    }
-
-    /**
      * Generate named parameter insert statement.
      *
      * @param tableName  table name
      * @param data       data
-     * @param keysScope  keys scope
+     * @param columns    table columns
      * @param ignoreNull ignore null value or not
      * @return named parameter insert statement
-     * @throws IllegalArgumentException if all data keys not in scope
      */
-    public String generateNamedParamInsert(final String tableName, final Map<String, ?> data, List<String> keysScope, boolean ignoreNull) {
-        Set<String> keys = filterKeys(data, keysScope);
-        if (keys.isEmpty()) {
-            throw new IllegalArgumentException("empty key set, generate insert sql error.");
-        }
+    public String generateNamedParamInsert(final String tableName, Collection<String> columns, final Map<String, ?> data, boolean ignoreNull) {
         StringJoiner f = new StringJoiner(", ");
         StringJoiner h = new StringJoiner(", ");
-        for (String key : keys) {
-            if (data.containsKey(key)) {
-                if (ignoreNull && Objects.isNull(data.get(key))) {
-                    continue;
-                }
-                f.add(key);
-                h.add(namedParamPrefix + key);
+        for (String column : columns) {
+            if (ignoreNull && Objects.isNull(data.get(column))) {
+                continue;
             }
+            f.add(column);
+            h.add(namedParamPrefix + column);
         }
         return "insert into " + tableName + "(" + f + ") values (" + h + ")";
     }
@@ -240,55 +211,20 @@ public class SqlGenerator {
      * Generate named parameter update statement.
      *
      * @param tableName  table name
-     * @param where      condition
      * @param data       data
-     * @param keysScope  keys scope
+     * @param columns    table columns
      * @param ignoreNull ignore null value or not
-     * @return named parameter update statement
+     * @return named parameter update sets statement
      */
-    public String generateNamedParamUpdate(String tableName, String where, Map<String, ?> data, List<String> keysScope, boolean ignoreNull) {
-        Map<String, ?> updateSets = getUpdateSets(where, data);
-        if (updateSets.isEmpty()) {
-            throw new IllegalArgumentException("empty field set, generate update sql error.");
-        }
-        Set<String> keys = filterKeys(updateSets, keysScope);
-        if (keys.isEmpty()) {
-            throw new IllegalArgumentException("empty field set, generate update sql error.");
-        }
+    public String generateNamedParamUpdate(String tableName, Collection<String> columns, Map<String, ?> data, boolean ignoreNull) {
         StringJoiner sb = new StringJoiner(",\n\t");
-        for (String key : keys) {
-            if (updateSets.containsKey(key)) {
-                if (ignoreNull && Objects.isNull(updateSets.get(key))) {
-                    continue;
-                }
-                sb.add(key + " = " + namedParamPrefix + key);
+        for (String column : columns) {
+            if (ignoreNull && Objects.isNull(data.get(column))) {
+                continue;
             }
+            sb.add(column + " = " + namedParamPrefix + column);
         }
-        return "update " + tableName + "\nset " + sb + "\nwhere " + where;
-    }
-
-    /**
-     * Get update statement sets data from data map exclude keys in condition.
-     *
-     * @param where condition
-     * @param args  args
-     * @return update sets data
-     */
-    public Map<String, ?> getUpdateSets(String where, Map<String, ?> args) {
-        if (Objects.isNull(args) || args.isEmpty()) {
-            return new HashMap<>();
-        }
-        Map<String, Object> sets = new HashMap<>();
-        // pick out named parameter from where condition.
-        Set<String> whereFields = generatePreparedSql(where, args).getArgNameIndexMapping().keySet();
-        // for build correct update sets excludes the arg which in where condition.
-        // where id = :id
-        for (Map.Entry<String, ?> e : args.entrySet()) {
-            if (!whereFields.contains(e.getKey())) {
-                sets.put(e.getKey(), e.getValue());
-            }
-        }
-        return sets;
+        return "update " + tableName + "\nset " + sb;
     }
 
     /**

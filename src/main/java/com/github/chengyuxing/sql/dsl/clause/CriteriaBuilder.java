@@ -67,15 +67,25 @@ public abstract class CriteriaBuilder<T> extends ColumnHelper<T> {
             } else if (criteria instanceof AndGroup) {
                 List<Criteria> andGroup = ((AndGroup) criteria).getGroup();
                 if (!andGroup.isEmpty()) {
-                    Pair<String, Map<String, Object>> result = build(uniqueIndex, andGroup, Logic.AND, identLevel + 1);
-                    sb.append("(").append(result.getItem1()).append(")");
+                    int groupSize = andGroup.size();
+                    Pair<String, Map<String, Object>> result = build(uniqueIndex, andGroup, Logic.OR, groupSize == 1 ? identLevel : identLevel + 1);
+                    if (groupSize == 1) {
+                        sb.append(result.getItem1());
+                    } else {
+                        sb.append("(").append(result.getItem1()).append(")");
+                    }
                     params.putAll(result.getItem2());
                 }
             } else if (criteria instanceof OrGroup) {
                 List<Criteria> orGroup = ((OrGroup) criteria).getGroup();
                 if (!orGroup.isEmpty()) {
-                    Pair<String, Map<String, Object>> result = build(uniqueIndex, orGroup, Logic.OR, identLevel + 1);
-                    sb.append("(").append(result.getItem1()).append(")");
+                    int groupSize = orGroup.size();
+                    Pair<String, Map<String, Object>> result = build(uniqueIndex, orGroup, Logic.AND, groupSize == 1 ? identLevel : identLevel + 1);
+                    if (groupSize == 1) {
+                        sb.append(result.getItem1());
+                    } else {
+                        sb.append("(").append(result.getItem1()).append(")");
+                    }
                     params.putAll(result.getItem2());
                 }
             }

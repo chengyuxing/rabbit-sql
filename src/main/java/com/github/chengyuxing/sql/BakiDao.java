@@ -297,17 +297,13 @@ public class BakiDao extends JdbcSupport implements Baki {
         EntityManager.EntityMeta entityMeta = entityManager.getEntityMeta(clazz);
         return new Query<T, SELF>() {
             private final Set<String> selectColumns = new LinkedHashSet<>();
-
             private final List<Criteria> finalWhereCriteria = new ArrayList<>();
-
             private final Set<Pair<String, OrderByType>> finalOrderBy = new LinkedHashSet<>();
-
             private final Set<String> finalGroupByAggColumns = new LinkedHashSet<>();
             private final Set<String> finalGroupByColumns = new LinkedHashSet<>();
             private final List<Criteria> finalHavingCriteria = new ArrayList<>();
 
             private Triple<String, String, Map<String, Object>> createQuery() {
-
                 String select = selectColumns.isEmpty() ? entityMeta.getSelect() : entityMeta.getSelect(selectColumns);
                 String countSelect = entityMeta.getCountSelect();
 
@@ -391,9 +387,13 @@ public class BakiDao extends JdbcSupport implements Baki {
                         throw new IllegalStateException("group by clause must have at least one column");
                     }
                     Triple<String, String, Map<String, Object>> query = createQuery();
-                    String key = "@Entity:" + clazz.getName() + ":" + query.getItem1();
+                    String key = entityCallKey(clazz, query.getItem1());
                     return watchSql(key, query.getItem1(), query.getItem3(),
-                            () -> executeQueryStreamWithCache(key, query.getItem1(), query.getItem3()));
+                            () -> executeQueryStreamWithCache(
+                                    key,
+                                    query.getItem1(),
+                                    query.getItem3()
+                            ));
                 }
                 return createGroupBy().query();
             }
@@ -418,9 +418,9 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
 
             @Override
-            public <R, V> R collect(@NotNull Function<T, V> fun, @NotNull Collector<V, ?, R> collector) {
+            public <R, V> R collect(@NotNull Function<T, V> mapper, @NotNull Collector<V, ?, R> collector) {
                 try (Stream<T> s = toStream()) {
-                    return s.map(fun).collect(collector);
+                    return s.map(mapper).collect(collector);
                 }
             }
 
@@ -510,7 +510,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 }
                 query += where.getItem1();
                 final String existQuery = query;
-                String key = "@Entity:" + clazz.getName() + ":" + existQuery;
+                String key = entityCallKey(clazz, existQuery);
                 return watchSql(key, existQuery, where.getItem2(), () -> {
                     try (Stream<DataRow> s = executeQueryStream(existQuery, where.getItem2())) {
                         return s.findFirst().isPresent();
@@ -546,7 +546,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 }
                 final String countQuery = countSelect;
                 final Map<String, Object> myArgs = args;
-                String key = "@Entity:" + clazz.getName() + ":" + countQuery;
+                String key = entityCallKey(clazz, countQuery);
                 return watchSql(key, countQuery, myArgs, () -> {
                     try (Stream<DataRow> s = executeQueryStreamWithCache(key, countQuery, myArgs)) {
                         return s.findFirst()
@@ -557,9 +557,9 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
 
             @Override
-            public <R, V> R collectRow(@NotNull Function<DataRow, V> func, @NotNull Collector<V, ?, R> collector) {
+            public <R, V> R collectRow(@NotNull Function<DataRow, V> mapper, @NotNull Collector<V, ?, R> collector) {
                 try (Stream<DataRow> s = toRowStream()) {
-                    return s.map(func).collect(collector);
+                    return s.map(mapper).collect(collector);
                 }
             }
 
@@ -609,7 +609,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         @SuppressWarnings("unchecked") Class<T> clazz = (Class<T>) entity.getClass();
         String insert = entityManager.getEntityMeta(clazz).getInsert();
         Map<String, Object> data = Args.ofEntity(entity);
-        String key = "@Entity:" + clazz.getName();
+        String key = entityCallKey(clazz, insert);
         return watchSql(key, insert, data, () -> executeUpdate(insert, data));
     }
 
@@ -621,7 +621,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         List<Map<String, Object>> data = entities.stream()
                 .map(Args::ofEntity)
                 .collect(Collectors.toList());
-        String key = "@Entity:" + clazz.getName();
+        String key = entityCallKey(clazz, insert);
         return watchSql(key, insert, data, () -> executeBatchUpdate(insert, data, batchSize));
     }
 
@@ -646,7 +646,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 String whereById = "\nwhere " + idColumn + " = " + namedParamPrefix + idColumn;
                 Map<String, Object> data = Args.ofEntity(entity);
                 String update = ignoreNull ? dynamicUpdate(data, whereById) : entityMeta.getUpdate() + whereById;
-                String key = "@Entity:" + clazz.getName() + ":" + update;
+                String key = entityCallKey(clazz, update);
                 return watchSql(key, update, data, () -> executeUpdate(update, data));
             }
 
@@ -664,7 +664,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 String whereBy = whereClause.getItem1();
                 String update = ignoreNull ? dynamicUpdate(data, whereBy) : entityMeta.getUpdate() + whereBy;
                 data.putAll(whereClause.getItem2());
-                String key = "@Entity:" + clazz.getName() + ":" + update;
+                String key = entityCallKey(clazz, update);
                 return watchSql(key, update, data, () -> executeUpdate(update, data));
             }
         };
@@ -680,7 +680,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 String idColumn = entityMeta.getPrimaryKey();
                 String delete = entityMeta.getDelete() + "\nwhere " + idColumn + " = " + namedParamPrefix + idColumn;
                 Map<String, Object> data = Args.ofEntity(entity);
-                String key = "@Entity:" + clazz.getName() + ":" + delete;
+                String key = entityCallKey(clazz, delete);
                 return watchSql(key, delete, data, () -> executeUpdate(delete, data));
             }
 
@@ -696,7 +696,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 String delete = entityMeta.getDelete() + whereClause.getItem1();
                 Map<String, Object> data = Args.ofEntity(entity);
                 data.putAll(whereClause.getItem2());
-                String key = "@Entity:" + clazz.getName() + ":" + delete;
+                String key = entityCallKey(clazz, delete);
                 return watchSql(key, delete, data, () -> executeUpdate(delete, data));
             }
         };
@@ -929,7 +929,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         @Override
         protected Stream<DataRow> query() {
             Pair<String, Map<String, Object>> query = getQuerySql();
-            String key = "@Entity:" + clazz.getName() + ":" + query;
+            String key = entityCallKey(clazz, query.getItem1());
             return watchSql(key, query.getItem1(), query.getItem2(),
                     () -> executeQueryStreamWithCache(key, query.getItem1(), query.getItem2()));
         }
@@ -1105,6 +1105,10 @@ public class BakiDao extends JdbcSupport implements Baki {
                 }
             });
         }
+    }
+
+    protected String entityCallKey(Class<?> clazz, String sql) {
+        return "@" + clazz.getName() + ":" + sql;
     }
 
     /**

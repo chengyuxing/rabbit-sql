@@ -1,4 +1,4 @@
-package com.github.chengyuxing.sql.dsl.type;
+package com.github.chengyuxing.sql.dsl.types;
 
 import java.io.Serializable;
 

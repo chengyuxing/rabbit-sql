@@ -1,8 +1,8 @@
 package com.github.chengyuxing.sql.dsl.clause.condition;
 
 import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.sql.dsl.type.Logic;
-import com.github.chengyuxing.sql.dsl.type.StandardOperator;
+import com.github.chengyuxing.sql.dsl.types.Logic;
+import com.github.chengyuxing.sql.dsl.types.StandardOperator;
 
 import java.util.HashMap;
 import java.util.Map;

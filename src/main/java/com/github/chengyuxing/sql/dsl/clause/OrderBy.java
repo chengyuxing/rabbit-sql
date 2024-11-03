@@ -1,47 +1,101 @@
 package com.github.chengyuxing.sql.dsl.clause;
 
 import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.sql.dsl.type.FieldReference;
-import com.github.chengyuxing.sql.dsl.type.OrderByType;
+import com.github.chengyuxing.sql.dsl.types.FieldReference;
+import com.github.chengyuxing.sql.dsl.types.OrderByType;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 
+/**
+ * Order by clause.
+ *
+ * @param <T> entity type
+ */
 public abstract class OrderBy<T> extends ColumnHelper<T> {
     protected Set<Pair<String, OrderByType>> orders = new LinkedHashSet<>();
 
+    /**
+     * Construct a new Order by builder.
+     *
+     * @param clazz entity type
+     */
     public OrderBy(@NotNull Class<T> clazz) {
         super(clazz);
     }
 
+    /**
+     * Construct a new Order by builder with initial Order by builder.
+     *
+     * @param clazz entity class
+     * @param other order by builder
+     */
     public OrderBy(@NotNull Class<T> clazz, @NotNull OrderBy<T> other) {
         super(clazz);
         this.orders = other.orders;
     }
 
+    /**
+     * Order by.
+     *
+     * @param column column
+     * @param order  order by type
+     * @return order by builder
+     */
     public OrderBy<T> by(@NotNull String column, OrderByType order) {
         orders.add(Pair.of(column, order));
         return this;
     }
 
+    /**
+     * Order by.
+     *
+     * @param column column
+     * @param order  order by type
+     * @return order by builder
+     */
     public OrderBy<T> by(FieldReference<T> column, OrderByType order) {
         return by(getColumnName(column), order);
     }
 
+    /**
+     * {@code asc}
+     *
+     * @param column column
+     * @return order by builder
+     */
     public OrderBy<T> asc(@NotNull String column) {
         orders.add(Pair.of(column, OrderByType.ASC));
         return this;
     }
 
+    /**
+     * {@code asc}
+     *
+     * @param column column
+     * @return order by builder
+     */
     public OrderBy<T> asc(FieldReference<T> column) {
         return asc(getColumnName(column));
     }
 
+    /**
+     * {@code desc}
+     *
+     * @param column column
+     * @return order by builder
+     */
     public OrderBy<T> desc(@NotNull String column) {
         orders.add(Pair.of(column, OrderByType.DESC));
         return this;
     }
 
+    /**
+     * {@code desc}
+     *
+     * @param column column
+     * @return order by builder
+     */
     public OrderBy<T> desc(FieldReference<T> column) {
         return desc(getColumnName(column));
     }

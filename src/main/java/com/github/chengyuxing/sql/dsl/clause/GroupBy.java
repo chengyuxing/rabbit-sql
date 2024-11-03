@@ -2,23 +2,39 @@ package com.github.chengyuxing.sql.dsl.clause;
 
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.dsl.clause.condition.Criteria;
-import com.github.chengyuxing.sql.dsl.type.FieldReference;
-import com.github.chengyuxing.sql.dsl.type.StandardAggFunction;
+import com.github.chengyuxing.sql.dsl.types.FieldReference;
+import com.github.chengyuxing.sql.dsl.types.StandardAggFunction;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+/**
+ * Group by clause.
+ *
+ * @param <T> entity type
+ */
 public abstract class GroupBy<T> extends ColumnHelper<T> {
     protected Set<String> aggColumns = new LinkedHashSet<>();
     protected Set<String> groupColumns = new LinkedHashSet<>();
     protected List<Criteria> havingCriteria = new ArrayList<>();
 
+    /**
+     * Construct a new Group by builder with initial Group by builder.
+     *
+     * @param clazz entity class
+     */
     protected GroupBy(@NotNull Class<T> clazz) {
         super(clazz);
     }
 
+    /**
+     * Construct a new Group by builder with initial Group by builder.
+     *
+     * @param clazz entity class
+     * @param other group by builder
+     */
     protected GroupBy(@NotNull Class<T> clazz, @NotNull GroupBy<T> other) {
         super(clazz);
         this.aggColumns = other.aggColumns;
@@ -26,36 +42,73 @@ public abstract class GroupBy<T> extends ColumnHelper<T> {
         this.havingCriteria = other.havingCriteria;
     }
 
+    /**
+     * {@code count(*)}
+     *
+     * @return group by builder
+     */
     public GroupBy<T> count() {
         addAggColumn(StandardAggFunction.COUNT, "*");
         return this;
     }
 
+    /**
+     * {@code count([column])}
+     *
+     * @return group by builder
+     */
     public GroupBy<T> count(FieldReference<T> fieldReference) {
         addAggColumn(StandardAggFunction.COUNT, getColumnName(fieldReference));
         return this;
     }
 
+    /**
+     * {@code sum([column])}
+     *
+     * @return group by builder
+     */
     public GroupBy<T> sum(FieldReference<T> fieldReference) {
         addAggColumn(StandardAggFunction.SUM, getColumnName(fieldReference));
         return this;
     }
 
+    /**
+     * {@code max([column])}
+     *
+     * @return group by builder
+     */
     public GroupBy<T> max(FieldReference<T> fieldReference) {
         addAggColumn(StandardAggFunction.MAX, getColumnName(fieldReference));
         return this;
     }
 
+    /**
+     * {@code min([column])}
+     *
+     * @return group by builder
+     */
     public GroupBy<T> min(FieldReference<T> fieldReference) {
         addAggColumn(StandardAggFunction.MIN, getColumnName(fieldReference));
         return this;
     }
 
+    /**
+     * {@code avg([column])}
+     *
+     * @return group by builder
+     */
     public GroupBy<T> avg(FieldReference<T> fieldReference) {
         addAggColumn(StandardAggFunction.AVG, getColumnName(fieldReference));
         return this;
     }
 
+    /**
+     * group by columns.
+     *
+     * @param column column
+     * @param more   more column
+     * @return group by builder
+     */
     @SafeVarargs
     public final GroupBy<T> by(FieldReference<T> column, FieldReference<T>... more) {
         addSelectColumn(getColumnName(column));
@@ -65,6 +118,12 @@ public abstract class GroupBy<T> extends ColumnHelper<T> {
         return this;
     }
 
+    /**
+     * Providers a Having instance to built having clause.
+     *
+     * @param having having instance
+     * @return group by builder
+     */
     public abstract GroupBy<T> having(Function<Having<T>, Having<T>> having);
 
     // It does not return an entity, by default agg columns will be into the query result.

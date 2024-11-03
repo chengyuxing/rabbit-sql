@@ -1,7 +1,7 @@
 package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.utils.ReflectUtil;
-import com.github.chengyuxing.sql.dsl.type.StandardOperator;
+import com.github.chengyuxing.sql.dsl.types.StandardOperator;
 
 import javax.persistence.*;
 import java.lang.reflect.Field;
@@ -10,6 +10,15 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Entity manager.
+ *
+ * @see Entity @Entity
+ * @see Table @Table
+ * @see Id @Id
+ * @see Column @Column
+ * @see Transient @Transient
+ */
 public class EntityManager implements AutoCloseable {
     private final Map<Class<?>, EntityMeta> classInformation = new ConcurrentHashMap<>();
     private final char namedParamPrefix;

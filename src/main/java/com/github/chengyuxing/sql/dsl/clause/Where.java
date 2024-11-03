@@ -2,9 +2,9 @@ package com.github.chengyuxing.sql.dsl.clause;
 
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.sql.dsl.clause.condition.*;
-import com.github.chengyuxing.sql.dsl.type.FieldReference;
-import com.github.chengyuxing.sql.dsl.type.Logic;
-import com.github.chengyuxing.sql.dsl.type.Operator;
+import com.github.chengyuxing.sql.dsl.types.FieldReference;
+import com.github.chengyuxing.sql.dsl.types.Logic;
+import com.github.chengyuxing.sql.dsl.types.Operator;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
@@ -16,7 +16,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import static com.github.chengyuxing.sql.dsl.type.StandardOperator.*;
+import static com.github.chengyuxing.sql.dsl.types.StandardOperator.*;
 
 /**
  * Where clause builder.
@@ -36,7 +36,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
     }
 
     /**
-     * Construct a new Where builder with initial where builder.
+     * Construct a new Where builder with initial Where builder.
      *
      * @param clazz entity class
      * @param other where builder
@@ -47,7 +47,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
     }
 
     /**
-     * Returns a new where builder.
+     * Returns a new Where builder.
      *
      * @return where builder
      */
@@ -57,7 +57,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
      * Add a condition.
      *
      * @param column     column
-     * @param operator   {@link com.github.chengyuxing.sql.dsl.type.StandardOperator StandardOperator} or other trusted operator
+     * @param operator   {@link com.github.chengyuxing.sql.dsl.types.StandardOperator StandardOperator} or other trusted operator
      * @param value      value
      * @param predicates all predicates to the true add the condition otherwise avoid the condition.
      * @param <E>        value type
@@ -393,7 +393,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
      *          )
      * </pre></blockquote>
      *
-     * @param orGroup or group
+     * @param orGroup and group
      * @return where builder
      * @see #or(Function)
      */
@@ -415,7 +415,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
      *       .eq(Guest::getName, "cyx")
      * </pre></blockquote>
      *
-     * @param andGroup and group
+     * @param andGroup or group
      * @return where builder
      * @see #and(Function)
      */

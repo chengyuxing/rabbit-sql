@@ -97,14 +97,6 @@ public abstract class QueryExecutor {
     public abstract <T> List<T> entities(Class<T> entityClass);
 
     /**
-     * Convert result row to column.
-     *
-     * @return column structured data
-     * @see DataRow#zip(Collection)
-     */
-    public abstract @NotNull DataRow zip();
-
-    /**
      * Convert state to page query.
      * <p>If built-in paged sql not enough, such as postgresql's view query:</p>
      * <blockquote>
@@ -165,11 +157,4 @@ public abstract class QueryExecutor {
      * @return 1st optional row
      */
     public abstract Optional<DataRow> findFirst();
-
-    /**
-     * Check query result exists or not.
-     *
-     * @return true if exists or false
-     */
-    public abstract boolean exists();
 }

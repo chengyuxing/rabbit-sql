@@ -1,8 +1,8 @@
 package com.github.chengyuxing.sql.dsl.clause;
 
-import com.github.chengyuxing.sql.dsl.type.FieldReference;
-import com.github.chengyuxing.sql.dsl.type.Operator;
-import com.github.chengyuxing.sql.dsl.type.StandardOperator;
+import com.github.chengyuxing.sql.dsl.types.FieldReference;
+import com.github.chengyuxing.sql.dsl.types.Operator;
+import com.github.chengyuxing.sql.dsl.types.StandardOperator;
 import com.github.chengyuxing.sql.utils.EntityUtil;
 import org.jetbrains.annotations.NotNull;
 

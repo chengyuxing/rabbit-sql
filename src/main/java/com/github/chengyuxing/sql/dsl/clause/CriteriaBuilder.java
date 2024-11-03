@@ -3,7 +3,7 @@ package com.github.chengyuxing.sql.dsl.clause;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.dsl.clause.condition.*;
-import com.github.chengyuxing.sql.dsl.type.Logic;
+import com.github.chengyuxing.sql.dsl.types.Logic;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
@@ -11,8 +11,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.github.chengyuxing.sql.dsl.type.StandardOperator.IS_NOT_NULL;
-import static com.github.chengyuxing.sql.dsl.type.StandardOperator.IS_NULL;
+import static com.github.chengyuxing.sql.dsl.types.StandardOperator.IS_NOT_NULL;
+import static com.github.chengyuxing.sql.dsl.types.StandardOperator.IS_NULL;
 
 public abstract class CriteriaBuilder<T> extends ColumnHelper<T> {
     protected CriteriaBuilder(@NotNull Class<T> clazz) {

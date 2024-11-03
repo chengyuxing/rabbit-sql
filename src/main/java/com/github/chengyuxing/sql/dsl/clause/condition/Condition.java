@@ -1,6 +1,6 @@
 package com.github.chengyuxing.sql.dsl.clause.condition;
 
-import com.github.chengyuxing.sql.dsl.type.Operator;
+import com.github.chengyuxing.sql.dsl.types.Operator;
 
 public class Condition<T> implements Criteria {
     protected final String column;

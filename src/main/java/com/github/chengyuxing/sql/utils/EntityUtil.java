@@ -1,7 +1,7 @@
 package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.utils.ObjectUtil;
-import com.github.chengyuxing.sql.dsl.type.FieldReference;
+import com.github.chengyuxing.sql.dsl.types.FieldReference;
 
 import javax.persistence.Column;
 import java.beans.Introspector;

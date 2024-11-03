@@ -2,7 +2,7 @@ package com.github.chengyuxing.sql.dsl.clause.condition;
 
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.ObjectUtil;
-import com.github.chengyuxing.sql.dsl.type.StandardOperator;
+import com.github.chengyuxing.sql.dsl.types.StandardOperator;
 
 import java.util.Collection;
 import java.util.HashMap;

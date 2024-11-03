@@ -1,6 +1,7 @@
 package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.sql.page.PageHelper;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.List;
@@ -28,7 +29,7 @@ public final class PagedResource<T> {
      * @param <T>   data type
      * @return PagedResource instance
      */
-    public static <T> PagedResource<T> of(PageHelper pager, List<T> data) {
+    public static <T> PagedResource<T> of(@NotNull PageHelper pager, List<T> data) {
         return new PagedResource<>(pager, data);
     }
 

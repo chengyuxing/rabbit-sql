@@ -2,6 +2,7 @@ package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.sql.dsl.types.StandardOperator;
+import org.jetbrains.annotations.NotNull;
 
 import javax.persistence.*;
 import java.lang.reflect.Field;
@@ -30,18 +31,18 @@ public class EntityManager implements AutoCloseable {
         this.namedParamPrefix = namedParamPrefix;
     }
 
-    public <T> EntityMeta getEntityMeta(Class<T> clazz) {
+    public <T> EntityMeta getEntityMeta(@NotNull Class<T> clazz) {
         if (!clazz.isAnnotationPresent(Entity.class)) {
             throw new IllegalStateException(clazz.getName() + " must be annotated with @" + Entity.class.getSimpleName());
         }
         return classInformation.computeIfAbsent(clazz, c -> new EntityMeta(namedParamPrefix, checkTableName(c), checkColumns(c)));
     }
 
-    public String getTableName(Class<?> clazz) {
+    public String getTableName(@NotNull Class<?> clazz) {
         return getEntityMeta(clazz).getTableName();
     }
 
-    public Map<String, ColumnMeta> getColumns(Class<?> clazz) {
+    public Map<String, ColumnMeta> getColumns(@NotNull Class<?> clazz) {
         return getEntityMeta(clazz).getColumns();
     }
 

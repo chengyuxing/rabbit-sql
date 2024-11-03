@@ -11,6 +11,7 @@ import com.github.chengyuxing.sql.plugins.SqlInvokeHandler;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.annotation.Type;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
@@ -33,7 +34,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
 
     private final ClassLoader classLoader = this.getClass().getClassLoader();
 
-    protected abstract BakiDao baki();
+    protected abstract @NotNull BakiDao baki();
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {

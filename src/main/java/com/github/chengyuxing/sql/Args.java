@@ -3,6 +3,7 @@ package com.github.chengyuxing.sql;
 import com.github.chengyuxing.common.MapExtends;
 import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.sql.utils.EntityUtil;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -75,7 +76,7 @@ public final class Args<V> extends HashMap<String, V> implements MapExtends<Args
      * @return entity
      */
     @SuppressWarnings("unchecked")
-    public <E> E toEntity(Class<E> entityClass) {
+    public <E> E toEntity(@NotNull Class<E> entityClass) {
         return EntityUtil.mapToEntity((Map<String, Object>) this, entityClass);
     }
 }

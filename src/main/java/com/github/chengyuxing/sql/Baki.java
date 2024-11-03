@@ -12,7 +12,18 @@ import java.util.function.Function;
 
 /**
  * Basic database access interface
- * work perfectly with <a href="https://plugins.jetbrains.com/plugin/21403-rabbit-sql">Rabbit-SQL IDEA Plugin</a>.
+ * work perfectly with <a href="https://plugins.jetbrains.com/plugin/21403-rabbit-sql">Rabbit-SQL IDEA Plugin</a>,
+ * Features:
+ * <ul>
+ *     <li>Native sql execute.</li>
+ *     <li>Basic single entity CRUD depends on JPA.<br>
+ *     Implemented annotations: {@link javax.persistence.Entity @Entity}
+ *     {@link javax.persistence.Table @Table}
+ *     {@link javax.persistence.Id @Id}
+ *     {@link javax.persistence.Column @Column}
+ *     {@link javax.persistence.Transient @Transient}
+ *     </li>
+ * </ul>
  */
 public interface Baki {
     /**

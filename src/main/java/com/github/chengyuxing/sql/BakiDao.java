@@ -11,8 +11,8 @@ import com.github.chengyuxing.sql.dsl.clause.Having;
 import com.github.chengyuxing.sql.dsl.clause.OrderBy;
 import com.github.chengyuxing.sql.dsl.clause.Where;
 import com.github.chengyuxing.sql.dsl.clause.condition.Criteria;
-import com.github.chengyuxing.sql.dsl.type.FieldReference;
-import com.github.chengyuxing.sql.dsl.type.OrderByType;
+import com.github.chengyuxing.sql.dsl.types.FieldReference;
+import com.github.chengyuxing.sql.dsl.types.OrderByType;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
 import com.github.chengyuxing.sql.exceptions.IllegalSqlException;
 import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
@@ -179,7 +179,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param args args
      * @return query result
      */
-    protected Stream<DataRow> executeQueryStreamWithCache(String key, String sql, Map<String, Object> args) {
+    public Stream<DataRow> executeQueryStream(final String key, final String sql, Map<String, Object> args) {
         if (Objects.isNull(queryCacheManager) || !queryCacheManager.isAvailable(key, args)) {
             return executeQueryStream(sql, args);
         }
@@ -210,7 +210,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         return new QueryExecutor(sql) {
             @Override
             public Stream<DataRow> stream() {
-                return watchSql(sql, sql, args, () -> executeQueryStreamWithCache(sql, sql, args));
+                return watchSql(sql, sql, args, () -> executeQueryStream(sql, sql, args));
             }
 
             @Override
@@ -232,11 +232,6 @@ public class BakiDao extends JdbcSupport implements Baki {
                 try (Stream<DataRow> s = stream()) {
                     return s.map(d -> EntityUtil.mapToEntity(d, entityClass)).collect(Collectors.toList());
                 }
-            }
-
-            @Override
-            public @NotNull DataRow zip() {
-                return DataRow.zip(rows());
             }
 
             @Override
@@ -283,11 +278,6 @@ public class BakiDao extends JdbcSupport implements Baki {
                 try (Stream<DataRow> s = stream()) {
                     return s.findFirst();
                 }
-            }
-
-            @Override
-            public boolean exists() {
-                return findFirst().isPresent();
             }
         };
     }
@@ -389,7 +379,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                     Triple<String, String, Map<String, Object>> query = createQuery();
                     String key = entityCallKey(clazz, query.getItem1());
                     return watchSql(key, query.getItem1(), query.getItem3(),
-                            () -> executeQueryStreamWithCache(
+                            () -> executeQueryStream(
                                     key,
                                     query.getItem1(),
                                     query.getItem3()
@@ -515,7 +505,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 final String existQuery = query;
                 String key = entityCallKey(clazz, existQuery);
                 return watchSql(key, existQuery, where.getItem2(), () -> {
-                    try (Stream<DataRow> s = executeQueryStream(existQuery, where.getItem2())) {
+                    try (Stream<DataRow> s = executeQueryStream(key, existQuery, where.getItem2())) {
                         return s.findFirst().isPresent();
                     }
                 });
@@ -551,7 +541,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 final Map<String, Object> myArgs = args;
                 String key = entityCallKey(clazz, countQuery);
                 return watchSql(key, countQuery, myArgs, () -> {
-                    try (Stream<DataRow> s = executeQueryStreamWithCache(key, countQuery, myArgs)) {
+                    try (Stream<DataRow> s = executeQueryStream(key, countQuery, myArgs)) {
                         return s.findFirst()
                                 .map(d -> d.getLong(0))
                                 .orElse(0L);
@@ -934,7 +924,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             Pair<String, Map<String, Object>> query = getQuerySql();
             String key = entityCallKey(clazz, query.getItem1());
             return watchSql(key, query.getItem1(), query.getItem2(),
-                    () -> executeQueryStreamWithCache(key, query.getItem1(), query.getItem2()));
+                    () -> executeQueryStream(key, query.getItem1(), query.getItem2()));
         }
 
         @Override
@@ -1074,7 +1064,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             if (count == null) {
                 String cq = countQuery == null ? sqlGenerator.generateCountQuery(query) : countQuery;
                 count = watchSql(recordQuery, cq, myArgs, () -> {
-                    try (Stream<DataRow> s = executeQueryStreamWithCache(recordQuery, cq, myArgs)) {
+                    try (Stream<DataRow> s = executeQueryStream(recordQuery, cq, myArgs)) {
                         return s.findFirst()
                                 .map(d -> d.getInt(0))
                                 .orElse(0);
@@ -1100,7 +1090,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             String executeQuery = disablePageSql ? query : pageHelper.pagedSql(query);
             final PageHelper finalPageHelper = pageHelper;
             return watchSql(recordQuery, executeQuery, myArgs, () -> {
-                try (Stream<DataRow> s = executeQueryStreamWithCache(recordQuery, executeQuery, myArgs)) {
+                try (Stream<DataRow> s = executeQueryStream(recordQuery, executeQuery, myArgs)) {
                     List<T> list = s.peek(d -> d.remove(PageHelper.ROW_NUM_KEY))
                             .map(mapper)
                             .collect(Collectors.toList());

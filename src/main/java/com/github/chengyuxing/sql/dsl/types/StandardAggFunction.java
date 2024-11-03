@@ -1,4 +1,4 @@
-package com.github.chengyuxing.sql.dsl.type;
+package com.github.chengyuxing.sql.dsl.types;
 
 public enum StandardAggFunction implements StoreFunction {
     COUNT("count"),

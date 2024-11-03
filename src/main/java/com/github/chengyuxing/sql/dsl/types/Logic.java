@@ -1,4 +1,4 @@
-package com.github.chengyuxing.sql.dsl.type;
+package com.github.chengyuxing.sql.dsl.types;
 
 public enum Logic implements Operator {
     AND("and"),

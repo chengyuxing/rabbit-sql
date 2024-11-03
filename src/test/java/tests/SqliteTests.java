@@ -77,8 +77,8 @@ public class SqliteTests {
 
     @Test
     public void test35() {
-        baki.update("test.user", "id = :id")
-                .save(DataRow.of("id", 10, "name", "cyx"));
+//        baki.update("test.user", "id = :id")
+//                .save(DataRow.of("id", 10, "name", "cyx"));
 
         Args<Object> args = Args.of("dt", "2022-1-2");
         args.updateKey("dt", "date");

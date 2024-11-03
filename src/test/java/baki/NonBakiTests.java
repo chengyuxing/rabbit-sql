@@ -15,11 +15,18 @@ import com.github.chengyuxing.sql.XQLFileManagerConfig;
 import com.github.chengyuxing.sql.annotation.XQLMapper;
 import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
+import com.github.chengyuxing.sql.dsl.clause.Where;
+import com.github.chengyuxing.sql.utils.EntityUtil;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.utils.SqlHighlighter;
 import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
+import tests.User;
 
+import java.beans.IntrospectionException;
+import java.beans.Introspector;
+import java.beans.PropertyDescriptor;
+import java.lang.reflect.Field;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
@@ -27,6 +34,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -316,5 +324,49 @@ public class NonBakiTests {
     public void testRR() {
         PagedResource<DataRow> resource = PagedResource.empty();
         System.out.println(resource);
+    }
+
+    @Test
+    public void testEn() {
+//        new Where<>()
+//                .eq("unique_id", 901, Objects::nonNull)
+//                .lt("age", 21)
+//                .startsWith("name", "cyx")
+//                .in("id", 1, 2, 3, 4, 5, 6)
+//                .between("date", LocalDateTime.now(), LocalDateTime.now().plusDays(1))
+//                .peek((sql, args) -> {
+//                    System.out.println(sql);
+//                    System.out.println(args);
+//                })
+////                .and(new Where<>().eq("name", "cyx").lt("age", 21))
+////                .peek(sql -> System.out.println(sql))
+//                .or(new Where<>().eq("name", "cyx").lt("age", 21).and(new Where<>().eq("address", "kunming").eq("email", "cyx")))
+////                .peek(sql -> System.out.println(sql))
+//                .or(new Where<>())
+////                .or(Where.of().eq("id", 1).eq("id", 2).lt("age", 2))
+////                .or(Where.of().eq("id", 89))
+//                .peek((sql, params) -> {
+//                    System.out.println(sql);
+//                    System.out.println(params);
+//                })
+//        ;
+
+    }
+
+    @Test
+    public void testBean() throws IntrospectionException {
+        PropertyDescriptor[] descriptors = Introspector.getBeanInfo(User.class).getPropertyDescriptors();
+        for (PropertyDescriptor descriptor : descriptors) {
+            System.out.println(descriptor.getName());
+        }
+        System.out.println("----");
+        for (Field field : User.class.getDeclaredFields()) {
+            System.out.println(field.getName());
+        }
+    }
+
+    @Test
+    public void testLambda() {
+//        System.out.println(EntityUtil.getFieldName(User::getName));
     }
 }

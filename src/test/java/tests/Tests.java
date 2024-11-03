@@ -318,8 +318,7 @@ public class Tests {
 
         SqlGenerator sqlGenerator = new SqlGenerator(':');
 
-        System.out.println(sqlGenerator.filterKeys(map, Arrays.asList("a", "b", "c")));
-        System.out.println(sqlGenerator.generateNamedParamInsert("test.t", map, Arrays.asList("a", "b", "c"), true));
+//        System.out.println(sqlGenerator.filterKeys(map, Arrays.asList("a", "b", "c")));
 
     }
 

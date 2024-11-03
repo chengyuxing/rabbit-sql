@@ -4,9 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.*;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
-import com.github.chengyuxing.sql.types.IOutParam;
+import com.github.chengyuxing.sql.types.OutParamType;
 import com.github.chengyuxing.sql.transaction.Tx;
-import com.github.chengyuxing.sql.types.OUTParamType;
+import com.github.chengyuxing.sql.types.StandardOutParamType;
 import com.github.chengyuxing.sql.types.Param;
 import com.zaxxer.hikari.HikariDataSource;
 import func.FCondition;
@@ -169,10 +169,10 @@ public class MyTest {
                 .add("tm", "23时55分13秒")
                 .add("strs", Arrays.asList("1", "2", "3", "4"))
                 .add("bak", "ccc");
-        baki.insert("test.tb").safe().save(args);
-        baki.insert("test.tb")
-                .safe()
-                .save(DataRow.of("ts", "2022-12-23 11:22:23", "tm", new Date(), "aaa", "bbb"));
+//        baki.insert("test.tb").safe().save(args);
+//        baki.insert("test.tb")
+//                .safe()
+//                .save(DataRow.of("ts", "2022-12-23 11:22:23", "tm", new Date(), "aaa", "bbb"));
     }
 
     @Test
@@ -181,12 +181,12 @@ public class MyTest {
         Me me = new Me();
         me.setAge(25);
         me.setName("entity");
-        baki.insert("test.tb").save(DataRow.of("jsb", me));
+//        baki.insert("test.tb").save(DataRow.of("jsb", me));
     }
 
     @Test
     public void insertFile() throws IOException {
-        baki.insert("test.tb").save(DataRow.of("blob", Files.newInputStream(Paths.get("/Users/chengyuxing/Downloads/Bob.app.zip"))));
+//        baki.insert("test.tb").save(DataRow.of("blob", Files.newInputStream(Paths.get("/Users/chengyuxing/Downloads/Bob.app.zip"))));
     }
 
 
@@ -204,8 +204,8 @@ public class MyTest {
         List<Map<String, Object>> list = new ArrayList<>();
         list.add(DataRow.of("id", 23, "name", "昆明西山万达广场"));
         list.add(DataRow.of("id", 24, "name", "南亚风情园"));
-        int i = baki.update("test.region", "id = :id").save(list);
-        System.out.println(i);
+//        int i = baki.update("test.region", "id = :id").save(list);
+//        System.out.println(i);
     }
 
     @Test
@@ -316,8 +316,8 @@ public class MyTest {
         map.put("productplace", "bbb");
         map.put("price", 1000);
 
-        int i = baki.insert("test.fruit").save(map);
-        System.out.println(i);
+//        int i = baki.insert("test.fruit").save(map);
+//        System.out.println(i);
     }
 
     @Test
@@ -415,7 +415,7 @@ public class MyTest {
     @Test
     public void testCallFunc() throws Exception {
 //        int res = (int) baki.call("{:res = call test.slow_query(:a,:b)}",
-//                        Args.of("RES", Param.OUT(OUTParamType.INTEGER))
+//                        Args.of("RES", Param.OUT(StandardOutParamType.INTEGER))
 //                                .add("a", Param.IN(13))
 //                                .add("b", Param.IN(192)))
 //                .getFirst();
@@ -425,7 +425,7 @@ public class MyTest {
     @Test
     public void testCall() throws Exception {
 //        Tx.using(() -> baki.call("{:res = call test.fun_query()}",
-//                        Args.of("res", Param.OUT(OUTParamType.REF_CURSOR)))
+//                        Args.of("res", Param.OUT(StandardOutParamType.REF_CURSOR)))
 //                .<List<DataRow>>getFirstAs()
 //                .forEach(System.out::println));
     }
@@ -433,7 +433,7 @@ public class MyTest {
     @Test
     public void testCall2() throws Exception {
 //        baki.call(":num = call test.get_grade(:id)",
-//                        Args.of("num", Param.OUT(OUTParamType.INTEGER))
+//                        Args.of("num", Param.OUT(StandardOutParamType.INTEGER))
 //                                .add("id", Param.IN(5)))
 //                .getOptional("num")
 //                .ifPresent(System.out::println);
@@ -442,7 +442,7 @@ public class MyTest {
     @Test
     public void testCall3() throws Exception {
 //        DataRow row = baki.call("{:res = call test.mvn_dependency_query(:keywords)}",
-//                Args.of("res", Param.OUT(OUTParamType.OTHER))
+//                Args.of("res", Param.OUT(StandardOutParamType.OTHER))
 //                        .add("keywords", Param.IN("chengyuxing")));
 //        System.out.println(row);
     }
@@ -453,7 +453,7 @@ public class MyTest {
             baki.query("select current_timestamp, version()")
                     .findFirst()
                     .ifPresent(System.out::println);
-            baki.insert("test.history").save(DataRow.of("userid", UUID.randomUUID(), "words", "transactional"));
+//            baki.insert("test.history").save(DataRow.of("userid", UUID.randomUUID(), "words", "transactional"));
         });
     }
 
@@ -482,9 +482,9 @@ public class MyTest {
     public void multi_res_function() throws Exception {
         Tx.using(() -> {
             Map<String, Param> paramMap = new HashMap<>();
-            paramMap.put("success", Param.OUT(OUTParamType.BOOLEAN));
-            paramMap.put("res", Param.OUT(OUTParamType.REF_CURSOR));
-            paramMap.put("msg", Param.OUT(OUTParamType.VARCHAR));
+            paramMap.put("success", Param.OUT(StandardOutParamType.BOOLEAN));
+            paramMap.put("res", Param.OUT(StandardOutParamType.REF_CURSOR));
+            paramMap.put("msg", Param.OUT(StandardOutParamType.VARCHAR));
             DataRow row = baki.of("call test.multi_res(12, :success, :res, :msg)")
                     .call(paramMap);
             System.out.println(row);
@@ -505,7 +505,7 @@ public class MyTest {
 
     @Test
     public void callTest() throws Exception {
-        class TIME implements IOutParam {
+        class TIME implements OutParamType {
 
             @Override
             public int typeNumber() {
@@ -517,10 +517,10 @@ public class MyTest {
             }
         }
         Map<String, Param> params = new HashMap<>();
-        params.put("dt", Param.OUT(OUTParamType.TIMESTAMP));
+        params.put("dt", Param.OUT(StandardOutParamType.TIMESTAMP));
         params.put("a", Param.IN(11));
         params.put("b", Param.IN(22));
-        params.put("sum", Param.OUT(OUTParamType.INTEGER));
+        params.put("sum", Param.OUT(StandardOutParamType.INTEGER));
         params.put("tm", Param.OUT(new TIME()));
         DataRow row = baki.of("{call test.fun_now(:a, :b, :sum, :dt, :tm)}").call(params);
         Timestamp dt = row.getAs("dt");
@@ -552,7 +552,7 @@ public class MyTest {
 
     @Test
     public void TestDelete() throws SQLException {
-//        int i = baki.delete("test.history", Condition.where(Filter.eq("userid", "13766f06-119d-463d-9a94-8350ea172c87")));
+//        int i = baki.delete("test.history", Where.where(Filter.eq("userid", "13766f06-119d-463d-9a94-8350ea172c87")));
 //        System.out.println(i);
     }
 
@@ -560,7 +560,7 @@ public class MyTest {
     public void testUpdate() throws SQLException {
 //        int i = baki.update("test.user t",
 //                Args.create().add("name", Param.IN("SQLFileManager")),
-//                Condition.where(Filter.eq("id", 5)));
+//                Where.where(Filter.eq("id", 5)));
 //        System.out.println(i);
     }
 
@@ -574,7 +574,7 @@ public class MyTest {
 
     @Test
     public void ConditionTest() {
-//        ICondition conditions = Condition.where(Filter.eq("id", 25))
+//        ICondition conditions = Where.where(Filter.eq("id", 25))
 //                .and(Filter.isNotNull("name"))
 //                .or(Filter.eq("id", 88))
 //                .or(Filter.notLike("name", "%admin"));

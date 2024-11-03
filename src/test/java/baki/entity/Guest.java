@@ -1,13 +1,19 @@
 package baki.entity;
 
-import java.util.Arrays;
+import javax.persistence.*;
 
+@Entity
+@Table(schema = "test")
 public class Guest {
+    @Id
     private Integer id;
     private String name;
     private Integer age;
     private String address;
-    private byte[] photo;
+
+    @Transient
+    @Column(name = "count_all")
+    private Integer count;
 
     @Override
     public String toString() {
@@ -16,7 +22,7 @@ public class Guest {
                 ", name='" + name + '\'' +
                 ", age=" + age +
                 ", address='" + address + '\'' +
-                ", photo=" + Arrays.toString(photo) +
+                ", count=" + count +
                 '}';
     }
 
@@ -52,11 +58,11 @@ public class Guest {
         this.address = address;
     }
 
-    public byte[] getPhoto() {
-        return photo;
+    public Integer getCount() {
+        return count;
     }
 
-    public void setPhoto(byte[] photo) {
-        this.photo = photo;
+    public void setCount(Integer count) {
+        this.count = count;
     }
 }

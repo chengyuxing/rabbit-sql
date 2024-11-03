@@ -1,16 +1,20 @@
 package baki.entity;
 
-import com.github.chengyuxing.common.anno.Alias;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
-@Alias("test.user")
+@Entity
+@Table(schema = "test")
 public class AnotherUser {
-    @Alias("id")
+    @Id
     private Integer userId;
-    @Alias("name")
+    @Column(name = "name")
     private String xm;
-    @Alias("address")
+    @Column(name = "address")
     private String xxdz;
-    @Alias("age")
+    @Column(name = "age")
     private Integer nl;
 
     @Override

@@ -34,9 +34,4 @@ public interface HomeMapper {
 
     Guest queryOneGuest();
 
-    @Insert("test.guest")
-    int addGuest(Guest guest);
-
-    @Update(value = "test.guest", where = "id = :id")
-    int updateGuestById(Guest guest);
 }

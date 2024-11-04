@@ -386,9 +386,9 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
      * </pre></blockquote>
      * The built struct:
      * <blockquote><pre>
-     * w -> w.and(o -> o.or(a -> a.eq(Guest::getName, "cyx")
+     * w -&gt; w.and(o -&gt; o.or(a -&gt; a.eq(Guest::getName, "cyx")
      *                          .eq(Guest::getAge, 30))
-     *                  .or(r -> r.eq(Guest::getName, "jack")
+     *                  .or(r -&gt; r.eq(Guest::getName, "jack")
      *                          .eq(Guest::getAge, 60))
      *          )
      * </pre></blockquote>
@@ -410,10 +410,10 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
      * Or group, all condition will be concat with {@code and}, {@code or (...and...ang...and...)}<br>
      * E.g. simple nest condition:
      * <blockquote><pre>
-     * {@code (age < 15 or age > 60) and name = 'cyx'}
+     * {@code (age &lt; 15 or age &gt; 60) and name = 'cyx'}
      * </pre></blockquote>
      * <blockquote><pre>
-     * w -> w.and(o -> o.lt(Guest::getAge, 15)
+     * w -&gt; w.and(o -&gt; o.lt(Guest::getAge, 15)
      *               .gt(Guest::getAge, 60))
      *       .eq(Guest::getName, "cyx")
      * </pre></blockquote>

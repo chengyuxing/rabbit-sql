@@ -36,19 +36,19 @@ public interface Query<T, SELF extends Query<T, SELF>> {
      * and {@link Where#or(Function, boolean...)} .</p>
      * SQL:
      * <blockquote><pre>
-     * where id > 5 and id < 10 or id in (17, 18, 19)
+     * where id &gt; 5 and id &lt; 10 or id in (17, 18, 19)
      * </pre></blockquote>
      * Flatten:
      * <blockquote><pre>
-     * .where(g -> g.gt(Guest::getId, 5))
-     * .where(g -> g.lt(Guest::getId, 10))
-     * .where(g -> g.or(o -> o.in(Guest::getId, Arrays.asList(17, 18, 19))))
+     * .where(g -&gt; g.gt(Guest::getId, 5))
+     * .where(g -&gt; g.lt(Guest::getId, 10))
+     * .where(g -&gt; g.or(o -&gt; o.in(Guest::getId, Arrays.asList(17, 18, 19))))
      * </pre></blockquote>
      * Nested:
      * <blockquote><pre>
-     * .where(g -> g.gt(Guest::getId, 5)
+     * .where(g -&gt; g.gt(Guest::getId, 5)
      *             .lt(Guest::getId, 10)
-     *             .or(o -> o.in(Guest::getId, Arrays.asList(17, 18, 19))))
+     *             .or(o -&gt; o.in(Guest::getId, Arrays.asList(17, 18, 19))))
      * </pre></blockquote>
      *
      * @param where where builder
@@ -67,15 +67,15 @@ public interface Query<T, SELF extends Query<T, SELF>> {
      *        avg(age) as avg_age
      * from ...
      * group by age
-     * having count(*) > 1
+     * having count(*) &gt; 1
      * </pre></blockquote>
      * Group by builder:
      * <blockquote><pre>
-     * .groupBy(g -> g.count()
+     * .groupBy(g -&gt; g.count()
      *         .max(Guest::getAge)
      *         .avg(Guest::getAge)
      *         .by(Guest::getAge)
-     *         .having(h -> h.count(StandardOperator.GT, 1))
+     *         .having(h -&gt; h.count(StandardOperator.GT, 1))
      * )
      * </pre></blockquote>
      *

@@ -66,6 +66,7 @@ public abstract class Having<T> extends CriteriaBuilder<T> {
     /**
      * {@code count([column])}
      *
+     * @param column   column
      * @param operator {@link com.github.chengyuxing.sql.dsl.types.StandardOperator StandardOperator}
      * @param value    value
      * @return having builder
@@ -78,6 +79,7 @@ public abstract class Having<T> extends CriteriaBuilder<T> {
     /**
      * {@code sum([column])}
      *
+     * @param column   column
      * @param operator {@link com.github.chengyuxing.sql.dsl.types.StandardOperator StandardOperator}
      * @param value    value
      * @return having builder
@@ -90,6 +92,7 @@ public abstract class Having<T> extends CriteriaBuilder<T> {
     /**
      * {@code avg([column])}
      *
+     * @param column   column
      * @param operator {@link com.github.chengyuxing.sql.dsl.types.StandardOperator StandardOperator}
      * @param value    value
      * @return having builder
@@ -102,6 +105,7 @@ public abstract class Having<T> extends CriteriaBuilder<T> {
     /**
      * {@code min([column])}
      *
+     * @param column   column
      * @param operator {@link com.github.chengyuxing.sql.dsl.types.StandardOperator StandardOperator}
      * @param value    value
      * @return having builder
@@ -114,6 +118,7 @@ public abstract class Having<T> extends CriteriaBuilder<T> {
     /**
      * {@code max([column])}
      *
+     * @param column   column
      * @param operator {@link com.github.chengyuxing.sql.dsl.types.StandardOperator StandardOperator}
      * @param value    value
      * @return having builder
@@ -128,7 +133,7 @@ public abstract class Having<T> extends CriteriaBuilder<T> {
      *
      * @param andGroup and group
      * @return having builder
-     * @see Where#and(Function, boolean...) 
+     * @see Where#and(Function, boolean...)
      */
     public Having<T> and(Function<Having<T>, Having<T>> andGroup) {
         List<Criteria> criteriaList = andGroup.apply(newInstance()).criteria;
@@ -141,7 +146,7 @@ public abstract class Having<T> extends CriteriaBuilder<T> {
      *
      * @param orGroup or group
      * @return having builder
-     * @see Where#or(Function, boolean...) 
+     * @see Where#or(Function, boolean...)
      */
     public Having<T> or(Function<Having<T>, Having<T>> orGroup) {
         List<Criteria> criteriaList = orGroup.apply(newInstance()).criteria;

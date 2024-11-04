@@ -190,7 +190,8 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
      * @param column     column
      * @param values     {@link Collection} or Array.
      * @param predicates all predicates to the true add the condition otherwise avoid the condition.
-     * @param <E>        value type
+     * @param <E>        value item type
+     * @param <V>        value type
      * @return where builder
      */
     @SafeVarargs

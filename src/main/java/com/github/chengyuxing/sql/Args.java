@@ -62,6 +62,7 @@ public final class Args<V> extends HashMap<String, V> implements MapExtends<Args
      * Returns an Args from standard java bean entity.
      *
      * @param entity standard java bean with annotation {@link javax.persistence.Entity @Entity}.
+     * @param <T>    entity type
      * @return Args instance
      */
     public static <T> Args<Object> ofEntity(T entity) {

@@ -55,50 +55,55 @@ public abstract class GroupBy<T> extends ColumnHelper<T> {
     /**
      * {@code count([column])}
      *
+     * @param column column
      * @return group by builder
      */
-    public GroupBy<T> count(FieldReference<T> fieldReference) {
-        addAggColumn(StandardAggFunction.COUNT, getColumnName(fieldReference));
+    public GroupBy<T> count(FieldReference<T> column) {
+        addAggColumn(StandardAggFunction.COUNT, getColumnName(column));
         return this;
     }
 
     /**
      * {@code sum([column])}
      *
+     * @param column column
      * @return group by builder
      */
-    public GroupBy<T> sum(FieldReference<T> fieldReference) {
-        addAggColumn(StandardAggFunction.SUM, getColumnName(fieldReference));
+    public GroupBy<T> sum(FieldReference<T> column) {
+        addAggColumn(StandardAggFunction.SUM, getColumnName(column));
         return this;
     }
 
     /**
      * {@code max([column])}
      *
+     * @param column column
      * @return group by builder
      */
-    public GroupBy<T> max(FieldReference<T> fieldReference) {
-        addAggColumn(StandardAggFunction.MAX, getColumnName(fieldReference));
+    public GroupBy<T> max(FieldReference<T> column) {
+        addAggColumn(StandardAggFunction.MAX, getColumnName(column));
         return this;
     }
 
     /**
      * {@code min([column])}
      *
+     * @param column column
      * @return group by builder
      */
-    public GroupBy<T> min(FieldReference<T> fieldReference) {
-        addAggColumn(StandardAggFunction.MIN, getColumnName(fieldReference));
+    public GroupBy<T> min(FieldReference<T> column) {
+        addAggColumn(StandardAggFunction.MIN, getColumnName(column));
         return this;
     }
 
     /**
      * {@code avg([column])}
      *
+     * @param column column
      * @return group by builder
      */
-    public GroupBy<T> avg(FieldReference<T> fieldReference) {
-        addAggColumn(StandardAggFunction.AVG, getColumnName(fieldReference));
+    public GroupBy<T> avg(FieldReference<T> column) {
+        addAggColumn(StandardAggFunction.AVG, getColumnName(column));
         return this;
     }
 

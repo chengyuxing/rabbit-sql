@@ -38,8 +38,9 @@ public interface Baki {
     /**
      * Query.
      *
-     * @param clazz entity class
-     * @param <T>   entity type
+     * @param clazz  entity class
+     * @param <T>    entity type
+     * @param <SELF> query builder
      * @return Query instance
      * @see javax.persistence.Entity @Entity
      */

@@ -42,7 +42,7 @@ public final class PagedResource<T> {
     public static <T> PagedResource<T> empty() {
         return of(new PageHelper() {
             @Override
-            public String pagedSql(String sql) {
+            public String pagedSql(char namedParamPrefix, String sql) {
                 return "";
             }
 

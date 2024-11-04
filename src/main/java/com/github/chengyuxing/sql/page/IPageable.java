@@ -71,7 +71,7 @@ public abstract class IPageable {
     }
 
     /**
-     * Disable auto generate paged sql ({@link PageHelper#pagedSql(String)} and implement
+     * Disable auto generate paged sql ({@link PageHelper#pagedSql(char, String)} and implement
      * custom count query manually.
      *
      * @param countQuery count query, overwrite {@link #count(String)}

@@ -1088,7 +1088,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 pagedArgs = Args.of();
             }
             myArgs.putAll(rewriteArgsFunc == null ? pagedArgs : rewriteArgsFunc.apply(pagedArgs));
-            String executeQuery = disablePageSql ? query : pageHelper.pagedSql(query);
+            String executeQuery = disablePageSql ? query : pageHelper.pagedSql(namedParamPrefix, query);
             final PageHelper finalPageHelper = pageHelper;
             return watchSql(recordQuery, executeQuery, myArgs, () -> {
                 try (Stream<DataRow> s = executeQueryStream(recordQuery, executeQuery, myArgs)) {

@@ -25,8 +25,8 @@ public class PGPageHelper extends PageHelper {
     }
 
     @Override
-    public String pagedSql(String sql) {
-        return sql + " LIMIT :" + START_NUM_KEY + " OFFSET :" + END_NUM_KEY;
+    public String pagedSql(char namedParamPrefix, String sql) {
+        return sql + " limit " + namedParamPrefix + START_NUM_KEY + " offset " + namedParamPrefix + END_NUM_KEY;
     }
 
     @Override

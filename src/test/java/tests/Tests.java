@@ -42,7 +42,7 @@ public class Tests {
 
     @Test
     public void testHash() {
-        System.out.println(StringUtil.hash("","MD5"));
+        System.out.println(StringUtil.hash("", "MD5"));
     }
 
     @Test
@@ -292,7 +292,7 @@ public class Tests {
         page.init(1, 10, 100);
         System.out.println(page.start());
         System.out.println(page.end());
-        System.out.println(page.pagedSql("select * from test.user"));
+        System.out.println(page.pagedSql(':', "select * from test.user"));
 //        PagedResource<Integer> pagedResource = PagedResource.of(page, Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8, 9));
 //        System.out.println(pagedResource);
 //        System.out.println(Json.toJson(pagedResource));

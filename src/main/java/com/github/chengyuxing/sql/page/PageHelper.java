@@ -17,10 +17,11 @@ public abstract class PageHelper {
     /**
      * Create paged sql.
      *
-     * @param sql sql
+     * @param namedParamPrefix named parameter prefix
+     * @param sql              sql
      * @return paged sql
      */
-    public abstract String pagedSql(String sql);
+    public abstract String pagedSql(char namedParamPrefix, String sql);
 
     /**
      * Paged args.

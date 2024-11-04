@@ -30,6 +30,26 @@ import java.util.stream.Stream;
 public interface Query<T, SELF extends Query<T, SELF>> {
     /**
      * Where clause.
+     * <p>Support flatten style and nested style to build the complex condition struct, and invoke
+     * {@link Where#peek(BiConsumer)} to check the build result.</p>
+     * <p>By default, all condition concat with {@code and}, excepted {@link Where#and(Function, boolean...)}
+     * and {@link Where#or(Function, boolean...)} .</p>
+     * SQL:
+     * <blockquote><pre>
+     * where id > 5 and id < 10 or id in (17, 18, 19)
+     * </pre></blockquote>
+     * Flatten:
+     * <blockquote><pre>
+     * .where(g -> g.gt(Guest::getId, 5))
+     * .where(g -> g.lt(Guest::getId, 10))
+     * .where(g -> g.or(o -> o.in(Guest::getId, Arrays.asList(17, 18, 19))))
+     * </pre></blockquote>
+     * Nested:
+     * <blockquote><pre>
+     * .where(g -> g.gt(Guest::getId, 5)
+     *             .lt(Guest::getId, 10)
+     *             .or(o -> o.in(Guest::getId, Arrays.asList(17, 18, 19))))
+     * </pre></blockquote>
      *
      * @param where where builder
      * @return self
@@ -38,6 +58,26 @@ public interface Query<T, SELF extends Query<T, SELF>> {
 
     /**
      * Group by clause.
+     * <p>Support complex having clause struct likes {@link #where(Function)}, e.g.</p>
+     * SQL:
+     * <blockquote><pre>
+     * select age,
+     *        count(*) as count_all,
+     *        max(age) as max_age,
+     *        avg(age) as avg_age
+     * from ...
+     * group by age
+     * having count(*) > 1
+     * </pre></blockquote>
+     * Group by builder:
+     * <blockquote><pre>
+     * .groupBy(g -> g.count()
+     *         .max(Guest::getAge)
+     *         .avg(Guest::getAge)
+     *         .by(Guest::getAge)
+     *         .having(h -> h.count(StandardOperator.GT, 1))
+     * )
+     * </pre></blockquote>
      *
      * @param group group by builder
      * @return self

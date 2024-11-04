@@ -64,29 +64,8 @@ public abstract class OrderBy<T> extends ColumnHelper<T> {
      * @param column column
      * @return order by builder
      */
-    public OrderBy<T> asc(@NotNull String column) {
-        orders.add(Pair.of(column, OrderByType.ASC));
-        return this;
-    }
-
-    /**
-     * {@code asc}
-     *
-     * @param column column
-     * @return order by builder
-     */
     public OrderBy<T> asc(FieldReference<T> column) {
-        return asc(getColumnName(column));
-    }
-
-    /**
-     * {@code desc}
-     *
-     * @param column column
-     * @return order by builder
-     */
-    public OrderBy<T> desc(@NotNull String column) {
-        orders.add(Pair.of(column, OrderByType.DESC));
+        orders.add(Pair.of(getColumnName(column), OrderByType.ASC));
         return this;
     }
 
@@ -97,7 +76,8 @@ public abstract class OrderBy<T> extends ColumnHelper<T> {
      * @return order by builder
      */
     public OrderBy<T> desc(FieldReference<T> column) {
-        return desc(getColumnName(column));
+        orders.add(Pair.of(getColumnName(column), OrderByType.DESC));
+        return this;
     }
 
     protected final String build() {

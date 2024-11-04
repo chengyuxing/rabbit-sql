@@ -2,6 +2,7 @@ package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.script.expression.Patterns;
 import com.github.chengyuxing.common.utils.ObjectUtil;
+import com.github.chengyuxing.sql.dsl.types.StandardOperator;
 import com.github.chengyuxing.sql.plugins.NamedParamFormatter;
 import com.github.chengyuxing.sql.plugins.TemplateFormatter;
 
@@ -222,7 +223,7 @@ public class SqlGenerator {
             if (ignoreNull && Objects.isNull(data.get(column))) {
                 continue;
             }
-            sb.add(column + " = " + namedParamPrefix + column);
+            sb.add(column + StandardOperator.EQ.padWithSpace() + namedParamPrefix + column);
         }
         return "update " + tableName + "\nset " + sb;
     }

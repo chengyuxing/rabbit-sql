@@ -393,13 +393,16 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
      *          )
      * </pre></blockquote>
      *
-     * @param orGroup and group
+     * @param orGroup    and group
+     * @param predicates all predicates to the true add the group otherwise avoid the group.
      * @return where builder
-     * @see #or(Function)
+     * @see #or(Function, boolean...)
      */
-    public Where<T> and(Function<Where<T>, Where<T>> orGroup) {
-        List<Criteria> criteriaList = orGroup.apply(newInstance()).criteria;
-        criteria.add(new AndGroup(criteriaList));
+    public Where<T> and(Function<Where<T>, Where<T>> orGroup, boolean... predicates) {
+        if (isConditionMatched(predicates)) {
+            List<Criteria> criteriaList = orGroup.apply(newInstance()).criteria;
+            criteria.add(new AndGroup(criteriaList));
+        }
         return this;
     }
 
@@ -415,13 +418,16 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
      *       .eq(Guest::getName, "cyx")
      * </pre></blockquote>
      *
-     * @param andGroup or group
+     * @param andGroup   or group
+     * @param predicates all predicates to the true add the group otherwise avoid the group.
      * @return where builder
-     * @see #and(Function)
+     * @see #and(Function, boolean...)
      */
-    public Where<T> or(Function<Where<T>, Where<T>> andGroup) {
-        List<Criteria> criteriaList = andGroup.apply(newInstance()).criteria;
-        criteria.add(new OrGroup(criteriaList));
+    public Where<T> or(Function<Where<T>, Where<T>> andGroup, boolean... predicates) {
+        if (isConditionMatched(predicates)) {
+            List<Criteria> criteriaList = andGroup.apply(newInstance()).criteria;
+            criteria.add(new OrGroup(criteriaList));
+        }
         return this;
     }
 

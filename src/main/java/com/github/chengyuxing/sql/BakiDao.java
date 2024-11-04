@@ -626,8 +626,8 @@ public class BakiDao extends JdbcSupport implements Baki {
         return new Update<T>() {
             private String dynamicUpdate(Map<String, Object> data, String where) {
                 return sqlGenerator.generateNamedParamUpdate(
-                        entityManager.getTableName(clazz),
-                        entityMeta.getColumns().keySet(),
+                        entityMeta.getTableName(),
+                        entityMeta.getUpdateColumns(),
                         data,
                         true
                 ) + where;

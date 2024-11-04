@@ -104,6 +104,8 @@ public class EntityManager implements AutoCloseable {
         private final String tableName;
         private final String primaryKey;
         private final Map<String, ColumnMeta> columns;
+        private final Set<String> updateColumns;
+        private final Set<String> insertColumns;
         private final String select;
         private final String countSelect;
         private final String existsSelect;
@@ -115,6 +117,8 @@ public class EntityManager implements AutoCloseable {
             this.namedParamPrefix = namedParamPrefix;
             this.tableName = tableName;
             this.columns = columns;
+            this.updateColumns = genUpdateSetColumns();
+            this.insertColumns = genInsertColumns();
             this.primaryKey = checkPrimaryKey();
             this.select = genSelect(this.columns.keySet());
             this.countSelect = genCountSelect();
@@ -130,6 +134,14 @@ public class EntityManager implements AutoCloseable {
 
         public Map<String, ColumnMeta> getColumns() {
             return columns;
+        }
+
+        public Set<String> getInsertColumns() {
+            return insertColumns;
+        }
+
+        public Set<String> getUpdateColumns() {
+            return updateColumns;
         }
 
         public String getTableName() {
@@ -185,26 +197,45 @@ public class EntityManager implements AutoCloseable {
             return "select 1 from " + tableName;
         }
 
-        private String genInsert() {
-            StringJoiner f = new StringJoiner(", ");
-            StringJoiner h = new StringJoiner(", ");
+        private Set<String> genInsertColumns() {
+            Set<String> insertColumns = new HashSet<>();
             for (Map.Entry<String, ColumnMeta> entry : columns.entrySet()) {
                 Column column = entry.getValue().getColumn();
                 if (Objects.isNull(column) || column.insertable()) {
-                    f.add(entry.getKey());
-                    h.add(namedParamPrefix + entry.getKey());
+                    insertColumns.add(entry.getKey());
                 }
+            }
+            return insertColumns;
+        }
+
+        private String genInsert() {
+            StringJoiner f = new StringJoiner(", ");
+            StringJoiner h = new StringJoiner(", ");
+            for (String column : insertColumns) {
+                f.add(column);
+                h.add(namedParamPrefix + column);
             }
             return "insert into " + tableName + "(" + f + ") values (" + h + ")";
         }
 
+        private Set<String> genUpdateSetColumns() {
+            Set<String> setColumns = new HashSet<>();
+            for (Map.Entry<String, ColumnMeta> entry : columns.entrySet()) {
+                if (Objects.nonNull(entry.getValue().getId())) {
+                    continue;
+                }
+                Column column = entry.getValue().getColumn();
+                if (Objects.isNull(column) || column.updatable()) {
+                    setColumns.add(entry.getKey());
+                }
+            }
+            return setColumns;
+        }
+
         private String genUpdate() {
             StringJoiner sets = new StringJoiner(",\n\t");
-            for (Map.Entry<String, ColumnMeta> entry : columns.entrySet()) {
-                Column column = entry.getValue().getColumn();
-                if (Objects.isNull(entry.getValue().getId()) && (Objects.isNull(column) || column.updatable())) {
-                    sets.add(entry.getKey() + StandardOperator.EQ + namedParamPrefix + entry.getKey());
-                }
+            for (String column : updateColumns) {
+                sets.add(column + StandardOperator.EQ.padWithSpace() + namedParamPrefix + column);
             }
             return "update " + tableName + "\nset " + sets;
         }

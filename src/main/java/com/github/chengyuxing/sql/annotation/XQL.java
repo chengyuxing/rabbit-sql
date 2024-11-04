@@ -22,5 +22,5 @@ public @interface XQL {
      *
      * @return Sql type
      */
-    Type type() default Type.query;
+    SqlStatementType type() default SqlStatementType.query;
 }

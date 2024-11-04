@@ -4,6 +4,7 @@ import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.PagedResource;
 import com.github.chengyuxing.sql.plugins.PageHelperProvider;
+import org.jetbrains.annotations.Range;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,7 +31,9 @@ public abstract class IPageable {
      * @param page        current page
      * @param size        page size
      */
-    public IPageable(String recordQuery, int page, int size) {
+    public IPageable(String recordQuery,
+                     @Range(from = 1, to = Integer.MAX_VALUE) int page,
+                     @Range(from = 1, to = Integer.MAX_VALUE) int size) {
         this.recordQuery = recordQuery;
         this.page = page;
         this.size = size;
@@ -66,7 +69,7 @@ public abstract class IPageable {
      * @param count data count
      * @return IPageable
      */
-    public IPageable count(Integer count) {
+    public IPageable count(@Range(from = 0, to = Integer.MAX_VALUE) Integer count) {
         this.count = count;
         return this;
     }

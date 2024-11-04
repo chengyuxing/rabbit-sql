@@ -2,6 +2,7 @@ package com.github.chengyuxing.sql.page.impl;
 
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.page.PageHelper;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * <p>Oracle page helper, e.g.</p>
@@ -28,7 +29,7 @@ public class OraclePageHelper extends PageHelper {
     }
 
     @Override
-    public String pagedSql(char namedParamPrefix, String sql) {
+    public @NotNull String pagedSql(char namedParamPrefix, @NotNull String sql) {
         return "select *\n" +
                 "from (select t.*, rownum " + ROW_NUM_KEY + "\n" +
                 "          from (" + sql + ") t\n" +
@@ -37,7 +38,7 @@ public class OraclePageHelper extends PageHelper {
     }
 
     @Override
-    public Args<Integer> pagedArgs() {
+    public @NotNull Args<Integer> pagedArgs() {
         return Args.of(START_NUM_KEY, start()).add(END_NUM_KEY, end());
     }
 }

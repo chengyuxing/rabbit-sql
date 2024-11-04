@@ -9,7 +9,7 @@ import com.github.chengyuxing.sql.plugins.PageHelperProvider;
 import com.github.chengyuxing.sql.plugins.SqlInvokeHandler;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
 import com.github.chengyuxing.sql.types.Param;
-import com.github.chengyuxing.sql.annotation.Type;
+import com.github.chengyuxing.sql.annotation.SqlStatementType;
 import com.github.chengyuxing.sql.utils.EntityUtil;
 import org.jetbrains.annotations.NotNull;
 
@@ -59,7 +59,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
         String alias = clazz.getDeclaredAnnotation(XQLMapper.class).value();
         String sqlName = method.getName();
 
-        Type sqlType = detectSQLTypeByMethodPrefix(sqlName);
+        SqlStatementType sqlType = detectSQLTypeByMethodPrefix(sqlName);
 
         if (method.isAnnotationPresent(XQL.class)) {
             XQL xql = method.getDeclaredAnnotation(XQL.class);
@@ -103,23 +103,23 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
         }
     }
 
-    protected Type detectSQLTypeByMethodPrefix(String method) {
+    protected SqlStatementType detectSQLTypeByMethodPrefix(String method) {
         if (method.matches(QUERY_PATTERN)) {
-            return Type.query;
+            return SqlStatementType.query;
         }
         if (method.matches(INSERT_PATTERN)) {
-            return Type.insert;
+            return SqlStatementType.insert;
         }
         if (method.matches(UPDATE_PATTERN)) {
-            return Type.update;
+            return SqlStatementType.update;
         }
         if (method.matches(DELETE_PATTERN)) {
-            return Type.delete;
+            return SqlStatementType.delete;
         }
         if (method.matches(CALL_PATTERN)) {
-            return Type.procedure;
+            return SqlStatementType.procedure;
         }
-        return Type.unset;
+        return SqlStatementType.unset;
     }
 
     protected DataRow handleNormal(BakiDao baki, String sqlRef, Object args, Method method, Class<?> returnType) {

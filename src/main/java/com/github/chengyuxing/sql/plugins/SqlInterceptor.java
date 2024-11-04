@@ -1,6 +1,7 @@
 package com.github.chengyuxing.sql.plugins;
 
 import com.github.chengyuxing.sql.exceptions.IllegalSqlException;
+import org.jetbrains.annotations.NotNull;
 
 import java.sql.DatabaseMetaData;
 import java.util.Map;
@@ -19,5 +20,5 @@ public interface SqlInterceptor {
      * @return true if valid or false
      * @throws IllegalSqlException reject execute exception
      */
-    boolean preHandle(String sql, Map<String, ?> args, DatabaseMetaData metaData) throws IllegalSqlException;
+    boolean preHandle(@NotNull String sql, @NotNull Map<String, ?> args, @NotNull DatabaseMetaData metaData) throws IllegalSqlException;
 }

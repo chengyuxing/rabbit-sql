@@ -180,7 +180,7 @@ try(Stream<DataRow> fruits = baki.query("select * from fruit").stream()){
 
 Default pageable query will auto generate **paging statement** and **count** statement by database.
 
-Built-in support oracle, mysql, postgresql, sqlite, mariadb, db2, or extends class `com.github.chengyuxing.sql.page.PageHelperProvider` and set to [BakiDao](#BakiDao) get support.
+Built-in support oracle, mysql, postgresql, sqlite, mariadb, db2, or extends class `com.github.chengyuxing.sql.plugins.PageHelperProvider` and set to [BakiDao](#BakiDao) get support.
 
 ```java
 PagedResource<DataRow> resource = baki.query("select ... where id < :id")

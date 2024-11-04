@@ -1,5 +1,7 @@
 package com.github.chengyuxing.sql.plugins;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
  * Non-prepared Sql named parameter ({@code :key}) value formatter.
  */
@@ -11,5 +13,5 @@ public interface NamedParamFormatter {
      * @param value value
      * @return formatted value
      */
-    String format(Object value);
+    @NotNull String format(Object value);
 }

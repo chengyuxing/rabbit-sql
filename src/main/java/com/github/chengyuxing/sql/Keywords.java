@@ -3,7 +3,7 @@ package com.github.chengyuxing.sql;
 /**
  * Mostly keywords of database.
  */
-public class Keywords {
+public final class Keywords {
     public static final String[] STANDARD = new String[]{
             "abort", "absolute", "access", "action", "add", "admin", "after", "aggregate", "all",
             "also", "alter", "always", "analyse", "analyze", "and", "any", "array", "as", "asc",

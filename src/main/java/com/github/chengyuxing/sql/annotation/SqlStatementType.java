@@ -1,6 +1,6 @@
 package com.github.chengyuxing.sql.annotation;
 
-public enum Type {
+public enum SqlStatementType {
     query,
     insert,
     update,

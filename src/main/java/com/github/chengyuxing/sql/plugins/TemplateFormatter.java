@@ -1,5 +1,7 @@
 package com.github.chengyuxing.sql.plugins;
 
+import org.jetbrains.annotations.NotNull;
+
 @FunctionalInterface
 public interface TemplateFormatter {
     /**
@@ -9,5 +11,5 @@ public interface TemplateFormatter {
      * @param isSpecial key start with {@code !} or not
      * @return formatted content
      */
-    String format(Object value, boolean isSpecial);
+    @NotNull String format(Object value, boolean isSpecial);
 }

@@ -28,7 +28,7 @@ import com.github.chengyuxing.sql.support.*;
 import com.github.chengyuxing.sql.support.executor.Executor;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
 import com.github.chengyuxing.sql.types.Param;
-import com.github.chengyuxing.sql.annotation.Type;
+import com.github.chengyuxing.sql.annotation.SqlStatementType;
 import com.github.chengyuxing.sql.utils.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -58,7 +58,7 @@ import java.util.stream.Stream;
  */
 public class BakiDao extends JdbcSupport implements Baki {
     private final static Logger log = LoggerFactory.getLogger(BakiDao.class);
-    private final Map<Type, SqlInvokeHandler> xqlMappingHandlers = new HashMap<>();
+    private final Map<SqlStatementType, SqlInvokeHandler> xqlMappingHandlers = new HashMap<>();
     private final Map<String, Object> queryCacheLocks = new ConcurrentHashMap<>();
     private final DataSource dataSource;
     private DatabaseMetaData metaData;
@@ -179,7 +179,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param args args
      * @return query result
      */
-    public Stream<DataRow> executeQueryStream(final String key, final String sql, Map<String, Object> args) {
+    public Stream<DataRow> executeQueryStream(@NotNull final String key, @NotNull final String sql, Map<String, Object> args) {
         if (Objects.isNull(queryCacheManager) || !queryCacheManager.isAvailable(key, args)) {
             return executeQueryStream(sql, args);
         }
@@ -717,13 +717,13 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
 
             @Override
-            public int executeBatch(List<String> moreSql) {
+            public int executeBatch(@NotNull List<String> moreSql) {
                 String s = String.join("###", moreSql);
                 return watchSql(s, s, Collections.emptyMap(), () -> BakiDao.super.executeBatch(moreSql, batchSize));
             }
 
             @Override
-            public int executeBatch(Collection<? extends Map<String, ?>> data) {
+            public int executeBatch(@NotNull Collection<? extends Map<String, ?>> data) {
                 Map<String, ?> arg = data.isEmpty() ? new HashMap<>() : data.iterator().next();
                 Pair<String, Map<String, Object>> parsed = parseSql(sql, arg);
                 return watchSql(sql, parsed.getItem1(), data, () -> {
@@ -1083,9 +1083,6 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
             pageHelper.init(page, size, count);
             Args<Integer> pagedArgs = pageHelper.pagedArgs();
-            if (pagedArgs == null) {
-                pagedArgs = Args.of();
-            }
             myArgs.putAll(rewriteArgsFunc == null ? pagedArgs : rewriteArgsFunc.apply(pagedArgs));
             String executeQuery = disablePageSql ? query : pageHelper.pagedSql(namedParamPrefix, query);
             final PageHelper finalPageHelper = pageHelper;
@@ -1177,7 +1174,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @throws IllegalSqlException  sql interceptor reject sql
      */
     @Override
-    protected Pair<String, Map<String, Object>> parseSql(String sql, Map<String, ?> args) {
+    protected Pair<String, Map<String, Object>> parseSql(@NotNull String sql, Map<String, ?> args) {
         Map<String, Object> myArgs = new HashMap<>();
         if (Objects.nonNull(args)) {
             myArgs.putAll(args);
@@ -1214,17 +1211,17 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    protected SqlGenerator sqlGenerator() {
+    protected @NotNull SqlGenerator sqlGenerator() {
         return sqlGenerator;
     }
 
     @Override
-    protected DataSource getDataSource() {
+    protected @NotNull DataSource getDataSource() {
         return dataSource;
     }
 
     @Override
-    protected Connection getConnection() {
+    protected @NotNull Connection getConnection() {
         try {
             return DataSourceUtil.getConnection(dataSource);
         } catch (SQLException e) {
@@ -1238,7 +1235,9 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    protected void doHandleStatementValue(PreparedStatement ps, int index, Object value) throws SQLException {
+    protected void doHandleStatementValue(@NotNull PreparedStatement ps,
+                                          @Range(from = 1, to = Integer.MAX_VALUE) int index,
+                                          @Nullable Object value) throws SQLException {
         statementValueHandler.handle(ps, index, value, metaData);
     }
 
@@ -1287,7 +1286,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         return batchSize;
     }
 
-    public void setBatchSize(int batchSize) {
+    public void setBatchSize(@Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
         this.batchSize = batchSize;
     }
 
@@ -1315,7 +1314,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         return pageKey;
     }
 
-    public void setPageKey(String pageKey) {
+    public void setPageKey(@NotNull String pageKey) {
         this.pageKey = pageKey;
     }
 
@@ -1323,7 +1322,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         return sizeKey;
     }
 
-    public void setSizeKey(String sizeKey) {
+    public void setSizeKey(@NotNull String sizeKey) {
         this.sizeKey = sizeKey;
     }
 
@@ -1337,11 +1336,11 @@ public class BakiDao extends JdbcSupport implements Baki {
         }
     }
 
-    public Map<Type, SqlInvokeHandler> getXqlMappingHandlers() {
+    public Map<SqlStatementType, SqlInvokeHandler> getXqlMappingHandlers() {
         return xqlMappingHandlers;
     }
 
-    public void registerXqlMappingHandler(Type type, SqlInvokeHandler handler) {
+    public void registerXqlMappingHandler(SqlStatementType type, SqlInvokeHandler handler) {
         xqlMappingHandlers.put(type, handler);
     }
 

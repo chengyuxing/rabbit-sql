@@ -1,5 +1,7 @@
 package com.github.chengyuxing.sql.plugins;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -18,14 +20,14 @@ public interface SqlWatcher {
      * @param endTime   execute finish time
      * @param throwable throwable
      */
-    void watch(String sourceSql, String targetSql, Object args, long startTime, long endTime, Throwable throwable);
+    void watch(@NotNull String sourceSql, @NotNull String targetSql, @Nullable Object args, long startTime, long endTime, @Nullable Throwable throwable);
 
     class SqlWatchLogger implements SqlWatcher {
         private static final Logger log = LoggerFactory.getLogger(SqlWatchLogger.class);
         private static final String PREFIX = "SQL-WATCHER";
 
         @Override
-        public void watch(String sourceSql, String targetSql, Object args, long startTime, long endTime, Throwable throwable) {
+        public void watch(@NotNull String sourceSql, @NotNull String targetSql, Object args, long startTime, long endTime, @Nullable Throwable throwable) {
             double spent = (endTime - startTime) / 1000.0;
             log.info("{}: {}, SPENT: {} sec.", PREFIX, sourceSql, spent);
         }

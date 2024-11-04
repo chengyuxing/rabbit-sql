@@ -2,6 +2,7 @@ package com.github.chengyuxing.sql.page.impl;
 
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.page.PageHelper;
+import org.jetbrains.annotations.NotNull;
 
 /**
  * <p>Mysql/MariaDB page helper,
@@ -26,12 +27,12 @@ public class MysqlPageHelper extends PageHelper {
     }
 
     @Override
-    public String pagedSql(char namedParamPrefix, String sql) {
+    public @NotNull String pagedSql(char namedParamPrefix, @NotNull String sql) {
         return sql + " limit " + namedParamPrefix + START_NUM_KEY + ", " + namedParamPrefix + END_NUM_KEY;
     }
 
     @Override
-    public Args<Integer> pagedArgs() {
+    public @NotNull Args<Integer> pagedArgs() {
         return Args.of(START_NUM_KEY, limit()).add(END_NUM_KEY, size());
     }
 }

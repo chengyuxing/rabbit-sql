@@ -42,12 +42,12 @@ public final class PagedResource<T> {
     public static <T> PagedResource<T> empty() {
         return of(new PageHelper() {
             @Override
-            public String pagedSql(char namedParamPrefix, String sql) {
+            public @NotNull String pagedSql(char namedParamPrefix, @NotNull String sql) {
                 return "";
             }
 
             @Override
-            public Args<Integer> pagedArgs() {
+            public @NotNull Args<Integer> pagedArgs() {
                 return Args.of();
             }
         }, Collections.emptyList());

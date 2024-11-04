@@ -5,6 +5,7 @@ import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.sql.dsl.types.StandardOperator;
 import com.github.chengyuxing.sql.plugins.NamedParamFormatter;
 import com.github.chengyuxing.sql.plugins.TemplateFormatter;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -234,7 +235,7 @@ public class SqlGenerator {
      * @param recordQuery record query
      * @return count query
      */
-    public String generateCountQuery(final String recordQuery) {
+    public String generateCountQuery(@NotNull final String recordQuery) {
         return "select count(*) from (" + recordQuery + ") t_4_rabbit";
     }
 

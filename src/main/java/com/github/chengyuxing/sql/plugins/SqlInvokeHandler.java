@@ -1,6 +1,7 @@
 package com.github.chengyuxing.sql.plugins;
 
 import com.github.chengyuxing.sql.Baki;
+import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Method;
 
@@ -18,5 +19,10 @@ public interface SqlInvokeHandler {
      * @return execute result
      * @throws Throwable throwable
      */
-    Object handle(Baki baki, String sqlRef, Object args, Method method, Class<?> returnType, Class<?> returnGenericType) throws Throwable;
+    Object handle(@NotNull Baki baki,
+                  @NotNull String sqlRef,
+                  @NotNull Object args,
+                  @NotNull Method method,
+                  @NotNull Class<?> returnType,
+                  @NotNull Class<?> returnGenericType) throws Throwable;
 }

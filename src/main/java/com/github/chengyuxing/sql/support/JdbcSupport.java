@@ -10,6 +10,9 @@ import com.github.chengyuxing.sql.types.ParamMode;
 import com.github.chengyuxing.sql.utils.JdbcUtil;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.utils.SqlHighlighter;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.Range;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,14 +45,14 @@ public abstract class JdbcSupport extends SqlParser {
      *
      * @return datasource
      */
-    protected abstract DataSource getDataSource();
+    protected abstract @NotNull DataSource getDataSource();
 
     /**
      * Get connection.
      *
      * @return connection
      */
-    protected abstract Connection getConnection();
+    protected abstract @NotNull Connection getConnection();
 
     /**
      * Release connection when execute finished.
@@ -67,7 +70,9 @@ public abstract class JdbcSupport extends SqlParser {
      * @param value parameter value
      * @throws SQLException ex
      */
-    protected abstract void doHandleStatementValue(PreparedStatement ps, int index, Object value) throws SQLException;
+    protected abstract void doHandleStatementValue(@NotNull PreparedStatement ps,
+                                                   @Range(from = 1, to = Integer.MAX_VALUE) int index,
+                                                   @Nullable Object value) throws SQLException;
 
     /**
      * Jdbc execute sql timeout.
@@ -77,7 +82,7 @@ public abstract class JdbcSupport extends SqlParser {
      * @return time out (seconds)
      * @see Statement#setQueryTimeout(int)
      */
-    protected int queryTimeout(String sql, Map<String, ?> args) {
+    protected @Range(from = 0, to = Integer.MAX_VALUE) int queryTimeout(String sql, Map<String, ?> args) {
         return 0;
     }
 
@@ -90,7 +95,7 @@ public abstract class JdbcSupport extends SqlParser {
      * @return any result
      * @throws UncheckedSqlException if connection states error
      */
-    protected <T> T execute(final String sql, StatementCallback<T> callback) {
+    protected <T> T execute(@NotNull final String sql, @NotNull StatementCallback<T> callback) {
         PreparedStatement statement = null;
         Connection connection = null;
         try {
@@ -180,7 +185,7 @@ public abstract class JdbcSupport extends SqlParser {
      * @return Query: List{@code <DataRow>}, DML: affected row count, DDL: 0
      * @throws UncheckedSqlException sql execute error
      */
-    public DataRow execute(final String sql, Map<String, ?> args) {
+    public DataRow execute(@NotNull final String sql, Map<String, ?> args) {
         SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepare(sql, args);
         final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
         final String preparedSql = sqlMetaData.getResultSql();
@@ -230,7 +235,7 @@ public abstract class JdbcSupport extends SqlParser {
      * @return Stream query result
      * @throws UncheckedSqlException sql execute error
      */
-    public Stream<DataRow> executeQueryStream(final String sql, Map<String, ?> args) {
+    public Stream<DataRow> executeQueryStream(@NotNull final String sql, Map<String, ?> args) {
         SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepare(sql, args);
         final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
         final String preparedSql = sqlMetaData.getResultSql();
@@ -286,10 +291,7 @@ public abstract class JdbcSupport extends SqlParser {
      * @throws UncheckedSqlException    execute sql error
      * @throws IllegalArgumentException if sqls count less than 1
      */
-    public int executeBatch(final List<String> sqls, int batchSize) {
-        if (batchSize < 1) {
-            throw new IllegalArgumentException("batchSize must greater than 0.");
-        }
+    public int executeBatch(@NotNull final List<String> sqls, @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
         if (sqls.isEmpty()) {
             return 0;
         }
@@ -343,10 +345,9 @@ public abstract class JdbcSupport extends SqlParser {
      * @param batchSize batch size
      * @return affected row count
      */
-    public int executeBatchUpdate(final String sql, Collection<? extends Map<String, ?>> args, int batchSize) {
-        if (batchSize < 1) {
-            throw new IllegalArgumentException("batchSize must greater than 0.");
-        }
+    public int executeBatchUpdate(@NotNull final String sql,
+                                  @NotNull Collection<? extends Map<String, ?>> args,
+                                  @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
         Map<String, ?> first = args.iterator().next();
         SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepare(sql, first);
         final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
@@ -389,7 +390,7 @@ public abstract class JdbcSupport extends SqlParser {
      * @param args args
      * @return affect row count
      */
-    public int executeUpdate(final String sql, Map<String, ?> args) {
+    public int executeUpdate(@NotNull final String sql, Map<String, ?> args) {
         SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepare(sql, args);
         final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
         final String preparedSql = sqlMetaData.getResultSql();
@@ -431,7 +432,7 @@ public abstract class JdbcSupport extends SqlParser {
      * @return DataRow
      * @throws UncheckedSqlException execute procedure error
      */
-    public DataRow executeCallStatement(final String procedure, Map<String, Param> args) {
+    public DataRow executeCallStatement(@NotNull final String procedure, Map<String, Param> args) {
         SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepare(procedure, args);
         final String executeSql = sqlMetaData.getResultSql();
         final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();

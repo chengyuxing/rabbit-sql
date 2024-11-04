@@ -182,7 +182,7 @@ try(Stream<DataRow> fruits = baki.query("select * from fruit").stream()){
 
 默认的分页查询将自动根据数据库生成**分页查询语句**和生成 **count** 查询语句。
 
-内置支持 oracle，mysql，postgresql，sqlite，mariadb，db2，其他可通过实现接口 `com.github.chengyuxing.sql.page.PageHelperProvider` 并添加到[BakiDao](#BakiDao)进行支持。
+内置支持 oracle，mysql，postgresql，sqlite，mariadb，db2，其他可通过实现接口 `com.github.chengyuxing.sql.plugins.PageHelperProvider` 并添加到[BakiDao](#BakiDao)进行支持。
 
 ```java
 PagedResource<DataRow> resource = baki.query("select ... where id < :id")

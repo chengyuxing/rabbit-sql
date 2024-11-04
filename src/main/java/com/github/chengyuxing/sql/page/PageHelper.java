@@ -1,6 +1,8 @@
 package com.github.chengyuxing.sql.page;
 
 import com.github.chengyuxing.sql.Args;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Range;
 
 /**
  * Abstract page helper.
@@ -21,7 +23,7 @@ public abstract class PageHelper {
      * @param sql              sql
      * @return paged sql
      */
-    public abstract String pagedSql(char namedParamPrefix, String sql);
+    public abstract @NotNull String pagedSql(char namedParamPrefix, @NotNull String sql);
 
     /**
      * Paged args.
@@ -30,21 +32,21 @@ public abstract class PageHelper {
      * @see #START_NUM_KEY
      * @see #END_NUM_KEY
      */
-    public abstract Args<Integer> pagedArgs();
+    public abstract @NotNull Args<Integer> pagedArgs();
 
-    public int getPageCount() {
+    public @Range(from = 0, to = Integer.MAX_VALUE) int getPageCount() {
         return pageCount;
     }
 
-    public int getPageNumber() {
+    public @Range(from = 1, to = Integer.MAX_VALUE) int getPageNumber() {
         return pageNumber;
     }
 
-    public int getPageSize() {
+    public @Range(from = 1, to = Integer.MAX_VALUE) int getPageSize() {
         return pageSize;
     }
 
-    public int getRecordCount() {
+    public @Range(from = 0, to = Integer.MAX_VALUE) int getRecordCount() {
         return recordCount;
     }
 
@@ -55,7 +57,9 @@ public abstract class PageHelper {
      * @param size  page size
      * @param count record count
      */
-    public void init(int page, int size, int count) {
+    public void init(@Range(from = 1, to = Integer.MAX_VALUE) int page,
+                     @Range(from = 1, to = Integer.MAX_VALUE) int size,
+                     @Range(from = 0, to = Integer.MAX_VALUE) int count) {
         pageNumber = page;
         pageSize = size;
         recordCount = count;

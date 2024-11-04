@@ -263,7 +263,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
      * @return where builder
      */
     @SafeVarargs
-    public final Where<T> like(FieldReference<T> column, @NotNull String value, Predicate<String>... predicates) {
+    public final Where<T> like(FieldReference<T> column, String value, Predicate<String>... predicates) {
         if (isConditionMatched(value, predicates)) {
             addCondition(column, LIKE, "%" + value + "%");
         }
@@ -279,7 +279,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
      * @return where builder
      */
     @SafeVarargs
-    public final Where<T> notLike(FieldReference<T> column, @NotNull String value, Predicate<String>... predicates) {
+    public final Where<T> notLike(FieldReference<T> column, String value, Predicate<String>... predicates) {
         if (isConditionMatched(value, predicates)) {
             addCondition(column, NOT_LIKE, "%" + value + "%");
         }
@@ -295,7 +295,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
      * @return where builder
      */
     @SafeVarargs
-    public final Where<T> startsWith(FieldReference<T> column, @NotNull String value, Predicate<String>... predicates) {
+    public final Where<T> startsWith(FieldReference<T> column, String value, Predicate<String>... predicates) {
         if (isConditionMatched(value, predicates)) {
             addCondition(column, LIKE, value + "%");
         }
@@ -311,7 +311,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
      * @return where builder
      */
     @SafeVarargs
-    public final Where<T> notStartsWith(FieldReference<T> column, @NotNull String value, Predicate<String>... predicates) {
+    public final Where<T> notStartsWith(FieldReference<T> column, String value, Predicate<String>... predicates) {
         if (isConditionMatched(value, predicates)) {
             addCondition(column, NOT_LIKE, value + "%");
         }
@@ -327,7 +327,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
      * @return where builder
      */
     @SafeVarargs
-    public final Where<T> endsWith(FieldReference<T> column, @NotNull String value, Predicate<String>... predicates) {
+    public final Where<T> endsWith(FieldReference<T> column, String value, Predicate<String>... predicates) {
         if (isConditionMatched(value, predicates)) {
             addCondition(column, LIKE, "%" + value);
         }
@@ -343,7 +343,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
      * @return where builder
      */
     @SafeVarargs
-    public final Where<T> notEndsWith(FieldReference<T> column, @NotNull String value, Predicate<String>... predicates) {
+    public final Where<T> notEndsWith(FieldReference<T> column, String value, Predicate<String>... predicates) {
         if (isConditionMatched(value, predicates)) {
             addCondition(column, NOT_LIKE, "%" + value);
         }

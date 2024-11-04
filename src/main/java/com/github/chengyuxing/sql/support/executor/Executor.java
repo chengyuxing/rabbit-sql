@@ -43,7 +43,7 @@ public interface Executor {
      * @param moreSql more sql
      * @return affected row count
      */
-    int executeBatch(List<String> moreSql);
+    int executeBatch(@NotNull List<String> moreSql);
 
     /**
      * Batch execute prepared dml sql.
@@ -51,7 +51,7 @@ public interface Executor {
      * @param args args collection
      * @return affected row count
      */
-    int executeBatch(Collection<? extends Map<String, ?>> args);
+    int executeBatch(@NotNull Collection<? extends Map<String, ?>> args);
 
     /**
      * Execute store procedure or function.

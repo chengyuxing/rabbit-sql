@@ -12,7 +12,7 @@ import java.lang.annotation.*;
  *     {@link Procedure @Procedure}
  *     {@link Function @Function}
  *     </li>
- *     <li>Annotated with {@link XQL @XQL}(type = {@link Type ...})</li>
+ *     <li>Annotated with {@link XQL @XQL}(type = {@link SqlStatementType ...})</li>
  *     <li>Method name pattern:
  *     <ul>
  *         <li>{@link com.github.chengyuxing.sql.XQLInvocationHandler#QUERY_PATTERN select}</li>

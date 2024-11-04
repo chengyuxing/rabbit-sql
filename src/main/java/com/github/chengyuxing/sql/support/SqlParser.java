@@ -2,6 +2,7 @@ package com.github.chengyuxing.sql.support;
 
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Map;
@@ -42,14 +43,14 @@ public abstract class SqlParser {
      * @param args args
      * @return parsed sql and args
      */
-    protected abstract Pair<String, Map<String, Object>> parseSql(String sql, Map<String, ?> args);
+    protected abstract Pair<String, Map<String, Object>> parseSql(@NotNull String sql, Map<String, ?> args);
 
     /**
      * Sql translator for support prepare sql.
      *
      * @return Sql translator.
      */
-    protected abstract SqlGenerator sqlGenerator();
+    protected abstract @NotNull SqlGenerator sqlGenerator();
 
     /**
      * Convert named parameter sql to prepared sql.
@@ -58,7 +59,7 @@ public abstract class SqlParser {
      * @param args args
      * @return GeneratedSqlMetaData
      */
-    protected SqlGenerator.GeneratedSqlMetaData prepare(String sql, Map<String, ?> args) {
+    protected SqlGenerator.GeneratedSqlMetaData prepare(@NotNull String sql, Map<String, ?> args) {
         // try to generate full named parameter sql.
         Pair<String, Map<String, Object>> result = parseSql(sql, args);
         String parsedSql = result.getItem1();

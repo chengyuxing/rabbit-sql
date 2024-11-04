@@ -1,5 +1,7 @@
 package com.github.chengyuxing.sql.plugins;
 
+import org.jetbrains.annotations.NotNull;
+
 @FunctionalInterface
 public interface SqlParseChecker {
     /**
@@ -8,5 +10,5 @@ public interface SqlParseChecker {
      * @param sql sql
      * @return new sql
      */
-    String handle(final String sql);
+    @NotNull String handle(@NotNull final String sql);
 }

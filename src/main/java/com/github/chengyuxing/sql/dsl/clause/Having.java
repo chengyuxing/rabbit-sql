@@ -128,7 +128,7 @@ public abstract class Having<T> extends CriteriaBuilder<T> {
      *
      * @param andGroup and group
      * @return having builder
-     * @see Where#and(Function)
+     * @see Where#and(Function, boolean...) 
      */
     public Having<T> and(Function<Having<T>, Having<T>> andGroup) {
         List<Criteria> criteriaList = andGroup.apply(newInstance()).criteria;
@@ -141,7 +141,7 @@ public abstract class Having<T> extends CriteriaBuilder<T> {
      *
      * @param orGroup or group
      * @return having builder
-     * @see Where#or(Function)
+     * @see Where#or(Function, boolean...) 
      */
     public Having<T> or(Function<Having<T>, Having<T>> orGroup) {
         List<Criteria> criteriaList = orGroup.apply(newInstance()).criteria;

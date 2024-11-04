@@ -1,5 +1,10 @@
 # change note
 
+# 8.0.0
+
+- Support support dsl query.
+- Some update and fixed.
+
 # 7.14.0
 
 - Fixed bugs.

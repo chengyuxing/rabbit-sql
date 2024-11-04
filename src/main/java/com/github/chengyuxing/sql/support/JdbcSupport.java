@@ -4,6 +4,7 @@ import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.UncheckedCloseable;
 import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
+import com.github.chengyuxing.sql.exceptions.SqlRuntimeException;
 import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.types.ParamMode;
@@ -207,7 +208,7 @@ public abstract class JdbcSupport extends SqlParser {
                 return DataRow.of("result", count, "type", "DD(M)L");
             });
         } catch (Exception e) {
-            throw new RuntimeException("prepare sql error:\n" + sql + "\n" + myArgs, e);
+            throw new SqlRuntimeException("prepare sql error:\n" + sql + "\n" + myArgs, e);
         }
     }
 
@@ -278,7 +279,7 @@ public abstract class JdbcSupport extends SqlParser {
                     ex.addSuppressed(e);
                 }
             }
-            throw new RuntimeException("streaming query error:\n" + preparedSql + "\n" + myArgs, ex);
+            throw new SqlRuntimeException("streaming query error:\n" + preparedSql + "\n" + myArgs, ex);
         }
     }
 
@@ -371,7 +372,7 @@ public abstract class JdbcSupport extends SqlParser {
                 return result.build().flatMapToInt(IntStream::of).sum();
             });
         } catch (Exception e) {
-            throw new RuntimeException("prepare sql error:\n" + sql, e);
+            throw new SqlRuntimeException("prepare sql error:\n" + sql, e);
         }
     }
 
@@ -406,7 +407,7 @@ public abstract class JdbcSupport extends SqlParser {
                 return sc.executeUpdate();
             });
         } catch (Exception e) {
-            throw new RuntimeException("prepare sql error:\n" + sql + "\n" + myArgs, e);
+            throw new SqlRuntimeException("prepare sql error:\n" + sql + "\n" + myArgs, e);
         }
     }
 

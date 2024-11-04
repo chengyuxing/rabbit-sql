@@ -152,10 +152,10 @@ public class NonBakiTests {
         String sql4 = "select * from user\nwhere \n\t\nand id = :id";
         String sql2 = "select * from user where order by id desc";
         String sql3 = "update test.user set name = :name ,  where id = 1";
-        System.out.println(SqlUtil.repairSyntaxError(sql));
-        System.out.println(SqlUtil.repairSyntaxError(sql4));
-        System.out.println(SqlUtil.repairSyntaxError(sql2));
-        System.out.println(SqlUtil.repairSyntaxError(sql3));
+//        System.out.println(SqlUtil.repairSyntaxError(sql));
+//        System.out.println(SqlUtil.repairSyntaxError(sql4));
+//        System.out.println(SqlUtil.repairSyntaxError(sql2));
+//        System.out.println(SqlUtil.repairSyntaxError(sql3));
     }
 
     @Test

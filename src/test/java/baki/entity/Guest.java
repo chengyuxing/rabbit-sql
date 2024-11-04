@@ -6,6 +6,7 @@ import javax.persistence.*;
 @Table(schema = "test")
 public class Guest {
     @Id
+    @Column(insertable = false, updatable = false)
     private Integer id;
     private String name;
     private Integer age;

@@ -152,8 +152,50 @@ public class NewBakiTests {
     }
 
     @Test
+    public void testDslQuery4() {
+        Object res = baki.query(Guest.class)
+                .where(w -> w.gt(Guest::getId, 10))
+                .groupBy(g -> g.count().by(Guest::getAge).having(h -> h.count(StandardOperator.GT, 1)))
+                .orderBy(o -> o.asc(Guest::getAge))
+                .toPagedRowResource(1, 10)
+//                .count()
+//                .exists()
+                ;
+        System.out.println(res);
+    }
+
+    @Test
+    public void testDslDelete() {
+        Guest guest = new Guest();
+        guest.setId(14);
+        int i = baki.delete(guest)
+//                .byId()
+                .by(w -> w.and(g -> g.eq(Guest::getId, 12).eq(Guest::getId, 20)));
+        System.out.println(i);
+    }
+
+    @Test
+    public void testDslQuery2() {
+        baki.query(Guest.class)
+                .where(g -> g.gt(Guest::getId, 5))
+                .where(g -> g.lt(Guest::getId, 10))
+                .where(g -> g.or(o -> o.in(Guest::getId, Arrays.asList(17, 18, 19))))
+                .toList()
+                .forEach(System.out::println);
+
+        System.out.println("---");
+
+        Object sql = baki.query(Guest.class)
+                .where(g -> g.gt(Guest::getId, 5)
+                        .lt(Guest::getId, 10)
+                        .or(o -> o.in(Guest::getId, Arrays.asList(17, 18, 19))))
+                .getSql();
+
+        System.out.println(sql);
+    }
+
+    @Test
     public void testDslQuery() {
-        // FIXME ORDER BY 要不要加下动态sql功能
         baki.query(Guest.class)
                 .where(w -> w.isNotNull(Guest::getId)
                         .gt(Guest::getId, 1)
@@ -179,6 +221,10 @@ public class NewBakiTests {
                 .groupBy(g -> g.count()
                         .max(Guest::getAge)
                         .avg(Guest::getAge)
+                        .count(Guest::getAge)
+                        .count(Guest::getName)
+                        .min(Guest::getAge)
+                        .min(Guest::getId)
                         .by(Guest::getAge)
                         .having(h -> h.count(StandardOperator.GT, 1))
                 )
@@ -237,11 +283,22 @@ public class NewBakiTests {
     @Test
     public void testDslUpdate() {
         Guest guest = new Guest();
-//        guest.setId(1);
-        guest.setAddress("USAbc");
+        guest.setId(16);
+        guest.setAddress("Shanghai");
+        int i = baki.update(guest)
+//                .ignoreNull()
+                .byId();
+        System.out.println(i);
+    }
+
+    @Test
+    public void testDslUpdate2() {
+        Guest guest = new Guest();
+        guest.setId(15);
+        guest.setAddress("China");
         int i = baki.update(guest)
                 .ignoreNull()
-                .by(w -> w.eq(Guest::getId, 3));
+                .by(w -> w.and(o -> o.eq(Guest::getId, 18).eq(Guest::getId, 22)));
         System.out.println(i);
     }
 
@@ -257,7 +314,14 @@ public class NewBakiTests {
 
     @Test
     public void testDslInsert() {
-        baki.insert(new Guest());
+        Guest guest = new Guest();
+        guest.setId(1000);
+        guest.setAddress("BBC");
+        guest.setAge(89);
+        guest.setCount(1919);
+        guest.setName("chengyuxing");
+        int i = baki.insert(guest);
+        System.out.println(i);
     }
 
     @Test

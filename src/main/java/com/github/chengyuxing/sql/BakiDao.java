@@ -13,6 +13,7 @@ import com.github.chengyuxing.sql.dsl.clause.Where;
 import com.github.chengyuxing.sql.dsl.clause.condition.Criteria;
 import com.github.chengyuxing.sql.dsl.types.FieldReference;
 import com.github.chengyuxing.sql.dsl.types.OrderByType;
+import com.github.chengyuxing.sql.dsl.types.StandardOperator;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
 import com.github.chengyuxing.sql.exceptions.IllegalSqlException;
 import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
@@ -636,7 +637,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             @Override
             public int byId() {
                 String idColumn = entityMeta.getPrimaryKey();
-                String whereById = "\nwhere " + idColumn + " = " + namedParamPrefix + idColumn;
+                String whereById = "\nwhere " + idColumn + StandardOperator.EQ.padWithSpace() + namedParamPrefix + idColumn;
                 Map<String, Object> data = Args.ofEntity(entity);
                 String update = ignoreNull ? dynamicUpdate(data, whereById) : entityMeta.getUpdate() + whereById;
                 String key = entityCallKey(clazz, update);
@@ -671,7 +672,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             @Override
             public int byId() {
                 String idColumn = entityMeta.getPrimaryKey();
-                String delete = entityMeta.getDelete() + "\nwhere " + idColumn + " = " + namedParamPrefix + idColumn;
+                String delete = entityMeta.getDelete() + "\nwhere " + idColumn + StandardOperator.EQ.padWithSpace() + namedParamPrefix + idColumn;
                 Map<String, Object> data = Args.ofEntity(entity);
                 String key = entityCallKey(clazz, delete);
                 return watchSql(key, delete, data, () -> executeUpdate(delete, data));
@@ -1100,6 +1101,13 @@ public class BakiDao extends JdbcSupport implements Baki {
         }
     }
 
+    /**
+     * For {@link #watchSql(String, String, Object, Supplier)} and {@link #executeQueryStream(String, String, Map)}
+     *
+     * @param clazz entity type
+     * @param sql   sql
+     * @return unique key
+     */
     protected String entityCallKey(Class<?> clazz, String sql) {
         return "@" + clazz.getName() + ":" + sql;
     }

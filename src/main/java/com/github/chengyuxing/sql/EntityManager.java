@@ -186,7 +186,8 @@ public class EntityManager implements AutoCloseable {
         }
 
         private String genSelect(Set<String> columns) {
-            return "select " + String.join(", ", columns) + "\nfrom " + tableName;
+            String delimiter = columns.size() > 7 ? ",\n\t" : ", ";
+            return "select " + String.join(delimiter, columns) + "\nfrom " + tableName;
         }
 
         private String genCountSelect() {

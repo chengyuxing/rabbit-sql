@@ -1,7 +1,6 @@
 package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.DataRow;
-import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.sql.annotation.*;
 import com.github.chengyuxing.sql.page.IPageable;
@@ -11,6 +10,7 @@ import com.github.chengyuxing.sql.plugins.SqlInvokeHandler;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.annotation.Type;
+import com.github.chengyuxing.sql.utils.EntityUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.Annotation;
@@ -274,7 +274,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
             if (genericType.isAssignableFrom(d.getClass())) {
                 return d;
             }
-            return ObjectUtil.mapToEntity(d, genericType);
+            return EntityUtil.mapToEntity(d, genericType);
         };
     }
 
@@ -302,7 +302,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
                             continue;
                         }
                         if (!arg.getClass().getName().startsWith("java.")) {
-                            myArgs.add(ObjectUtil.entityToMap(arg, HashMap::new));
+                            myArgs.add(EntityUtil.entityToMap(arg, HashMap::new));
                             continue;
                         }
                         throw new IllegalArgumentException(method.getDeclaringClass() + "." + method.getName() + " unsupported arg type: " + arg.getClass().getName());
@@ -313,7 +313,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
                     return arg;
                 }
                 if (!ReflectUtil.isBasicType(arg)) {
-                    return ObjectUtil.entityToMap(arg, HashMap::new);
+                    return EntityUtil.entityToMap(arg, HashMap::new);
                 }
             }
         }

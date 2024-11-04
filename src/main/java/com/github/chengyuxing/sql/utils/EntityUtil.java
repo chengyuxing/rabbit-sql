@@ -16,14 +16,40 @@ import java.util.function.Function;
 public final class EntityUtil {
     private static final Map<FieldReference<?>, String> columnCache = new ConcurrentHashMap<>();
 
+    /**
+     * Convert entity to map.
+     *
+     * @param entity     entity
+     * @param mapBuilder map builder
+     * @param <T>        map type
+     * @param <E>        entity type
+     * @return map
+     * @see Column @Column
+     */
     public static <T extends Map<String, Object>, E> T entityToMap(E entity, Function<Integer, T> mapBuilder) {
         return ObjectUtil.entityToMap(entity, EntityUtil::getColumnName, mapBuilder);
     }
 
-    public static <T> T mapToEntity(Map<String, Object> source, Class<T> entityClass) {
-        return ObjectUtil.mapToEntity(source, entityClass, EntityUtil::getColumnName, null);
+    /**
+     * Convert map to entity.
+     *
+     * @param source map
+     * @param clazz  entity class
+     * @param <T>    entity type
+     * @return entity
+     * @see Column @Column
+     */
+    public static <T> T mapToEntity(Map<String, Object> source, Class<T> clazz) {
+        return ObjectUtil.mapToEntity(source, clazz, EntityUtil::getColumnName, null);
     }
 
+    /**
+     * Get the entity column name.
+     *
+     * @param field field
+     * @return column name
+     * @see Column @Column
+     */
     public static String getColumnName(Field field) {
         String name = field.getName();
         if (field.isAnnotationPresent(Column.class)) {

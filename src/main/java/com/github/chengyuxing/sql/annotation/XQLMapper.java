@@ -45,7 +45,7 @@ import java.lang.annotation.*;
  *     {@link java.util.Optional Optional}
  *     {@link java.util.Map Map}
  *     {@link com.github.chengyuxing.common.DataRow DataRow}
- *     {@link IPageable Ipageable}
+ *     {@link IPageable IPageable}
  *     {@link com.github.chengyuxing.sql.PagedResource PagedResource}
  *     {@link Integer}
  *     {@link Long}

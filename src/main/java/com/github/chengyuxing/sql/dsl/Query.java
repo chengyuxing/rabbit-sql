@@ -7,7 +7,7 @@ import com.github.chengyuxing.sql.dsl.clause.GroupBy;
 import com.github.chengyuxing.sql.dsl.clause.OrderBy;
 import com.github.chengyuxing.sql.dsl.clause.Where;
 import com.github.chengyuxing.sql.dsl.types.FieldReference;
-import com.github.chengyuxing.sql.page.PageHelperProvider;
+import com.github.chengyuxing.sql.plugins.PageHelperProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;

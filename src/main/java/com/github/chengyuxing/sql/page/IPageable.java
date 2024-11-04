@@ -3,6 +3,7 @@ package com.github.chengyuxing.sql.page;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.PagedResource;
+import com.github.chengyuxing.sql.plugins.PageHelperProvider;
 
 import java.util.HashMap;
 import java.util.Map;

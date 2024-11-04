@@ -2,7 +2,7 @@ package com.github.chengyuxing.sql.annotation;
 
 import com.github.chengyuxing.sql.page.IPageable;
 import com.github.chengyuxing.sql.page.PageHelper;
-import com.github.chengyuxing.sql.page.PageHelperProvider;
+import com.github.chengyuxing.sql.plugins.PageHelperProvider;
 
 import java.lang.annotation.*;
 import java.util.function.Function;
@@ -17,7 +17,7 @@ import java.util.function.Function;
 @Documented
 public @interface PageableConfig {
     /**
-     * Disable auto generate paged sql ({@link PageHelper#pagedSql(String)} and rewrite default page args.
+     * Disable auto generate paged sql ({@link PageHelper#pagedSql(char, String)} and rewrite default page args.
      *
      * @return default page args [{@link PageHelper#START_NUM_KEY start}, {@link PageHelper#END_NUM_KEY end}]
      * @see IPageable#rewriteDefaultPageArgs(Function) rewriteDefaultPageArgs

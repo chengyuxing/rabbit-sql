@@ -1,9 +1,6 @@
-package com.github.chengyuxing.sql.page;
+package com.github.chengyuxing.sql.plugins;
 
-import com.github.chengyuxing.sql.page.impl.Db2PageHelper;
-import com.github.chengyuxing.sql.page.impl.MysqlPageHelper;
-import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
-import com.github.chengyuxing.sql.page.impl.PGPageHelper;
+import com.github.chengyuxing.sql.page.PageHelper;
 
 import java.sql.DatabaseMetaData;
 
@@ -19,10 +16,6 @@ public interface PageHelperProvider {
      * @param dbName           current database name
      * @param namedParamPrefix current named parameter prefix
      * @return PageHelper instance
-     * @see PGPageHelper PGPageHelper
-     * @see OraclePageHelper OraclePageHelper
-     * @see MysqlPageHelper MysqlPageHelper
-     * @see Db2PageHelper Db2PageHelper
      */
     PageHelper customPageHelper(DatabaseMetaData databaseMetaData, String dbName, char namedParamPrefix);
 }

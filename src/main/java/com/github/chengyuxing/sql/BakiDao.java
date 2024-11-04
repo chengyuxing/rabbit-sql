@@ -592,7 +592,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             @Override
             public @NotNull Pair<String, Map<String, Object>> getSql() {
                 Triple<String, String, Map<String, Object>> query = createQuery();
-                return Pair.of(query.getItem2(), Collections.unmodifiableMap(query.getItem3()));
+                return Pair.of(query.getItem1(), Collections.unmodifiableMap(query.getItem3()));
             }
         };
     }

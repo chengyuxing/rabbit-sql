@@ -3,6 +3,7 @@ package com.github.chengyuxing.sql;
 import com.github.chengyuxing.sql.dsl.*;
 import com.github.chengyuxing.sql.support.executor.Executor;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
+import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
@@ -42,6 +43,7 @@ public interface Baki {
      * @return Query instance
      * @see javax.persistence.Entity @Entity
      */
+    @ApiStatus.AvailableSince("8.0.0")
     <T, SELF extends Query<T, SELF>> Query<T, SELF> query(@NotNull Class<T> clazz);
 
     /**
@@ -52,6 +54,7 @@ public interface Baki {
      * @return affected rows
      * @see javax.persistence.Entity @Entity
      */
+    @ApiStatus.AvailableSince("8.0.0")
     <T> int insert(@NotNull T entity);
 
     /**
@@ -62,6 +65,7 @@ public interface Baki {
      * @return affected rows
      * @see javax.persistence.Entity @Entity
      */
+    @ApiStatus.AvailableSince("8.0.0")
     <T> int insert(@NotNull Collection<T> entities);
 
     /**
@@ -72,6 +76,7 @@ public interface Baki {
      * @return Update instance
      * @see javax.persistence.Entity @Entity
      */
+    @ApiStatus.AvailableSince("8.0.0")
     <T> Update<T> update(@NotNull T entity);
 
     /**
@@ -82,6 +87,7 @@ public interface Baki {
      * @return Delete instance
      * @see javax.persistence.Entity @Entity
      */
+    @ApiStatus.AvailableSince("8.0.0")
     <T> Delete<T> delete(@NotNull T entity);
 
     /**

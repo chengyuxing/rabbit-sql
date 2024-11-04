@@ -174,11 +174,11 @@ public class EntityManager implements AutoCloseable {
         }
 
         private String genSelect(Set<String> columns) {
-            return "select " + String.join(", ", columns) + " \nfrom " + tableName;
+            return "select " + String.join(", ", columns) + "\nfrom " + tableName;
         }
 
         private String genCountSelect() {
-            return "select count(*) \nfrom " + tableName;
+            return "select count(*)\nfrom " + tableName;
         }
 
         private String genExistSelect() {

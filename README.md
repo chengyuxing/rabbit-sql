@@ -14,7 +14,7 @@ Get [Best practice](https://github.com/chengyuxing/rabbit-sql/blob/master/BEST_P
 
 This is a lightweight persistence layer framework, provides a complete database operation solution, through encapsulation and abstraction, simplifies the complexity of database access, but also provides flexibility and scalability for developers. simple, stable and efficient as the goal, some features following:
 
-- Basic operation for insert, delete, update, query;
+- Native SQL executor and basic [JPA support](#JPA) for single table CRUD;
 - [execute procedure/function](#Procedure);
 - simple [transaction](#Transaction);
 - [prepare sql](#Prepare-SQL);
@@ -99,9 +99,6 @@ public interface ExampleMapper {
   
   @XQL(type = Type.insert)
   int addGuest(DataRow dataRow);
-  
-  @Insert("test.guest")
-  int addGuests(List<DataRow> dataRows);
 }
 ```
 
@@ -136,13 +133,12 @@ By default, all methods behaviors are depends on method prefix and sql name mapp
 
 If the method annotated with special annotations, method will not mapping to xql file sql name, it just execute by the itself:
 
-- `@Insert`
-- `@Update`
-- `@Delete`
 - `@Procedure`
 - `@Function`
 
 ### Baki
+
+Basic interface to access database.
 
 #### Query
 
@@ -218,37 +214,119 @@ PagedResource<DataRow> res = baki.query("&data.custom_paged")
 #### Procedure
 
 ```java
-baki.of("{call test.fun_query(:c::refcursor)}")
-        .call(Args.of("c", Param.IN_OUT("result",OUTParamType.REF_CURSOR)))
-        .<List<DataRow>>getFirstAs()
-        .stream()
-        .forEach(System.out::println);
+baki.of("{:res = call test.sum(:a, :b)}")
+      .call(Args.of("res", Param.OUT(StandardOutParamType.INTEGER))
+              .add("a", Param.IN(34))
+              .add("b", Param.IN(56)))
+      .getOptional("res")
+      .ifPresent(System.out::println);
 ```
 
 > If **postgresql**, you must use transaction when returns cursor.
 
-#### Update & Insert & Delete
+#### JPA
 
-I'm going to focus here on the update operation, use [baki](#BakiDao)'s  `update` operation, `update` returns an **update executor**，some details following:
+Implemented JPA annotations: `@Entity` , `@Table` , `@Id` , `@Column` , `@Transient` , support **Lambda** style for CRUD, the CRUD logic basically follows the JPA specification.
 
-- **safe** property: get all table fields before execute update, and remove updated data fields which not exist in table fields;
+A simple entity:
 
-  > Notice, recommend do not use this property for improve performance if you 100% fully know the data you need will be updated.
-  >
-  > Same as **insert** operation.
+```java
+@Entity
+@Table(schema = "test")
+public class Guest {
+    @Id
+    @Column(insertable = false, updatable = false)
+    private Integer id;
+    private String name;
+    private Integer age;
+    private String address;
 
-The 2nd arg `where` of `update` operation, condition is static if statement not contains named parameter, all data will be updated on static condition; if statement contains named parameter like: `id = :id` , all data will be updated dynamically by every id parameter value.
+    @Transient
+    @Column(name = "count_all")
+    private Integer count;
+  
+    // getter, setter
+}
+```
 
-**Example**
-
-Data:`[{name: 'cyx', 'age': 29, id: 13}, ...]`;
-
-Condition: `id = :id`;
-
-`update` operation can find arg which in condition and generate correct update statement:
+Query supports structure:
 
 ```sql
-update ... set name = :name, age = :age where id = :id;
+select ... from table [where ...] [group by ...] [having ...] [order by ...]
+```
+
+A complete example:
+
+```sql
+baki.query(Guest.class)
+    .where(w -> w.isNotNull(Guest::getId)
+               .gt(Guest::getId, 1)
+               .and(a -> a.in(Guest::getId, Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8))
+                         .startsWith(Guest::getName, "cyx")
+                         .or(s -> s.between(Guest::getAge, 1, 100)
+                                  .notBetween(Guest::getAge, 100, 1000)
+                         )
+                         .in(Guest::getName, Arrays.asList("cyx", "jack"))
+               )
+               .of(Guest::getAddress, () -> "~", "kunming")
+               .peek((a, b) -> System.out.println(a))
+    )
+   .groupBy(g -> g.count()
+           .max(Guest::getAge)
+           .avg(Guest::getAge)
+           .by(Guest::getAge)
+           .having(h -> h.count(StandardOperator.GT, 1))
+           )
+   .orderBy(o -> o.asc(Guest::getAge))
+   .toList()
+```
+
+- Check the currently built SQL structure by method `peek` on the development phase.
+- Support custom operator(`() -> "~"`) by invoke [operator white list](#operatorWhiteList).
+
+**Select/update/delete** can build complex **where** nest conditions, the **having** logic same as **where**, supports the flatten style and nest style, by default multiple conditions concated by `and` .
+
+**SQL**:
+
+```sql
+where id > 5 and id < 10 or id in (17, 18, 19)
+```
+
+**Flatten style**:
+
+```java
+.where(g -> g.gt(Guest::getId, 5))
+.where(g -> g.lt(Guest::getId, 10))
+.where(g -> g.or(o -> o.in(Guest::getId, Arrays.asList(17, 18, 19))))
+```
+
+**Nest style**:
+
+```java
+.where(g -> g.gt(Guest::getId, 5)
+        .lt(Guest::getId, 10)
+        .or(o -> o.in(Guest::getId, Arrays.asList(17, 18, 19))))
+```
+
+Notice the `and` and `or` :  adjustments have been made for most common situations: 
+
+- all condition will be concat with `or` in the **and group**;
+- all condition will be concat with `and` in the **or group**;
+
+**SQL**:
+
+```sql
+((name = 'cyx' and age = 30) or (name = 'jack' and age = 60))
+```
+
+**Nest structure**:
+
+```java
+.where(w -> w.and(o -> o.or(a -> a.eq(Guest::getName, "cyx")
+                                 .eq(Guest::getAge, 30))
+                       .or(r -> r.eq(Guest::getName, "jack")
+                                 .eq(Guest::getAge, 60))
+               )
 ```
 
 ### Transaction
@@ -692,6 +770,12 @@ Default: `null`
 The query cache manager caches query results to improve performance, increase concurrency, and reduce database stress.
 
 Make a reasonable automatic cache expiration policy to prevent data from being updated in time.
+
+##### operatorWhiteList
+
+Default：`null`
+
+The JPA entity query where condition builds a custom action whitelist to support other trusted, non-built-in operators.
 
 ### XQLFileManager
 

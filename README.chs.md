@@ -14,7 +14,7 @@
 
 这是一个轻量级的持久层框架，提供了完整的数据库操作解决方案，通过封装和抽象，简化了数据库访问的复杂性，同时也为开发者提供了灵活性和可扩展性，以追求简单稳定高效为目标，此库基本功能如下：
 
-- 基本[接口](#BakiDao)增删改查；
+- 原生SQL执行和基本的[JPA单表](#JPA)CRUD；
 - [执行存储过程/函数](#调用存储过程函数)；
 - 简单的[事务](#事务)；
 - [预编译sql](#预编译SQL)；
@@ -101,9 +101,6 @@ public interface ExampleMapper {
   
   @XQL(type = Type.insert)
   int addGuest(DataRow dataRow);
-  
-  @Insert("test.guest")
-  int addGuests(List<DataRow> dataRows);
 }
 ```
 
@@ -138,15 +135,14 @@ public interface ExampleMapper {
 
 如果接口方法标记了以下特殊注解，将忽略接口的映射关系，并执行此注解的具体操作：
 
-- `@Insert`
-- `@Update`
-- `@Delete`
 - `@Procedure`
 - `@Function`
 
 ### Baki
 
-#### 查询
+访问数据库的基础接口。
+
+#### 原生SQL查询
 
 ```java
 baki.query("select … where id = :id").arg("id", "1")
@@ -220,37 +216,116 @@ PagedResource<DataRow> res = baki.query("&data.custom_paged")
 #### 调用存储过程/函数
 
 ```java
-baki.of("{call test.fun_query(:c::refcursor)}")
-        .call(Args.of("c", Param.IN_OUT("result",OUTParamType.REF_CURSOR)))
-        .<List<DataRow>>getFirstAs()
-        .stream()
-        .forEach(System.out::println);
+baki.of("{:res = call test.sum(:a, :b)}")
+      .call(Args.of("res", Param.OUT(StandardOutParamType.INTEGER))
+              .add("a", Param.IN(34))
+              .add("b", Param.IN(56)))
+      .getOptional("res")
+      .ifPresent(System.out::println);
 ```
 
 > 如果是**postgresql**数据库，返回值有游标需要使用[事务](#事务)进行包裹。
 
-#### 更新&插入&删除
+#### JPA
 
-更新一般使用[baki](#BakiDao)提供的 `update` 方法，`update` 返回一个**更新执行器**，具体说下几个细节：
+已实现的JPA注解包括：`@Entity` , `@Table` , `@Id` , `@Column` , `@Transient` ，支持基本**Lambda**风格的CRUD操作，CRUD逻辑基本遵循JPA规范即可。
 
-- **safe**属性：在更新数据之前先获取要插入表的所有字段，并将要更新数据中的不存在的表字段的数据过滤，最终生成的update语句只包含表中存在的字段；
+一个简单的实体如下：
 
-  > 需要注意，如果100%确定自己要插入的数据无误，可以不调用此属性，以提高性能；
-  >
-  > 同样适用于**插入**操作。
+```java
+@Entity
+@Table(schema = "test")
+public class Guest {
+    @Id
+    @Column(insertable = false, updatable = false)
+    private Integer id;
+    private String name;
+    private Integer age;
+    private String address;
 
-`update` 方法第二个参数 `where`，如果不包含参数占位符，那么条件都是固定的，所有数据都将根据一个固定的条件执行更新，如果是包含参数占位符，例如： `id = :id` ，那么需要更新的数据中必须包含 `id` 参数值，每条数据将动态的根据此 `id` 进行更新。
+    @Transient
+    @Column(name = "count_all")
+    private Integer count;
+  
+    // getter, setter
+}
+```
 
-**示例**
-
-数据：`[{name: 'cyx', 'age': 29, id: 13}, ...]`；
-
-条件：`id = :id`；
-
-`update` 方法最终会自动识别出 `where` 中的参数，并构建合理的sql语句：
+查询支持构建形如：
 
 ```sql
-update ... set name = :name, age = :age where id = :id;
+select ... from table [where ...] [group by ...] [having ...] [order by ...]
+```
+
+一个完整的例子如下：
+
+```java
+baki.query(Guest.class)
+    .where(w -> w.isNotNull(Guest::getId)
+               .gt(Guest::getId, 1)
+               .and(a -> a.in(Guest::getId, Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8))
+                         .startsWith(Guest::getName, "cyx")
+                         .or(s -> s.between(Guest::getAge, 1, 100)
+                                  .notBetween(Guest::getAge, 100, 1000)
+                         )
+                         .in(Guest::getName, Arrays.asList("cyx", "jack"))
+               )
+               .of(Guest::getAddress, () -> "~", "kunming")
+               .peek((a, b) -> System.out.println(a))
+    )
+   .groupBy(g -> g.count()
+           .max(Guest::getAge)
+           .avg(Guest::getAge)
+           .by(Guest::getAge)
+           .having(h -> h.count(StandardOperator.GT, 1))
+           )
+   .orderBy(o -> o.asc(Guest::getAge))
+   .toList()
+```
+
+- 在开发阶段构建复杂条件时可以通过 `peek` 方法来输出查看当前构建出的SQL结构；
+- 通过[操作符白名](#operatorWhiteList)单可支持自定义操作符（`() -> "~"`）。
+
+**查询/更新/删除**可构建复杂的**where**嵌套条件，分组**having**逻辑同**where**一样，支持展平风格和嵌套风格，其最终构建的SQL都一样，默认情况下多个条件以` and` 连接。
+
+**SQL**：
+
+```sql
+where id > 5 and id < 10 or id in (17, 18, 19)
+```
+
+**展平风格**：
+
+```java
+.where(g -> g.gt(Guest::getId, 5))
+.where(g -> g.lt(Guest::getId, 10))
+.where(g -> g.or(o -> o.in(Guest::getId, Arrays.asList(17, 18, 19))))
+```
+
+**嵌套风格**：
+
+```java
+.where(g -> g.gt(Guest::getId, 5)
+        .lt(Guest::getId, 10)
+        .or(o -> o.in(Guest::getId, Arrays.asList(17, 18, 19))))
+```
+
+其中 `and` 和 `or` 的嵌套需要注意，根据大部分常见情况做了调整，`and` 组里面的多个条件以 `or` 连接，`or` 组里面的多个条件以 `and` 连接。
+
+**SQL**:
+
+```sql
+((name = 'cyx' and age = 30) or (name = 'jack' and age = 60))
+```
+
+**嵌套结构**：
+
+```java
+.where(w -> w.and(o -> o.or(a -> a.eq(Guest::getName, "cyx")
+                                 .eq(Guest::getAge, 30))
+                       .or(r -> r.eq(Guest::getName, "jack")
+                                 .eq(Guest::getAge, 60))
+               )
 ```
 
 ### 事务
@@ -694,6 +769,12 @@ JDBC底层执行批量操作每次提交数据数量。
 查询缓存管理器，缓存查询结果，以提高性能，提高并发，降低数据库压力。
 
 合理制定缓存的自动过期策略，以免数据更新不及时。
+
+##### operatorWhiteList
+
+默认值：`null`
+
+JPA实体查询**where**条件构建自定义操作符白名单，用于支持其他受信任的非内建操作符。
 
 ### XQLFileManager
 

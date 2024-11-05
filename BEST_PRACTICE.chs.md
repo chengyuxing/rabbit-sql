@@ -181,8 +181,9 @@ private ExampleMapper exampleMapper;
 
 - 通过 Baki 接口来执行增删改查、事务操作等基本数据库操作，避免直接与 JDBC 交互。
 - 每个 SQL 操作都通过传递 SQL 名称来执行，并传入参数映射。
+- 单表CRUD推荐使用基本的JPA的实体来进行操作。
 
-**示例**：
+**SQL名示例**：
 
 ```java
 @Autowired
@@ -192,6 +193,18 @@ public Stream<DataRow> getUsersByName() {
     return baki.query("&example.queryAllUsers").args().stream();
 }
 ```
+
+**JPA示例**：
+
+```java
+baki.query(Guest.class)
+    .where(g -> g.gt(Guest::getId, 5))
+    .where(g -> g.lt(Guest::getId, 10))
+    .where(g -> g.or(o -> o.in(Guest::getId, Arrays.asList(17, 18, 19))))
+    .toList()
+```
+
+更详细的使用方法可参考[文档][jpa]。
 
 #### 事务处理
 
@@ -232,7 +245,7 @@ public void b(){
 对于批量插入、更新等操作，推荐使用批量提交，减少数据库的网络交互次数，提升性能。
 
 ```java
-baki.insert("<表名>").save(Collection<? extends Map<String, ?>> data);
+baki.insert(Collection<Entity> data);
 ```
 
 ```java
@@ -349,3 +362,4 @@ baki.of("&<sql名>").executeBatch(...);
 [gitee-rabbit-sql-sbt-md]:https://gitee.com/cyxo/rabbit-sql-spring-boot-starter/blob/main/README.chs.md
 [springboot-org]:https://spring.io/projects/spring-boot#learn
 [demo]:https://github.com/chengyuxing/rabbit-sql-quickstart
+[jpa]:https://github.com/chengyuxing/rabbit-sql/blob/master/README.chs.md#jpa

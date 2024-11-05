@@ -180,8 +180,9 @@ Except for interface mapping, by default the [Baki][baki] is provided also.
 
 - Using the Baki interface to perform basic database operations such as add, delete, modify, and transaction operations, avoiding direct interaction with JDBC.
 - Each SQL operation is performed by passing in the SQL name, along with the parameter mapping.
+- Single-table CRUD recommends using basic JPA entities for operations.
 
-**Example**:
+**Named SQL Example**:
 
 ```java
 @Autowired
@@ -191,6 +192,18 @@ public Stream<DataRow> getUsersByName() {
     return baki.query("&example.queryAllUsers").args().stream();
 }
 ```
+
+**JPA Example**:
+
+```java
+baki.query(Guest.class)
+    .where(g -> g.gt(Guest::getId, 5))
+    .where(g -> g.lt(Guest::getId, 10))
+    .where(g -> g.or(o -> o.in(Guest::getId, Arrays.asList(17, 18, 19))))
+    .toList()
+```
+
+Refer to the [documentation][jpa] for more detailed usage.
 
 #### Transaction
 
@@ -349,3 +362,4 @@ Effective use of [plugin][plugin] for [dynamic SQL][dynamic-sql] testing to ensu
 [gitee-rabbit-sql-sbt-md]:https://gitee.com/cyxo/rabbit-sql-spring-boot-starter
 [springboot-org]:https://spring.io/projects/spring-boot#learn
 [demo]:https://github.com/chengyuxing/rabbit-sql-quickstart
+[jpa]:https://github.com/chengyuxing/rabbit-sql#jpa

@@ -199,25 +199,14 @@ public class NewBakiTests {
         baki.query(Guest.class)
                 .where(w -> w.isNotNull(Guest::getId)
                         .gt(Guest::getId, 1)
-
                         .and(and -> and.in(Guest::getId, Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8))
                                 .startsWith(Guest::getName, "cyx")
                                 .or(s -> s.between(Guest::getAge, 1, 100).notBetween(Guest::getAge, 100, 1000))
                                 .in(Guest::getName, Arrays.asList("cyx", "jack"))
                         )
-
-                        .or(o -> o.isNotNull(Guest::getId))
                         .of(Guest::getAddress, () -> "~", "kunming")
-                        .neq(Guest::getAddress, "beijing", Objects::nonNull)
-
-                        .and(a -> a.or(b -> b.lt(Guest::getAge, 30).eq(Guest::getAge, 30)))
-                        .eq(Guest::getAddress, "beijing")
-
-                        .or(o -> o.gt(Guest::getAge, 10).lt(Guest::getAge, 30))
-                        .eq(Guest::getAddress, "beijing")
                         .peek((a, b) -> System.out.println(a))
                 )
-
                 .groupBy(g -> g.count()
                         .max(Guest::getAge)
                         .avg(Guest::getAge)
@@ -229,8 +218,6 @@ public class NewBakiTests {
                         .having(h -> h.count(StandardOperator.GT, 1))
                 )
                 .orderBy(o -> o.asc(Guest::getAge))
-//                .orderBy(o -> o.desc(Guest::getAge).asc(Guest::getAddress))
-//                .orderBy(o -> o.desc("name"))
                 .toList()
                 .forEach(System.out::println)
         ;

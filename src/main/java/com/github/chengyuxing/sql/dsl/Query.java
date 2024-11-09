@@ -93,12 +93,20 @@ public interface Query<T, SELF extends Query<T, SELF>> {
     SELF orderBy(@NotNull Function<OrderBy<T>, OrderBy<T>> order);
 
     /**
-     * Select columns into the result which the field ,if empty select will include all column.
+     * Select columns into the result, if empty select will include all column.
      *
      * @param columns the column that without annotation {@link javax.persistence.Transient @Transient}
      * @return self
      */
     SELF select(@NotNull List<FieldReference<T>> columns);
+
+    /**
+     * Deselect columns into the result.
+     *
+     * @param columns the column that without annotation {@link javax.persistence.Transient @Transient}
+     * @return self
+     */
+    SELF deselect(@NotNull List<FieldReference<T>> columns);
 
     /**
      * Check the built result currently.

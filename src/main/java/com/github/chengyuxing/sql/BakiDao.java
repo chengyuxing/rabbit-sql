@@ -350,11 +350,29 @@ public class BakiDao extends JdbcSupport implements Baki {
 
             @Override
             public SELF select(@NotNull List<FieldReference<T>> columns) {
+                selectColumns.clear();
                 for (FieldReference<T> column : columns) {
                     String columnName = EntityUtil.getFieldNameWithCache(column);
                     // excludes the field which annotated with @Transient
                     if (entityMeta.getColumns().containsKey(columnName)) {
                         selectColumns.add(columnName);
+                    }
+                }
+                //noinspection unchecked
+                return (SELF) this;
+            }
+
+            @Override
+            public SELF deselect(@NotNull List<FieldReference<T>> columns) {
+                if (columns.isEmpty()) {
+                    //noinspection unchecked
+                    return (SELF) this;
+                }
+                selectColumns.clear();
+                Set<String> deselectColumns = columns.stream().map(EntityUtil::getFieldNameWithCache).collect(Collectors.toSet());
+                for (String column : entityMeta.getColumns().keySet()) {
+                    if (!deselectColumns.contains(column)) {
+                        selectColumns.add(column);
                     }
                 }
                 //noinspection unchecked

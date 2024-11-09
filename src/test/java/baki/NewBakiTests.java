@@ -250,7 +250,9 @@ public class NewBakiTests {
 
                         .peek((sql, arg) -> System.out.println(sql))
                 )
-                .toList();
+                .deselect(Arrays.asList(Guest::getId, Guest::getAge))
+                .toList()
+                .forEach(System.out::println);
 
     }
 

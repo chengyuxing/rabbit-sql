@@ -70,26 +70,52 @@ public interface Baki {
     <T> int insert(@NotNull Collection<T> entities);
 
     /**
-     * Update.
+     * Update by {@link javax.persistence.Id id}.
      *
-     * @param entity entity
-     * @param <T>    entity type
-     * @return Update instance
+     * @param entity     entity
+     * @param ignoreNull ignore null value or not for update sets
+     * @param <T>        entity type
+     * @return affected rows
      * @see javax.persistence.Entity @Entity
      */
-    @ApiStatus.AvailableSince("8.0.0")
-    <T> Update<T> update(@NotNull T entity);
+    @ApiStatus.AvailableSince("8.0.1")
+    <T> int update(@NotNull T entity, boolean ignoreNull);
 
     /**
-     * Delete.
+     * Batch update by {@link javax.persistence.Id id}.
+     * <p>Notice: the real update statement depends on first data,
+     * it means 'ignoreNull' just available on first data.</p>
+     *
+     * @param entities   entities
+     * @param ignoreNull ignore null value or not for update sets
+     * @param <T>        entity type
+     * @return affected rows
+     * @see javax.persistence.Entity @Entity
+     */
+    @ApiStatus.AvailableSince("8.0.1")
+    <T> int update(@NotNull Collection<T> entities, boolean ignoreNull);
+
+    /**
+     * Delete by {@link javax.persistence.Id id}.
      *
      * @param entity entity
      * @param <T>    entity type
-     * @return Delete instance
+     * @return affected rows
      * @see javax.persistence.Entity @Entity
      */
-    @ApiStatus.AvailableSince("8.0.0")
-    <T> Delete<T> delete(@NotNull T entity);
+    @ApiStatus.AvailableSince("8.0.1")
+    <T> int delete(@NotNull T entity);
+
+    /**
+     * Batch delete by {@link javax.persistence.Id id}.
+     *
+     * @param entities entities
+     * @param <T>      entity type
+     * @return affected rows
+     * @see javax.persistence.Entity @Entity
+     */
+    @ApiStatus.AvailableSince("8.0.1")
+    <T> int delete(@NotNull Collection<T> entities);
 
     /**
      * Basic executor.

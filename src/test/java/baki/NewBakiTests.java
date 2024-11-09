@@ -168,9 +168,7 @@ public class NewBakiTests {
     public void testDslDelete() {
         Guest guest = new Guest();
         guest.setId(14);
-        int i = baki.delete(guest)
-//                .byId()
-                .by(w -> w.and(g -> g.eq(Guest::getId, 12).eq(Guest::getId, 20)));
+        int i = baki.delete(guest);
         System.out.println(i);
     }
 
@@ -274,9 +272,7 @@ public class NewBakiTests {
         Guest guest = new Guest();
         guest.setId(16);
         guest.setAddress("Shanghai");
-        int i = baki.update(guest)
-//                .ignoreNull()
-                .byId();
+        int i = baki.update(guest, true);
         System.out.println(i);
     }
 
@@ -285,9 +281,7 @@ public class NewBakiTests {
         Guest guest = new Guest();
         guest.setId(15);
         guest.setAddress("China");
-        int i = baki.update(guest)
-                .ignoreNull()
-                .by(w -> w.and(o -> o.eq(Guest::getId, 18).eq(Guest::getId, 22)));
+        int i = baki.update(guest, true);
         System.out.println(i);
     }
 
@@ -328,8 +322,7 @@ public class NewBakiTests {
         user.setNl(76);
 //        user.setXm("cyx");
         user.setUserId(2120056);
-        baki.update(AnotherUser.class)
-                .ignoreNull()
+        baki.update(AnotherUser.class, true)
 //                .save(user, Where.of().eq("id", 1))
         ;
 //        System.out.println(i);
@@ -363,9 +356,8 @@ public class NewBakiTests {
         Guest user = new Guest();
         user.setId(11);
         user.setAddress("昆明市西山区福海街道");
-        baki.update(User.class)
-                .ignoreNull()
-                .byId();
+        int i = baki.update(user, true);
+        System.out.println(i);
     }
 
     @Test

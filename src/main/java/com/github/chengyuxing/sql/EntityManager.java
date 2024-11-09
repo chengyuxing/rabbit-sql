@@ -103,6 +103,7 @@ public class EntityManager implements AutoCloseable {
         private final char namedParamPrefix;
         private final String tableName;
         private final String primaryKey;
+        private final String whereById;
         private final Map<String, ColumnMeta> columns;
         private final Set<String> updateColumns;
         private final Set<String> insertColumns;
@@ -110,26 +111,31 @@ public class EntityManager implements AutoCloseable {
         private final String countSelect;
         private final String existsSelect;
         private final String insert;
-        private final String update;
-        private final String delete;
+        private final String updateById;
+        private final String deleteById;
 
         public EntityMeta(char namedParamPrefix, String tableName, Map<String, ColumnMeta> columns) {
             this.namedParamPrefix = namedParamPrefix;
             this.tableName = tableName;
             this.columns = columns;
+            this.primaryKey = checkPrimaryKey();
+            this.whereById = genWhereById();
             this.updateColumns = genUpdateSetColumns();
             this.insertColumns = genInsertColumns();
-            this.primaryKey = checkPrimaryKey();
             this.select = genSelect(this.columns.keySet());
             this.countSelect = genCountSelect();
             this.existsSelect = genExistSelect();
             this.insert = genInsert();
-            this.update = genUpdate();
-            this.delete = genDelete();
+            this.updateById = genUpdate();
+            this.deleteById = genDelete();
         }
 
         public String getPrimaryKey() {
             return primaryKey;
+        }
+
+        public String getWhereById() {
+            return whereById;
         }
 
         public Map<String, ColumnMeta> getColumns() {
@@ -168,12 +174,12 @@ public class EntityManager implements AutoCloseable {
             return insert;
         }
 
-        public String getUpdate() {
-            return update;
+        public String getUpdateById() {
+            return updateById;
         }
 
-        public String getDelete() {
-            return delete;
+        public String getDeleteById() {
+            return deleteById;
         }
 
         private String checkPrimaryKey() {
@@ -183,6 +189,10 @@ public class EntityManager implements AutoCloseable {
                 }
             }
             throw new IllegalStateException("Primary Key not found");
+        }
+
+        private String genWhereById() {
+            return "\nwhere " + primaryKey + StandardOperator.EQ.padWithSpace() + namedParamPrefix + primaryKey;
         }
 
         private String genSelect(Set<String> columns) {
@@ -238,11 +248,11 @@ public class EntityManager implements AutoCloseable {
             for (String column : updateColumns) {
                 sets.add(column + StandardOperator.EQ.padWithSpace() + namedParamPrefix + column);
             }
-            return "update " + tableName + "\nset " + sets;
+            return "update " + tableName + "\nset " + sets + whereById;
         }
 
         private String genDelete() {
-            return "delete from " + tableName;
+            return "delete from " + tableName + whereById;
         }
     }
 

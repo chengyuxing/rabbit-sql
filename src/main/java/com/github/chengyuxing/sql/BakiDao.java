@@ -13,7 +13,6 @@ import com.github.chengyuxing.sql.dsl.clause.Where;
 import com.github.chengyuxing.sql.dsl.clause.condition.Criteria;
 import com.github.chengyuxing.sql.dsl.types.FieldReference;
 import com.github.chengyuxing.sql.dsl.types.OrderByType;
-import com.github.chengyuxing.sql.dsl.types.StandardOperator;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
 import com.github.chengyuxing.sql.exceptions.IllegalSqlException;
 import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
@@ -637,80 +636,63 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public <T> Update<T> update(@NotNull T entity) {
+    public <T> int update(@NotNull T entity, boolean ignoreNull) {
         @SuppressWarnings("unchecked") Class<T> clazz = (Class<T>) entity.getClass();
         EntityManager.EntityMeta entityMeta = entityManager.getEntityMeta(clazz);
 
-        return new Update<T>() {
-            private String dynamicUpdate(Map<String, Object> data, String where) {
-                return sqlGenerator.generateNamedParamUpdate(
-                        entityMeta.getTableName(),
-                        entityMeta.getUpdateColumns(),
-                        data,
-                        true
-                ) + where;
-            }
-
-            @Override
-            public int byId() {
-                String idColumn = entityMeta.getPrimaryKey();
-                String whereById = "\nwhere " + idColumn + StandardOperator.EQ.padWithSpace() + namedParamPrefix + idColumn;
-                Map<String, Object> data = Args.ofEntity(entity);
-                String update = ignoreNull ? dynamicUpdate(data, whereById) : entityMeta.getUpdate() + whereById;
-                String key = entityCallKey(clazz, update);
-                return watchSql(key, update, data, () -> executeUpdate(update, data));
-            }
-
-            @Override
-            public int by(Function<Where<T>, Where<T>> where) {
-                Where<T> gotten = where.apply(new InternalWhere<>(clazz));
-                InternalWhere<T> wrapper = new InternalWhere<>(clazz, gotten);
-
-                Map<String, Object> data = Args.ofEntity(entity);
-                Pair<String, Map<String, Object>> whereClause = wrapper.getWhere();
-
-                if (whereClause.getItem1().isEmpty()) {
-                    throw new IllegalSqlException("Update must have condition.");
-                }
-                String whereBy = whereClause.getItem1();
-                String update = ignoreNull ? dynamicUpdate(data, whereBy) : entityMeta.getUpdate() + whereBy;
-                data.putAll(whereClause.getItem2());
-                String key = entityCallKey(clazz, update);
-                return watchSql(key, update, data, () -> executeUpdate(update, data));
-            }
-        };
+        Map<String, Object> data = Args.ofEntity(entity);
+        String update = ignoreNull ? sqlGenerator.generateNamedParamUpdate(
+                entityMeta.getTableName(),
+                entityMeta.getUpdateColumns(),
+                data,
+                true
+        ) + entityMeta.getWhereById() : entityMeta.getUpdateById();
+        String key = entityCallKey(clazz, update);
+        return watchSql(key, update, data, () -> executeUpdate(update, data));
     }
 
     @Override
-    public <T> Delete<T> delete(@NotNull T entity) {
+    public <T> int update(@NotNull Collection<T> entities, boolean ignoreNull) {
+        if (entities.isEmpty()) return 0;
+        @SuppressWarnings("unchecked") Class<T> clazz = (Class<T>) entities.iterator().next().getClass();
+        EntityManager.EntityMeta entityMeta = entityManager.getEntityMeta(clazz);
+
+        List<Map<String, Object>> data = entities.stream()
+                .map(Args::ofEntity)
+                .collect(Collectors.toList());
+        String update = ignoreNull ? sqlGenerator.generateNamedParamUpdate(
+                entityMeta.getTableName(),
+                entityMeta.getUpdateColumns(),
+                data.get(0),
+                true
+        ) + entityMeta.getWhereById() : entityMeta.getUpdateById();
+        String key = entityCallKey(clazz, update);
+        return watchSql(key, update, data, () -> executeBatchUpdate(update, data, batchSize));
+    }
+
+    @Override
+    public <T> int delete(@NotNull T entity) {
         @SuppressWarnings("unchecked") Class<T> clazz = (Class<T>) entity.getClass();
         EntityManager.EntityMeta entityMeta = entityManager.getEntityMeta(clazz);
-        return new Delete<T>() {
-            @Override
-            public int byId() {
-                String idColumn = entityMeta.getPrimaryKey();
-                String delete = entityMeta.getDelete() + "\nwhere " + idColumn + StandardOperator.EQ.padWithSpace() + namedParamPrefix + idColumn;
-                Map<String, Object> data = Args.ofEntity(entity);
-                String key = entityCallKey(clazz, delete);
-                return watchSql(key, delete, data, () -> executeUpdate(delete, data));
-            }
+        String delete = entityMeta.getDeleteById();
+        Map<String, Object> data = Args.ofEntity(entity);
+        String key = entityCallKey(clazz, delete);
+        return watchSql(key, delete, data, () -> executeUpdate(delete, data));
+    }
 
-            @Override
-            public int by(Function<Where<T>, Where<T>> where) {
-                Where<T> gotten = where.apply(new InternalWhere<>(clazz));
-                InternalWhere<T> wrapper = new InternalWhere<>(clazz, gotten);
-
-                Pair<String, Map<String, Object>> whereClause = wrapper.getWhere();
-                if (whereClause.getItem1().isEmpty()) {
-                    throw new IllegalSqlException("Delete must have condition.");
-                }
-                String delete = entityMeta.getDelete() + whereClause.getItem1();
-                Map<String, Object> data = Args.ofEntity(entity);
-                data.putAll(whereClause.getItem2());
-                String key = entityCallKey(clazz, delete);
-                return watchSql(key, delete, data, () -> executeUpdate(delete, data));
-            }
-        };
+    @Override
+    public <T> int delete(@NotNull Collection<T> entities) {
+        if (entities.isEmpty()) {
+            return 0;
+        }
+        @SuppressWarnings("unchecked") Class<T> clazz = (Class<T>) entities.iterator().next().getClass();
+        EntityManager.EntityMeta entityMeta = entityManager.getEntityMeta(clazz);
+        String delete = entityMeta.getDeleteById();
+        List<Map<String, Object>> data = entities.stream()
+                .map(Args::ofEntity)
+                .collect(Collectors.toList());
+        String key = entityCallKey(clazz, delete);
+        return watchSql(key, delete, data, () -> executeBatchUpdate(delete, data, batchSize));
     }
 
     @Override

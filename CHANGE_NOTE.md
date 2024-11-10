@@ -1,5 +1,9 @@
 # change note
 
+# 8.1.1
+
+- `Baki#update/delete` optimized.
+
 # 8.1.0
 
 - Support support dsl query.

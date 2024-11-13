@@ -90,7 +90,7 @@ public class FeaturedConstructor extends Constructor {
                     String envKey = holder.substring(4);
                     resolvedValue = System.getenv(envKey);
                     if (resolvedValue == null) {
-                        resolvedValue = matcher.group(0);
+                        resolvedValue = "";
                     }
                     break;
                 default:

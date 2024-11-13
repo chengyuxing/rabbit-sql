@@ -18,7 +18,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
- * Dynamic SQL parse file manager config.
+ * Dynamic SQL File Manager config.
  */
 public class XQLFileManagerConfig {
     private static final Logger log = LoggerFactory.getLogger(XQLFileManagerConfig.class);

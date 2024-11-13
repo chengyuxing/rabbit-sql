@@ -27,7 +27,7 @@
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql-spring-boot-starter</artifactId>
-    <version>3.1.1</version>
+    <version>3.1.2</version>
 </dependency>
 ```
 

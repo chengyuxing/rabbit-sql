@@ -1,5 +1,9 @@
 # change note
 
+# 8.1.2
+
+- Some optimized.
+
 # 8.1.1
 
 - `Baki#update/delete` optimized.

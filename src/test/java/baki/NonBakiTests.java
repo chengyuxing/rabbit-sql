@@ -26,7 +26,9 @@ import tests.User;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
@@ -372,7 +374,9 @@ public class NonBakiTests {
     }
 
     @Test
-    public void testLambda() {
-//        System.out.println(EntityUtil.getFieldName(User::getName));
+    public void testUri() throws IOException {
+        String s = "http://localhost:8080/share/cyx.xql?token=abcdef";
+        String file = s.substring(0, s.indexOf("?"));
+        System.out.println(file.replaceAll("[\\\\/:*?\"<>|]+","_"));
     }
 }

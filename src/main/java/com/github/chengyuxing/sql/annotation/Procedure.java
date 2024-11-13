@@ -1,5 +1,7 @@
 package com.github.chengyuxing.sql.annotation;
 
+import org.intellij.lang.annotations.Language;
+
 import java.lang.annotation.*;
 
 /**
@@ -11,9 +13,10 @@ import java.lang.annotation.*;
 @Documented
 public @interface Procedure {
     /**
-     * Procedure name.
+     * Procedure name e.g. {@code {call my_proc(:num)}} .
      *
      * @return procedure name
      */
+    @Language("SQL")
     String value();
 }

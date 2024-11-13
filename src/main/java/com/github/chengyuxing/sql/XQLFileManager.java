@@ -49,6 +49,8 @@ import static com.github.chengyuxing.common.utils.StringUtil.containsAnyIgnoreCa
  * <blockquote><pre>
  * files:
  *   home: {@code https://server/home.xql?token=${env.TOKEN}}
+ *   foo: xlqs/a.xql
+ *   bar: !path [xqls, b.xql]
  * </pre></blockquote>
  *
  * <p>Notice: <a href="https://plugins.jetbrains.com/plugin/21403-rabbit-sql/introduction/execute-dynamic-sql">

@@ -36,15 +36,24 @@ import static com.github.chengyuxing.common.utils.StringUtil.NEW_LINE;
 import static com.github.chengyuxing.common.utils.StringUtil.containsAnyIgnoreCase;
 
 /**
- * <h2>Dynamic SQL parse file manager</h2>
+ * <h2>Dynamic SQL File Manager</h2>
  * <p>Use standard sql block annotation ({@code /**}{@code /}), line annotation ({@code --}),
  * named parameter ({@code :name}) and string template variable ({@code ${template}}) to
  * extends SQL file standard syntax with special content format, brings more features to
  * SQL file and follow the strict SQL file syntax.</p>
  * <p>File type supports: {@code .xql}, {@code .sql}, suffix {@code .xql} means this file is
  * {@code XQLFileManager} default file type.</p>
- * <p>File path support {@link FileResource URI and classpath} with environment variable ({@link System#getenv()}) e.g. {@code https://server/home.xql?token=${env.TOKEN}} .</p>
- * <p>Notice: <a href="https://plugins.jetbrains.com/plugin/21403-rabbit-sql/introduction/execute-dynamic-sql">Rabbit-SQL IDEA Plugin</a> only support detect {@code .xql} file.</p>
+ *
+ * <p>File path support {@link FileResource URI and classpath}, {@code .yml} configuration file support
+ * environment variable ({@link System#getenv()}) e.g. {@link #YML} :</p>
+ * <blockquote><pre>
+ * files:
+ *   home: {@code https://server/home.xql?token=${env.TOKEN}}
+ * </pre></blockquote>
+ *
+ * <p>Notice: <a href="https://plugins.jetbrains.com/plugin/21403-rabbit-sql/introduction/execute-dynamic-sql">
+ * Rabbit-SQL IDEA Plugin</a> only support detect {@code .xql} file.</p>
+ *
  * <h3>File content structure</h3>
  * <p>{@code key-value} format, key is sql name, value is sql statement,  e.g.</p>
  * <blockquote>

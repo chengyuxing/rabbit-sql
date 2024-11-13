@@ -88,42 +88,6 @@ public abstract class JdbcSupport extends SqlParser {
     }
 
     /**
-     * Execute any prepared sql.
-     *
-     * @param sql      sql
-     * @param callback statement callback
-     * @param <T>      result type
-     * @return any result
-     * @throws UncheckedSqlException if connection states error
-     */
-    protected <T> T execute(@NotNull final String sql, @NotNull StatementCallback<T> callback) {
-        PreparedStatement statement = null;
-        Connection connection = null;
-        try {
-            connection = getConnection();
-            //noinspection SqlSourceToSinkFlow
-            statement = connection.prepareStatement(sql);
-            return callback.doInStatement(statement);
-        } catch (SQLException e) {
-            try {
-                JdbcUtil.closeStatement(statement);
-            } catch (SQLException ex) {
-                e.addSuppressed(ex);
-            }
-            statement = null;
-            releaseConnection(connection, getDataSource());
-            throw new UncheckedSqlException("execute sql:\n" + sql, e);
-        } finally {
-            try {
-                JdbcUtil.closeStatement(statement);
-            } catch (SQLException e) {
-                log.error("close statement error.", e);
-            }
-            releaseConnection(connection, getDataSource());
-        }
-    }
-
-    /**
      * Set prepared sql statement args.
      *
      * @param ps    sql statement object
@@ -170,6 +134,42 @@ public abstract class JdbcSupport extends SqlParser {
                     }
                 }
             }
+        }
+    }
+
+    /**
+     * Execute any prepared sql.
+     *
+     * @param sql      sql
+     * @param callback statement callback
+     * @param <T>      result type
+     * @return any result
+     * @throws UncheckedSqlException if connection states error
+     */
+    public <T> T execute(@NotNull final String sql, @NotNull StatementCallback<T> callback) {
+        PreparedStatement statement = null;
+        Connection connection = null;
+        try {
+            connection = getConnection();
+            //noinspection SqlSourceToSinkFlow
+            statement = connection.prepareStatement(sql);
+            return callback.doInStatement(statement);
+        } catch (SQLException e) {
+            try {
+                JdbcUtil.closeStatement(statement);
+            } catch (SQLException ex) {
+                e.addSuppressed(ex);
+            }
+            statement = null;
+            releaseConnection(connection, getDataSource());
+            throw new UncheckedSqlException("execute sql:\n" + sql, e);
+        } finally {
+            try {
+                JdbcUtil.closeStatement(statement);
+            } catch (SQLException e) {
+                log.error("close statement error.", e);
+            }
+            releaseConnection(connection, getDataSource());
         }
     }
 

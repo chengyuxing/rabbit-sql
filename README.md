@@ -284,7 +284,7 @@ baki.query(Guest.class)
 - Check the currently built SQL structure by method `peek` on the development phase.
 - Support custom operator(`() -> "~"`) by invoke [operator white list](#operatorWhiteList).
 
-**Select/update/delete** can build complex **where** nest conditions, the **having** logic same as **where**, supports the flatten style and nest style, by default multiple conditions concated by `and` .
+**Select** can build complex **where** nest conditions, the **having** logic same as **where**, supports the flatten style and nest style, by default multiple conditions concated by `and` .
 
 **SQL**:
 

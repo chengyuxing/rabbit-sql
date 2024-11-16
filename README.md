@@ -97,12 +97,12 @@ public interface ExampleMapper {
   @XQL(value = "queryGuests")
   Optional<Guest> findById(@Arg("id") int id);
   
-  @XQL(type = Type.insert)
+  @XQL(type = SqlStatementType.insert)
   int addGuest(DataRow dataRow);
 }
 ```
 
-By default, all methods behaviors are depends on method prefix and sql name mapping to method name if matched, otherwise use `@XQL(value = "sql name",type = Type.insert)` annotate method to specify the sql name and modify the default query behave, methods must follow the rules:
+By default, all methods behaviors are depends on method prefix and sql name mapping to method name if matched, otherwise use `@XQL(value = "sql name",type = SqlStatementType.insert)` annotate method to specify the sql name and modify the default query behave, methods must follow the rules:
 
 | Sql type             | Method prefix                                              |
 | -------------------- | ---------------------------------------------------------- |
@@ -117,19 +117,19 @@ By default, all methods behaviors are depends on method prefix and sql name mapp
 - **Argument dictionary**: `DataRow|Map<String,Object>|<JavaBean>`
 - **Argument List**: Each argument annotated with `@Arg`
 
-| Return Type                                            | sql Type（Type）                  | Remark                  |
-| ------------------------------------------------------ | --------------------------------- | ----------------------- |
-| `List<DataRow/Map<String,Object>/<JavaBean>>`          | query                             |                         |
-| `Set<DataRow/Map<String,Object>/<JavaBean>>`           | query                             |                         |
-| `Stream<DataRow/Map<String,Object>/<JavaBean>>`        | query                             |                         |
-| `Optional<DataRow/Map<String,Object>/<JavaBean>>`      | query                             |                         |
-| `Map<String,Object>`                                   | query                             |                         |
-| `PagedResource<DataRow/Map<String,Object>/<JavaBean>>` | query                             | `@CountQuery`(optional) |
-| `IPageable`                                            | query                             | `@CountQuery`(optional) |
-| `Long`, `Integer`, `Double`                            | query                             |                         |
-| `<JavaBean>`                                           | query                             |                         |
-| `DataRow`                                              | query, procedure, function, plsql |                         |
-| `int/Integer`                                          | insert, update, delete, ddl       |                         |
+| Return Type                                            | sql Type（Type）                              | Remark                  |
+| ------------------------------------------------------ | --------------------------------------------- | ----------------------- |
+| `List<DataRow/Map<String,Object>/<JavaBean>>`          | query                                         |                         |
+| `Set<DataRow/Map<String,Object>/<JavaBean>>`           | query                                         |                         |
+| `Stream<DataRow/Map<String,Object>/<JavaBean>>`        | query                                         |                         |
+| `Optional<DataRow/Map<String,Object>/<JavaBean>>`      | query                                         |                         |
+| `Map<String,Object>`                                   | query                                         |                         |
+| `PagedResource<DataRow/Map<String,Object>/<JavaBean>>` | query                                         | `@CountQuery`(optional) |
+| `IPageable`                                            | query                                         | `@CountQuery`(optional) |
+| `Long`, `Integer`, `Double`                            | query                                         |                         |
+| `<JavaBean>`                                           | query                                         |                         |
+| `DataRow`                                              | query, procedure, function, ddl, plsql, unset |                         |
+| `int/Integer`                                          | insert, update, delete                        |                         |
 
 If the method annotated with special annotations, method will not mapping to xql file sql name, it just execute by the itself:
 

@@ -99,12 +99,12 @@ public interface ExampleMapper {
   @XQL(value = "queryGuests")
   Optional<Guest> findById(@Arg("id") int id);
   
-  @XQL(type = Type.insert)
+  @XQL(type = SqlStatementType.insert)
   int addGuest(DataRow dataRow);
 }
 ```
 
-默认情况下，所有方法均根据前缀来确定执行类型，并且**SQL名字**和**接口方法**一一对应，如果不对应的情况下，使用注解`@XQL(value = "sql名",type = Type.insert)` 来指定具体的sql名字和覆盖默认的查询行为，接口方法定义需遵循如下规范：
+默认情况下，所有方法均根据前缀来确定执行类型，并且**SQL名字**和**接口方法**一一对应，如果不对应的情况下，使用注解`@XQL(value = "sql名",type = SqlStatementType.insert)` 来指定具体的sql名字和覆盖默认的查询行为，接口方法定义需遵循如下规范：
 
 | sql类型              | 方法前缀                                                  |
 | -------------------- | --------------------------------------------------------- |
@@ -119,19 +119,19 @@ public interface ExampleMapper {
 - 参数字典：`DataRow|Map<String,Object>|<JavaBean>`
 - 参数列表：使用注解 `@Arg` 标记每个参数的名字
 
-| 返回类型                                               | sql类型（Type）                   | 备注                  |
-| ------------------------------------------------------ | --------------------------------- | --------------------- |
-| `List<DataRow/Map<String,Object>/<JavaBean>>`          | query                             |                       |
-| `Set<DataRow/Map<String,Object>/<JavaBean>>`           | query                             |                       |
-| `Stream<DataRow/Map<String,Object>/<JavaBean>>`        | query                             |                       |
-| `Optional<DataRow/Map<String,Object>/<JavaBean>>`      | query                             |                       |
-| `Map<String,Object>`                                   | query                             |                       |
-| `PagedResource<DataRow/Map<String,Object>/<JavaBean>>` | query                             | `@CountQuery`（可选） |
-| `IPageable`                                            | query                             | `@CountQuery`（可选） |
-| `Long`, `Integer`, `Double`                            | query                             |                       |
-| `<JavaBean>`                                           | query                             |                       |
-| `DataRow`                                              | query, procedure, function, plsql |                       |
-| `int/Integer`                                          | insert, update, delete, ddl       |                       |
+| 返回类型                                               | sql类型（Type）                               | 备注                  |
+| ------------------------------------------------------ | --------------------------------------------- | --------------------- |
+| `List<DataRow/Map<String,Object>/<JavaBean>>`          | query                                         |                       |
+| `Set<DataRow/Map<String,Object>/<JavaBean>>`           | query                                         |                       |
+| `Stream<DataRow/Map<String,Object>/<JavaBean>>`        | query                                         |                       |
+| `Optional<DataRow/Map<String,Object>/<JavaBean>>`      | query                                         |                       |
+| `Map<String,Object>`                                   | query                                         |                       |
+| `PagedResource<DataRow/Map<String,Object>/<JavaBean>>` | query                                         | `@CountQuery`（可选） |
+| `IPageable`                                            | query                                         | `@CountQuery`（可选） |
+| `Long`, `Integer`, `Double`                            | query                                         |                       |
+| `<JavaBean>`                                           | query                                         |                       |
+| `DataRow`                                              | query, procedure, function, plsql, ddl, unset |                       |
+| `int/Integer`                                          | insert, update, delete                        |                       |
 
 如果接口方法标记了以下特殊注解，将忽略接口的映射关系，并执行此注解的具体操作：
 

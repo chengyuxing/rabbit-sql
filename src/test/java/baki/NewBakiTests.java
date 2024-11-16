@@ -317,6 +317,15 @@ public class NewBakiTests {
     }
 
     @Test
+    public void testInsertReturning() {
+        DataRow res = baki.of("insert into test.guest(name, address, age)\n" +
+                        "values ('xxx', 'kunming', 37)\n" +
+                        "returning id")
+                .execute();
+        System.out.println(res);
+    }
+
+    @Test
     public void testUpdateEntity() {
         AnotherUser user = new AnotherUser();
         user.setNl(76);

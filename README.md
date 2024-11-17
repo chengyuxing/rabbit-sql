@@ -22,14 +22,25 @@ This is a lightweight persistence layer framework, provides a complete database 
 - [dynamic sql](#Dynamic-SQL);
 - [interface mapping](#Interface-Mapping)
 
-## Maven dependency (jdk1.8+)
+## Maven dependency
+
+_java 17+_
 
 ```xml
-<!-- Maven central -->
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>8.1.3</version>
+    <version>9.0.1</version>
+</dependency>
+```
+
+_java 8_
+
+```xml
+<dependency>
+  <groupId>com.github.chengyuxing</groupId>
+  <artifactId>rabbit-sql</artifactId>
+  <version>8.1.3</version>
 </dependency>
 ```
 

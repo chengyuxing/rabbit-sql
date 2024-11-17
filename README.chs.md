@@ -22,10 +22,21 @@
 - [动态sql解析](#动态SQL)；
 - [接口映射](#接口映射)；
 
-## Maven dependency (jdk1.8+)
+## Maven dependency
+
+_java 17+_
 
 ```xml
-<!-- Maven 中央仓库 -->
+<dependency>
+    <groupId>com.github.chengyuxing</groupId>
+    <artifactId>rabbit-sql</artifactId>
+    <version>9.0.1</version>
+</dependency>
+```
+
+_java 8_
+
+```xml
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>

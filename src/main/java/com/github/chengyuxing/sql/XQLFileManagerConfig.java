@@ -46,7 +46,7 @@ public class XQLFileManagerConfig {
      * @param configLocation config location path
      */
     public XQLFileManagerConfig(String configLocation) {
-        FileResource resource = new FileResource(configLocation);
+        var resource = new FileResource(configLocation);
         if (configLocation.endsWith(".yml")) {
             loadYaml(resource);
             return;
@@ -64,9 +64,9 @@ public class XQLFileManagerConfig {
      * @param yamlLocation yml resource
      */
     public void loadYaml(FileResource yamlLocation) {
-        Yaml yaml = new Yaml(new FeaturedConstructor());
+        var yaml = new Yaml(new FeaturedConstructor());
         try {
-            XQLFileManagerConfig config = yaml.loadAs(yamlLocation.getInputStream(), XQLFileManagerConfig.class);
+            var config = yaml.loadAs(yamlLocation.getInputStream(), XQLFileManagerConfig.class);
             if (Objects.isNull(config)) {
                 log.warn("yaml loaded nothing, resource length is {}", yamlLocation.getInputStream().available());
                 return;
@@ -83,16 +83,16 @@ public class XQLFileManagerConfig {
      * @param propertiesLocation properties resource
      */
     public void loadProperties(FileResource propertiesLocation) {
-        TypedProperties properties = new TypedProperties();
+        var properties = new TypedProperties();
         try {
-            XQLFileManagerConfig config = new XQLFileManagerConfig();
+            var config = new XQLFileManagerConfig();
             properties.load(propertiesLocation.getInputStream());
             Map<String, String> localFiles = new LinkedHashMap<>();
             Map<String, Object> localConstants = new HashMap<>();
             Map<String, String> localPipes = new HashMap<>();
             properties.forEach((k, s) -> {
-                String p = k.toString().trim();
-                String v = s.toString().trim();
+                var p = k.toString().trim();
+                var v = s.toString().trim();
                 if (!p.isEmpty() && !v.isEmpty()) {
                     if (p.startsWith("files.")) {
                         localFiles.put(p.substring(6), v);
@@ -354,9 +354,7 @@ public class XQLFileManagerConfig {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof XQLFileManagerConfig)) return false;
-
-        XQLFileManagerConfig config = (XQLFileManagerConfig) o;
+        if (!(o instanceof XQLFileManagerConfig config)) return false;
 
         if (!getFiles().equals(config.getFiles())) return false;
         if (!getConstants().equals(config.getConstants())) return false;

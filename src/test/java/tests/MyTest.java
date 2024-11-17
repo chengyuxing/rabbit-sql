@@ -18,10 +18,7 @@ import org.postgresql.util.PGobject;
 import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.URISyntaxException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.sql.*;
-import java.util.Date;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
@@ -232,7 +229,7 @@ public class MyTest {
 //                    }
 //                })
                 .collect(d -> d);
-        res.getData().forEach(System.out::println);
+        res.data().forEach(System.out::println);
     }
 
     @Test

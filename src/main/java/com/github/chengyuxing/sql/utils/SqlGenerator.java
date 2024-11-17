@@ -54,62 +54,16 @@ public class SqlGenerator {
     }
 
     /**
-     * Generated sql meta data.
+     * Construct a new GeneratedSqlMetaData instance.
+     *
+     * @param namedParamSql       named parameter sql
+     * @param resultSql           prepared sql or normal sql
+     * @param argNameIndexMapping prepared sql arg name index mapping
+     * @param args                args
      */
-    public static final class GeneratedSqlMetaData {
-        private final String namedParamSql;
-        private final String resultSql;
-        private final Map<String, List<Integer>> argNameIndexMapping;
-        private final Map<String, ?> args;
-
-        /**
-         * Construct a new GeneratedSqlMetaData instance.
-         *
-         * @param namedParamSql       named parameter sql
-         * @param resultSql           prepared sql or normal sql
-         * @param argNameIndexMapping prepared sql arg name index mapping
-         * @param args                args
-         */
-        public GeneratedSqlMetaData(String namedParamSql, String resultSql, Map<String, List<Integer>> argNameIndexMapping, Map<String, ?> args) {
-            this.namedParamSql = namedParamSql;
-            this.resultSql = resultSql;
-            this.argNameIndexMapping = argNameIndexMapping;
-            this.args = args;
-        }
-
-        public String getNamedParamSql() {
-            return namedParamSql;
-        }
-
-        public String getResultSql() {
-            return resultSql;
-        }
-
-        public Map<String, List<Integer>> getArgNameIndexMapping() {
-            return argNameIndexMapping;
-        }
-
-        public Map<String, ?> getArgs() {
-            return args;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof GeneratedSqlMetaData)) return false;
-
-            GeneratedSqlMetaData that = (GeneratedSqlMetaData) o;
-            return Objects.equals(getNamedParamSql(), that.getNamedParamSql()) && Objects.equals(getResultSql(), that.getResultSql()) && Objects.equals(getArgNameIndexMapping(), that.getArgNameIndexMapping()) && Objects.equals(getArgs(), that.getArgs());
-        }
-
-        @Override
-        public int hashCode() {
-            int result = Objects.hashCode(getNamedParamSql());
-            result = 31 * result + Objects.hashCode(getResultSql());
-            result = 31 * result + Objects.hashCode(getArgNameIndexMapping());
-            result = 31 * result + Objects.hashCode(getArgs());
-            return result;
-        }
+    public record GeneratedSqlMetaData(String namedParamSql, String resultSql,
+                                       Map<String, List<Integer>> argNameIndexMapping,
+                                       Map<String, ?> args) {
     }
 
     /**
@@ -141,7 +95,7 @@ public class SqlGenerator {
      * @see #setTemplateFormatter(TemplateFormatter)
      */
     public String generateSql(final String sql, Map<String, ?> args) {
-        return parseNamedParameterSql(sql, args, false).getResultSql();
+        return parseNamedParameterSql(sql, args, false).resultSql();
     }
 
     /**

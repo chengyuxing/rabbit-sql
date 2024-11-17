@@ -23,8 +23,7 @@ public class JdbcUtil {
         }
         if (obj instanceof Blob) {
             obj = getBytes((Blob) obj);
-        } else if (obj instanceof Clob) {
-            Clob clob = (Clob) obj;
+        } else if (obj instanceof Clob clob) {
             obj = clob.getSubString(1, (int) clob.length());
         } else if ("org.postgresql.jdbc.PgArray".equals(className)) {
             obj = resultSet.getArray(index).getArray();

@@ -18,11 +18,11 @@ import java.util.function.Function;
  * <ul>
  *     <li>Native sql execute.</li>
  *     <li>Basic single entity CRUD depends on JPA.<br>
- *     Implemented annotations: {@link javax.persistence.Entity @Entity}
- *     {@link javax.persistence.Table @Table}
- *     {@link javax.persistence.Id @Id}
- *     {@link javax.persistence.Column @Column}
- *     {@link javax.persistence.Transient @Transient}
+ *     Implemented annotations: {@link jakarta.persistence.Entity @Entity}
+ *     {@link jakarta.persistence.Table @Table}
+ *     {@link jakarta.persistence.Id @Id}
+ *     {@link jakarta.persistence.Column @Column}
+ *     {@link jakarta.persistence.Transient @Transient}
  *     </li>
  * </ul>
  */
@@ -42,7 +42,7 @@ public interface Baki {
      * @param <T>    entity type
      * @param <SELF> query builder
      * @return Query instance
-     * @see javax.persistence.Entity @Entity
+     * @see jakarta.persistence.Entity @Entity
      */
     @ApiStatus.AvailableSince("8.0.0")
     <T, SELF extends Query<T, SELF>> Query<T, SELF> query(@NotNull Class<T> clazz);
@@ -53,7 +53,7 @@ public interface Baki {
      * @param entity entity
      * @param <T>    entity type
      * @return affected rows
-     * @see javax.persistence.Entity @Entity
+     * @see jakarta.persistence.Entity @Entity
      */
     @ApiStatus.AvailableSince("8.0.0")
     <T> int insert(@NotNull T entity);
@@ -64,25 +64,25 @@ public interface Baki {
      * @param entities entities
      * @param <T>      entity type
      * @return affected rows
-     * @see javax.persistence.Entity @Entity
+     * @see jakarta.persistence.Entity @Entity
      */
     @ApiStatus.AvailableSince("8.0.0")
     <T> int insert(@NotNull Collection<T> entities);
 
     /**
-     * Update by {@link javax.persistence.Id id}.
+     * Update by {@link jakarta.persistence.Id id}.
      *
      * @param entity     entity
      * @param ignoreNull ignore null value or not for update sets
      * @param <T>        entity type
      * @return affected rows
-     * @see javax.persistence.Entity @Entity
+     * @see jakarta.persistence.Entity @Entity
      */
     @ApiStatus.AvailableSince("8.0.1")
     <T> int update(@NotNull T entity, boolean ignoreNull);
 
     /**
-     * Batch update by {@link javax.persistence.Id id}.
+     * Batch update by {@link jakarta.persistence.Id id}.
      * <p>Notice: the real update statement depends on first data,
      * it means 'ignoreNull' just available on first data.</p>
      *
@@ -90,29 +90,29 @@ public interface Baki {
      * @param ignoreNull ignore null value or not for update sets
      * @param <T>        entity type
      * @return affected rows
-     * @see javax.persistence.Entity @Entity
+     * @see jakarta.persistence.Entity @Entity
      */
     @ApiStatus.AvailableSince("8.0.1")
     <T> int update(@NotNull Collection<T> entities, boolean ignoreNull);
 
     /**
-     * Delete by {@link javax.persistence.Id id}.
+     * Delete by {@link jakarta.persistence.Id id}.
      *
      * @param entity entity
      * @param <T>    entity type
      * @return affected rows
-     * @see javax.persistence.Entity @Entity
+     * @see jakarta.persistence.Entity @Entity
      */
     @ApiStatus.AvailableSince("8.0.1")
     <T> int delete(@NotNull T entity);
 
     /**
-     * Batch delete by {@link javax.persistence.Id id}.
+     * Batch delete by {@link jakarta.persistence.Id id}.
      *
      * @param entities entities
      * @param <T>      entity type
      * @return affected rows
-     * @see javax.persistence.Entity @Entity
+     * @see jakarta.persistence.Entity @Entity
      */
     @ApiStatus.AvailableSince("8.0.1")
     <T> int delete(@NotNull Collection<T> entities);

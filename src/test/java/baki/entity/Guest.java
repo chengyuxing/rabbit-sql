@@ -1,6 +1,7 @@
 package baki.entity;
 
-import javax.persistence.*;
+
+import jakarta.persistence.*;
 
 @Entity
 @Table(schema = "test")

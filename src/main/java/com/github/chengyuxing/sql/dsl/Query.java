@@ -95,7 +95,7 @@ public interface Query<T, SELF extends Query<T, SELF>> {
     /**
      * Select columns into the result, if empty select will include all column.
      *
-     * @param columns the column that without annotation {@link javax.persistence.Transient @Transient}
+     * @param columns the column that without annotation {@link jakarta.persistence.Transient @Transient}
      * @return self
      */
     SELF select(@NotNull List<FieldReference<T>> columns);
@@ -103,7 +103,7 @@ public interface Query<T, SELF extends Query<T, SELF>> {
     /**
      * Deselect columns into the result.
      *
-     * @param columns the column that without annotation {@link javax.persistence.Transient @Transient}
+     * @param columns the column that without annotation {@link jakarta.persistence.Transient @Transient}
      * @return self
      */
     SELF deselect(@NotNull List<FieldReference<T>> columns);

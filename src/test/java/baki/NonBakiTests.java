@@ -16,8 +16,6 @@ import com.github.chengyuxing.sql.XQLFileManagerConfig;
 import com.github.chengyuxing.sql.annotation.XQLMapper;
 import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
-import com.github.chengyuxing.sql.dsl.clause.Where;
-import com.github.chengyuxing.sql.utils.EntityUtil;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.utils.SqlHighlighter;
 import com.github.chengyuxing.sql.utils.SqlUtil;
@@ -32,7 +30,6 @@ import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
@@ -40,7 +37,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -74,6 +70,7 @@ public class NonBakiTests {
         PageHelper pageHelper = new PGPageHelper();
         pageHelper.init(1, 15, 45);
         PagedResource<DataRow> pagedResource = PagedResource.of(pageHelper, Collections.singletonList(DataRow.of("a", 1, "b", 2)));
+        System.out.println(pagedResource);
 //        String j = Jackson.toJson(pagedResource);
 //        System.out.println(j);
     }
@@ -101,8 +98,8 @@ public class NonBakiTests {
 
         SqlGenerator sqlGenerator = new SqlGenerator(':');
         SqlGenerator.GeneratedSqlMetaData pair = sqlGenerator.generatePreparedSql(sql, Collections.emptyMap());
-        System.out.println(pair.getNamedParamSql());
-        System.out.println(pair.getResultSql());
+        System.out.println(pair.namedParamSql());
+        System.out.println(pair.resultSql());
 
         Matcher m = sqlGenerator.getNamedParamPattern().matcher(sql);
         while (m.find()) {
@@ -134,8 +131,8 @@ public class NonBakiTests {
                 "idc", 15,
                 "username", "cyx"
         ));
-        System.out.println(pair1.getArgs());
-        System.out.println(pair1.getResultSql());
+        System.out.println(pair1.args());
+        System.out.println(pair1.resultSql());
     }
 
     @Test
@@ -147,8 +144,8 @@ public class NonBakiTests {
                 "idd", 16,
                 "age", 30,
                 "address", LocalDateTime.now()));
-        System.out.println(sqla.getArgs());
-        System.out.println(sqla.getResultSql());
+        System.out.println(sqla.args());
+        System.out.println(sqla.resultSql());
     }
 
     @Test

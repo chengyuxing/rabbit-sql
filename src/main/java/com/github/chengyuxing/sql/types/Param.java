@@ -82,9 +82,7 @@ public final class Param {
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof Param)) return false;
-
-        Param param = (Param) o;
+        if (!(o instanceof Param param)) return false;
 
         if (getValue() != null ? !getValue().equals(param.getValue()) : param.getValue() != null) return false;
         if (getType() != null ? !getType().equals(param.getType()) : param.getType() != null) return false;

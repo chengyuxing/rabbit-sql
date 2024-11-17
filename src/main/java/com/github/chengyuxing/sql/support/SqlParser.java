@@ -61,9 +61,9 @@ public abstract class SqlParser {
      */
     protected SqlGenerator.GeneratedSqlMetaData prepare(@NotNull String sql, Map<String, ?> args) {
         // try to generate full named parameter sql.
-        Pair<String, Map<String, Object>> result = parseSql(sql, args);
-        String parsedSql = result.getItem1();
-        Map<String, Object> parsedArgs = result.getItem2();
+        final var result = parseSql(sql, args);
+        final var parsedSql = result.getItem1();
+        final var parsedArgs = result.getItem2();
 
         // convert named parameter sql to prepared sql.
         return sqlGenerator().generatePreparedSql(parsedSql, parsedArgs);

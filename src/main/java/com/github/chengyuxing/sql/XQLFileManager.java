@@ -19,7 +19,6 @@ import org.jetbrains.annotations.Unmodifiable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.BufferedReader;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -177,14 +176,14 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     public @NotNull Resource parse(@NotNull String alias, @NotNull String filename, @NotNull FileResource fileResource) throws IOException, URISyntaxException {
         Map<String, Sql> entry = new LinkedHashMap<>();
-        StringJoiner xqlDesc = new StringJoiner(NEW_LINE);
-        try (BufferedReader reader = fileResource.getBufferedReader(Charset.forName(charset))) {
+        var xqlDesc = new StringJoiner(NEW_LINE);
+        try (var reader = fileResource.getBufferedReader(Charset.forName(charset))) {
             String blockName = null;
             List<String> descriptionBuffer = new ArrayList<>();
             List<String> sqlBodyBuffer = new ArrayList<>();
             String line;
             while ((line = reader.readLine()) != null) {
-                String trimLine = line.trim();
+                var trimLine = line.trim();
                 if (trimLine.isEmpty()) {
                     continue;
                 }
@@ -290,7 +289,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         if (!entry.isEmpty()) {
             mergeSqlTemplate(entry);
         }
-        Resource resource = new Resource(alias, filename);
+        var resource = new Resource(alias, filename);
         resource.setEntry(Collections.unmodifiableMap(entry));
         resource.setLastModified(fileResource.getLastModified());
         resource.setDescription(xqlDesc.toString().trim());
@@ -326,7 +325,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     protected void mergeSqlTemplate(Map<String, Sql> sqlResource) {
         Map<String, String> templates = new HashMap<>();
-        for (Map.Entry<String, Sql> e : sqlResource.entrySet()) {
+        for (var e : sqlResource.entrySet()) {
             String k = e.getKey();
             if (k.startsWith("${")) {
                 String template = fixTemplate(e.getValue().getContent());
@@ -336,7 +335,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         if (templates.isEmpty() && constants.isEmpty()) {
             return;
         }
-        for (Map.Entry<String, Sql> e : sqlResource.entrySet()) {
+        for (var e : sqlResource.entrySet()) {
             Sql sql = e.getValue();
             String sqlContent = sql.getContent();
             if (sqlContent.contains("${")) {
@@ -404,15 +403,15 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             // It's necessary to remove non-associated dirty resources.
             resources.entrySet().removeIf(e -> !files.containsKey(e.getKey()));
             // Reload and parse all sql file.
-            for (Map.Entry<String, String> e : files.entrySet()) {
+            for (var e : files.entrySet()) {
                 String alias = e.getKey();
                 String filename = e.getValue();
-                FileResource fr = new FileResource(filename);
+                var fr = new FileResource(filename);
                 if (fr.exists()) {
                     String ext = fr.getFilenameExtension();
                     if (ext != null && (ext.equals("sql") || ext.equals("xql"))) {
                         if (resources.containsKey(alias)) {
-                            Resource resource = resources.get(alias);
+                            var resource = resources.get(alias);
                             long oldLastModified = resource.getLastModified();
                             long lastModified = fr.getLastModified();
                             if (oldLastModified > 0 && oldLastModified != lastModified) {
@@ -443,7 +442,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             return;
         }
         try {
-            for (Map.Entry<String, String> entry : pipes.entrySet()) {
+            for (var entry : pipes.entrySet()) {
                 pipeInstances.put(entry.getKey(), (IPipe<?>) ReflectUtil.getInstance(classLoader.loadClass(entry.getValue())));
             }
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
@@ -530,7 +529,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     public int size() {
         int i = 0;
-        for (Resource resource : resources.values()) {
+        for (var resource : resources.values()) {
             i += resource.getEntry().size();
         }
         return i;
@@ -563,8 +562,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     public boolean contains(String name) {
         if (Objects.isNull(name)) return false;
-        Pair<String, String> p = decodeSqlReference(name);
-        Resource resource = resources.get(p.getItem1());
+        var p = decodeSqlReference(name);
+        var resource = resources.get(p.getItem1());
         if (Objects.isNull(resource)) {
             return false;
         }
@@ -583,12 +582,12 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         if (Objects.isNull(name)) {
             throw new IllegalArgumentException("sql object name is null");
         }
-        Pair<String, String> p = decodeSqlReference(name);
-        Resource resource = getResource(p.getItem1());
+        var p = decodeSqlReference(name);
+        var resource = getResource(p.getItem1());
         if (Objects.isNull(resource)) {
             throw new NoSuchElementException(String.format("Resource with alias [%s] not found.", p.getItem1()));
         }
-        Sql sql = resource.getEntry().get(p.getItem2());
+        var sql = resource.getEntry().get(p.getItem2());
         if (Objects.isNull(sql)) {
             throw new NoSuchElementException(String.format("no SQL named [%s] was found.", p.getItem2()));
         }
@@ -643,8 +642,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         }
         myArgs.put("_parameter", args);
         myArgs.put("_databaseId", databaseId);
-        DynamicSqlParser parser = newDynamicSqlParser(sql);
-        String parsedSql = parser.parse(myArgs);
+        var parser = newDynamicSqlParser(sql);
+        var parsedSql = parser.parse(myArgs);
         return Pair.of(parsedSql, parser.getForContextVars());
     }
 
@@ -705,10 +704,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if (!(o instanceof XQLFileManager)) return false;
+        if (!(o instanceof XQLFileManager that)) return false;
         if (!super.equals(o)) return false;
-
-        XQLFileManager that = (XQLFileManager) o;
 
         return getResources().equals(that.getResources());
     }
@@ -860,9 +857,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (!(o instanceof Sql)) return false;
+            if (!(o instanceof Sql sql)) return false;
 
-            Sql sql = (Sql) o;
             return getContent().equals(sql.getContent()) && getDescription().equals(sql.getDescription());
         }
 
@@ -926,9 +922,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (!(o instanceof Resource)) return false;
+            if (!(o instanceof Resource resource)) return false;
 
-            Resource resource = (Resource) o;
             return getLastModified() == resource.getLastModified() && Objects.equals(getAlias(), resource.getAlias()) && Objects.equals(getFilename(), resource.getFilename()) && Objects.equals(getDescription(), resource.getDescription()) && getEntry().equals(resource.getEntry());
         }
 

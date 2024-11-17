@@ -2,8 +2,8 @@ package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.sql.dsl.types.FieldReference;
+import jakarta.persistence.Column;
 
-import javax.persistence.Column;
 import java.beans.Introspector;
 import java.lang.invoke.SerializedLambda;
 import java.lang.reflect.Field;

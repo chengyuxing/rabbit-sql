@@ -1199,7 +1199,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
         }
         if (Objects.nonNull(sqlParseChecker)) {
-            mySql = sqlParseChecker.handle(mySql);
+            mySql = sqlParseChecker.handle(mySql, myArgs);
         }
         if (Objects.nonNull(sqlInterceptor)) {
             boolean request = sqlInterceptor.preHandle(mySql, myArgs, metaData);

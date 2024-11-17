@@ -27,7 +27,7 @@ Create maven project.
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql-spring-boot-starter</artifactId>
-    <version>3.1.2</version>
+    <version>3.1.3-jdk8</version>
 </dependency>
 ```
 

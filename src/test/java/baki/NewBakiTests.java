@@ -8,6 +8,9 @@ import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.sql.*;
 import com.github.chengyuxing.sql.dsl.types.StandardOperator;
+import com.github.chengyuxing.sql.page.PageHelper;
+import com.github.chengyuxing.sql.page.impl.PGPageHelper;
+import com.github.chengyuxing.sql.plugins.PageHelperProvider;
 import com.github.chengyuxing.sql.plugins.SqlWatcher;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
 import com.github.chengyuxing.sql.transaction.Tx;
@@ -15,10 +18,13 @@ import com.github.chengyuxing.sql.types.StandardOutParamType;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.utils.JdbcUtil;
 import com.zaxxer.hikari.HikariDataSource;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.sql.CallableStatement;
+import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -85,6 +91,24 @@ public class NewBakiTests {
         bakiDao.setOperatorWhiteList(new HashSet<>(Arrays.asList("~")));
 
         baki = bakiDao;
+
+        bakiDao.setGlobalPageHelperProvider(new PageHelperProvider() {
+            @Override
+            public @Nullable PageHelper customPageHelper(@NotNull DatabaseMetaData databaseMetaData, @NotNull String dbName, char namedParamPrefix) {
+                if (dbName.equals("kingbasees")) {
+                    return new PGPageHelper();
+                }
+                return null;
+            }
+        });
+    }
+
+    @Test
+    public void doPaging() {
+        PagedResource<DataRow> resource = baki.query("select * from test.guest where id > :id")
+                .args("id", 1, "page", 1, "size", 10)
+                .pageable()
+                .collect();
     }
 
     @Test

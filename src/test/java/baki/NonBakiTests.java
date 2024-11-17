@@ -1,5 +1,6 @@
 package baki;
 
+import baki.entity.Guest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -27,7 +28,10 @@ import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
 import java.io.IOException;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.net.URI;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -377,6 +381,16 @@ public class NonBakiTests {
     public void testUri() throws IOException {
         String s = "http://localhost:8080/share/cyx.xql?token=abcdef";
         String file = s.substring(0, s.indexOf("?"));
-        System.out.println(file.replaceAll("[\\\\/:*?\"<>|]+","_"));
+        System.out.println(file.replaceAll("[\\\\/:*?\"<>|]+", "_"));
+    }
+
+    @Test
+    public void test11J() throws ClassNotFoundException, NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        Class<?> clazz = Class.forName("javax.persistence.Table");
+        if (Guest.class.isAnnotationPresent((Class<? extends Annotation>) clazz)) {
+            Annotation a = Guest.class.getDeclaredAnnotation((Class<? extends Annotation>) clazz);
+            Method m = clazz.getDeclaredMethod("schema");
+            System.out.println(m.invoke(a));
+        }
     }
 }

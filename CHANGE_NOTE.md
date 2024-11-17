@@ -1,6 +1,6 @@
 # change note
 
-# 8.1.3-jdk8
+# 8.1.3
 
 - Some update.
 

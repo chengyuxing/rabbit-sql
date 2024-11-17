@@ -49,37 +49,37 @@ public class JdbcUtil {
     public static void setStatementValue(PreparedStatement ps, int index, Object value) throws SQLException {
         if (Objects.isNull(value)) {
             ps.setNull(index, Types.NULL);
-        } else if (value instanceof java.util.Date) {
-            ps.setObject(index, new Timestamp(((java.util.Date) value).getTime()));
-        } else if (value instanceof LocalDateTime) {
-            ps.setObject(index, new Timestamp(((LocalDateTime) value).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
-        } else if (value instanceof LocalDate) {
-            ps.setObject(index, new Date(((LocalDate) value).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()));
-        } else if (value instanceof LocalTime) {
-            ps.setObject(index, new Time(((LocalTime) value).atDate(LocalDate.now()).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
-        } else if (value instanceof OffsetDateTime) {
-            ps.setObject(index, new Timestamp(((OffsetDateTime) value).toInstant().toEpochMilli()));
-        } else if (value instanceof OffsetTime) {
-            ps.setObject(index, new Time(((OffsetTime) value).atDate(LocalDate.now()).toInstant().toEpochMilli()));
-        } else if (value instanceof ZonedDateTime) {
-            ps.setObject(index, new Timestamp(((ZonedDateTime) value).toInstant().toEpochMilli()));
-        } else if (value instanceof Instant) {
-            ps.setObject(index, new Timestamp(((Instant) value).toEpochMilli()));
-        } else if (value instanceof MostDateTime) {
-            ps.setObject(index, new Timestamp(((MostDateTime) value).toInstant().toEpochMilli()));
+        } else if (value instanceof java.util.Date date) {
+            ps.setObject(index, new Timestamp(date.getTime()));
+        } else if (value instanceof LocalDateTime localDateTime) {
+            ps.setObject(index, new Timestamp(localDateTime.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
+        } else if (value instanceof LocalDate localDate) {
+            ps.setObject(index, new Date(localDate.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()));
+        } else if (value instanceof LocalTime localTime) {
+            ps.setObject(index, new Time(localTime.atDate(LocalDate.now()).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
+        } else if (value instanceof OffsetDateTime offsetDateTime) {
+            ps.setObject(index, new Timestamp(offsetDateTime.toInstant().toEpochMilli()));
+        } else if (value instanceof OffsetTime offsetTime) {
+            ps.setObject(index, new Time(offsetTime.atDate(LocalDate.now()).toInstant().toEpochMilli()));
+        } else if (value instanceof ZonedDateTime zonedDateTime) {
+            ps.setObject(index, new Timestamp(zonedDateTime.toInstant().toEpochMilli()));
+        } else if (value instanceof Instant instant) {
+            ps.setObject(index, new Timestamp(instant.toEpochMilli()));
+        } else if (value instanceof MostDateTime mostDateTime) {
+            ps.setObject(index, new Timestamp(mostDateTime.toInstant().toEpochMilli()));
         } else if (value instanceof UUID) {
             ps.setObject(index, value.toString().replace("-", ""));
-        } else if (value instanceof InputStream) {
-            ps.setBinaryStream(index, (InputStream) value);
-        } else if (value instanceof Path) {
+        } else if (value instanceof InputStream inputStream) {
+            ps.setBinaryStream(index, inputStream);
+        } else if (value instanceof Path path) {
             try {
-                ps.setBinaryStream(index, Files.newInputStream((Path) value));
+                ps.setBinaryStream(index, Files.newInputStream(path));
             } catch (IOException e) {
                 throw new SQLException("set binary value failed.", e);
             }
-        } else if (value instanceof File) {
+        } else if (value instanceof File file) {
             try {
-                ps.setBinaryStream(index, new FileInputStream((File) value));
+                ps.setBinaryStream(index, new FileInputStream(file));
             } catch (FileNotFoundException e) {
                 throw new SQLException("set binary value failed.", e);
             }
@@ -127,7 +127,7 @@ public class JdbcUtil {
      * @throws SQLException ex
      */
     public static String[] createNames(ResultSet resultSet, final String executedSql) throws SQLException {
-        ResultSetMetaData metaData = resultSet.getMetaData();
+        var metaData = resultSet.getMetaData();
         int columnCount = metaData.getColumnCount();
         String[] names = new String[columnCount];
         for (int i = 0; i < columnCount; i++) {
@@ -152,7 +152,7 @@ public class JdbcUtil {
      * @throws SQLException ex
      */
     public static DataRow createDataRow(String[] names, ResultSet resultSet) throws SQLException {
-        DataRow row = new DataRow(names.length);
+        var row = new DataRow(names.length);
         for (int i = 0; i < names.length; i++) {
             row.put(names[i], getResultValue(resultSet, i + 1));
         }

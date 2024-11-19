@@ -18,7 +18,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.sql.*;
-import java.time.LocalDateTime;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.stream.IntStream;
@@ -195,16 +194,9 @@ public abstract class JdbcSupport extends SqlParser {
             return execute(preparedSql, ps -> {
                 ps.setQueryTimeout(queryTimeout(sql, myArgs));
                 setPreparedSqlArgs(ps, myArgs, argNames);
-                boolean isQuery = ps.execute();
-                printSqlConsole(ps);
-                if (isQuery) {
-                    var resultSet = ps.getResultSet();
-                    var rows = JdbcUtil.createDataRows(resultSet, preparedSql, -1);
-                    JdbcUtil.closeResultSet(resultSet);
-                    return DataRow.of("result", rows, "type", "QUERY");
-                }
-                int count = ps.getUpdateCount();
-                return DataRow.of("result", count, "type", "DD(M)L");
+                ps.execute();
+                JdbcUtil.printSqlConsole(ps);
+                return JdbcUtil.getResult(ps, preparedSql);
             });
         } catch (Exception e) {
             throw new SqlRuntimeException("prepare sql error:\n" + sql + "\n" + myArgs, e);
@@ -434,19 +426,11 @@ public abstract class JdbcSupport extends SqlParser {
      */
     public DataRow executeCallStatement(@NotNull final String procedure, Map<String, Param> args) {
         final var sqlMetaData = prepare(procedure, args);
-        final var executeSql = sqlMetaData.resultSql();
+        final var sql = sqlMetaData.resultSql();
         final var argNames = sqlMetaData.argNameIndexMapping();
         final var connection = getConnection();
-        CallableStatement statement = null;
+        CallableStatement cs = null;
         try {
-            debugSql(procedure, sqlMetaData.namedParamSql(), Collections.singletonList(args));
-            //noinspection SqlSourceToSinkFlow
-            statement = connection.prepareCall(executeSql);
-            statement.setQueryTimeout(queryTimeout(procedure, args));
-            setPreparedStoreArgs(statement, args, argNames);
-            boolean hasResults = statement.execute();
-            printSqlConsole(statement);
-
             List<String> outNames = new ArrayList<>();
             if (!args.isEmpty()) {
                 for (String name : argNames.keySet()) {
@@ -459,25 +443,16 @@ public abstract class JdbcSupport extends SqlParser {
                 }
             }
 
+            debugSql(procedure, sqlMetaData.namedParamSql(), Collections.singletonList(args));
+            //noinspection SqlSourceToSinkFlow
+            cs = connection.prepareCall(sql);
+            cs.setQueryTimeout(queryTimeout(procedure, args));
+            setPreparedStoreArgs(cs, args, argNames);
+            cs.execute();
+            JdbcUtil.printSqlConsole(cs);
+
             if (outNames.isEmpty()) {
-                DataRow results = new DataRow();
-                int i = 0;
-                do {
-                    if (hasResults) {
-                        var resultSet = statement.getResultSet();
-                        var dataRows = JdbcUtil.createDataRows(resultSet, "", -1);
-                        results.put("result" + i, dataRows);
-                        JdbcUtil.closeResultSet(resultSet);
-                    } else {
-                        int updCnt = statement.getUpdateCount();
-                        if (updCnt != -1) {
-                            results.put("result" + i, updCnt);
-                        }
-                    }
-                    i++;
-                    hasResults = statement.getMoreResults();
-                } while (hasResults || statement.getUpdateCount() != -1);
-                return results;
+                return JdbcUtil.getResult(cs, sql);
             }
 
             var values = new Object[outNames.size()];
@@ -485,7 +460,7 @@ public abstract class JdbcSupport extends SqlParser {
             for (var e : argNames.entrySet()) {
                 if (outNames.contains(e.getKey())) {
                     for (var i : e.getValue()) {
-                        var result = statement.getObject(i);
+                        var result = cs.getObject(i);
                         if (Objects.isNull(result)) {
                             values[resultIndex] = null;
                         } else if (result instanceof ResultSet resultSet) {
@@ -502,16 +477,16 @@ public abstract class JdbcSupport extends SqlParser {
             return DataRow.of(outNames.toArray(new String[0]), values);
         } catch (SQLException e) {
             try {
-                JdbcUtil.closeStatement(statement);
+                JdbcUtil.closeStatement(cs);
             } catch (SQLException ex) {
                 e.addSuppressed(ex);
             }
-            statement = null;
+            cs = null;
             releaseConnection(connection, getDataSource());
             throw new UncheckedSqlException("execute procedure error:\n" + procedure + "\n" + args, e);
         } finally {
             try {
-                JdbcUtil.closeStatement(statement);
+                JdbcUtil.closeStatement(cs);
             } catch (SQLException e) {
                 log.error("close statement error.", e);
             }
@@ -541,28 +516,6 @@ public abstract class JdbcSupport extends SqlParser {
                     }
                 });
                 log.debug("Args: {}", sb);
-            }
-        }
-    }
-
-    /**
-     * Print sql log, e.g. postgresql:
-     * <blockquote><pre>
-     * raise notice 'my console.';</pre>
-     * </blockquote>
-     *
-     * @param sc sql statement object
-     */
-    private void printSqlConsole(Statement sc) {
-        if (log.isWarnEnabled()) {
-            try {
-                var warning = sc.getWarnings();
-                if (warning != null) {
-                    var state = warning.getSQLState();
-                    warning.forEach(r -> log.warn("[{}] [{}] {}", LocalDateTime.now(), state, r.getMessage()));
-                }
-            } catch (SQLException e) {
-                log.error("get sql warning error.", e);
             }
         }
     }

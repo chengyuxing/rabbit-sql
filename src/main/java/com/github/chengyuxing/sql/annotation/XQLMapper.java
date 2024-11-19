@@ -52,7 +52,7 @@ import java.lang.annotation.*;
  *     {@link Double}
  *     {@code <Java Bean>}</li>
  *     <li>insert, update, delete: {@code int} {@link Integer}</li>
- *     <li>procedure, function, ddl, plsql: {@link java.util.Map Map} {@link com.github.chengyuxing.common.DataRow DataRow}</li>
+ *     <li>procedure, function, ddl, plsql, other: {@link java.util.Map Map} {@link com.github.chengyuxing.common.DataRow DataRow}</li>
  * </ul>
  *
  * @see XQL @XQL

@@ -18,10 +18,7 @@ import com.github.chengyuxing.sql.exceptions.IllegalSqlException;
 import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 import com.github.chengyuxing.sql.page.IPageable;
 import com.github.chengyuxing.sql.page.PageHelper;
-import com.github.chengyuxing.sql.page.impl.Db2PageHelper;
-import com.github.chengyuxing.sql.page.impl.MysqlPageHelper;
-import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
-import com.github.chengyuxing.sql.page.impl.PGPageHelper;
+import com.github.chengyuxing.sql.page.impl.*;
 import com.github.chengyuxing.sql.plugins.*;
 import com.github.chengyuxing.sql.support.*;
 import com.github.chengyuxing.sql.support.executor.Executor;
@@ -1138,6 +1135,8 @@ public class BakiDao extends JdbcSupport implements Baki {
             case "cloudscape":
             case "informix":
                 return new Db2PageHelper();
+            case "microsoft sql server":
+                return new SqlServer2012PageHelper();
             default:
                 throw new UnsupportedOperationException("pager of \"" + databaseId + "\" default not implement currently, see method 'setGlobalPageHelperProvider'.");
         }

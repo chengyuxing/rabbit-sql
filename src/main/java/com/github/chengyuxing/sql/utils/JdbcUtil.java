@@ -2,6 +2,8 @@ package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.MostDateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.file.Files;
@@ -15,6 +17,8 @@ import java.util.*;
  * JDBC util.
  */
 public class JdbcUtil {
+    private static final Logger log = LoggerFactory.getLogger(JdbcUtil.class);
+
     public static Object getResultValue(ResultSet resultSet, int index) throws SQLException {
         Object obj = resultSet.getObject(index);
         String className = null;
@@ -101,6 +105,51 @@ public class JdbcUtil {
             }
         }
         return bytes;
+    }
+
+    /**
+     * Do execute query, ddl, dml or plsql statement to get result.<br>
+     * Get result by index {@code 0} or by name: {@code result} .
+     *
+     * @param statement preparedStatement
+     * @param sql       executed sql
+     * @return DataRow
+     * @throws SQLException sql exp
+     */
+    public static DataRow getResult(PreparedStatement statement, final String sql) throws SQLException {
+        ResultSet resultSet = statement.getResultSet();
+        if (Objects.nonNull(resultSet)) {
+            List<DataRow> result = JdbcUtil.createDataRows(resultSet, sql, -1);
+            JdbcUtil.closeResultSet(resultSet);
+            return DataRow.of("result", result, "type", "QUERY");
+        }
+        int i = statement.getUpdateCount();
+        if (i != -1) {
+            return DataRow.of("result", i, "type", "DD(M)L");
+        }
+        return new DataRow(0);
+    }
+
+    /**
+     * Print sql log, e.g. postgresql:
+     * <blockquote><pre>
+     * raise notice 'my console.';</pre>
+     * </blockquote>
+     *
+     * @param sc sql statement object
+     */
+    public static void printSqlConsole(Statement sc) {
+        if (log.isWarnEnabled()) {
+            try {
+                SQLWarning warning = sc.getWarnings();
+                if (warning != null) {
+                    String state = warning.getSQLState();
+                    warning.forEach(r -> log.warn("[{}] [{}] {}", LocalDateTime.now(), state, r.getMessage()));
+                }
+            } catch (SQLException e) {
+                log.error("get sql warning error.", e);
+            }
+        }
     }
 
     public static void closeResultSet(ResultSet resultSet) throws SQLException {

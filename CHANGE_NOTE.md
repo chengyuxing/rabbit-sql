@@ -1,5 +1,10 @@
 # change note
 
+# 9.0.2
+
+- Support sqlserver page query.
+- JdbcSupport optimized.
+
 # 9.0.0
 
 - jdk17.

@@ -1,6 +1,9 @@
 # change note
 
-# 8.1.3
+# 8.1.4
+
+- Support sqlserver page query.
+- JdbcSupport optimized.
 
 - Some update.
 

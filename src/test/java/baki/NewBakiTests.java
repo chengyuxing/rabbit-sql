@@ -112,6 +112,13 @@ public class NewBakiTests {
     }
 
     @Test
+    public void testMoreRes() {
+        var res = baki.of("update test.guest set name = 'ccc' where id = :id")
+                .execute(Args.of("id", 17));
+        System.out.println(res);
+    }
+
+    @Test
     public void proxyTest1() throws IllegalAccessException {
         HomeMapper homeMapper = bakiDao.proxyXQLMapper(HomeMapper.class);
 //        homeMapper.queryAllGuests().forEach(System.out::println);

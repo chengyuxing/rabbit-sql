@@ -18,10 +18,7 @@ import com.github.chengyuxing.sql.exceptions.IllegalSqlException;
 import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 import com.github.chengyuxing.sql.page.IPageable;
 import com.github.chengyuxing.sql.page.PageHelper;
-import com.github.chengyuxing.sql.page.impl.Db2PageHelper;
-import com.github.chengyuxing.sql.page.impl.MysqlPageHelper;
-import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
-import com.github.chengyuxing.sql.page.impl.PGPageHelper;
+import com.github.chengyuxing.sql.page.impl.*;
 import com.github.chengyuxing.sql.plugins.*;
 import com.github.chengyuxing.sql.support.*;
 import com.github.chengyuxing.sql.support.executor.Executor;
@@ -479,7 +476,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                     if (!finalGroupByAggColumns.isEmpty()) {
                         throw new IllegalStateException("group by clause must have at least one column");
                     }
-                   var queryObj = createQuery();
+                    var queryObj = createQuery();
                     query = queryObj.getItem1();
                     countQuery = queryObj.getItem2();
                     args = queryObj.getItem3();
@@ -1127,7 +1124,9 @@ public class BakiDao extends JdbcSupport implements Baki {
             case "postgresql", "sqlite" -> new PGPageHelper();
             case "mysql", "mariadb" -> new MysqlPageHelper();
             case "z/os", "sqlds", "iseries", "db2 for unix/windows", "cloudscape", "informix" -> new Db2PageHelper();
-            default -> throw new UnsupportedOperationException("pager of \"" + databaseId + "\" default not implement currently, see method 'setGlobalPageHelperProvider'.");
+            case "microsoft sql server" -> new SqlServer2012PageHelper();
+            default ->
+                    throw new UnsupportedOperationException("pager of \"" + databaseId + "\" default not implement currently, see method 'setGlobalPageHelperProvider'.");
         };
     }
 

@@ -1198,6 +1198,31 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
+    protected String printExceptionMessage(String sourceSql, String executeSql, Object args) {
+        return (sourceSql.trim().startsWith("&") ? "SQL(" + sourceSql + ")" : "") + "\n" + executeSql + "\n" + args;
+    }
+
+    @Override
+    protected void debugSql(String sourceSql, String executeSql, Collection<? extends Map<String, ?>> args) {
+        if (log.isDebugEnabled()) {
+            log.debug("SQL{}: {}",
+                    sourceSql.trim().startsWith("&") ? "(" + sourceSql + ")" : "",
+                    SqlHighlighter.highlightIfAnsiCapable(executeSql));
+            for (var arg : args) {
+                var sb = new StringJoiner(", ", "{", "}");
+                arg.forEach((k, v) -> {
+                    if (v == null) {
+                        sb.add(k + " -> null");
+                    } else {
+                        sb.add(k + " -> " + v + "(" + v.getClass().getSimpleName() + ")");
+                    }
+                });
+                log.debug("Args: {}", sb);
+            }
+        }
+    }
+
+    @Override
     protected @NotNull SqlGenerator sqlGenerator() {
         return sqlGenerator;
     }

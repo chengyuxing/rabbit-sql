@@ -22,6 +22,7 @@ import java.util.*;
  */
 public class XQLFileManagerConfig {
     private static final Logger log = LoggerFactory.getLogger(XQLFileManagerConfig.class);
+    private String configLocation;
     // ----------------optional properties------------------
     protected Map<String, String> files = new LinkedHashMap<>();
     protected Map<String, Object> constants = new HashMap<>();
@@ -46,6 +47,7 @@ public class XQLFileManagerConfig {
      * @param configLocation config location path
      */
     public XQLFileManagerConfig(String configLocation) {
+        this.configLocation = configLocation;
         FileResource resource = new FileResource(configLocation);
         if (configLocation.endsWith(".yml")) {
             loadYaml(resource);
@@ -137,6 +139,10 @@ public class XQLFileManagerConfig {
                 }
             }
         }
+    }
+
+    public String getConfigLocation() {
+        return configLocation;
     }
 
     /**

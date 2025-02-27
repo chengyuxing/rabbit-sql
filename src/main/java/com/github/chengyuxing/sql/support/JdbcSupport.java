@@ -10,7 +10,6 @@ import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.types.ParamMode;
 import com.github.chengyuxing.sql.utils.JdbcUtil;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
-import com.github.chengyuxing.sql.utils.SqlHighlighter;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
@@ -161,7 +160,7 @@ public abstract class JdbcSupport extends SqlParser {
             }
             statement = null;
             releaseConnection(connection, getDataSource());
-            throw new UncheckedSqlException("execute sql:\n" + sql, e);
+            throw new SqlRuntimeException(printExceptionMessage(sql, sql, Collections.emptyMap()), e);
         } finally {
             try {
                 JdbcUtil.closeStatement(statement);
@@ -200,7 +199,7 @@ public abstract class JdbcSupport extends SqlParser {
                 return JdbcUtil.getResult(ps, preparedSql);
             });
         } catch (Exception e) {
-            throw new SqlRuntimeException("prepare sql error:\n" + sql + "\n" + myArgs, e);
+            throw new SqlRuntimeException(printExceptionMessage(sql, preparedSql, myArgs), e);
         }
     }
 
@@ -259,7 +258,7 @@ public abstract class JdbcSupport extends SqlParser {
                         action.accept(JdbcUtil.createDataRow(names, resultSet));
                         return true;
                     } catch (SQLException ex) {
-                        throw new UncheckedSqlException("reading result set of query:\n" + preparedSql + "\nerror.", ex);
+                        throw new UncheckedSqlException("reading result set of query error:\n" + preparedSql, ex);
                     }
                 }
             }, false).onClose(close);
@@ -271,7 +270,7 @@ public abstract class JdbcSupport extends SqlParser {
                     ex.addSuppressed(e);
                 }
             }
-            throw new SqlRuntimeException("streaming query error:\n" + preparedSql + "\n" + myArgs, ex);
+            throw new SqlRuntimeException(printExceptionMessage(sql, preparedSql, myArgs), ex);
         }
     }
 
@@ -319,7 +318,7 @@ public abstract class JdbcSupport extends SqlParser {
             }
             s = null;
             releaseConnection(connection, getDataSource());
-            throw new UncheckedSqlException("execute batch error.", e);
+            throw new SqlRuntimeException("execute batch error.", e);
         } finally {
             try {
                 JdbcUtil.closeStatement(s);
@@ -364,7 +363,7 @@ public abstract class JdbcSupport extends SqlParser {
                 return result.build().flatMapToInt(IntStream::of).sum();
             });
         } catch (Exception e) {
-            throw new SqlRuntimeException("prepare sql error:\n" + sql, e);
+            throw new SqlRuntimeException(printExceptionMessage(sql, preparedSql, args), e);
         }
     }
 
@@ -399,7 +398,7 @@ public abstract class JdbcSupport extends SqlParser {
                 return sc.executeUpdate();
             });
         } catch (Exception e) {
-            throw new SqlRuntimeException("prepare sql error:\n" + sql + "\n" + myArgs, e);
+            throw new SqlRuntimeException(printExceptionMessage(sql, preparedSql, myArgs), e);
         }
     }
 
@@ -484,7 +483,7 @@ public abstract class JdbcSupport extends SqlParser {
             }
             cs = null;
             releaseConnection(connection, getDataSource());
-            throw new UncheckedSqlException("execute procedure error:\n" + procedure + "\n" + args, e);
+            throw new SqlRuntimeException(printExceptionMessage(procedure, sql, args), e);
         } finally {
             try {
                 JdbcUtil.closeStatement(cs);
@@ -495,29 +494,18 @@ public abstract class JdbcSupport extends SqlParser {
         }
     }
 
+    protected String printExceptionMessage(String sourceSql, String executeSql, Object args) {
+        return executeSql + "\n" + args;
+    }
+
     /**
      * Debug executed sql and args.
      *
-     * @param sqlName sql name
-     * @param sql     sql
-     * @param args    args
+     * @param sourceSql  sql name
+     * @param executeSql sql
+     * @param args       args
      */
-    protected void debugSql(String sqlName, String sql, Collection<? extends Map<String, ?>> args) {
-        if (log.isDebugEnabled()) {
-            log.debug("SQL{}: {}",
-                    sqlName.trim().startsWith("&") ? "(" + sqlName + ")" : "",
-                    SqlHighlighter.highlightIfAnsiCapable(sql));
-            for (Map<String, ?> arg : args) {
-                StringJoiner sb = new StringJoiner(", ", "{", "}");
-                arg.forEach((k, v) -> {
-                    if (v == null) {
-                        sb.add(k + " -> null");
-                    } else {
-                        sb.add(k + " -> " + v + "(" + v.getClass().getSimpleName() + ")");
-                    }
-                });
-                log.debug("Args: {}", sb);
-            }
-        }
+    protected void debugSql(String sourceSql, String executeSql, Collection<? extends Map<String, ?>> args) {
+        log.debug("SQL: {}, Args: {}", executeSql, args);
     }
 }

@@ -29,7 +29,7 @@ _java 17+_
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql-spring-boot-starter</artifactId>
-    <version>4.0.1</version>
+    <version>4.0.2</version>
 </dependency>
 ```
 
@@ -39,7 +39,7 @@ _java 8_
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql-spring-boot-starter</artifactId>
-    <version>3.1.4</version>
+    <version>3.1.5</version>
 </dependency>
 ```
 
@@ -235,7 +235,7 @@ public void a() {
 
 ```java
 // 通过手动管理事务
-// com.github.chengyuxing.sql.spring.autoconfigure.Tx
+// com.github.chengyuxing.sql.spring.Tx
 @Autowired;
 Tx tx;
 

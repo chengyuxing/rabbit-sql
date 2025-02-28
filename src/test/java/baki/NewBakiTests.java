@@ -177,7 +177,8 @@ public class NewBakiTests {
 
     @Test
     public void testDslQuery4() {
-        Object res = baki.query(Guest.class)
+        Object res = baki.entity(Guest.class)
+                .query()
                 .where(w -> w.gt(Guest::getId, 10))
                 .groupBy(g -> g.count().by(Guest::getAge).having(h -> h.count(StandardOperator.GT, 1)))
                 .orderBy(o -> o.asc(Guest::getAge))
@@ -192,13 +193,13 @@ public class NewBakiTests {
     public void testDslDelete() {
         Guest guest = new Guest();
         guest.setId(14);
-        int i = baki.delete(guest);
+        int i = baki.entity(Guest.class).delete(guest);
         System.out.println(i);
     }
 
     @Test
     public void testDslQuery2() {
-        baki.query(Guest.class)
+        baki.entity(Guest.class).query()
                 .where(g -> g.gt(Guest::getId, 5))
                 .where(g -> g.lt(Guest::getId, 10))
                 .where(g -> g.or(o -> o.in(Guest::getId, Arrays.asList(17, 18, 19))))
@@ -207,7 +208,7 @@ public class NewBakiTests {
 
         System.out.println("---");
 
-        Object sql = baki.query(Guest.class)
+        Object sql = baki.entity(Guest.class).query()
                 .where(g -> g.gt(Guest::getId, 5)
                         .lt(Guest::getId, 10)
                         .or(o -> o.in(Guest::getId, Arrays.asList(17, 18, 19))))
@@ -218,7 +219,7 @@ public class NewBakiTests {
 
     @Test
     public void testDslQuery() {
-        baki.query(Guest.class)
+        baki.entity(Guest.class).query()
                 .where(w -> w.isNotNull(Guest::getId)
                         .gt(Guest::getId, 1)
                         .and(and -> and.in(Guest::getId, Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8))
@@ -247,7 +248,7 @@ public class NewBakiTests {
 
     @Test
     public void testDslGroupBy() {
-        PagedResource<DataRow> res = baki.query(Guest.class)
+        PagedResource<DataRow> res = baki.entity(Guest.class).query()
                 .where(w -> w.gt(Guest::getAge, 23))
                 .groupBy(g -> g.count(Guest::getId).max(Guest::getAge).by(Guest::getAge)
                         .having(h -> h.min(Guest::getId, StandardOperator.IS_NOT_NULL, 18980)))
@@ -265,7 +266,7 @@ public class NewBakiTests {
 
     @Test
     public void testDlsQuery2() {
-        baki.query(Guest.class)
+        baki.entity(Guest.class).query()
                 .where(w -> w.and(o -> o.lt(Guest::getAge, 15)
                                 .gt(Guest::getAge, 60))
                         .eq(Guest::getName, "cyx")
@@ -280,7 +281,7 @@ public class NewBakiTests {
 
     @Test
     public void testDslQuery3() {
-        baki.query(Guest.class)
+        baki.entity(Guest.class).query()
                 .where(w -> w.and(o -> o.or(a -> a.eq(Guest::getName, "cyx")
                                                 .eq(Guest::getAge, 30))
                                         .or(r -> r.eq(Guest::getName, "jack")
@@ -296,7 +297,7 @@ public class NewBakiTests {
         Guest guest = new Guest();
         guest.setId(16);
         guest.setAddress("Shanghai");
-        int i = baki.update(guest, true);
+        int i = baki.entity(Guest.class).update(guest, true);
         System.out.println(i);
     }
 
@@ -305,7 +306,7 @@ public class NewBakiTests {
         Guest guest = new Guest();
         guest.setId(15);
         guest.setAddress("China");
-        int i = baki.update(guest, true);
+        int i = baki.entity(Guest.class).update(guest, true);
         System.out.println(i);
     }
 
@@ -327,7 +328,7 @@ public class NewBakiTests {
         guest.setAge(89);
         guest.setCount(1919);
         guest.setName("chengyuxing");
-        int i = baki.insert(guest);
+        int i = baki.entity(Guest.class).insert(guest);
         System.out.println(i);
     }
 
@@ -355,7 +356,7 @@ public class NewBakiTests {
         user.setNl(76);
 //        user.setXm("cyx");
         user.setUserId(2120056);
-        baki.update(AnotherUser.class, true)
+        baki.entity(AnotherUser.class).update(user, true)
 //                .save(user, Where.of().eq("id", 1))
         ;
 //        System.out.println(i);
@@ -389,7 +390,7 @@ public class NewBakiTests {
         Guest user = new Guest();
         user.setId(11);
         user.setAddress("昆明市西山区福海街道");
-        int i = baki.update(user, true);
+        int i = baki.entity(Guest.class).update(user, true);
         System.out.println(i);
     }
 

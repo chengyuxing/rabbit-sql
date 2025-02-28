@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * Basic executor.
  */
-public interface Executor {
+public interface GenericExecutor {
     /**
      * Execute sql (ddl, dml, query or plsql).
      *

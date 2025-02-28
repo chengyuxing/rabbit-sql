@@ -21,7 +21,8 @@ import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.impl.*;
 import com.github.chengyuxing.sql.plugins.*;
 import com.github.chengyuxing.sql.support.*;
-import com.github.chengyuxing.sql.support.executor.Executor;
+import com.github.chengyuxing.sql.support.executor.EntityExecutor;
+import com.github.chengyuxing.sql.support.executor.GenericExecutor;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.annotation.SqlStatementType;
@@ -279,422 +280,427 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public <T, SELF extends Query<T, SELF>> Query<T, SELF> query(@NotNull Class<T> clazz) {
-        var entityMeta = entityManager.getEntityMeta(clazz);
-        return new Query<>() {
-            private final Set<String> selectColumns = new LinkedHashSet<>();
-            private final List<Criteria> finalWhereCriteria = new ArrayList<>();
-            private final Set<Pair<String, OrderByType>> finalOrderBy = new LinkedHashSet<>();
-            private final Set<String> finalGroupByAggColumns = new LinkedHashSet<>();
-            private final Set<String> finalGroupByColumns = new LinkedHashSet<>();
-            private final List<Criteria> finalHavingCriteria = new ArrayList<>();
-
-            private Triple<String, String, Map<String, Object>> createQuery() {
-                var select = selectColumns.isEmpty() ? entityMeta.getSelect() : entityMeta.getSelect(selectColumns);
-                var countSelect = entityMeta.getCountSelect();
-
-                var where = new InternalWhere<>(clazz, finalWhereCriteria).getWhere();
-                if (!where.getItem1().isEmpty()) {
-                    select += where.getItem1();
-                    countSelect += where.getItem1();
-                }
-                var orderBy = new InternalOrderBy<>(clazz, finalOrderBy).getOrderBy();
-                if (!orderBy.isEmpty()) {
-                    select += orderBy;
-                }
-                return Triple.of(select, countSelect, where.getItem2());
-            }
-
-            private InternalGroupBy<T> createGroupBy() {
-                var where = new InternalWhere<>(clazz, finalWhereCriteria).getWhere();
-                var orderBy = new InternalOrderBy<>(clazz, finalOrderBy).getOrderBy();
-                var groupBy = new InternalGroupBy<>(clazz, finalGroupByAggColumns, finalGroupByColumns, finalHavingCriteria);
-                groupBy.setWhereClause(where.getItem1());
-                groupBy.setOrderByClause(orderBy);
-                groupBy.setArgs(where.getItem2());
-                return groupBy;
-            }
-
+    public <T> EntityExecutor<T> entity(@NotNull Class<T> clazz) {
+        return new EntityExecutor<>() {
             @Override
-            public SELF where(@NotNull Function<Where<T>, Where<T>> where) {
-                var gotten = where.apply(new InternalWhere<>(clazz));
-                var wrapper = new InternalWhere<>(clazz, gotten);
-                finalWhereCriteria.addAll(wrapper.getCriteria());
-                //noinspection unchecked
-                return (SELF) this;
-            }
+            public <SELF extends Query<T, SELF>> Query<T, SELF> query() {
+                var entityMeta = entityManager.getEntityMeta(clazz);
+                return new Query<>() {
+                    private final Set<String> selectColumns = new LinkedHashSet<>();
+                    private final List<Criteria> finalWhereCriteria = new ArrayList<>();
+                    private final Set<Pair<String, OrderByType>> finalOrderBy = new LinkedHashSet<>();
+                    private final Set<String> finalGroupByAggColumns = new LinkedHashSet<>();
+                    private final Set<String> finalGroupByColumns = new LinkedHashSet<>();
+                    private final List<Criteria> finalHavingCriteria = new ArrayList<>();
 
-            @Override
-            public SELF groupBy(@NotNull Function<GroupBy<T>, GroupBy<T>> groupBy) {
-                var gotten = groupBy.apply(new InternalGroupBy<>(clazz));
-                var wrapper = new InternalGroupBy<>(clazz, gotten);
-                finalGroupByAggColumns.addAll(wrapper.getAggColumns());
-                finalGroupByColumns.addAll(wrapper.getGroupColumns());
-                finalHavingCriteria.addAll(wrapper.getHavingCriteria());
-                //noinspection unchecked
-                return (SELF) this;
-            }
+                    private Triple<String, String, Map<String, Object>> createQuery() {
+                        var select = selectColumns.isEmpty() ? entityMeta.getSelect() : entityMeta.getSelect(selectColumns);
+                        var countSelect = entityMeta.getCountSelect();
 
-            @Override
-            public SELF orderBy(@NotNull Function<OrderBy<T>, OrderBy<T>> orderBy) {
-                var gotten = orderBy.apply(new InternalOrderBy<>(clazz));
-                var wrapper = new InternalOrderBy<>(clazz, gotten);
-                finalOrderBy.addAll(wrapper.getOrders());
-                //noinspection unchecked
-                return (SELF) this;
-            }
-
-            @Override
-            public SELF select(@NotNull List<FieldReference<T>> columns) {
-                selectColumns.clear();
-                for (var column : columns) {
-                    var columnName = EntityUtil.getFieldNameWithCache(column);
-                    // excludes the field which annotated with @Transient
-                    if (entityMeta.getColumns().containsKey(columnName)) {
-                        selectColumns.add(columnName);
+                        var where = new InternalWhere<>(clazz, finalWhereCriteria).getWhere();
+                        if (!where.getItem1().isEmpty()) {
+                            select += where.getItem1();
+                            countSelect += where.getItem1();
+                        }
+                        var orderBy = new InternalOrderBy<>(clazz, finalOrderBy).getOrderBy();
+                        if (!orderBy.isEmpty()) {
+                            select += orderBy;
+                        }
+                        return Triple.of(select, countSelect, where.getItem2());
                     }
-                }
-                //noinspection unchecked
-                return (SELF) this;
-            }
 
-            @Override
-            public SELF deselect(@NotNull List<FieldReference<T>> columns) {
-                if (columns.isEmpty()) {
-                    //noinspection unchecked
-                    return (SELF) this;
-                }
-                selectColumns.clear();
-                var deselectColumns = columns.stream().map(EntityUtil::getFieldNameWithCache).collect(Collectors.toSet());
-                for (var column : entityMeta.getColumns().keySet()) {
-                    if (!deselectColumns.contains(column)) {
-                        selectColumns.add(column);
+                    private InternalGroupBy<T> createGroupBy() {
+                        var where = new InternalWhere<>(clazz, finalWhereCriteria).getWhere();
+                        var orderBy = new InternalOrderBy<>(clazz, finalOrderBy).getOrderBy();
+                        var groupBy = new InternalGroupBy<>(clazz, finalGroupByAggColumns, finalGroupByColumns, finalHavingCriteria);
+                        groupBy.setWhereClause(where.getItem1());
+                        groupBy.setOrderByClause(orderBy);
+                        groupBy.setArgs(where.getItem2());
+                        return groupBy;
                     }
-                }
-                //noinspection unchecked
-                return (SELF) this;
-            }
 
-            @Override
-            public SELF peek(@NotNull BiConsumer<String, Pair<String, Map<String, Object>>> consumer) {
-                var query = createQuery();
-                consumer.accept(query.getItem1(), Pair.of(query.getItem2(), Collections.unmodifiableMap(query.getItem3())));
-                //noinspection unchecked
-                return (SELF) this;
-            }
-
-            @Override
-            public Stream<DataRow> toRowStream() {
-                // there is no any group by columns, just execute query without group by clause.
-                if (finalGroupByColumns.isEmpty()) {
-                    if (!finalGroupByAggColumns.isEmpty()) {
-                        throw new IllegalStateException("group by clause must have at least one column");
+                    @Override
+                    public SELF where(@NotNull Function<Where<T>, Where<T>> where) {
+                        var gotten = where.apply(new InternalWhere<>(clazz));
+                        var wrapper = new InternalWhere<>(clazz, gotten);
+                        finalWhereCriteria.addAll(wrapper.getCriteria());
+                        //noinspection unchecked
+                        return (SELF) this;
                     }
-                    var query = createQuery();
-                    var key = entityCallKey(clazz, query.getItem1());
-                    return watchSql(key, query.getItem1(), query.getItem3(),
-                            () -> executeQueryStream(
-                                    key,
-                                    query.getItem1(),
-                                    query.getItem3()
-                            ));
-                }
-                return createGroupBy().query();
-            }
 
-            @Override
-            public Stream<T> toStream() {
-                return toRowStream().map(d -> EntityUtil.mapToEntity(d, clazz));
-            }
-
-            @Override
-            public List<T> toList() {
-                try (Stream<T> s = toStream()) {
-                    return s.collect(Collectors.toList());
-                }
-            }
-
-            @Override
-            public <R> List<R> toList(@NotNull Function<T, R> mapper) {
-                try (Stream<T> s = toStream()) {
-                    return s.map(mapper).collect(Collectors.toList());
-                }
-            }
-
-            @Override
-            public <R, V> R collect(@NotNull Function<T, V> mapper, @NotNull Collector<V, ?, R> collector) {
-                try (Stream<T> s = toStream()) {
-                    return s.map(mapper).collect(collector);
-                }
-            }
-
-            @Override
-            public <R> R collect(@NotNull Collector<T, ?, R> collector) {
-                try (Stream<T> s = toStream()) {
-                    return s.collect(collector);
-                }
-            }
-
-            @Override
-            public @NotNull Optional<T> findFirst() {
-                try (Stream<T> s = toStream()) {
-                    return s.findFirst();
-                }
-            }
-
-            @Override
-            public @Nullable T getFirst() {
-                return findFirst().orElse(null);
-            }
-
-            @Override
-            public @NotNull PagedResource<T> toPagedResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
-                                                             @Range(from = 1, to = Integer.MAX_VALUE) int size,
-                                                             @Nullable PageHelperProvider pageHelperProvider) {
-                var query = createQuery();
-                return new SimplePageable(query.getItem1(), page, size)
-                        .args(query.getItem3())
-                        .pageHelper(pageHelperProvider)
-                        .count(query.getItem2())
-                        .collect(d -> EntityUtil.mapToEntity(d, clazz));
-            }
-
-            @Override
-            public @NotNull PagedResource<T> toPagedResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
-                                                             @Range(from = 1, to = Integer.MAX_VALUE) int size) {
-                return toPagedResource(page, size, null);
-            }
-
-            @Override
-            public @NotNull PagedResource<DataRow> toPagedRowResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
-                                                                      @Range(from = 1, to = Integer.MAX_VALUE) int size,
-                                                                      @Nullable PageHelperProvider pageHelperProvider) {
-                String query;
-                String countQuery;
-                Map<String, Object> args;
-                if (finalGroupByColumns.isEmpty()) {
-                    if (!finalGroupByAggColumns.isEmpty()) {
-                        throw new IllegalStateException("group by clause must have at least one column");
+                    @Override
+                    public SELF groupBy(@NotNull Function<GroupBy<T>, GroupBy<T>> groupBy) {
+                        var gotten = groupBy.apply(new InternalGroupBy<>(clazz));
+                        var wrapper = new InternalGroupBy<>(clazz, gotten);
+                        finalGroupByAggColumns.addAll(wrapper.getAggColumns());
+                        finalGroupByColumns.addAll(wrapper.getGroupColumns());
+                        finalHavingCriteria.addAll(wrapper.getHavingCriteria());
+                        //noinspection unchecked
+                        return (SELF) this;
                     }
-                    var queryObj = createQuery();
-                    query = queryObj.getItem1();
-                    countQuery = queryObj.getItem2();
-                    args = queryObj.getItem3();
-                } else {
-                    // group by paged query
-                    var groupBy = createGroupBy();
 
-                    var querySqlObj = groupBy.getQuerySql();
-                    query = querySqlObj.getItem1();
-                    args = querySqlObj.getItem2();
-
-                    countQuery = sqlGenerator.generateCountQuery(
-                            entityMeta.getSelect(groupBy.getGroupColumns()) +
-                                    groupBy.getWhereClause() +
-                                    groupBy.getGroupByClause() +
-                                    groupBy.getHavingClause().getItem1()
-                    );
-                }
-                return new SimplePageable(query, page, size)
-                        .args(args)
-                        .pageHelper(pageHelperProvider)
-                        .count(countQuery)
-                        .collect();
-            }
-
-            @Override
-            public @NotNull PagedResource<DataRow> toPagedRowResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
-                                                                      @Range(from = 1, to = Integer.MAX_VALUE) int size) {
-                return toPagedRowResource(page, size, null);
-            }
-
-            @Override
-            public boolean exists() {
-                var query = entityMeta.getExistsSelect();
-                var where = new InternalWhere<>(clazz, finalWhereCriteria).getWhere();
-                if (where.getItem1().isEmpty()) {
-                    throw new IllegalSqlException("Exists query must have condition.");
-                }
-                query += where.getItem1();
-                final var existQuery = query;
-                var key = entityCallKey(clazz, existQuery);
-                return watchSql(key, existQuery, where.getItem2(), () -> {
-                    try (Stream<DataRow> s = executeQueryStream(key, existQuery, where.getItem2())) {
-                        return s.findFirst().isPresent();
+                    @Override
+                    public SELF orderBy(@NotNull Function<OrderBy<T>, OrderBy<T>> orderBy) {
+                        var gotten = orderBy.apply(new InternalOrderBy<>(clazz));
+                        var wrapper = new InternalOrderBy<>(clazz, gotten);
+                        finalOrderBy.addAll(wrapper.getOrders());
+                        //noinspection unchecked
+                        return (SELF) this;
                     }
-                });
-            }
 
-            @Override
-            public @Range(from = 0, to = Long.MAX_VALUE) long count() {
-                String countSelect;
-                Map<String, Object> args = Collections.emptyMap();
-                if (finalGroupByColumns.isEmpty()) {
-                    if (!finalGroupByAggColumns.isEmpty()) {
-                        throw new IllegalStateException("group by clause must have at least one column");
+                    @Override
+                    public SELF select(@NotNull List<FieldReference<T>> columns) {
+                        selectColumns.clear();
+                        for (var column : columns) {
+                            var columnName = EntityUtil.getFieldNameWithCache(column);
+                            // excludes the field which annotated with @Transient
+                            if (entityMeta.getColumns().containsKey(columnName)) {
+                                selectColumns.add(columnName);
+                            }
+                        }
+                        //noinspection unchecked
+                        return (SELF) this;
                     }
-                    countSelect = entityMeta.getCountSelect();
 
-                    var where = new InternalWhere<>(clazz, finalWhereCriteria).getWhere();
-                    if (!where.getItem1().isEmpty()) {
-                        countSelect += where.getItem1();
-                        args = where.getItem2();
+                    @Override
+                    public SELF deselect(@NotNull List<FieldReference<T>> columns) {
+                        if (columns.isEmpty()) {
+                            //noinspection unchecked
+                            return (SELF) this;
+                        }
+                        selectColumns.clear();
+                        var deselectColumns = columns.stream().map(EntityUtil::getFieldNameWithCache).collect(Collectors.toSet());
+                        for (var column : entityMeta.getColumns().keySet()) {
+                            if (!deselectColumns.contains(column)) {
+                                selectColumns.add(column);
+                            }
+                        }
+                        //noinspection unchecked
+                        return (SELF) this;
                     }
-                } else {
-                    var groupBy = createGroupBy();
 
-                    countSelect = sqlGenerator.generateCountQuery(
-                            entityMeta.getSelect(groupBy.getGroupColumns()) +
-                                    groupBy.getWhereClause() +
-                                    groupBy.getGroupByClause() +
-                                    groupBy.getHavingClause().getItem1()
-                    );
-                    args = groupBy.getQuerySql().getItem2();
-                }
-                final var countQuery = countSelect;
-                final var myArgs = args;
-                String key = entityCallKey(clazz, countQuery);
-                return watchSql(key, countQuery, myArgs, () -> {
-                    try (Stream<DataRow> s = executeQueryStream(key, countQuery, myArgs)) {
-                        return s.findFirst()
-                                .map(d -> d.getLong(0))
-                                .orElse(0L);
+                    @Override
+                    public SELF peek(@NotNull BiConsumer<String, Pair<String, Map<String, Object>>> consumer) {
+                        var query = createQuery();
+                        consumer.accept(query.getItem1(), Pair.of(query.getItem2(), Collections.unmodifiableMap(query.getItem3())));
+                        //noinspection unchecked
+                        return (SELF) this;
                     }
-                });
+
+                    @Override
+                    public Stream<DataRow> toRowStream() {
+                        // there is no any group by columns, just execute query without group by clause.
+                        if (finalGroupByColumns.isEmpty()) {
+                            if (!finalGroupByAggColumns.isEmpty()) {
+                                throw new IllegalStateException("group by clause must have at least one column");
+                            }
+                            var query = createQuery();
+                            var key = entityCallKey(clazz, query.getItem1());
+                            return watchSql(key, query.getItem1(), query.getItem3(),
+                                    () -> executeQueryStream(
+                                            key,
+                                            query.getItem1(),
+                                            query.getItem3()
+                                    ));
+                        }
+                        return createGroupBy().query();
+                    }
+
+                    @Override
+                    public Stream<T> toStream() {
+                        return toRowStream().map(d -> EntityUtil.mapToEntity(d, clazz));
+                    }
+
+                    @Override
+                    public List<T> toList() {
+                        try (Stream<T> s = toStream()) {
+                            return s.collect(Collectors.toList());
+                        }
+                    }
+
+                    @Override
+                    public <R> List<R> toList(@NotNull Function<T, R> mapper) {
+                        try (Stream<T> s = toStream()) {
+                            return s.map(mapper).collect(Collectors.toList());
+                        }
+                    }
+
+                    @Override
+                    public <R, V> R collect(@NotNull Function<T, V> mapper, @NotNull Collector<V, ?, R> collector) {
+                        try (Stream<T> s = toStream()) {
+                            return s.map(mapper).collect(collector);
+                        }
+                    }
+
+                    @Override
+                    public <R> R collect(@NotNull Collector<T, ?, R> collector) {
+                        try (Stream<T> s = toStream()) {
+                            return s.collect(collector);
+                        }
+                    }
+
+                    @Override
+                    public @NotNull Optional<T> findFirst() {
+                        try (Stream<T> s = toStream()) {
+                            return s.findFirst();
+                        }
+                    }
+
+                    @Override
+                    public @Nullable T getFirst() {
+                        return findFirst().orElse(null);
+                    }
+
+                    @Override
+                    public @NotNull PagedResource<T> toPagedResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
+                                                                     @Range(from = 1, to = Integer.MAX_VALUE) int size,
+                                                                     @Nullable PageHelperProvider pageHelperProvider) {
+                        var query = createQuery();
+                        return new SimplePageable(query.getItem1(), page, size)
+                                .args(query.getItem3())
+                                .pageHelper(pageHelperProvider)
+                                .count(query.getItem2())
+                                .collect(d -> EntityUtil.mapToEntity(d, clazz));
+                    }
+
+                    @Override
+                    public @NotNull PagedResource<T> toPagedResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
+                                                                     @Range(from = 1, to = Integer.MAX_VALUE) int size) {
+                        return toPagedResource(page, size, null);
+                    }
+
+                    @Override
+                    public @NotNull PagedResource<DataRow> toPagedRowResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
+                                                                              @Range(from = 1, to = Integer.MAX_VALUE) int size,
+                                                                              @Nullable PageHelperProvider pageHelperProvider) {
+                        String query;
+                        String countQuery;
+                        Map<String, Object> args;
+                        if (finalGroupByColumns.isEmpty()) {
+                            if (!finalGroupByAggColumns.isEmpty()) {
+                                throw new IllegalStateException("group by clause must have at least one column");
+                            }
+                            var queryObj = createQuery();
+                            query = queryObj.getItem1();
+                            countQuery = queryObj.getItem2();
+                            args = queryObj.getItem3();
+                        } else {
+                            // group by paged query
+                            var groupBy = createGroupBy();
+
+                            var querySqlObj = groupBy.getQuerySql();
+                            query = querySqlObj.getItem1();
+                            args = querySqlObj.getItem2();
+
+                            countQuery = sqlGenerator.generateCountQuery(
+                                    entityMeta.getSelect(groupBy.getGroupColumns()) +
+                                            groupBy.getWhereClause() +
+                                            groupBy.getGroupByClause() +
+                                            groupBy.getHavingClause().getItem1()
+                            );
+                        }
+                        return new SimplePageable(query, page, size)
+                                .args(args)
+                                .pageHelper(pageHelperProvider)
+                                .count(countQuery)
+                                .collect();
+                    }
+
+                    @Override
+                    public @NotNull PagedResource<DataRow> toPagedRowResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
+                                                                              @Range(from = 1, to = Integer.MAX_VALUE) int size) {
+                        return toPagedRowResource(page, size, null);
+                    }
+
+                    @Override
+                    public boolean exists() {
+                        var query = entityMeta.getExistsSelect();
+                        var where = new InternalWhere<>(clazz, finalWhereCriteria).getWhere();
+                        if (where.getItem1().isEmpty()) {
+                            throw new IllegalSqlException("Exists query must have condition.");
+                        }
+                        query += where.getItem1();
+                        final var existQuery = query;
+                        var key = entityCallKey(clazz, existQuery);
+                        return watchSql(key, existQuery, where.getItem2(), () -> {
+                            try (Stream<DataRow> s = executeQueryStream(key, existQuery, where.getItem2())) {
+                                return s.findFirst().isPresent();
+                            }
+                        });
+                    }
+
+                    @Override
+                    public @Range(from = 0, to = Long.MAX_VALUE) long count() {
+                        String countSelect;
+                        Map<String, Object> args = Collections.emptyMap();
+                        if (finalGroupByColumns.isEmpty()) {
+                            if (!finalGroupByAggColumns.isEmpty()) {
+                                throw new IllegalStateException("group by clause must have at least one column");
+                            }
+                            countSelect = entityMeta.getCountSelect();
+
+                            var where = new InternalWhere<>(clazz, finalWhereCriteria).getWhere();
+                            if (!where.getItem1().isEmpty()) {
+                                countSelect += where.getItem1();
+                                args = where.getItem2();
+                            }
+                        } else {
+                            var groupBy = createGroupBy();
+
+                            countSelect = sqlGenerator.generateCountQuery(
+                                    entityMeta.getSelect(groupBy.getGroupColumns()) +
+                                            groupBy.getWhereClause() +
+                                            groupBy.getGroupByClause() +
+                                            groupBy.getHavingClause().getItem1()
+                            );
+                            args = groupBy.getQuerySql().getItem2();
+                        }
+                        final var countQuery = countSelect;
+                        final var myArgs = args;
+                        String key = entityCallKey(clazz, countQuery);
+                        return watchSql(key, countQuery, myArgs, () -> {
+                            try (Stream<DataRow> s = executeQueryStream(key, countQuery, myArgs)) {
+                                return s.findFirst()
+                                        .map(d -> d.getLong(0))
+                                        .orElse(0L);
+                            }
+                        });
+                    }
+
+                    @Override
+                    public <R, V> R collectRow(@NotNull Function<DataRow, V> mapper, @NotNull Collector<V, ?, R> collector) {
+                        try (Stream<DataRow> s = toRowStream()) {
+                            return s.map(mapper).collect(collector);
+                        }
+                    }
+
+                    @Override
+                    public <R> R collectRow(@NotNull Collector<DataRow, ?, R> collector) {
+                        try (Stream<DataRow> s = toRowStream()) {
+                            return s.collect(collector);
+                        }
+                    }
+
+                    @Override
+                    public @NotNull Optional<DataRow> findFirstRow() {
+                        try (Stream<DataRow> s = toRowStream()) {
+                            return s.findFirst();
+                        }
+                    }
+
+                    @Override
+                    public @NotNull DataRow getFirstRow() {
+                        return findFirstRow().orElse(DataRow.of());
+                    }
+
+                    @Override
+                    public List<DataRow> toRows() {
+                        try (Stream<DataRow> s = toRowStream()) {
+                            return s.collect(Collectors.toList());
+                        }
+                    }
+
+                    @Override
+                    public List<Map<String, Object>> toMaps() {
+                        try (Stream<DataRow> s = toRowStream()) {
+                            return s.collect(Collectors.toList());
+                        }
+                    }
+
+                    @Override
+                    public @NotNull Pair<String, Map<String, Object>> getSql() {
+                        var query = createQuery();
+                        return Pair.of(query.getItem1(), Collections.unmodifiableMap(query.getItem3()));
+                    }
+                };
             }
 
             @Override
-            public <R, V> R collectRow(@NotNull Function<DataRow, V> mapper, @NotNull Collector<V, ?, R> collector) {
-                try (Stream<DataRow> s = toRowStream()) {
-                    return s.map(mapper).collect(collector);
+            public int insert(@NotNull T entity) {
+                @SuppressWarnings("unchecked") Class<T> clazz = (Class<T>) entity.getClass();
+                var insert = entityManager.getEntityMeta(clazz).getInsert();
+                var data = Args.ofEntity(entity);
+                var key = entityCallKey(clazz, insert);
+                return watchSql(key, insert, data, () -> executeUpdate(insert, data));
+            }
+
+            @Override
+            public int insert(@NotNull Collection<T> entities) {
+                if (entities.isEmpty()) return 0;
+                @SuppressWarnings("unchecked") Class<T> clazz = (Class<T>) entities.iterator().next().getClass();
+                var insert = entityManager.getEntityMeta(clazz).getInsert();
+                var data = entities.stream()
+                        .map(Args::ofEntity)
+                        .collect(Collectors.toList());
+                var key = entityCallKey(clazz, insert);
+                return watchSql(key, insert, data, () -> executeBatchUpdate(insert, data, batchSize));
+            }
+
+            @Override
+            public int update(@NotNull T entity, boolean ignoreNull) {
+                @SuppressWarnings("unchecked") Class<T> clazz = (Class<T>) entity.getClass();
+                var entityMeta = entityManager.getEntityMeta(clazz);
+
+                var data = Args.ofEntity(entity);
+                var update = ignoreNull ? sqlGenerator.generateNamedParamUpdate(
+                        entityMeta.getTableName(),
+                        entityMeta.getUpdateColumns(),
+                        data,
+                        true
+                ) + entityMeta.getWhereById() : entityMeta.getUpdateById();
+                var key = entityCallKey(clazz, update);
+                return watchSql(key, update, data, () -> executeUpdate(update, data));
+            }
+
+            @Override
+            public int update(@NotNull Collection<T> entities, boolean ignoreNull) {
+                if (entities.isEmpty()) return 0;
+                @SuppressWarnings("unchecked") Class<T> clazz = (Class<T>) entities.iterator().next().getClass();
+                var entityMeta = entityManager.getEntityMeta(clazz);
+
+                var data = entities.stream()
+                        .map(Args::ofEntity)
+                        .collect(Collectors.toList());
+                var update = ignoreNull ? sqlGenerator.generateNamedParamUpdate(
+                        entityMeta.getTableName(),
+                        entityMeta.getUpdateColumns(),
+                        data.get(0),
+                        true
+                ) + entityMeta.getWhereById() : entityMeta.getUpdateById();
+                var key = entityCallKey(clazz, update);
+                return watchSql(key, update, data, () -> executeBatchUpdate(update, data, batchSize));
+            }
+
+            @Override
+            public int delete(@NotNull T entity) {
+                @SuppressWarnings("unchecked") Class<T> clazz = (Class<T>) entity.getClass();
+                var entityMeta = entityManager.getEntityMeta(clazz);
+                var delete = entityMeta.getDeleteById();
+                var data = Args.ofEntity(entity);
+                var key = entityCallKey(clazz, delete);
+                return watchSql(key, delete, data, () -> executeUpdate(delete, data));
+            }
+
+            @Override
+            public int delete(@NotNull Collection<T> entities) {
+                if (entities.isEmpty()) {
+                    return 0;
                 }
-            }
-
-            @Override
-            public <R> R collectRow(@NotNull Collector<DataRow, ?, R> collector) {
-                try (Stream<DataRow> s = toRowStream()) {
-                    return s.collect(collector);
-                }
-            }
-
-            @Override
-            public @NotNull Optional<DataRow> findFirstRow() {
-                try (Stream<DataRow> s = toRowStream()) {
-                    return s.findFirst();
-                }
-            }
-
-            @Override
-            public @NotNull DataRow getFirstRow() {
-                return findFirstRow().orElse(DataRow.of());
-            }
-
-            @Override
-            public List<DataRow> toRows() {
-                try (Stream<DataRow> s = toRowStream()) {
-                    return s.collect(Collectors.toList());
-                }
-            }
-
-            @Override
-            public List<Map<String, Object>> toMaps() {
-                try (Stream<DataRow> s = toRowStream()) {
-                    return s.collect(Collectors.toList());
-                }
-            }
-
-            @Override
-            public @NotNull Pair<String, Map<String, Object>> getSql() {
-                var query = createQuery();
-                return Pair.of(query.getItem1(), Collections.unmodifiableMap(query.getItem3()));
+                @SuppressWarnings("unchecked") Class<T> clazz = (Class<T>) entities.iterator().next().getClass();
+                var entityMeta = entityManager.getEntityMeta(clazz);
+                var delete = entityMeta.getDeleteById();
+                var data = entities.stream()
+                        .map(Args::ofEntity)
+                        .collect(Collectors.toList());
+                var key = entityCallKey(clazz, delete);
+                return watchSql(key, delete, data, () -> executeBatchUpdate(delete, data, batchSize));
             }
         };
     }
 
     @Override
-    public <T> int insert(@NotNull T entity) {
-        @SuppressWarnings("unchecked") Class<T> clazz = (Class<T>) entity.getClass();
-        var insert = entityManager.getEntityMeta(clazz).getInsert();
-        var data = Args.ofEntity(entity);
-        var key = entityCallKey(clazz, insert);
-        return watchSql(key, insert, data, () -> executeUpdate(insert, data));
-    }
-
-    @Override
-    public <T> int insert(@NotNull Collection<T> entities) {
-        if (entities.isEmpty()) return 0;
-        @SuppressWarnings("unchecked") Class<T> clazz = (Class<T>) entities.iterator().next().getClass();
-        var insert = entityManager.getEntityMeta(clazz).getInsert();
-        var data = entities.stream()
-                .map(Args::ofEntity)
-                .collect(Collectors.toList());
-        var key = entityCallKey(clazz, insert);
-        return watchSql(key, insert, data, () -> executeBatchUpdate(insert, data, batchSize));
-    }
-
-    @Override
-    public <T> int update(@NotNull T entity, boolean ignoreNull) {
-        @SuppressWarnings("unchecked") Class<T> clazz = (Class<T>) entity.getClass();
-        var entityMeta = entityManager.getEntityMeta(clazz);
-
-        var data = Args.ofEntity(entity);
-        var update = ignoreNull ? sqlGenerator.generateNamedParamUpdate(
-                entityMeta.getTableName(),
-                entityMeta.getUpdateColumns(),
-                data,
-                true
-        ) + entityMeta.getWhereById() : entityMeta.getUpdateById();
-        var key = entityCallKey(clazz, update);
-        return watchSql(key, update, data, () -> executeUpdate(update, data));
-    }
-
-    @Override
-    public <T> int update(@NotNull Collection<T> entities, boolean ignoreNull) {
-        if (entities.isEmpty()) return 0;
-        @SuppressWarnings("unchecked") Class<T> clazz = (Class<T>) entities.iterator().next().getClass();
-        var entityMeta = entityManager.getEntityMeta(clazz);
-
-        var data = entities.stream()
-                .map(Args::ofEntity)
-                .collect(Collectors.toList());
-        var update = ignoreNull ? sqlGenerator.generateNamedParamUpdate(
-                entityMeta.getTableName(),
-                entityMeta.getUpdateColumns(),
-                data.get(0),
-                true
-        ) + entityMeta.getWhereById() : entityMeta.getUpdateById();
-        var key = entityCallKey(clazz, update);
-        return watchSql(key, update, data, () -> executeBatchUpdate(update, data, batchSize));
-    }
-
-    @Override
-    public <T> int delete(@NotNull T entity) {
-        @SuppressWarnings("unchecked") Class<T> clazz = (Class<T>) entity.getClass();
-        var entityMeta = entityManager.getEntityMeta(clazz);
-        var delete = entityMeta.getDeleteById();
-        var data = Args.ofEntity(entity);
-        var key = entityCallKey(clazz, delete);
-        return watchSql(key, delete, data, () -> executeUpdate(delete, data));
-    }
-
-    @Override
-    public <T> int delete(@NotNull Collection<T> entities) {
-        if (entities.isEmpty()) {
-            return 0;
-        }
-        @SuppressWarnings("unchecked") Class<T> clazz = (Class<T>) entities.iterator().next().getClass();
-        var entityMeta = entityManager.getEntityMeta(clazz);
-        var delete = entityMeta.getDeleteById();
-        var data = entities.stream()
-                .map(Args::ofEntity)
-                .collect(Collectors.toList());
-        var key = entityCallKey(clazz, delete);
-        return watchSql(key, delete, data, () -> executeBatchUpdate(delete, data, batchSize));
-    }
-
-    @Override
-    public Executor of(@NotNull String sql) {
-        return new Executor() {
+    public GenericExecutor of(@NotNull String sql) {
+        return new GenericExecutor() {
             @Override
             public @NotNull DataRow execute() {
                 return watchSql(sql, sql, Collections.emptyMap(), () -> BakiDao.super.execute(sql, Collections.emptyMap()));

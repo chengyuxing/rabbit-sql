@@ -37,7 +37,7 @@ public interface Baki {
      * @param <T>   entity type
      * @return Entity executor
      */
-    @ApiStatus.AvailableSince("9.0.3")
+    @ApiStatus.AvailableSince("8.1.6")
     <T> EntityExecutor<T> entity(@NotNull Class<T> clazz);
 
     /**
@@ -70,7 +70,7 @@ public interface Baki {
      *
      * @return current database metadata
      */
-    DatabaseMetaData metaData();
+    @NotNull DatabaseMetaData metaData();
 
     /**
      * Get current database name.

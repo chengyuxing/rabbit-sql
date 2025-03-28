@@ -713,17 +713,11 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
 
             @Override
-            public int executeBatch(String... moreSql) {
-                List<String> sqlList = new ArrayList<>(Arrays.asList(moreSql));
-                sqlList.add(0, sql);
-                String s = String.join("###", sqlList);
-                return watchSql(s, s, Collections.emptyMap(), () -> BakiDao.super.executeBatch(sqlList, batchSize));
-            }
-
-            @Override
             public int executeBatch(@NotNull List<String> moreSql) {
+                List<String> sqlList = new ArrayList<>(moreSql);
+                sqlList.add(0, sql);
                 String s = String.join("###", moreSql);
-                return watchSql(s, s, Collections.emptyMap(), () -> BakiDao.super.executeBatch(moreSql, batchSize));
+                return watchSql(s, s, Collections.emptyMap(), () -> BakiDao.super.executeBatch(sqlList, batchSize));
             }
 
             @Override

@@ -24,7 +24,7 @@ This is a lightweight persistence layer framework, provides a complete database 
 
 ## Maven dependency
 
-_java 17+_
+_java 11+_
 
 ```xml
 <dependency>

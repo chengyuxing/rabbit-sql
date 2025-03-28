@@ -142,7 +142,7 @@ public abstract class JdbcSupport extends SqlParser {
      * @param callback statement callback
      * @param <T>      result type
      * @return any result
-     * @throws UncheckedSqlException if connection states error
+     * @throws SqlRuntimeException sql execute error
      */
     public <T> T execute(@NotNull final String sql, @NotNull StatementCallback<T> callback) {
         PreparedStatement statement = null;
@@ -182,7 +182,7 @@ public abstract class JdbcSupport extends SqlParser {
      * @param sql  named parameter sql
      * @param args args
      * @return Query: List{@code <DataRow>}, DML: affected row count, DDL: 0
-     * @throws UncheckedSqlException sql execute error
+     * @throws SqlRuntimeException sql execute error
      */
     public DataRow execute(@NotNull final String sql, Map<String, ?> args) {
         SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepare(sql, args);

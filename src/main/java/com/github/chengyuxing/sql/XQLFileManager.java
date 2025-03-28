@@ -6,6 +6,7 @@ import com.github.chengyuxing.common.script.parser.FlowControlParser;
 import com.github.chengyuxing.common.script.exception.ScriptSyntaxException;
 import com.github.chengyuxing.common.script.expression.IPipe;
 import com.github.chengyuxing.common.tuple.Pair;
+import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.exceptions.DuplicateException;
@@ -187,8 +188,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     String sqlName = matcher.group("sqlName");
                     String partName = matcher.group("partName");
                     String name = sqlName != null ? sqlName : "${" + partName + "}";
+                    if (sqlBuffer.length() != 0) {
+                        throw new IllegalStateException("the sql which before the name '" + ObjectUtil.coalesce(sqlName, partName) + "' does not seem to end with the '" + delimiter + "' in " + filename);
+                    }
                     if (entry.containsKey(name)) {
-                        throw new DuplicateException("duplicate name: '" + name + "' in " + filename);
+                        throw new DuplicateException("duplicate name: '" + ObjectUtil.coalesce(sqlName, partName) + "' in " + filename);
                     }
                     currentName = name;
                     continue;

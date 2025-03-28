@@ -277,6 +277,8 @@ public class NonBakiTests {
         XQLFileManager xqlFileManager = new XQLFileManager();
         xqlFileManager.add("sys", "pgsql/system.xql");
         xqlFileManager.add("xstj", "pgsql/xstjfx.xql");
+        xqlFileManager.add("dynamic", "pgsql/dynamic.sql");
+        xqlFileManager.add("nest", "pgsql/nest.sql");
         xqlFileManager.init();
 
         Map<String, XQLFileManager.Resource> resourceMap = xqlFileManager.getResources();

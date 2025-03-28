@@ -5,6 +5,8 @@ import com.github.chengyuxing.common.io.TypedProperties;
 import com.github.chengyuxing.common.script.expression.IPipe;
 import com.github.chengyuxing.sql.exceptions.YamlDeserializeException;
 import com.github.chengyuxing.sql.yaml.FeaturedConstructor;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Unmodifiable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -16,6 +18,8 @@ import java.lang.reflect.Modifier;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * Dynamic SQL File Manager config.
@@ -24,9 +28,8 @@ public class XQLFileManagerConfig {
     private static final Logger log = LoggerFactory.getLogger(XQLFileManagerConfig.class);
     private String configLocation;
     // ----------------optional properties------------------
-    protected Map<String, String> files = new LinkedHashMap<>();
+    protected FileMap files = new FileMap();
     protected Map<String, Object> constants = new HashMap<>();
-    protected Map<String, IPipe<?>> pipeInstances = new HashMap<>();
     protected Map<String, String> pipes = new HashMap<>();
     protected String charset = "UTF-8";
     protected String delimiter = ";";
@@ -89,7 +92,7 @@ public class XQLFileManagerConfig {
         try {
             XQLFileManagerConfig config = new XQLFileManagerConfig();
             properties.load(propertiesLocation.getInputStream());
-            Map<String, String> localFiles = new LinkedHashMap<>();
+            FileMap localFiles = new FileMap();
             Map<String, Object> localConstants = new HashMap<>();
             Map<String, String> localPipes = new HashMap<>();
             properties.forEach((k, s) -> {
@@ -166,7 +169,7 @@ public class XQLFileManagerConfig {
      *
      * @return file map [alias, file name]
      */
-    public Map<String, String> getFiles() {
+    public FileMap getFiles() {
         return files;
     }
 
@@ -175,10 +178,10 @@ public class XQLFileManagerConfig {
      *
      * @param files files map [alias, file name]
      */
-    public void setFiles(Map<String, String> files) {
+    public void setFiles(FileMap files) {
         checkLoading();
         if (Objects.nonNull(files)) {
-            this.files = new LinkedHashMap<>(files);
+            this.files = new FileMap(files);
         }
     }
 
@@ -213,27 +216,6 @@ public class XQLFileManagerConfig {
         checkLoading();
         if (Objects.nonNull(constants)) {
             this.constants = new HashMap<>(constants);
-        }
-    }
-
-    /**
-     * Get custom pipe instances map.
-     *
-     * @return custom pipe instances map
-     */
-    public Map<String, IPipe<?>> getPipeInstances() {
-        return pipeInstances;
-    }
-
-    /**
-     * Set custom pipe instances map.
-     *
-     * @param pipeInstances custom pipe instances map [pipe name, pipe instance]
-     */
-    public void setPipeInstances(Map<String, IPipe<?>> pipeInstances) {
-        checkLoading();
-        if (Objects.nonNull(pipeInstances)) {
-            this.pipeInstances = new HashMap<>(pipeInstances);
         }
     }
 
@@ -366,7 +348,6 @@ public class XQLFileManagerConfig {
 
         if (!getFiles().equals(config.getFiles())) return false;
         if (!getConstants().equals(config.getConstants())) return false;
-        if (!getPipeInstances().equals(config.getPipeInstances())) return false;
         if (!getPipes().equals(config.getPipes())) return false;
         if (!getCharset().equals(config.getCharset())) return false;
         if (!getDelimiter().equals(config.getDelimiter())) return false;
@@ -378,12 +359,212 @@ public class XQLFileManagerConfig {
     public int hashCode() {
         int result = getFiles().hashCode();
         result = 31 * result + getConstants().hashCode();
-        result = 31 * result + getPipeInstances().hashCode();
         result = 31 * result + getPipes().hashCode();
         result = 31 * result + getCharset().hashCode();
         result = 31 * result + getDelimiter().hashCode();
         result = 31 * result + getNamedParamPrefix().hashCode();
         result = 31 * result + (getDatabaseId() != null ? getDatabaseId().hashCode() : 0);
         return result;
+    }
+
+    /**
+     * Sql object.
+     */
+    public static final class Sql {
+        private String content;
+        private String description = "";
+
+        public Sql(@NotNull String content) {
+            this.content = content;
+        }
+
+        void setContent(String content) {
+            this.content = content;
+        }
+
+        public @NotNull String getContent() {
+            return content;
+        }
+
+        public @NotNull String getDescription() {
+            return description;
+        }
+
+        void setDescription(String description) {
+            if (Objects.nonNull(description))
+                this.description = description;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof Sql)) return false;
+
+            Sql sql = (Sql) o;
+            return getContent().equals(sql.getContent()) && getDescription().equals(sql.getDescription());
+        }
+
+        @Override
+        public int hashCode() {
+            int result = getContent().hashCode();
+            result = 31 * result + getDescription().hashCode();
+            return result;
+        }
+    }
+
+    /**
+     * Sql file resource.
+     */
+    public static final class Resource {
+        private final String filename;
+        private long lastModified = -1;
+        private String description = "";
+        private Map<String, Sql> entry;
+
+        public Resource(@NotNull String filename) {
+            this.filename = filename;
+            this.entry = Collections.emptyMap();
+        }
+
+        public String getFilename() {
+            return filename;
+        }
+
+        public long getLastModified() {
+            return lastModified;
+        }
+
+        void setLastModified(long lastModified) {
+            this.lastModified = lastModified;
+        }
+
+        public @NotNull String getDescription() {
+            return description;
+        }
+
+        void setDescription(String description) {
+            this.description = description;
+        }
+
+        public @NotNull Map<String, Sql> getEntry() {
+            return entry;
+        }
+
+        void setEntry(Map<String, Sql> entry) {
+            if (Objects.nonNull(entry))
+                this.entry = entry;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof Resource)) return false;
+
+            Resource resource = (Resource) o;
+            return getLastModified() == resource.getLastModified() && Objects.equals(getFilename(), resource.getFilename()) && Objects.equals(getDescription(), resource.getDescription()) && getEntry().equals(resource.getEntry());
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Objects.hashCode(getFilename());
+            result = 31 * result + Long.hashCode(getLastModified());
+            result = 31 * result + Objects.hashCode(getDescription());
+            result = 31 * result + getEntry().hashCode();
+            return result;
+        }
+    }
+
+    /**
+     * Sql file container.
+     */
+    public static final class FileMap extends LinkedHashMap<String, String> {
+        private final Map<String, Resource> resources = new LinkedHashMap<>();
+
+        public FileMap() {
+        }
+
+        public FileMap(@NotNull Map<String, String> files) {
+            putAll(files);
+        }
+
+        public Resource getResource(String key) {
+            return resources.get(key);
+        }
+
+        public @NotNull @Unmodifiable Map<String, Resource> getResources() {
+            return Collections.unmodifiableMap(resources);
+        }
+
+        @Override
+        public String put(String key, String value) {
+            resources.put(key, new Resource(value));
+            return super.put(key, value);
+        }
+
+        @Override
+        public void putAll(Map<? extends String, ? extends String> m) {
+            if (m == null || m.isEmpty()) return;
+            for (Map.Entry<? extends String, ? extends String> entry : m.entrySet()) {
+                resources.put(entry.getKey(), new Resource(entry.getValue()));
+            }
+            super.putAll(m);
+        }
+
+        @Override
+        public String remove(Object key) {
+            resources.remove(key);
+            return super.remove(key);
+        }
+
+        @Override
+        public void clear() {
+            resources.clear();
+            super.clear();
+        }
+
+        @Override
+        public String compute(String key, BiFunction<? super String, ? super String, ? extends String> remappingFunction) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String computeIfAbsent(String key, Function<? super String, ? extends String> mappingFunction) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String computeIfPresent(String key, BiFunction<? super String, ? super String, ? extends String> remappingFunction) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String merge(String key, String value, BiFunction<? super String, ? super String, ? extends String> remappingFunction) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean replace(String key, String oldValue, String newValue) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String replace(String key, String value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void replaceAll(BiFunction<? super String, ? super String, ? extends String> function) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean remove(Object key, Object value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String putIfAbsent(String key, String value) {
+            throw new UnsupportedOperationException();
+        }
     }
 }

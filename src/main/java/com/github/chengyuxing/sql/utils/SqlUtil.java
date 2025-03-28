@@ -192,7 +192,7 @@ public class SqlUtil {
     }
 
     /**
-     * Trim sql string ends (\t\n\r;).
+     * Trim sql string ends ({@code \t\n\r;}).
      *
      * @param sql sql string
      * @return sql string

@@ -1,6 +1,5 @@
 package com.github.chengyuxing.sql.dsl.clause;
 
-import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.dsl.clause.condition.Criteria;
 import com.github.chengyuxing.sql.dsl.types.FieldReference;
 import com.github.chengyuxing.sql.dsl.types.StandardAggFunction;
@@ -8,7 +7,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 /**
  * Group by clause.
@@ -130,9 +128,6 @@ public abstract class GroupBy<T> extends ColumnHelper<T> {
      * @return group by builder
      */
     public abstract GroupBy<T> having(Function<Having<T>, Having<T>> having);
-
-    // It does not return an entity, by default agg columns will be into the query result.
-    protected abstract Stream<DataRow> query();
 
     private void addSelectColumn(String column) {
         if (isIllegalColumn(column)) {

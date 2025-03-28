@@ -70,7 +70,7 @@ public interface Baki {
      *
      * @return current database metadata
      */
-    DatabaseMetaData metaData();
+    @NotNull DatabaseMetaData metaData();
 
     /**
      * Get current database name.

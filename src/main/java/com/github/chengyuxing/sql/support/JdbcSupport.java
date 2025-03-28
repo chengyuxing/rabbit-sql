@@ -185,11 +185,11 @@ public abstract class JdbcSupport extends SqlParser {
      */
     public DataRow execute(@NotNull final String sql, Map<String, ?> args) {
         final var sqlMetaData = prepare(sql, args);
-        final var argNames = sqlMetaData.argNameIndexMapping();
-        final var preparedSql = sqlMetaData.resultSql();
-        final var myArgs = sqlMetaData.args();
+        final var argNames = sqlMetaData.getArgNameIndexMapping();
+        final var preparedSql = sqlMetaData.getResultSql();
+        final var myArgs = sqlMetaData.getArgs();
         try {
-            debugSql(sql, sqlMetaData.namedParamSql(), Collections.singletonList(myArgs));
+            debugSql(sql, sqlMetaData.getNamedParamSql(), Collections.singletonList(myArgs));
             return execute(preparedSql, ps -> {
                 ps.setQueryTimeout(queryTimeout(sql, myArgs));
                 setPreparedSqlArgs(ps, myArgs, argNames);
@@ -228,16 +228,16 @@ public abstract class JdbcSupport extends SqlParser {
      */
     public Stream<DataRow> executeQueryStream(@NotNull final String sql, Map<String, ?> args) {
         final var sqlMetaData = prepare(sql, args);
-        final var argNames = sqlMetaData.argNameIndexMapping();
-        final var preparedSql = sqlMetaData.resultSql();
-        final var myArgs = sqlMetaData.args();
+        final var argNames = sqlMetaData.getArgNameIndexMapping();
+        final var preparedSql = sqlMetaData.getResultSql();
+        final var myArgs = sqlMetaData.getArgs();
         UncheckedCloseable close = null;
         try {
             final var connection = getConnection();
             // if this query is not in transaction, it's connection managed by Stream
             // if transaction is active connection will not be close when read stream to the end in 'try-with-resource' block
             close = UncheckedCloseable.wrap(() -> releaseConnection(connection, getDataSource()));
-            debugSql(sql, sqlMetaData.namedParamSql(), Collections.singletonList(myArgs));
+            debugSql(sql, sqlMetaData.getNamedParamSql(), Collections.singletonList(myArgs));
             //noinspection SqlSourceToSinkFlow
             var ps = connection.prepareStatement(preparedSql);
             ps.setQueryTimeout(queryTimeout(sql, myArgs));
@@ -341,10 +341,10 @@ public abstract class JdbcSupport extends SqlParser {
                                   @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
         final var first = args.iterator().next();
         final var sqlMetaData = prepare(sql, first);
-        final var argNames = sqlMetaData.argNameIndexMapping();
-        final var preparedSql = sqlMetaData.resultSql();
+        final var argNames = sqlMetaData.getArgNameIndexMapping();
+        final var preparedSql = sqlMetaData.getResultSql();
         try {
-            debugSql(sql, sqlMetaData.namedParamSql(), args);
+            debugSql(sql, sqlMetaData.getNamedParamSql(), args);
             return execute(preparedSql, ps -> {
                 final Stream.Builder<int[]> result = Stream.builder();
                 int i = 1;
@@ -383,11 +383,11 @@ public abstract class JdbcSupport extends SqlParser {
      */
     public int executeUpdate(@NotNull final String sql, Map<String, ?> args) {
         final var sqlMetaData = prepare(sql, args);
-        final var argNames = sqlMetaData.argNameIndexMapping();
-        final var preparedSql = sqlMetaData.resultSql();
-        final var myArgs = sqlMetaData.args();
+        final var argNames = sqlMetaData.getArgNameIndexMapping();
+        final var preparedSql = sqlMetaData.getResultSql();
+        final var myArgs = sqlMetaData.getArgs();
         try {
-            debugSql(sql, sqlMetaData.namedParamSql(), Collections.singletonList(myArgs));
+            debugSql(sql, sqlMetaData.getNamedParamSql(), Collections.singletonList(myArgs));
             return execute(preparedSql, sc -> {
                 sc.setQueryTimeout(queryTimeout(sql, myArgs));
                 if (myArgs.isEmpty()) {
@@ -425,8 +425,8 @@ public abstract class JdbcSupport extends SqlParser {
      */
     public DataRow executeCallStatement(@NotNull final String procedure, Map<String, Param> args) {
         final var sqlMetaData = prepare(procedure, args);
-        final var sql = sqlMetaData.resultSql();
-        final var argNames = sqlMetaData.argNameIndexMapping();
+        final var sql = sqlMetaData.getResultSql();
+        final var argNames = sqlMetaData.getArgNameIndexMapping();
         final var connection = getConnection();
         CallableStatement cs = null;
         try {
@@ -442,7 +442,7 @@ public abstract class JdbcSupport extends SqlParser {
                 }
             }
 
-            debugSql(procedure, sqlMetaData.namedParamSql(), Collections.singletonList(args));
+            debugSql(procedure, sqlMetaData.getNamedParamSql(), Collections.singletonList(args));
             //noinspection SqlSourceToSinkFlow
             cs = connection.prepareCall(sql);
             cs.setQueryTimeout(queryTimeout(procedure, args));
@@ -462,7 +462,8 @@ public abstract class JdbcSupport extends SqlParser {
                         var result = cs.getObject(i);
                         if (Objects.isNull(result)) {
                             values[resultIndex] = null;
-                        } else if (result instanceof ResultSet resultSet) {
+                        } else if (result instanceof ResultSet) {
+                            ResultSet resultSet = (ResultSet) result;
                             var rows = JdbcUtil.createDataRows(resultSet, "", -1);
                             JdbcUtil.closeResultSet(resultSet);
                             values[resultIndex] = rows;

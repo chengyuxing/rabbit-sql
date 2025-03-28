@@ -35,14 +35,6 @@ public interface GenericExecutor {
      * @param moreSql more sql
      * @return affected row count
      */
-    int executeBatch(String... moreSql);
-
-    /**
-     * Batch execute non-prepared sql (dml, ddl).
-     *
-     * @param moreSql more sql
-     * @return affected row count
-     */
     int executeBatch(@NotNull List<String> moreSql);
 
     /**

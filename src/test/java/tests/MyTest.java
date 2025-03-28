@@ -229,7 +229,7 @@ public class MyTest {
 //                    }
 //                })
                 .collect(d -> d);
-        res.data().forEach(System.out::println);
+        res.getData().forEach(System.out::println);
     }
 
     @Test

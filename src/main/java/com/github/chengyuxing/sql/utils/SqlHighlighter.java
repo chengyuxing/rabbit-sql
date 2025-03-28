@@ -60,16 +60,28 @@ public final class SqlHighlighter {
      * @return highlighted sql
      */
     public static String ansi(String sql) {
-        return highlight(sql, (tag, content) -> switch (tag) {
-            case FUNCTION -> Printer.colorful(content, Color.BLUE);
-            case KEYWORD -> Printer.colorful(content, Color.DARK_PURPLE);
-            case NUMBER -> Printer.colorful(content, Color.DARK_CYAN);
-            case POSTGRESQL_FUNCTION_BODY_SYMBOL, SINGLE_QUOTE_STRING -> Printer.colorful(content, Color.DARK_GREEN);
-            case ASTERISK -> Printer.colorful(content, Color.YELLOW);
-            case LINE_ANNOTATION -> Printer.colorful(content, Color.SILVER);
-            case BLOCK_ANNOTATION -> Printer.colorful(content.replaceAll("\033\\[\\d{2}m|\033\\[0m", ""), Color.SILVER);
-            case NAMED_PARAMETER -> Printer.colorful(content, Color.CYAN);
-            default -> content;
+        return highlight(sql, (tag, content) -> {
+            switch (tag) {
+                case FUNCTION:
+                    return Printer.colorful(content, Color.BLUE);
+                case KEYWORD:
+                    return Printer.colorful(content, Color.DARK_PURPLE);
+                case NUMBER:
+                    return Printer.colorful(content, Color.DARK_CYAN);
+                case POSTGRESQL_FUNCTION_BODY_SYMBOL:
+                case SINGLE_QUOTE_STRING:
+                    return Printer.colorful(content, Color.DARK_GREEN);
+                case ASTERISK:
+                    return Printer.colorful(content, Color.YELLOW);
+                case LINE_ANNOTATION:
+                    return Printer.colorful(content, Color.SILVER);
+                case BLOCK_ANNOTATION:
+                    return Printer.colorful(content.replaceAll("\033\\[\\d{2}m|\033\\[0m", ""), Color.SILVER);
+                case NAMED_PARAMETER:
+                    return Printer.colorful(content, Color.CYAN);
+                default:
+                    return content;
+            }
         });
     }
 

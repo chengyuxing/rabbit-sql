@@ -40,7 +40,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -281,10 +280,11 @@ public class BakiDao extends JdbcSupport implements Baki {
 
     @Override
     public <T> EntityExecutor<T> entity(@NotNull Class<T> clazz) {
-        return new EntityExecutor<>() {
+        return new EntityExecutor<T>() {
+            final EntityManager.EntityMeta entityMeta = entityManager.getEntityMeta(clazz);
+
             @Override
             public <SELF extends Query<T, SELF>> Query<T, SELF> query() {
-                var entityMeta = entityManager.getEntityMeta(clazz);
                 return new Query<>() {
                     private final Set<String> selectColumns = new LinkedHashSet<>();
                     private final List<Criteria> finalWhereCriteria = new ArrayList<>();
@@ -309,7 +309,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                         return Triple.of(select, countSelect, where.getItem2());
                     }
 
-                    private InternalGroupBy<T> createGroupBy() {
+                    private InternalGroupBy<T> createGroupByObject() {
                         var where = new InternalWhere<>(clazz, finalWhereCriteria).getWhere();
                         var orderBy = new InternalOrderBy<>(clazz, finalOrderBy).getOrderBy();
                         var groupBy = new InternalGroupBy<>(clazz, finalGroupByAggColumns, finalGroupByColumns, finalHavingCriteria);
@@ -403,7 +403,10 @@ public class BakiDao extends JdbcSupport implements Baki {
                                             query.getItem3()
                                     ));
                         }
-                        return createGroupBy().query();
+                        Pair<String, Map<String, Object>> query = createGroupByObject().getQuerySql();
+                        String key = entityCallKey(clazz, query.getItem1());
+                        return watchSql(key, query.getItem1(), query.getItem2(),
+                                () -> executeQueryStream(key, query.getItem1(), query.getItem2()));
                     }
 
                     @Override
@@ -412,30 +415,16 @@ public class BakiDao extends JdbcSupport implements Baki {
                     }
 
                     @Override
-                    public List<T> toList() {
+                    public @NotNull List<T> toList() {
                         try (Stream<T> s = toStream()) {
                             return s.collect(Collectors.toList());
                         }
                     }
 
                     @Override
-                    public <R> List<R> toList(@NotNull Function<T, R> mapper) {
+                    public <R> @NotNull List<R> toList(@NotNull Function<T, R> mapper) {
                         try (Stream<T> s = toStream()) {
                             return s.map(mapper).collect(Collectors.toList());
-                        }
-                    }
-
-                    @Override
-                    public <R, V> R collect(@NotNull Function<T, V> mapper, @NotNull Collector<V, ?, R> collector) {
-                        try (Stream<T> s = toStream()) {
-                            return s.map(mapper).collect(collector);
-                        }
-                    }
-
-                    @Override
-                    public <R> R collect(@NotNull Collector<T, ?, R> collector) {
-                        try (Stream<T> s = toStream()) {
-                            return s.collect(collector);
                         }
                     }
 
@@ -486,7 +475,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                             args = queryObj.getItem3();
                         } else {
                             // group by paged query
-                            var groupBy = createGroupBy();
+                            var groupBy = createGroupByObject();
 
                             var querySqlObj = groupBy.getQuerySql();
                             query = querySqlObj.getItem1();
@@ -545,7 +534,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                                 args = where.getItem2();
                             }
                         } else {
-                            var groupBy = createGroupBy();
+                            var groupBy = createGroupByObject();
 
                             countSelect = sqlGenerator.generateCountQuery(
                                     entityMeta.getSelect(groupBy.getGroupColumns()) +
@@ -568,20 +557,6 @@ public class BakiDao extends JdbcSupport implements Baki {
                     }
 
                     @Override
-                    public <R, V> R collectRow(@NotNull Function<DataRow, V> mapper, @NotNull Collector<V, ?, R> collector) {
-                        try (Stream<DataRow> s = toRowStream()) {
-                            return s.map(mapper).collect(collector);
-                        }
-                    }
-
-                    @Override
-                    public <R> R collectRow(@NotNull Collector<DataRow, ?, R> collector) {
-                        try (Stream<DataRow> s = toRowStream()) {
-                            return s.collect(collector);
-                        }
-                    }
-
-                    @Override
                     public @NotNull Optional<DataRow> findFirstRow() {
                         try (Stream<DataRow> s = toRowStream()) {
                             return s.findFirst();
@@ -594,14 +569,14 @@ public class BakiDao extends JdbcSupport implements Baki {
                     }
 
                     @Override
-                    public List<DataRow> toRows() {
+                    public @NotNull List<DataRow> toRows() {
                         try (Stream<DataRow> s = toRowStream()) {
                             return s.collect(Collectors.toList());
                         }
                     }
 
                     @Override
-                    public List<Map<String, Object>> toMaps() {
+                    public @NotNull List<Map<String, Object>> toMaps() {
                         try (Stream<DataRow> s = toRowStream()) {
                             return s.collect(Collectors.toList());
                         }
@@ -617,8 +592,7 @@ public class BakiDao extends JdbcSupport implements Baki {
 
             @Override
             public int insert(@NotNull T entity) {
-                @SuppressWarnings("unchecked") Class<T> clazz = (Class<T>) entity.getClass();
-                var insert = entityManager.getEntityMeta(clazz).getInsert();
+                var insert = entityMeta.getInsert();
                 var data = Args.ofEntity(entity);
                 var key = entityCallKey(clazz, insert);
                 return watchSql(key, insert, data, () -> executeUpdate(insert, data));
@@ -627,8 +601,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             @Override
             public int insert(@NotNull Collection<T> entities) {
                 if (entities.isEmpty()) return 0;
-                @SuppressWarnings("unchecked") Class<T> clazz = (Class<T>) entities.iterator().next().getClass();
-                var insert = entityManager.getEntityMeta(clazz).getInsert();
+                var insert = entityMeta.getInsert();
                 var data = entities.stream()
                         .map(Args::ofEntity)
                         .collect(Collectors.toList());
@@ -638,9 +611,6 @@ public class BakiDao extends JdbcSupport implements Baki {
 
             @Override
             public int update(@NotNull T entity, boolean ignoreNull) {
-                @SuppressWarnings("unchecked") Class<T> clazz = (Class<T>) entity.getClass();
-                var entityMeta = entityManager.getEntityMeta(clazz);
-
                 var data = Args.ofEntity(entity);
                 var update = ignoreNull ? sqlGenerator.generateNamedParamUpdate(
                         entityMeta.getTableName(),
@@ -655,9 +625,6 @@ public class BakiDao extends JdbcSupport implements Baki {
             @Override
             public int update(@NotNull Collection<T> entities, boolean ignoreNull) {
                 if (entities.isEmpty()) return 0;
-                @SuppressWarnings("unchecked") Class<T> clazz = (Class<T>) entities.iterator().next().getClass();
-                var entityMeta = entityManager.getEntityMeta(clazz);
-
                 var data = entities.stream()
                         .map(Args::ofEntity)
                         .collect(Collectors.toList());
@@ -673,8 +640,6 @@ public class BakiDao extends JdbcSupport implements Baki {
 
             @Override
             public int delete(@NotNull T entity) {
-                @SuppressWarnings("unchecked") Class<T> clazz = (Class<T>) entity.getClass();
-                var entityMeta = entityManager.getEntityMeta(clazz);
                 var delete = entityMeta.getDeleteById();
                 var data = Args.ofEntity(entity);
                 var key = entityCallKey(clazz, delete);
@@ -686,8 +651,6 @@ public class BakiDao extends JdbcSupport implements Baki {
                 if (entities.isEmpty()) {
                     return 0;
                 }
-                @SuppressWarnings("unchecked") Class<T> clazz = (Class<T>) entities.iterator().next().getClass();
-                var entityMeta = entityManager.getEntityMeta(clazz);
                 var delete = entityMeta.getDeleteById();
                 var data = entities.stream()
                         .map(Args::ofEntity)
@@ -712,17 +675,11 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
 
             @Override
-            public int executeBatch(String... moreSql) {
-                List<String> sqlList = new ArrayList<>(Arrays.asList(moreSql));
-                sqlList.add(0, sql);
-                String s = String.join("###", sqlList);
-                return watchSql(s, s, Collections.emptyMap(), () -> BakiDao.super.executeBatch(sqlList, batchSize));
-            }
-
-            @Override
             public int executeBatch(@NotNull List<String> moreSql) {
+                List<String> sqlList = new ArrayList<>(moreSql);
+                sqlList.add(0, sql);
                 String s = String.join("###", moreSql);
-                return watchSql(s, s, Collections.emptyMap(), () -> BakiDao.super.executeBatch(moreSql, batchSize));
+                return watchSql(s, s, Collections.emptyMap(), () -> BakiDao.super.executeBatch(sqlList, batchSize));
             }
 
             @Override
@@ -791,7 +748,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public DatabaseMetaData metaData() {
+    public @NotNull DatabaseMetaData metaData() {
         return this.metaData;
     }
 
@@ -920,14 +877,6 @@ public class BakiDao extends JdbcSupport implements Baki {
             var wrapper = new InternalHaving<>(clazz, gotten);
             havingCriteria.addAll(wrapper.getCriteria());
             return this;
-        }
-
-        @Override
-        protected Stream<DataRow> query() {
-            var query = getQuerySql();
-            var key = entityCallKey(clazz, query.getItem1());
-            return watchSql(key, query.getItem1(), query.getItem2(),
-                    () -> executeQueryStream(key, query.getItem1(), query.getItem2()));
         }
 
         @Override
@@ -1125,15 +1074,27 @@ public class BakiDao extends JdbcSupport implements Baki {
                 return pageHelper;
             }
         }
-        return switch (databaseId) {
-            case "oracle" -> new OraclePageHelper();
-            case "postgresql", "sqlite" -> new PGPageHelper();
-            case "mysql", "mariadb" -> new MysqlPageHelper();
-            case "z/os", "sqlds", "iseries", "db2 for unix/windows", "cloudscape", "informix" -> new Db2PageHelper();
-            case "microsoft sql server" -> new SqlServer2012PageHelper();
-            default ->
-                    throw new UnsupportedOperationException("pager of \"" + databaseId + "\" default not implement currently, see method 'setGlobalPageHelperProvider'.");
-        };
+        switch (databaseId) {
+            case "oracle":
+                return new OraclePageHelper();
+            case "postgresql":
+            case "sqlite":
+                return new PGPageHelper();
+            case "mysql":
+            case "mariadb":
+                return new MysqlPageHelper();
+            case "z/os":
+            case "sqlds":
+            case "iseries":
+            case "db2 for unix/windows":
+            case "cloudscape":
+            case "informix":
+                return new Db2PageHelper();
+            case "microsoft sql server":
+                return new SqlServer2012PageHelper();
+            default:
+                throw new UnsupportedOperationException("pager of \"" + databaseId + "\" default not implement currently, see method 'setGlobalPageHelperProvider'.");
+        }
     }
 
     /**

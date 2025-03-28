@@ -98,8 +98,8 @@ public class NonBakiTests {
 
         SqlGenerator sqlGenerator = new SqlGenerator(':');
         SqlGenerator.GeneratedSqlMetaData pair = sqlGenerator.generatePreparedSql(sql, Collections.emptyMap());
-        System.out.println(pair.namedParamSql());
-        System.out.println(pair.resultSql());
+        System.out.println(pair.getNamedParamSql());
+        System.out.println(pair.getResultSql());
 
         Matcher m = sqlGenerator.getNamedParamPattern().matcher(sql);
         while (m.find()) {
@@ -131,8 +131,8 @@ public class NonBakiTests {
                 "idc", 15,
                 "username", "cyx"
         ));
-        System.out.println(pair1.args());
-        System.out.println(pair1.resultSql());
+        System.out.println(pair1.getArgs());
+        System.out.println(pair1.getResultSql());
     }
 
     @Test
@@ -144,8 +144,8 @@ public class NonBakiTests {
                 "idd", 16,
                 "age", 30,
                 "address", LocalDateTime.now()));
-        System.out.println(sqla.args());
-        System.out.println(sqla.resultSql());
+        System.out.println(sqla.getArgs());
+        System.out.println(sqla.getResultSql());
     }
 
     @Test
@@ -272,6 +272,8 @@ public class NonBakiTests {
         XQLFileManager xqlFileManager = new XQLFileManager();
         xqlFileManager.add("sys", "pgsql/system.xql");
         xqlFileManager.add("xstj", "pgsql/xstjfx.xql");
+        xqlFileManager.add("dynamic", "pgsql/dynamic.sql");
+        xqlFileManager.add("nest", "pgsql/nest.sql");
         xqlFileManager.init();
 
         Map<String, XQLFileManager.Resource> resourceMap = xqlFileManager.getResources();

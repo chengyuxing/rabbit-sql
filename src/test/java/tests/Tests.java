@@ -43,8 +43,8 @@ public class Tests {
         String str = "select t.id || 'number' || 'age:age,name:cyx', '{\"name\":\"user\"}'::jsonb from test.user where id =:id::integer and id >:idc and name=text :username";
         String sql = "insert into test.user(idd,name,id,age,address) values (:id,:name::integer,:idd::float,integer :age,date :address)";
         SqlGenerator.GeneratedSqlMetaData pair = new SqlGenerator(':').generatePreparedSql(str, Collections.emptyMap());
-        System.out.println(pair.args());
-        System.out.println(pair.resultSql());
+        System.out.println(pair.getResultSql());
+        System.out.println(pair.getArgs());
     }
 
     @Test
@@ -53,8 +53,8 @@ public class Tests {
         SqlGenerator.GeneratedSqlMetaData sql = new SqlGenerator('?').generatePreparedSql(query, DataRow.of("cnd", "and date <= '${date}'")
                 .add("date", "2020-12-23 ${time}")
                 .add("time", "11:23:44"));
-        System.out.println(sql.args());
-        System.out.println(sql.resultSql());
+        System.out.println(sql.getResultSql());
+        System.out.println(sql.getArgs());
     }
 
     @Test

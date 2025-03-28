@@ -12,7 +12,14 @@ import java.util.function.BiFunction;
  *
  * @param <T> data type
  */
-public record PagedResource<T>(PageHelper pager, List<T> data) {
+public final class PagedResource<T> {
+    private final PageHelper pager;
+    private final List<T> data;
+
+    public PagedResource(PageHelper pager, List<T> data) {
+        this.pager = pager;
+        this.data = data;
+    }
 
     /**
      * Returns a PagedResource.
@@ -63,5 +70,39 @@ public record PagedResource<T>(PageHelper pager, List<T> data) {
      */
     public <R> R to(BiFunction<PageHelper, List<T>, R> converter) {
         return converter.apply(pager, data);
+    }
+
+    public List<T> getData() {
+        return data;
+    }
+
+    public PageHelper getPager() {
+        return pager;
+    }
+
+    @Override
+    public String toString() {
+        return "Pageable{" +
+                "pager=" + pager +
+                ", data=" + data +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof PagedResource)) return false;
+
+        PagedResource<?> that = (PagedResource<?>) o;
+
+        if (getPager() != null ? !getPager().equals(that.getPager()) : that.getPager() != null) return false;
+        return getData() != null ? getData().equals(that.getData()) : that.getData() == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = getPager() != null ? getPager().hashCode() : 0;
+        result = 31 * result + (getData() != null ? getData().hashCode() : 0);
+        return result;
     }
 }

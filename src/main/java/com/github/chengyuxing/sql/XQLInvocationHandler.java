@@ -83,12 +83,23 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
             return handler.handle(baki, sqlRef, myArgs, method, returnType, returnGenericType);
         }
 
-        return switch (sqlType) {
-            case query -> handleQuery(baki, alias, sqlName, myArgs, method, returnType, returnGenericType);
-            case insert, update, delete -> handleModify(baki, sqlRef, myArgs, method, returnType);
-            case procedure, function -> handleProcedure(baki, sqlRef, myArgs, method, returnType);
-            case ddl, plsql, unset -> handleNormal(baki, sqlRef, myArgs, method, returnType);
-        };
+        switch (sqlType) {
+            case query:
+                return handleQuery(baki, alias, sqlName, myArgs, method, returnType, returnGenericType);
+            case insert:
+            case update:
+            case delete:
+                return handleModify(baki, sqlRef, myArgs, method, returnType);
+            case procedure:
+            case function:
+                return handleProcedure(baki, sqlRef, myArgs, method, returnType);
+            case ddl:
+            case plsql:
+            case unset:
+                return handleNormal(baki, sqlRef, myArgs, method, returnType);
+            default:
+                throw new IllegalAccessException(method.getDeclaringClass() + "#" + method.getName() + " SQL type [" + sqlType + "] not supported");
+        }
     }
 
     protected SqlStatementType detectSQLTypeByMethodPrefix(String method) {
@@ -282,9 +293,9 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
             Annotation[] annotations = parameters[0].getAnnotations();
             if (annotations.length == 0) {
                 Object arg = args[0];
-                if (arg instanceof @SuppressWarnings("rawtypes")Collection collection) {
-                    List<Object> myArgs = new ArrayList<>(collection.size());
-                    for (var o : collection) {
+                if (arg instanceof Collection) {
+                    List<Object> myArgs = new ArrayList<>(((Collection<?>) arg).size());
+                    for (Object o : (Collection<?>) arg) {
                         if (o instanceof Map) {
                             myArgs.add(o);
                             continue;
@@ -314,8 +325,8 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
                 throw new IllegalArgumentException(method.getDeclaringClass() + "#" + method.getName() + "#" + parameter.getName() + " has no @" + Arg.class.getSimpleName());
             }
             for (Annotation annotation : annotations) {
-                if (annotation instanceof Arg arg) {
-                    String argName = arg.value();
+                if (annotation instanceof Arg) {
+                    String argName = ((Arg) annotation).value();
                     myArgs.put(argName, args[i]);
                     break;
                 }

@@ -23,7 +23,7 @@
 
 **pom.xml**：
 
-_java 17+_
+_java 11+_
 
 ```xml
 <dependency>

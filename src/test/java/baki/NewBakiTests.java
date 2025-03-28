@@ -496,7 +496,7 @@ public class NewBakiTests {
                 .arg("orderBy", "id desc")
                 .pageable()
                 .collect()
-                .data()
+                .getData()
                 .forEach(System.out::println);
     }
 

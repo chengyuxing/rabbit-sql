@@ -43,12 +43,12 @@ public abstract class CriteriaBuilder<T> extends ColumnHelper<T> {
 
                 int unique = uniqueIndex.getAndIncrement();
 
-                if (condition instanceof @SuppressWarnings("rawtypes")InCondition inCondition) {
-                    @SuppressWarnings({"unchecked"}) Pair<String, Map<String, Object>> result = inCondition.buildStatement(unique, namedParamPrefix());
+                if (condition instanceof InCondition) {
+                    @SuppressWarnings({"rawtypes", "unchecked"}) Pair<String, Map<String, Object>> result = ((InCondition) condition).buildStatement(unique, namedParamPrefix());
                     sb.append(result.getItem1());
                     params.putAll(result.getItem2());
-                } else if (condition instanceof BetweenCondition betweenCondition) {
-                    Pair<String, Map<String, Object>> result = betweenCondition.buildStatement(unique, namedParamPrefix());
+                } else if (condition instanceof BetweenCondition) {
+                    Pair<String, Map<String, Object>> result = ((BetweenCondition) condition).buildStatement(unique, namedParamPrefix());
                     sb.append(result.getItem1());
                     params.putAll(result.getItem2());
                 } else {
@@ -64,11 +64,11 @@ public abstract class CriteriaBuilder<T> extends ColumnHelper<T> {
                         params.put(key, condition.getValue());
                     }
                 }
-            } else if (criteria instanceof AndGroup andGroup) {
-                List<Criteria> andCriteria = andGroup.group();
-                if (!andCriteria.isEmpty()) {
-                    int groupSize = andCriteria.size();
-                    Pair<String, Map<String, Object>> result = build(uniqueIndex, andCriteria, Logic.OR, groupSize == 1 ? identLevel : identLevel + 1);
+            } else if (criteria instanceof AndGroup) {
+                List<Criteria> andGroup = ((AndGroup) criteria).getGroup();
+                if (!andGroup.isEmpty()) {
+                    int groupSize = andGroup.size();
+                    Pair<String, Map<String, Object>> result = build(uniqueIndex, andGroup, Logic.OR, groupSize == 1 ? identLevel : identLevel + 1);
                     if (groupSize == 1) {
                         sb.append(result.getItem1());
                     } else {
@@ -76,11 +76,11 @@ public abstract class CriteriaBuilder<T> extends ColumnHelper<T> {
                     }
                     params.putAll(result.getItem2());
                 }
-            } else if (criteria instanceof OrGroup orGroup) {
-                List<Criteria> orCriteria = orGroup.group();
-                if (!orCriteria.isEmpty()) {
-                    int groupSize = orCriteria.size();
-                    Pair<String, Map<String, Object>> result = build(uniqueIndex, orCriteria, Logic.AND, groupSize == 1 ? identLevel : identLevel + 1);
+            } else if (criteria instanceof OrGroup) {
+                List<Criteria> orGroup = ((OrGroup) criteria).getGroup();
+                if (!orGroup.isEmpty()) {
+                    int groupSize = orGroup.size();
+                    Pair<String, Map<String, Object>> result = build(uniqueIndex, orGroup, Logic.AND, groupSize == 1 ? identLevel : identLevel + 1);
                     if (groupSize == 1) {
                         sb.append(result.getItem1());
                     } else {

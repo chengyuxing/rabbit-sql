@@ -135,7 +135,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     public void add(@NotNull String alias, @NotNull String fileName) {
         if (files.containsKey(alias)) {
-            throw new DuplicateException("Duplicate alias: " + alias);
+            throw new DuplicateException("duplicate alias: " + alias);
         }
         files.put(alias, fileName);
     }

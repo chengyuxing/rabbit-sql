@@ -79,7 +79,7 @@ import static com.github.chengyuxing.common.utils.StringUtil.containsAnyIgnoreCa
  * </blockquote>
  * <p>
  * {@linkplain DynamicSqlParser Dynamic sql script} write in line annotation where starts with {@code --},
- * check example following class path file: {@code template.xql}.
+ * check example following class path file: {@code home.xql.template}.
  * <p>Invoke method {@link #get(String, Map)} to enjoy the dynamic sql!</p>
  *
  * @see FlowControlParser

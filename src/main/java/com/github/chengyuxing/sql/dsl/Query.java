@@ -18,7 +18,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 /**
@@ -137,7 +136,7 @@ public interface Query<T, SELF extends Query<T, SELF>> {
      *
      * @return list
      */
-    List<T> toList();
+    @NotNull List<T> toList();
 
     /**
      * Collect result to list.
@@ -146,27 +145,7 @@ public interface Query<T, SELF extends Query<T, SELF>> {
      * @param <R>    result type
      * @return list
      */
-    <R> List<R> toList(@NotNull Function<T, R> mapper);
-
-    /**
-     * Collect.
-     *
-     * @param mapper    item mapper
-     * @param collector result collector
-     * @param <R>       result type
-     * @param <V>       mapped value type
-     * @return any
-     */
-    <R, V> R collect(@NotNull Function<T, V> mapper, @NotNull Collector<V, ?, R> collector);
-
-    /**
-     * Collect.
-     *
-     * @param collector result collector
-     * @param <R>       result type
-     * @return any
-     */
-    <R> R collect(@NotNull Collector<T, ?, R> collector);
+    @NotNull <R> List<R> toList(@NotNull Function<T, R> mapper);
 
     /**
      * Find first item.
@@ -243,26 +222,6 @@ public interface Query<T, SELF extends Query<T, SELF>> {
     long count();
 
     /**
-     * Collect.
-     *
-     * @param mapper    item mapper
-     * @param collector result collector
-     * @param <R>       result type
-     * @param <V>       mapped value type
-     * @return any
-     */
-    <R, V> R collectRow(@NotNull Function<DataRow, V> mapper, @NotNull Collector<V, ?, R> collector);
-
-    /**
-     * Collect.
-     *
-     * @param collector result collector
-     * @param <R>       result type
-     * @return any
-     */
-    <R> R collectRow(@NotNull Collector<DataRow, ?, R> collector);
-
-    /**
      * Find first row.
      *
      * @return optional row
@@ -281,14 +240,14 @@ public interface Query<T, SELF extends Query<T, SELF>> {
      *
      * @return list
      */
-    List<DataRow> toRows();
+    @NotNull List<DataRow> toRows();
 
     /**
      * Collect to map list.
      *
      * @return list
      */
-    List<Map<String, Object>> toMaps();
+    @NotNull List<Map<String, Object>> toMaps();
 
     /**
      * Returns the built sql and parameters.

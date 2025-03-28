@@ -85,5 +85,4 @@ public interface EntityExecutor<T> {
      */
     @ApiStatus.AvailableSince("8.0.1")
     int delete(@NotNull Collection<T> entities);
-
 }

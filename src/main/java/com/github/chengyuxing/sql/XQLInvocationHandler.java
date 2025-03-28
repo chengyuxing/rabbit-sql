@@ -6,6 +6,7 @@ import com.github.chengyuxing.sql.annotation.*;
 import com.github.chengyuxing.sql.page.IPageable;
 import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.plugins.PageHelperProvider;
+import com.github.chengyuxing.sql.plugins.SqlInvokeHandler;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.annotation.SqlStatementType;
@@ -41,9 +42,9 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
         Class<?> returnType = method.getReturnType();
         Class<?> returnGenericType = getReturnGenericType(method);
 
-        final var baki = baki();
+        final BakiDao baki = baki();
 
-        final var myArgs = resolveArgs(method, args);
+        Object myArgs = resolveArgs(method, args);
 
         if (method.isAnnotationPresent(Procedure.class)) {
             Procedure procedure = method.getDeclaredAnnotation(Procedure.class);
@@ -55,10 +56,10 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
             return handleProcedure(baki, function.value(), myArgs, method, returnType);
         }
 
-        var alias = clazz.getDeclaredAnnotation(XQLMapper.class).value();
-        var sqlName = method.getName();
+        String alias = clazz.getDeclaredAnnotation(XQLMapper.class).value();
+        String sqlName = method.getName();
 
-        var sqlType = detectSQLTypeByMethodPrefix(sqlName);
+        SqlStatementType sqlType = detectSQLTypeByMethodPrefix(sqlName);
 
         if (method.isAnnotationPresent(XQL.class)) {
             XQL xql = method.getDeclaredAnnotation(XQL.class);
@@ -68,7 +69,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
             sqlType = xql.type();
         }
 
-        var xqlResource = baki.getXqlFileManager().getResource(alias);
+        XQLFileManager.Resource xqlResource = baki.getXqlFileManager().getResource(alias);
         if (xqlResource == null) {
             throw new IllegalAccessException("XQL file alias '" + alias + "' not found at: " + clazz);
         }
@@ -76,10 +77,10 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
             throw new IllegalAccessException("SQL name [" + sqlName + "] not found at: " + clazz + "#" + method.getName());
         }
 
-        var sqlRef = "&" + XQLFileManager.encodeSqlReference(alias, sqlName);
+        String sqlRef = "&" + XQLFileManager.encodeSqlReference(alias, sqlName);
 
         if (baki.getXqlMappingHandlers().containsKey(sqlType)) {
-            var handler = baki.getXqlMappingHandlers().get(sqlType);
+            SqlInvokeHandler handler = baki.getXqlMappingHandlers().get(sqlType);
             return handler.handle(baki, sqlRef, myArgs, method, returnType, returnGenericType);
         }
 
@@ -150,7 +151,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
         }
         Map<String, Param> myPaArgs = new HashMap<>();
         //noinspection unchecked
-        for (var entry : ((Map<String, Object>) args).entrySet()) {
+        for (Map.Entry<String, Object> entry : ((Map<String, Object>) args).entrySet()) {
             myPaArgs.put(entry.getKey(), (Param) entry.getValue());
         }
         return baki.of(sqlRef).call(myPaArgs);
@@ -160,7 +161,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
         if (args instanceof Collection) {
             throw new IllegalArgumentException(method.getDeclaringClass() + "#" + method.getName() + " args must not be Collection");
         }
-        @SuppressWarnings("unchecked") var qe = baki.query("&" + XQLFileManager.encodeSqlReference(alias, sqlName)).args((Map<String, Object>) args);
+        @SuppressWarnings("unchecked") QueryExecutor qe = baki.query("&" + XQLFileManager.encodeSqlReference(alias, sqlName)).args((Map<String, Object>) args);
         if (returnType == Stream.class) {
             return qe.stream().map(dataRowMapping(genericType));
         }
@@ -212,7 +213,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
         if (method.isAnnotationPresent(PageableConfig.class)) {
             PageableConfig pageableConfig = method.getDeclaredAnnotation(PageableConfig.class);
             String[] startEnd = pageableConfig.disableDefaultPageSql();
-            var pageHelpProviderCls = pageableConfig.pageHelper();
+            Class<? extends PageHelperProvider> pageHelpProviderCls = pageableConfig.pageHelper();
             if (startEnd.length > 0) {
                 if (Objects.isNull(count)) {
                     throw new IllegalStateException(method.getDeclaringClass() + "#" + method.getName() + " has no @" + CountQuery.class.getSimpleName() + ", property disableDefaultPageSql must work with @" + CountQuery.class.getSimpleName());
@@ -247,11 +248,11 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
      */
     protected Class<?> getReturnGenericType(Method method) throws ClassNotFoundException {
         Class<?> genericType = null;
-        var genericReturnType = method.getGenericReturnType();
+        java.lang.reflect.Type genericReturnType = method.getGenericReturnType();
         if (genericReturnType instanceof ParameterizedType) {
-            var actualTypeArguments = ((ParameterizedType) genericReturnType).getActualTypeArguments();
+            java.lang.reflect.Type[] actualTypeArguments = ((ParameterizedType) genericReturnType).getActualTypeArguments();
             if (actualTypeArguments.length == 1) {
-                var actualTypeArgument = actualTypeArguments[0];
+                java.lang.reflect.Type actualTypeArgument = actualTypeArguments[0];
                 if (actualTypeArgument instanceof ParameterizedType) {
                     genericType = (Class<?>) ((ParameterizedType) actualTypeArgument).getRawType();
                 } else {

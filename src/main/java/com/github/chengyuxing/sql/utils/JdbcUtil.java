@@ -117,9 +117,9 @@ public class JdbcUtil {
      * @throws SQLException sql exp
      */
     public static DataRow getResult(PreparedStatement statement, final String sql) throws SQLException {
-        var resultSet = statement.getResultSet();
+        ResultSet resultSet = statement.getResultSet();
         if (Objects.nonNull(resultSet)) {
-            var result = JdbcUtil.createDataRows(resultSet, sql, -1);
+            List<DataRow> result = JdbcUtil.createDataRows(resultSet, sql, -1);
             JdbcUtil.closeResultSet(resultSet);
             return DataRow.of("result", result, "type", "QUERY");
         }
@@ -141,9 +141,9 @@ public class JdbcUtil {
     public static void printSqlConsole(Statement sc) {
         if (log.isWarnEnabled()) {
             try {
-                var warning = sc.getWarnings();
+                SQLWarning warning = sc.getWarnings();
                 if (warning != null) {
-                    var state = warning.getSQLState();
+                    String state = warning.getSQLState();
                     warning.forEach(r -> log.warn("[{}] [{}] {}", LocalDateTime.now(), state, r.getMessage()));
                 }
             } catch (SQLException e) {
@@ -177,7 +177,7 @@ public class JdbcUtil {
      * @throws SQLException ex
      */
     public static String[] createNames(ResultSet resultSet, final String executedSql) throws SQLException {
-        var metaData = resultSet.getMetaData();
+        ResultSetMetaData metaData = resultSet.getMetaData();
         int columnCount = metaData.getColumnCount();
         String[] names = new String[columnCount];
         for (int i = 0; i < columnCount; i++) {
@@ -202,7 +202,7 @@ public class JdbcUtil {
      * @throws SQLException ex
      */
     public static DataRow createDataRow(String[] names, ResultSet resultSet) throws SQLException {
-        var row = new DataRow(names.length);
+        DataRow row = new DataRow(names.length);
         for (int i = 0; i < names.length; i++) {
             row.put(names[i], getResultValue(resultSet, i + 1));
         }

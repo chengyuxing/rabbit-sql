@@ -2,9 +2,10 @@ package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.sql.dsl.types.StandardOperator;
-import jakarta.persistence.*;
 import org.jetbrains.annotations.NotNull;
 
+import jakarta.persistence.*;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -52,7 +53,7 @@ public class EntityManager implements AutoCloseable {
     private String checkTableName(Class<?> clazz) {
         String tableName = clazz.getSimpleName().toLowerCase();
         if (clazz.isAnnotationPresent(Table.class)) {
-            var table = clazz.getAnnotation(Table.class);
+            Table table = clazz.getAnnotation(Table.class);
             if (!table.name().isEmpty()) {
                 tableName = table.name();
             }
@@ -66,7 +67,7 @@ public class EntityManager implements AutoCloseable {
     private Map<String, ColumnMeta> checkColumns(Class<?> clazz) {
         Map<String, ColumnMeta> columns = new HashMap<>();
         try {
-            for (var field : clazz.getDeclaredFields()) {
+            for (Field field : clazz.getDeclaredFields()) {
                 int modifiers = field.getModifiers();
                 if (Modifier.isFinal(modifiers) || Modifier.isStatic(modifiers)) {
                     continue;
@@ -74,9 +75,9 @@ public class EntityManager implements AutoCloseable {
                 if (field.isAnnotationPresent(Transient.class)) {
                     continue;
                 }
-                var getter = ReflectUtil.getGetMethod(clazz, field);
-                var setter = ReflectUtil.getSetMethod(clazz, field);
-                var columnMeta = new ColumnMeta(getter, setter, field.getType(), field.getAnnotation(Id.class));
+                Method getter = ReflectUtil.getGetMethod(clazz, field);
+                Method setter = ReflectUtil.getSetMethod(clazz, field);
+                ColumnMeta columnMeta = new ColumnMeta(getter, setter, field.getType(), field.getAnnotation(Id.class));
                 String columnName = field.getName();
                 if (field.isAnnotationPresent(Column.class)) {
                     columnMeta.setColumn(field.getAnnotation(Column.class));
@@ -182,7 +183,7 @@ public class EntityManager implements AutoCloseable {
         }
 
         private String checkPrimaryKey() {
-            for (var entry : columns.entrySet()) {
+            for (Map.Entry<String, ColumnMeta> entry : columns.entrySet()) {
                 if (Objects.nonNull(entry.getValue().getId())) {
                     return entry.getKey();
                 }
@@ -195,7 +196,7 @@ public class EntityManager implements AutoCloseable {
         }
 
         private String genSelect(Set<String> columns) {
-            var delimiter = columns.size() > 7 ? ",\n\t" : ", ";
+            String delimiter = columns.size() > 7 ? ",\n\t" : ", ";
             return "select " + String.join(delimiter, columns) + "\nfrom " + tableName;
         }
 
@@ -209,8 +210,8 @@ public class EntityManager implements AutoCloseable {
 
         private Set<String> genInsertColumns() {
             Set<String> insertColumns = new HashSet<>();
-            for (var entry : columns.entrySet()) {
-                var column = entry.getValue().getColumn();
+            for (Map.Entry<String, ColumnMeta> entry : columns.entrySet()) {
+                Column column = entry.getValue().getColumn();
                 if (Objects.isNull(column) || column.insertable()) {
                     insertColumns.add(entry.getKey());
                 }
@@ -219,9 +220,9 @@ public class EntityManager implements AutoCloseable {
         }
 
         private String genInsert() {
-            var f = new StringJoiner(", ");
-            var h = new StringJoiner(", ");
-            for (var column : insertColumns) {
+            StringJoiner f = new StringJoiner(", ");
+            StringJoiner h = new StringJoiner(", ");
+            for (String column : insertColumns) {
                 f.add(column);
                 h.add(namedParamPrefix + column);
             }
@@ -230,11 +231,11 @@ public class EntityManager implements AutoCloseable {
 
         private Set<String> genUpdateSetColumns() {
             Set<String> setColumns = new HashSet<>();
-            for (var entry : columns.entrySet()) {
+            for (Map.Entry<String, ColumnMeta> entry : columns.entrySet()) {
                 if (Objects.nonNull(entry.getValue().getId())) {
                     continue;
                 }
-                var column = entry.getValue().getColumn();
+                Column column = entry.getValue().getColumn();
                 if (Objects.isNull(column) || column.updatable()) {
                     setColumns.add(entry.getKey());
                 }
@@ -243,8 +244,8 @@ public class EntityManager implements AutoCloseable {
         }
 
         private String genUpdate() {
-            var sets = new StringJoiner(",\n\t");
-            for (var column : updateColumns) {
+            StringJoiner sets = new StringJoiner(",\n\t");
+            for (String column : updateColumns) {
                 sets.add(column + StandardOperator.EQ.padWithSpace() + namedParamPrefix + column);
             }
             return "update " + tableName + "\nset " + sets + whereById;

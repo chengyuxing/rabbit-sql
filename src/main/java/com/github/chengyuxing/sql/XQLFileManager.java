@@ -174,12 +174,12 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     public @NotNull Resource parse(@NotNull String alias, @NotNull String filename, @NotNull FileResource fileResource) throws IOException, URISyntaxException {
         Map<String, Sql> entry = new LinkedHashMap<>();
-        var xqlDesc = new StringJoiner(NEW_LINE);
+        StringJoiner xqlDesc = new StringJoiner(NEW_LINE);
         try (BufferedReader reader = fileResource.getBufferedReader(Charset.forName(charset))) {
             String line;
             String currentName = null;
-            var sqlBuffer = new StringBuilder();
-            var descriptionBuffer = new StringBuilder();
+            StringBuilder sqlBuffer = new StringBuilder();
+            StringBuilder descriptionBuffer = new StringBuilder();
             while ((line = reader.readLine()) != null) {
                 String trimLine = line.trim();
                 if (trimLine.isEmpty()) continue;
@@ -422,7 +422,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             return;
         }
         try {
-            for (var entry : pipes.entrySet()) {
+            for (Map.Entry<String, String> entry : pipes.entrySet()) {
                 pipeInstances.put(entry.getKey(), (IPipe<?>) ReflectUtil.getInstance(classLoader.loadClass(entry.getValue())));
             }
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
@@ -562,12 +562,12 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         if (Objects.isNull(name)) {
             throw new IllegalArgumentException("sql object name is null");
         }
-        var p = decodeSqlReference(name);
-        var resource = getResource(p.getItem1());
+        Pair<String, String> p = decodeSqlReference(name);
+        Resource resource = getResource(p.getItem1());
         if (Objects.isNull(resource)) {
             throw new NoSuchElementException(String.format("Resource with alias [%s] not found.", p.getItem1()));
         }
-        var sql = resource.getEntry().get(p.getItem2());
+        Sql sql = resource.getEntry().get(p.getItem2());
         if (Objects.isNull(sql)) {
             throw new NoSuchElementException(String.format("no SQL named [%s] was found.", p.getItem2()));
         }
@@ -622,8 +622,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         }
         myArgs.put("_parameter", args);
         myArgs.put("_databaseId", databaseId);
-        var parser = newDynamicSqlParser(sql);
-        var parsedSql = parser.parse(myArgs);
+        DynamicSqlParser parser = newDynamicSqlParser(sql);
+        String parsedSql = parser.parse(myArgs);
         return Pair.of(parsedSql, parser.getForContextVars());
     }
 

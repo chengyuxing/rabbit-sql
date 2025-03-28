@@ -51,7 +51,7 @@ public class XQLFileManagerConfig {
      */
     public XQLFileManagerConfig(String configLocation) {
         this.configLocation = configLocation;
-        var resource = new FileResource(configLocation);
+        FileResource resource = new FileResource(configLocation);
         if (configLocation.endsWith(".yml")) {
             loadYaml(resource);
             return;
@@ -69,9 +69,9 @@ public class XQLFileManagerConfig {
      * @param yamlLocation yml resource
      */
     public void loadYaml(FileResource yamlLocation) {
-        var yaml = new Yaml(new FeaturedConstructor());
+        Yaml yaml = new Yaml(new FeaturedConstructor());
         try {
-            var config = yaml.loadAs(yamlLocation.getInputStream(), XQLFileManagerConfig.class);
+            XQLFileManagerConfig config = yaml.loadAs(yamlLocation.getInputStream(), XQLFileManagerConfig.class);
             if (Objects.isNull(config)) {
                 log.warn("yaml loaded nothing, resource length is {}", yamlLocation.getInputStream().available());
                 return;
@@ -88,16 +88,16 @@ public class XQLFileManagerConfig {
      * @param propertiesLocation properties resource
      */
     public void loadProperties(FileResource propertiesLocation) {
-        var properties = new TypedProperties();
+        TypedProperties properties = new TypedProperties();
         try {
-            var config = new XQLFileManagerConfig();
+            XQLFileManagerConfig config = new XQLFileManagerConfig();
             properties.load(propertiesLocation.getInputStream());
             FileMap localFiles = new FileMap();
             Map<String, Object> localConstants = new HashMap<>();
             Map<String, String> localPipes = new HashMap<>();
             properties.forEach((k, s) -> {
-                var p = k.toString().trim();
-                var v = s.toString().trim();
+                String p = k.toString().trim();
+                String v = s.toString().trim();
                 if (!p.isEmpty() && !v.isEmpty()) {
                     if (p.startsWith("files.")) {
                         localFiles.put(p.substring(6), v);

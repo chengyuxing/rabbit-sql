@@ -185,7 +185,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             log.debug("Hits cache({}, {}), returns data from cache.", key, args);
             return cache;
         }
-        var lock = queryCacheLocks.computeIfAbsent(uniqueKey, k -> new Object());
+        Object lock = queryCacheLocks.computeIfAbsent(uniqueKey, k -> new Object());
         synchronized (lock) {
             cache = queryCacheManager.get(uniqueKey);
             if (Objects.nonNull(cache)) {
@@ -232,14 +232,14 @@ public class BakiDao extends JdbcSupport implements Baki {
 
             @Override
             public IPageable pageable(int page, int size) {
-                var iPageable = new SimplePageable(sql, page, size);
+                IPageable iPageable = new SimplePageable(sql, page, size);
                 return iPageable.args(args);
             }
 
             @Override
             public IPageable pageable(@NotNull String pageKey, @NotNull String sizeKey) {
-                var page = (Integer) args.get(pageKey);
-                var size = (Integer) args.get(sizeKey);
+                Integer page = (Integer) args.get(pageKey);
+                Integer size = (Integer) args.get(sizeKey);
                 if (page == null || size == null) {
                     throw new IllegalArgumentException("page or size is null.");
                 }
@@ -285,7 +285,7 @@ public class BakiDao extends JdbcSupport implements Baki {
 
             @Override
             public <SELF extends Query<T, SELF>> Query<T, SELF> query() {
-                return new Query<>() {
+                return new Query<T, SELF>() {
                     private final Set<String> selectColumns = new LinkedHashSet<>();
                     private final List<Criteria> finalWhereCriteria = new ArrayList<>();
                     private final Set<Pair<String, OrderByType>> finalOrderBy = new LinkedHashSet<>();
@@ -294,15 +294,15 @@ public class BakiDao extends JdbcSupport implements Baki {
                     private final List<Criteria> finalHavingCriteria = new ArrayList<>();
 
                     private Triple<String, String, Map<String, Object>> createQuery() {
-                        var select = selectColumns.isEmpty() ? entityMeta.getSelect() : entityMeta.getSelect(selectColumns);
-                        var countSelect = entityMeta.getCountSelect();
+                        String select = selectColumns.isEmpty() ? entityMeta.getSelect() : entityMeta.getSelect(selectColumns);
+                        String countSelect = entityMeta.getCountSelect();
 
-                        var where = new InternalWhere<>(clazz, finalWhereCriteria).getWhere();
+                        Pair<String, Map<String, Object>> where = new InternalWhere<>(clazz, finalWhereCriteria).getWhere();
                         if (!where.getItem1().isEmpty()) {
                             select += where.getItem1();
                             countSelect += where.getItem1();
                         }
-                        var orderBy = new InternalOrderBy<>(clazz, finalOrderBy).getOrderBy();
+                        String orderBy = new InternalOrderBy<>(clazz, finalOrderBy).getOrderBy();
                         if (!orderBy.isEmpty()) {
                             select += orderBy;
                         }
@@ -310,9 +310,9 @@ public class BakiDao extends JdbcSupport implements Baki {
                     }
 
                     private InternalGroupBy<T> createGroupByObject() {
-                        var where = new InternalWhere<>(clazz, finalWhereCriteria).getWhere();
-                        var orderBy = new InternalOrderBy<>(clazz, finalOrderBy).getOrderBy();
-                        var groupBy = new InternalGroupBy<>(clazz, finalGroupByAggColumns, finalGroupByColumns, finalHavingCriteria);
+                        Pair<String, Map<String, Object>> where = new InternalWhere<>(clazz, finalWhereCriteria).getWhere();
+                        String orderBy = new InternalOrderBy<>(clazz, finalOrderBy).getOrderBy();
+                        InternalGroupBy<T> groupBy = new InternalGroupBy<>(clazz, finalGroupByAggColumns, finalGroupByColumns, finalHavingCriteria);
                         groupBy.setWhereClause(where.getItem1());
                         groupBy.setOrderByClause(orderBy);
                         groupBy.setArgs(where.getItem2());
@@ -321,8 +321,8 @@ public class BakiDao extends JdbcSupport implements Baki {
 
                     @Override
                     public SELF where(@NotNull Function<Where<T>, Where<T>> where) {
-                        var gotten = where.apply(new InternalWhere<>(clazz));
-                        var wrapper = new InternalWhere<>(clazz, gotten);
+                        Where<T> gotten = where.apply(new InternalWhere<>(clazz));
+                        InternalWhere<T> wrapper = new InternalWhere<>(clazz, gotten);
                         finalWhereCriteria.addAll(wrapper.getCriteria());
                         //noinspection unchecked
                         return (SELF) this;
@@ -330,8 +330,8 @@ public class BakiDao extends JdbcSupport implements Baki {
 
                     @Override
                     public SELF groupBy(@NotNull Function<GroupBy<T>, GroupBy<T>> groupBy) {
-                        var gotten = groupBy.apply(new InternalGroupBy<>(clazz));
-                        var wrapper = new InternalGroupBy<>(clazz, gotten);
+                        GroupBy<T> gotten = groupBy.apply(new InternalGroupBy<>(clazz));
+                        InternalGroupBy<T> wrapper = new InternalGroupBy<>(clazz, gotten);
                         finalGroupByAggColumns.addAll(wrapper.getAggColumns());
                         finalGroupByColumns.addAll(wrapper.getGroupColumns());
                         finalHavingCriteria.addAll(wrapper.getHavingCriteria());
@@ -341,8 +341,8 @@ public class BakiDao extends JdbcSupport implements Baki {
 
                     @Override
                     public SELF orderBy(@NotNull Function<OrderBy<T>, OrderBy<T>> orderBy) {
-                        var gotten = orderBy.apply(new InternalOrderBy<>(clazz));
-                        var wrapper = new InternalOrderBy<>(clazz, gotten);
+                        OrderBy<T> gotten = orderBy.apply(new InternalOrderBy<>(clazz));
+                        InternalOrderBy<T> wrapper = new InternalOrderBy<>(clazz, gotten);
                         finalOrderBy.addAll(wrapper.getOrders());
                         //noinspection unchecked
                         return (SELF) this;
@@ -351,8 +351,8 @@ public class BakiDao extends JdbcSupport implements Baki {
                     @Override
                     public SELF select(@NotNull List<FieldReference<T>> columns) {
                         selectColumns.clear();
-                        for (var column : columns) {
-                            var columnName = EntityUtil.getFieldNameWithCache(column);
+                        for (FieldReference<T> column : columns) {
+                            String columnName = EntityUtil.getFieldNameWithCache(column);
                             // excludes the field which annotated with @Transient
                             if (entityMeta.getColumns().containsKey(columnName)) {
                                 selectColumns.add(columnName);
@@ -369,8 +369,8 @@ public class BakiDao extends JdbcSupport implements Baki {
                             return (SELF) this;
                         }
                         selectColumns.clear();
-                        var deselectColumns = columns.stream().map(EntityUtil::getFieldNameWithCache).collect(Collectors.toSet());
-                        for (var column : entityMeta.getColumns().keySet()) {
+                        Set<String> deselectColumns = columns.stream().map(EntityUtil::getFieldNameWithCache).collect(Collectors.toSet());
+                        for (String column : entityMeta.getColumns().keySet()) {
                             if (!deselectColumns.contains(column)) {
                                 selectColumns.add(column);
                             }
@@ -381,7 +381,7 @@ public class BakiDao extends JdbcSupport implements Baki {
 
                     @Override
                     public SELF peek(@NotNull BiConsumer<String, Pair<String, Map<String, Object>>> consumer) {
-                        var query = createQuery();
+                        Triple<String, String, Map<String, Object>> query = createQuery();
                         consumer.accept(query.getItem1(), Pair.of(query.getItem2(), Collections.unmodifiableMap(query.getItem3())));
                         //noinspection unchecked
                         return (SELF) this;
@@ -394,8 +394,8 @@ public class BakiDao extends JdbcSupport implements Baki {
                             if (!finalGroupByAggColumns.isEmpty()) {
                                 throw new IllegalStateException("group by clause must have at least one column");
                             }
-                            var query = createQuery();
-                            var key = entityCallKey(clazz, query.getItem1());
+                            Triple<String, String, Map<String, Object>> query = createQuery();
+                            String key = entityCallKey(clazz, query.getItem1());
                             return watchSql(key, query.getItem1(), query.getItem3(),
                                     () -> executeQueryStream(
                                             key,
@@ -444,7 +444,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                     public @NotNull PagedResource<T> toPagedResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
                                                                      @Range(from = 1, to = Integer.MAX_VALUE) int size,
                                                                      @Nullable PageHelperProvider pageHelperProvider) {
-                        var query = createQuery();
+                        Triple<String, String, Map<String, Object>> query = createQuery();
                         return new SimplePageable(query.getItem1(), page, size)
                                 .args(query.getItem3())
                                 .pageHelper(pageHelperProvider)
@@ -469,15 +469,15 @@ public class BakiDao extends JdbcSupport implements Baki {
                             if (!finalGroupByAggColumns.isEmpty()) {
                                 throw new IllegalStateException("group by clause must have at least one column");
                             }
-                            var queryObj = createQuery();
+                            Triple<String, String, Map<String, Object>> queryObj = createQuery();
                             query = queryObj.getItem1();
                             countQuery = queryObj.getItem2();
                             args = queryObj.getItem3();
                         } else {
                             // group by paged query
-                            var groupBy = createGroupByObject();
+                            InternalGroupBy<T> groupBy = createGroupByObject();
 
-                            var querySqlObj = groupBy.getQuerySql();
+                            Pair<String, Map<String, Object>> querySqlObj = groupBy.getQuerySql();
                             query = querySqlObj.getItem1();
                             args = querySqlObj.getItem2();
 
@@ -503,14 +503,14 @@ public class BakiDao extends JdbcSupport implements Baki {
 
                     @Override
                     public boolean exists() {
-                        var query = entityMeta.getExistsSelect();
-                        var where = new InternalWhere<>(clazz, finalWhereCriteria).getWhere();
+                        String query = entityMeta.getExistsSelect();
+                        Pair<String, Map<String, Object>> where = new InternalWhere<>(clazz, finalWhereCriteria).getWhere();
                         if (where.getItem1().isEmpty()) {
                             throw new IllegalSqlException("Exists query must have condition.");
                         }
                         query += where.getItem1();
-                        final var existQuery = query;
-                        var key = entityCallKey(clazz, existQuery);
+                        final String existQuery = query;
+                        String key = entityCallKey(clazz, existQuery);
                         return watchSql(key, existQuery, where.getItem2(), () -> {
                             try (Stream<DataRow> s = executeQueryStream(key, existQuery, where.getItem2())) {
                                 return s.findFirst().isPresent();
@@ -528,13 +528,13 @@ public class BakiDao extends JdbcSupport implements Baki {
                             }
                             countSelect = entityMeta.getCountSelect();
 
-                            var where = new InternalWhere<>(clazz, finalWhereCriteria).getWhere();
+                            Pair<String, Map<String, Object>> where = new InternalWhere<>(clazz, finalWhereCriteria).getWhere();
                             if (!where.getItem1().isEmpty()) {
                                 countSelect += where.getItem1();
                                 args = where.getItem2();
                             }
                         } else {
-                            var groupBy = createGroupByObject();
+                            InternalGroupBy<T> groupBy = createGroupByObject();
 
                             countSelect = sqlGenerator.generateCountQuery(
                                     entityMeta.getSelect(groupBy.getGroupColumns()) +
@@ -544,8 +544,8 @@ public class BakiDao extends JdbcSupport implements Baki {
                             );
                             args = groupBy.getQuerySql().getItem2();
                         }
-                        final var countQuery = countSelect;
-                        final var myArgs = args;
+                        final String countQuery = countSelect;
+                        final Map<String, Object> myArgs = args;
                         String key = entityCallKey(clazz, countQuery);
                         return watchSql(key, countQuery, myArgs, () -> {
                             try (Stream<DataRow> s = executeQueryStream(key, countQuery, myArgs)) {
@@ -584,7 +584,7 @@ public class BakiDao extends JdbcSupport implements Baki {
 
                     @Override
                     public @NotNull Pair<String, Map<String, Object>> getSql() {
-                        var query = createQuery();
+                        Triple<String, String, Map<String, Object>> query = createQuery();
                         return Pair.of(query.getItem1(), Collections.unmodifiableMap(query.getItem3()));
                     }
                 };
@@ -592,57 +592,57 @@ public class BakiDao extends JdbcSupport implements Baki {
 
             @Override
             public int insert(@NotNull T entity) {
-                var insert = entityMeta.getInsert();
-                var data = Args.ofEntity(entity);
-                var key = entityCallKey(clazz, insert);
+                String insert = entityMeta.getInsert();
+                Map<String, Object> data = Args.ofEntity(entity);
+                String key = entityCallKey(clazz, insert);
                 return watchSql(key, insert, data, () -> executeUpdate(insert, data));
             }
 
             @Override
             public int insert(@NotNull Collection<T> entities) {
                 if (entities.isEmpty()) return 0;
-                var insert = entityMeta.getInsert();
-                var data = entities.stream()
+                String insert = entityMeta.getInsert();
+                List<Map<String, Object>> data = entities.stream()
                         .map(Args::ofEntity)
                         .collect(Collectors.toList());
-                var key = entityCallKey(clazz, insert);
+                String key = entityCallKey(clazz, insert);
                 return watchSql(key, insert, data, () -> executeBatchUpdate(insert, data, batchSize));
             }
 
             @Override
             public int update(@NotNull T entity, boolean ignoreNull) {
-                var data = Args.ofEntity(entity);
-                var update = ignoreNull ? sqlGenerator.generateNamedParamUpdate(
+                Map<String, Object> data = Args.ofEntity(entity);
+                String update = ignoreNull ? sqlGenerator.generateNamedParamUpdate(
                         entityMeta.getTableName(),
                         entityMeta.getUpdateColumns(),
                         data,
                         true
                 ) + entityMeta.getWhereById() : entityMeta.getUpdateById();
-                var key = entityCallKey(clazz, update);
+                String key = entityCallKey(clazz, update);
                 return watchSql(key, update, data, () -> executeUpdate(update, data));
             }
 
             @Override
             public int update(@NotNull Collection<T> entities, boolean ignoreNull) {
                 if (entities.isEmpty()) return 0;
-                var data = entities.stream()
+                List<Map<String, Object>> data = entities.stream()
                         .map(Args::ofEntity)
                         .collect(Collectors.toList());
-                var update = ignoreNull ? sqlGenerator.generateNamedParamUpdate(
+                String update = ignoreNull ? sqlGenerator.generateNamedParamUpdate(
                         entityMeta.getTableName(),
                         entityMeta.getUpdateColumns(),
                         data.get(0),
                         true
                 ) + entityMeta.getWhereById() : entityMeta.getUpdateById();
-                var key = entityCallKey(clazz, update);
+                String key = entityCallKey(clazz, update);
                 return watchSql(key, update, data, () -> executeBatchUpdate(update, data, batchSize));
             }
 
             @Override
             public int delete(@NotNull T entity) {
-                var delete = entityMeta.getDeleteById();
-                var data = Args.ofEntity(entity);
-                var key = entityCallKey(clazz, delete);
+                String delete = entityMeta.getDeleteById();
+                Map<String, Object> data = Args.ofEntity(entity);
+                String key = entityCallKey(clazz, delete);
                 return watchSql(key, delete, data, () -> executeUpdate(delete, data));
             }
 
@@ -651,11 +651,11 @@ public class BakiDao extends JdbcSupport implements Baki {
                 if (entities.isEmpty()) {
                     return 0;
                 }
-                var delete = entityMeta.getDeleteById();
-                var data = entities.stream()
+                String delete = entityMeta.getDeleteById();
+                List<Map<String, Object>> data = entities.stream()
                         .map(Args::ofEntity)
                         .collect(Collectors.toList());
-                var key = entityCallKey(clazz, delete);
+                String key = entityCallKey(clazz, delete);
                 return watchSql(key, delete, data, () -> executeBatchUpdate(delete, data, batchSize));
             }
         };
@@ -685,7 +685,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             @Override
             public int executeBatch(@NotNull Collection<? extends Map<String, ?>> data) {
                 Map<String, ?> arg = data.isEmpty() ? new HashMap<>() : data.iterator().next();
-                var parsed = parseSql(sql, arg);
+                Pair<String, Map<String, Object>> parsed = parseSql(sql, arg);
                 return watchSql(sql, parsed.getItem1(), data, () -> {
                     Collection<? extends Map<String, ?>> newData;
                     if (parsed.getItem2().containsKey(XQLFileManager.DynamicSqlParser.FOR_VARS_KEY) &&
@@ -873,8 +873,8 @@ public class BakiDao extends JdbcSupport implements Baki {
 
         @Override
         public GroupBy<T> having(Function<Having<T>, Having<T>> having) {
-            var gotten = having.apply(new InternalHaving<>(clazz));
-            var wrapper = new InternalHaving<>(clazz, gotten);
+            Having<T> gotten = having.apply(new InternalHaving<>(clazz));
+            InternalHaving<T> wrapper = new InternalHaving<>(clazz, gotten);
             havingCriteria.addAll(wrapper.getCriteria());
             return this;
         }
@@ -891,17 +891,17 @@ public class BakiDao extends JdbcSupport implements Baki {
 
         private Pair<String, Map<String, Object>> getQuerySql() {
             Map<String, Object> allArgs = new HashMap<>();
-            var query = entityManager.getEntityMeta(clazz).getSelect(getSelectColumns());
+            String query = entityManager.getEntityMeta(clazz).getSelect(getSelectColumns());
             if (!whereClause.isEmpty()) {
                 query += whereClause;
             }
 
-            var groupByClause = buildGroupByClause();
+            String groupByClause = buildGroupByClause();
             if (!groupByClause.isEmpty()) {
                 query += groupByClause;
             }
 
-            var having = new InternalHaving<>(clazz, havingCriteria).getHavingClause();
+            Pair<String, Map<String, Object>> having = new InternalHaving<>(clazz, havingCriteria).getHavingClause();
             if (!having.getItem1().isEmpty()) {
                 query += having.getItem1();
             }
@@ -1010,9 +1010,9 @@ public class BakiDao extends JdbcSupport implements Baki {
 
         @Override
         public <T> PagedResource<T> collect(Function<DataRow, T> mapper) {
-            var result = parseSql(recordQuery, args);
-            var query = result.getItem1();
-            var myArgs = result.getItem2();
+            Pair<String, Map<String, Object>> result = parseSql(recordQuery, args);
+            String query = result.getItem1();
+            Map<String, Object> myArgs = result.getItem2();
             if (count == null) {
                 String cq = countQuery == null ? sqlGenerator.generateCountQuery(query) : countQuery;
                 count = watchSql(recordQuery, cq, myArgs, () -> {
@@ -1069,7 +1069,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     protected PageHelper defaultPager() {
         if (Objects.nonNull(globalPageHelperProvider)) {
-            var pageHelper = globalPageHelperProvider.customPageHelper(metaData, databaseId, namedParamPrefix);
+            PageHelper pageHelper = globalPageHelperProvider.customPageHelper(metaData, databaseId, namedParamPrefix);
             if (Objects.nonNull(pageHelper)) {
                 return pageHelper;
             }
@@ -1102,13 +1102,13 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     protected void loadXFMConfigByDatabaseId() {
         if (Objects.nonNull(xqlFileManager)) {
-            var pathByDb = "xql-file-manager-" + databaseId + ".yml";
-            var resource = new FileResource(pathByDb);
+            String pathByDb = "xql-file-manager-" + databaseId + ".yml";
+            FileResource resource = new FileResource(pathByDb);
             if (!resource.exists()) {
                 resource = new FileResource(XQLFileManager.YML);
             }
             if (resource.exists()) {
-                var config = new XQLFileManagerConfig();
+                XQLFileManagerConfig config = new XQLFileManagerConfig();
                 config.loadYaml(resource);
                 config.copyStateTo(xqlFileManager);
                 xqlFileManager.init();
@@ -1136,7 +1136,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         String mySql = SqlUtil.trimEnd(sql.trim());
         if (mySql.startsWith("&")) {
             if (Objects.nonNull(xqlFileManager)) {
-                var result = xqlFileManager.get(mySql.substring(1), myArgs);
+                Pair<String, Map<String, Object>> result = xqlFileManager.get(mySql.substring(1), myArgs);
                 mySql = result.getItem1();
                 // #for expression temp variables stored in _for variable.
                 if (!result.getItem2().isEmpty()) {
@@ -1175,8 +1175,8 @@ public class BakiDao extends JdbcSupport implements Baki {
             log.debug("SQL{}: {}",
                     sourceSql.trim().startsWith("&") ? "(" + sourceSql + ")" : "",
                     SqlHighlighter.highlightIfAnsiCapable(executeSql));
-            for (var arg : args) {
-                var sb = new StringJoiner(", ", "{", "}");
+            for (Map<String, ?> arg : args) {
+                StringJoiner sb = new StringJoiner(", ", "{", "}");
                 arg.forEach((k, v) -> {
                     if (v == null) {
                         sb.add(k + " -> null");

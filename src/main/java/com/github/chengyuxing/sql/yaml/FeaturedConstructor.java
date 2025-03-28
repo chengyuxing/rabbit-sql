@@ -46,7 +46,7 @@ public class FeaturedConstructor extends Constructor {
     }
 
     private void processMapping(Map<Object, Object> mapping) {
-        for (var entry : mapping.entrySet()) {
+        for (Map.Entry<Object, Object> entry : mapping.entrySet()) {
             if (entry.getValue() instanceof String) {
                 entry.setValue(resolveHolders((String) entry.getValue()));
             } else if (entry.getValue() instanceof List) {
@@ -78,8 +78,8 @@ public class FeaturedConstructor extends Constructor {
         if (!value.contains("${")) {
             return value;
         }
-        var matcher = VAR_PATTERN.matcher(value);
-        var sb = new StringBuffer();
+        Matcher matcher = VAR_PATTERN.matcher(value);
+        StringBuilder sb = new StringBuilder();
         while (matcher.find()) {
             String holder = matcher.group(1);
             String varType = resolveVarType(holder);

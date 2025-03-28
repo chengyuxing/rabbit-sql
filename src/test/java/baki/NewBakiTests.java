@@ -177,7 +177,7 @@ public class NewBakiTests {
 
     @Test
     public void testDslQuery4() {
-        Object res = baki.entity(Guest.class)
+        PagedResource<DataRow> res = baki.entity(Guest.class)
                 .query()
                 .where(w -> w.gt(Guest::getId, 10))
                 .groupBy(g -> g.count().by(Guest::getAge).having(h -> h.count(StandardOperator.GT, 1)))

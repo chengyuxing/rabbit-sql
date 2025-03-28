@@ -88,7 +88,7 @@ from test.region t
     --#break
 --#end
 and x = :x
-;
+;;;
 
 /*[choose]*/
 select * from test.user where

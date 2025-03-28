@@ -62,6 +62,8 @@ public class NonBakiTests {
     public void test448() {
         XQLFileManager xqlFileManager = new XQLFileManager("xql-file-manager-postgresql.yml");
         xqlFileManager.init();
+        System.out.println(xqlFileManager.getResources());
+        System.out.println("---");
     }
 
     @Test

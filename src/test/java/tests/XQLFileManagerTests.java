@@ -80,7 +80,7 @@ public class XQLFileManagerTests {
     public void test78() {
         XQLFileManager xqlFileManager = new XQLFileManager();
         xqlFileManager.add("new", "pgsql/new_for.sql");
-        xqlFileManager.setPipeInstances(Args.of("isOdd", new IsOdd()));
+//        xqlFileManager.setPipeInstances(Args.of("isOdd", new IsOdd()));
         xqlFileManager.init();
 
         Pair<String, Map<String, Object>> result1 = xqlFileManager.get("new.query",

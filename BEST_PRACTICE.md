@@ -23,7 +23,7 @@ Create maven project.
 
 **pom.xml**：
 
-_java 11+_
+_java 17+_
 
 ```xml
 <dependency>

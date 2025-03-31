@@ -97,8 +97,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     private TemplateFormatter templateFormatter = SqlUtil::parseValue;
     private final ClassLoader classLoader = this.getClass().getClassLoader();
     private final ReentrantLock lock = new ReentrantLock();
-    private final Map<String, IPipe<?>> pipeInstances = new HashMap<>();
     private volatile boolean initialized;
+    private final Map<String, IPipe<?>> pipeInstances = new HashMap<>();
 
     /**
      * Constructs a new XQLFileManager.
@@ -423,7 +423,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         }
         try {
             for (Map.Entry<String, String> entry : pipes.entrySet()) {
-                pipeInstances.put(entry.getKey(), (IPipe<?>) ReflectUtil.getInstance(classLoader.loadClass(entry.getValue())));
+                pipeInstances.put(entry.getKey(), parsePipe(entry.getValue()));
             }
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
                  InvocationTargetException | NoSuchMethodException e) {
@@ -433,6 +433,16 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             if (!pipeInstances.isEmpty())
                 log.debug("loaded pipes {}", pipeInstances);
         }
+    }
+
+    /**
+     * Do parse pipe class name to pipe instance.
+     *
+     * @param className pipe class name
+     * @return pipe instance
+     */
+    protected IPipe<?> parsePipe(String className) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+        return (IPipe<?>) ReflectUtil.getInstance(classLoader.loadClass(className));
     }
 
     /**
@@ -647,6 +657,15 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
+     * Get initialized pipe instances.
+     *
+     * @return pipe instances
+     */
+    public @NotNull @Unmodifiable Map<String, IPipe<?>> getPipeInstances() {
+        return Collections.unmodifiableMap(pipeInstances);
+    }
+
+    /**
      * Cleanup XQL file manager.
      */
     @Override
@@ -706,7 +725,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
 
         @Override
         protected Map<String, IPipe<?>> getPipes() {
-            return pipeInstances;
+            return getPipeInstances();
         }
 
         /**

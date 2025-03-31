@@ -172,7 +172,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @throws DuplicateException if duplicate sql fragment name found in same sql file
      * @throws URISyntaxException if file uri syntax error
      */
-    public @NotNull Resource parse(@NotNull String alias, @NotNull String filename, @NotNull FileResource fileResource) throws IOException, URISyntaxException {
+    public @NotNull Resource parseXql(@NotNull String alias, @NotNull String filename, @NotNull FileResource fileResource) throws IOException, URISyntaxException {
         Map<String, Sql> entry = new LinkedHashMap<>();
         StringJoiner xqlDesc = new StringJoiner(NEW_LINE);
         try (BufferedReader reader = fileResource.getBufferedReader(Charset.forName(charset))) {
@@ -376,6 +376,16 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
+     * Do parse pipe class name to pipe instance.
+     *
+     * @param className pipe class name
+     * @return pipe instance
+     */
+    protected IPipe<?> parsePipe(String className) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
+        return (IPipe<?>) ReflectUtil.getInstance(classLoader.loadClass(className));
+    }
+
+    /**
      * Load all sql files and parse to structured resources.
      *
      * @throws UncheckedIOException if file not exists or read error
@@ -397,7 +407,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                             log.debug("skip load unmodified resource [{}] from [{}]", alias, filename);
                             continue;
                         }
-                        Resource parsed = parse(alias, filename, fr);
+                        Resource parsed = parseXql(alias, filename, fr);
                         resource.setEntry(parsed.getEntry());
                         resource.setDescription(parsed.getDescription());
                         resource.setLastModified(parsed.getLastModified());
@@ -433,16 +443,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             if (!pipeInstances.isEmpty())
                 log.debug("loaded pipes {}", pipeInstances);
         }
-    }
-
-    /**
-     * Do parse pipe class name to pipe instance.
-     *
-     * @param className pipe class name
-     * @return pipe instance
-     */
-    protected IPipe<?> parsePipe(String className) throws ClassNotFoundException, InvocationTargetException, NoSuchMethodException, InstantiationException, IllegalAccessException {
-        return (IPipe<?>) ReflectUtil.getInstance(classLoader.loadClass(className));
     }
 
     /**

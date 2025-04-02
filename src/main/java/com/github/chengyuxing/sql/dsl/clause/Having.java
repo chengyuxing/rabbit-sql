@@ -22,7 +22,7 @@ import java.util.function.Function;
  * @param <T> entity type
  */
 public abstract class Having<T> extends CriteriaBuilder<T> {
-    protected List<Criteria> criteria = new ArrayList<>();
+    protected final List<Criteria> criteria = new ArrayList<>();
 
     /**
      * Construct a new Having builder.
@@ -41,7 +41,7 @@ public abstract class Having<T> extends CriteriaBuilder<T> {
      */
     protected Having(@NotNull Class<T> clazz, Having<T> other) {
         super(clazz);
-        this.criteria = other.criteria;
+        this.criteria.addAll(other.criteria);
     }
 
     /**

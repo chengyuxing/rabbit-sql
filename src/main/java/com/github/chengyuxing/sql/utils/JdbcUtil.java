@@ -2,6 +2,8 @@ package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.MostDateTime;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Range;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +21,7 @@ import java.util.*;
 public class JdbcUtil {
     private static final Logger log = LoggerFactory.getLogger(JdbcUtil.class);
 
-    public static Object getResultValue(ResultSet resultSet, int index) throws SQLException {
+    public static Object getResultValue(@NotNull ResultSet resultSet, @Range(from = 1, to = Integer.MAX_VALUE) int index) throws SQLException {
         Object obj = resultSet.getObject(index);
         String className = null;
         if (Objects.nonNull(obj)) {
@@ -51,7 +53,7 @@ public class JdbcUtil {
         return obj;
     }
 
-    public static void setStatementValue(PreparedStatement ps, int index, Object value) throws SQLException {
+    public static void setStatementValue(@NotNull PreparedStatement ps, @Range(from = 1, to = Integer.MAX_VALUE) int index, Object value) throws SQLException {
         if (Objects.isNull(value)) {
             ps.setNull(index, Types.NULL);
         } else if (value instanceof java.util.Date) {
@@ -218,7 +220,7 @@ public class JdbcUtil {
      * @return DataRows
      * @throws SQLException ex
      */
-    public static List<DataRow> createDataRows(final ResultSet resultSet, final String executedSql, final long fetchSize) throws SQLException {
+    public static List<DataRow> createDataRows(final ResultSet resultSet, final String executedSql, @Range(from = -1, to = Long.MAX_VALUE) final long fetchSize) throws SQLException {
         if (Objects.isNull(resultSet)) {
             return Collections.emptyList();
         }

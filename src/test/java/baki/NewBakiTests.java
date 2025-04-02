@@ -17,6 +17,7 @@ import com.github.chengyuxing.sql.transaction.Tx;
 import com.github.chengyuxing.sql.types.StandardOutParamType;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.utils.JdbcUtil;
+import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;

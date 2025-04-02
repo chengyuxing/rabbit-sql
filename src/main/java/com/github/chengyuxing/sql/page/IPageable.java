@@ -14,11 +14,11 @@ import java.util.function.Function;
  * Abstract page query config builder.
  */
 public abstract class IPageable {
-    protected Map<String, Object> args = new HashMap<>();
+    protected final Map<String, Object> args = new HashMap<>();
     protected final String recordQuery;
-    protected String countQuery;
     protected final int page;
     protected final int size;
+    protected String countQuery;
     protected Integer count;
     protected boolean disablePageSql;
     protected Function<Args<Integer>, Args<Integer>> rewriteArgsFunc;
@@ -47,7 +47,7 @@ public abstract class IPageable {
      */
     public IPageable args(Map<String, Object> args) {
         if (args != null) {
-            this.args = new HashMap<>(args);
+            this.args.putAll(args);
         }
         return this;
     }

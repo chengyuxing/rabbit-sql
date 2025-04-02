@@ -36,7 +36,6 @@ public class XQLFileManagerConfig {
     protected Character namedParamPrefix = ':';
     protected String databaseId;
     // ----------------optional properties------------------
-    protected volatile boolean loading;
 
     /**
      * Constructs a new XQLFileManagerConfig.
@@ -146,15 +145,6 @@ public class XQLFileManagerConfig {
 
     public String getConfigLocation() {
         return configLocation;
-    }
-
-    /**
-     * Loading state.
-     *
-     * @return true if loading or false
-     */
-    public boolean isLoading() {
-        return loading;
     }
 
     /**

@@ -98,7 +98,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     private final ClassLoader classLoader = this.getClass().getClassLoader();
     private final ReentrantLock lock = new ReentrantLock();
     protected final Map<String, IPipe<?>> pipeInstances = new HashMap<>();
-    private volatile boolean initialized;
+    protected volatile boolean loading;
+    protected volatile boolean initialized;
 
     /**
      * Constructs a new XQLFileManager.
@@ -635,6 +636,15 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     public Object getConstant(String key) {
         return constants.get(key);
+    }
+
+    /**
+     * Loading state.
+     *
+     * @return true if loading or false
+     */
+    public boolean isLoading() {
+        return loading;
     }
 
     /**

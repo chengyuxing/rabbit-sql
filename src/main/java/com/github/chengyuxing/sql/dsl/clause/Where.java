@@ -24,7 +24,7 @@ import static com.github.chengyuxing.sql.dsl.types.StandardOperator.*;
  * @param <T> entity type
  */
 public abstract class Where<T> extends CriteriaBuilder<T> {
-    protected List<Criteria> criteria = new ArrayList<>();
+    protected final List<Criteria> criteria = new ArrayList<>();
 
     /**
      * Construct a new Where builder.
@@ -43,7 +43,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
      */
     public Where(@NotNull Class<T> clazz, @NotNull Where<T> other) {
         super(clazz);
-        this.criteria = other.criteria;
+        this.criteria.addAll(other.criteria);
     }
 
     /**

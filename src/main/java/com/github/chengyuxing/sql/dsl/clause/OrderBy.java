@@ -13,7 +13,7 @@ import java.util.*;
  * @param <T> entity type
  */
 public abstract class OrderBy<T> extends ColumnHelper<T> {
-    protected Set<Pair<String, OrderByType>> orders = new LinkedHashSet<>();
+    protected final Set<Pair<String, OrderByType>> orders = new LinkedHashSet<>();
 
     /**
      * Construct a new Order by builder.
@@ -32,7 +32,7 @@ public abstract class OrderBy<T> extends ColumnHelper<T> {
      */
     public OrderBy(@NotNull Class<T> clazz, @NotNull OrderBy<T> other) {
         super(clazz);
-        this.orders = other.orders;
+        this.orders.addAll(other.orders);
     }
 
     /**

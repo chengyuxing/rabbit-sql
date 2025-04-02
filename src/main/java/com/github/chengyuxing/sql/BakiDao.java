@@ -777,7 +777,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             super(clazz);
             this.clazz = clazz;
             this.columns = entityManager.getColumns(clazz);
-            this.criteria = criteria;
+            this.criteria.addAll(criteria);
         }
 
         @Override
@@ -825,7 +825,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         InternalOrderBy(Class<T> clazz, Set<Pair<String, OrderByType>> orders) {
             super(clazz);
             this.columns = entityManager.getColumns(clazz);
-            this.orders = orders;
+            this.orders.addAll(orders);
         }
 
         private Set<Pair<String, OrderByType>> getOrders() {
@@ -852,6 +852,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         private String whereClause = "";
         private String orderByClause = "";
         private Map<String, Object> args = Collections.emptyMap();
+        private final List<Criteria> havingCriteria = new ArrayList<>();
 
         InternalGroupBy(@NotNull Class<T> clazz) {
             super(clazz);
@@ -861,9 +862,9 @@ public class BakiDao extends JdbcSupport implements Baki {
         InternalGroupBy(@NotNull Class<T> clazz, Set<String> aggColumns, Set<String> groupColumns, List<Criteria> havingCriteria) {
             super(clazz);
             this.columns = entityManager.getColumns(clazz);
-            this.groupColumns = groupColumns;
-            this.aggColumns = aggColumns;
-            this.havingCriteria = havingCriteria;
+            this.groupColumns.addAll(groupColumns);
+            this.aggColumns.addAll(aggColumns);
+            this.havingCriteria.addAll(havingCriteria);
         }
 
         InternalGroupBy(@NotNull Class<T> clazz, GroupBy<T> other) {
@@ -971,7 +972,7 @@ public class BakiDao extends JdbcSupport implements Baki {
 
         InternalHaving(@NotNull Class<T> clazz, List<Criteria> criteria) {
             super(clazz);
-            this.criteria = criteria;
+            this.criteria.addAll(criteria);
         }
 
         @Override

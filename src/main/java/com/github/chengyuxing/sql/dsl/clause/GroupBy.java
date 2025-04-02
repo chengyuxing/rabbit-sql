@@ -1,6 +1,5 @@
 package com.github.chengyuxing.sql.dsl.clause;
 
-import com.github.chengyuxing.sql.dsl.clause.condition.Criteria;
 import com.github.chengyuxing.sql.dsl.types.FieldReference;
 import com.github.chengyuxing.sql.dsl.types.StandardAggFunction;
 import org.jetbrains.annotations.NotNull;
@@ -14,9 +13,8 @@ import java.util.function.Function;
  * @param <T> entity type
  */
 public abstract class GroupBy<T> extends ColumnHelper<T> {
-    protected Set<String> aggColumns = new LinkedHashSet<>();
-    protected Set<String> groupColumns = new LinkedHashSet<>();
-    protected List<Criteria> havingCriteria = new ArrayList<>();
+    protected final Set<String> aggColumns = new LinkedHashSet<>();
+    protected final Set<String> groupColumns = new LinkedHashSet<>();
 
     /**
      * Construct a new Group by builder with initial Group by builder.
@@ -35,9 +33,8 @@ public abstract class GroupBy<T> extends ColumnHelper<T> {
      */
     protected GroupBy(@NotNull Class<T> clazz, @NotNull GroupBy<T> other) {
         super(clazz);
-        this.aggColumns = other.aggColumns;
-        this.groupColumns = other.groupColumns;
-        this.havingCriteria = other.havingCriteria;
+        this.aggColumns.addAll(other.aggColumns);
+        this.groupColumns.addAll(other.groupColumns);
     }
 
     /**
@@ -153,7 +150,7 @@ public abstract class GroupBy<T> extends ColumnHelper<T> {
         return " as " + aggName + "_" + column;
     }
 
-    protected final Set<String> getSelectColumns() {
+    protected final @NotNull Set<String> getSelectColumns() {
         Set<String> columns = new LinkedHashSet<>(groupColumns);
         columns.addAll(aggColumns);
         return columns;

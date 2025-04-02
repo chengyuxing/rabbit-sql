@@ -16,7 +16,7 @@ import java.util.stream.Stream;
  */
 public abstract class QueryExecutor {
     protected final String sql;
-    protected Map<String, Object> args = new HashMap<>();
+    protected final Map<String, Object> args = new HashMap<>();
 
     /**
      * Constructs a new Query with 1 sql.
@@ -36,7 +36,7 @@ public abstract class QueryExecutor {
      */
     public QueryExecutor args(Map<String, Object> args) {
         if (args != null) {
-            this.args = new HashMap<>(args);
+            this.args.putAll(args);
         }
         return this;
     }
@@ -49,7 +49,7 @@ public abstract class QueryExecutor {
      */
     public QueryExecutor args(Object... keyValues) {
         if (keyValues.length > 0) {
-            this.args = Args.of(keyValues);
+            this.args.putAll(Args.of(keyValues));
         }
         return this;
     }

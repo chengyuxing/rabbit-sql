@@ -149,13 +149,6 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * If XQL file manager on loading while config state changing by another thread, throws exception.
-     */
-    void checkLoading() {
-        if (loading) throw new ConcurrentModificationException("Cannot set property while loading.");
-    }
-
-    /**
      * Loading state.
      *
      * @return true if loading or false
@@ -179,7 +172,6 @@ public class XQLFileManagerConfig {
      * @param files files map [alias, file name]
      */
     public void setFiles(FileMap files) {
-        checkLoading();
         if (Objects.nonNull(files)) {
             this.files = new FileMap(files);
         }
@@ -213,7 +205,6 @@ public class XQLFileManagerConfig {
      * @param constants constants map
      */
     public void setConstants(Map<String, Object> constants) {
-        checkLoading();
         if (Objects.nonNull(constants)) {
             this.constants = new HashMap<>(constants);
         }
@@ -235,7 +226,6 @@ public class XQLFileManagerConfig {
      * @see IPipe
      */
     public void setPipes(Map<String, String> pipes) {
-        checkLoading();
         if (Objects.nonNull(pipes)) {
             this.pipes = new HashMap<>(pipes);
         }
@@ -257,7 +247,6 @@ public class XQLFileManagerConfig {
      * @see StandardCharsets
      */
     public void setCharset(String charset) {
-        checkLoading();
         if (Objects.nonNull(charset)) {
             this.charset = charset;
         }
@@ -270,7 +259,6 @@ public class XQLFileManagerConfig {
      * @see StandardCharsets
      */
     public void setCharset(Charset charset) {
-        checkLoading();
         if (Objects.nonNull(charset)) {
             this.charset = charset.name();
         }
@@ -293,7 +281,6 @@ public class XQLFileManagerConfig {
      * @param delimiter multi sql fragment/template delimiter
      */
     public void setDelimiter(String delimiter) {
-        checkLoading();
         if (Objects.nonNull(delimiter) && !delimiter.trim().isEmpty()) {
             this.delimiter = delimiter;
         }
@@ -314,7 +301,6 @@ public class XQLFileManagerConfig {
      * @param namedParamPrefix named parameter prefix
      */
     public void setNamedParamPrefix(Character namedParamPrefix) {
-        checkLoading();
         if (Objects.nonNull(namedParamPrefix) && namedParamPrefix != ' ') {
             this.namedParamPrefix = namedParamPrefix;
         }
@@ -335,7 +321,6 @@ public class XQLFileManagerConfig {
      * @param databaseId database name
      */
     public void setDatabaseId(String databaseId) {
-        checkLoading();
         this.databaseId = databaseId;
     }
 

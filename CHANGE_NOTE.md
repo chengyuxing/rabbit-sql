@@ -1,5 +1,9 @@
 # change note
 
+# 9.0.7
+
+- Some optimized.
+
 # 9.0.6
 
 - Pipe parse optimized.

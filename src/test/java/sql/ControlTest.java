@@ -13,7 +13,6 @@ import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.github.chengyuxing.common.utils.StringUtil.searchIndexUntilNotBlank;
 
 
 public class ControlTest {
@@ -40,7 +39,7 @@ public class ControlTest {
         Matcher m = PARAM_PATTERN.matcher(sql);
         while (m.find()) {
 //            System.out.println(m.group("name"));
-            sql = StringUtil.replaceFirstIgnoreCase(sql, ":" + m.group("name"), "?");
+//            sql = StringUtil.replaceFirstIgnoreCase(sql, ":" + m.group("name"), "?");
         }
 
         System.out.println(sql);
@@ -140,14 +139,6 @@ public class ControlTest {
         while (i++ < 10) {
             System.out.println(i);
         }
-    }
-
-    @Test
-    public void xxx() throws Exception {
-        String a = "1   \t  \n      \t${abc}   \n";
-        System.out.println(a.length());
-        System.out.println(searchIndexUntilNotBlank(a, 5, false));
-        System.out.println("abc".substring(0, 0));
     }
 
     @Test

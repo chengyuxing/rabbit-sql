@@ -128,7 +128,29 @@ public class SqlGenerator {
      * @return GeneratedSqlMetaData
      */
     public GeneratedSqlMetaData generatePreparedSql(final String sql, Map<String, ?> args) {
-        return parseNamedParameterSql(sql, args, true);
+        // resolve the sql string template first
+        String fullSql = SqlUtil.formatSql(sql, args, templateFormatter);
+        if (fullSql.lastIndexOf(namedParamPrefix) < 0) {
+            return new GeneratedSqlMetaData(sql, fullSql, Collections.emptyMap(), args);
+        }
+        Map<String, List<Integer>> indexMap = new HashMap<>();
+        Matcher matcher = namedParamPattern.matcher(fullSql);
+        int index = 1;
+        StringBuffer buffer = new StringBuffer();
+        while (matcher.find()) {
+            String name = matcher.group(1);
+            String replacement;
+            if (name != null) {
+                replacement = "?";
+                indexMap.computeIfAbsent(name, k -> new ArrayList<>()).add(index);
+                index++;
+            } else {
+                replacement = matcher.group();
+            }
+            matcher.appendReplacement(buffer, Matcher.quoteReplacement(replacement));
+        }
+        matcher.appendTail(buffer);
+        return new GeneratedSqlMetaData(sql, buffer.toString(), indexMap, args);
     }
 
     /**
@@ -141,50 +163,26 @@ public class SqlGenerator {
      * @see #setTemplateFormatter(TemplateFormatter)
      */
     public String generateSql(final String sql, Map<String, ?> args) {
-        return parseNamedParameterSql(sql, args, false).getResultSql();
-    }
-
-    /**
-     * Generate sql by named parameter sql.
-     *
-     * @param sql     named parameter sql
-     * @param args    data of named parameter
-     * @param prepare prepare or not
-     * @return GeneratedSqlMetaData
-     */
-    protected GeneratedSqlMetaData parseNamedParameterSql(final String sql, Map<String, ?> args, boolean prepare) {
         // resolve the sql string template first
         String fullSql = SqlUtil.formatSql(sql, args, templateFormatter);
         if (fullSql.lastIndexOf(namedParamPrefix) < 0) {
-            return new GeneratedSqlMetaData(sql, fullSql, Collections.emptyMap(), args);
+            return fullSql;
         }
-        Map<String, List<Integer>> indexMap = new HashMap<>();
-        StringBuilder parsedSql = new StringBuilder();
+        StringBuffer buffer = new StringBuffer();
         Matcher matcher = namedParamPattern.matcher(fullSql);
-        int index = 1;
-        int lastMatchEnd = 0;
         while (matcher.find()) {
-            parsedSql.append(fullSql, lastMatchEnd, matcher.start());
             String name = matcher.group(1);
+            String replacement;
             if (name != null) {
-                if (prepare) {
-                    if (!indexMap.containsKey(name)) {
-                        indexMap.put(name, new ArrayList<>());
-                    }
-                    indexMap.get(name).add(index);
-                    parsedSql.append("?");
-                    index++;
-                } else {
-                    Object value = name.contains(".") ? ObjectUtil.getDeepValue(args, name) : args.get(name);
-                    parsedSql.append(namedParamFormatter.format(value));
-                }
+                Object value = name.contains(".") ? ObjectUtil.getDeepValue(args, name) : args.get(name);
+                replacement = namedParamFormatter.format(value);
             } else {
-                parsedSql.append(matcher.group());
+                replacement = matcher.group();
             }
-            lastMatchEnd = matcher.end();
+            matcher.appendReplacement(buffer, Matcher.quoteReplacement(replacement));
         }
-        parsedSql.append(fullSql.substring(lastMatchEnd));
-        return new GeneratedSqlMetaData(sql, parsedSql.toString(), indexMap, args);
+        matcher.appendTail(buffer);
+        return buffer.toString();
     }
 
     /**

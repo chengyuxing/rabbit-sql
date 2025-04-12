@@ -138,6 +138,13 @@ public class NonBakiTests {
         ));
         System.out.println(pair1.getArgs());
         System.out.println(pair1.getResultSql());
+        System.out.println(pair1.getArgNameIndexMapping());
+        System.out.println(sqlGenerator.generateSql(query, Args.of(
+                "id", 25,
+                "idc", 15,
+                "username", "cyx",
+                "integer", 89
+        )));
     }
 
     @Test

@@ -1,5 +1,9 @@
 # change note
 
+# 9.0.9
+
+- Fixed first sql block comment bugs.
+
 # 9.0.8
 
 - Some optimized.

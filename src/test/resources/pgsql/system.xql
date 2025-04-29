@@ -65,8 +65,14 @@ from (select rm.menu_id
                            where ur.user_id = :sfzh)) res
          left join zhag_ptyw_menu m
                    on res.menu_id = m.id
+/*
+union all
 where m.jlbz = '1'
   and m.module = '1'
+-- #if :id != 40
+    and id = :id
+-- #fi
+*/
 order by m.sort
 ;
 

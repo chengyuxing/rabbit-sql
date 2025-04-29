@@ -179,7 +179,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         try (BufferedReader reader = fileResource.getBufferedReader(Charset.forName(charset))) {
             String line;
             String currentName = null;
-            boolean mainStarted = false;
+            boolean isMainStarted = false;
             StringBuilder sqlBuffer = new StringBuilder();
             StringBuilder descriptionBuffer = new StringBuilder();
             while ((line = reader.readLine()) != null) {
@@ -187,7 +187,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                 if (trimLine.isEmpty()) continue;
                 Matcher matcher = KEY_PATTERN.matcher(trimLine);
                 if (matcher.matches()) {
-                    mainStarted = true;
+                    isMainStarted = true;
                     String sqlName = matcher.group("sqlName");
                     String partName = matcher.group("partName");
                     String name = sqlName != null ? sqlName : "${" + partName + "}";
@@ -236,7 +236,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     // @@@
                     // ...
                     // @@@
-                    if (!mainStarted) {
+                    if (!isMainStarted) {
                         if (trimLine.endsWith("*/")) {
                             continue;
                         }

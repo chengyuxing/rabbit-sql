@@ -1,5 +1,9 @@
 # change note
 
+# 8.1.12
+
+- Fixed first sql block comment bugs.
+
 # 8.1.11
 
 - Some optimized.

@@ -95,7 +95,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * Default implementation: {@link SqlUtil#parseValue(Object, boolean) parseValue(value, boolean)}
      */
     private TemplateFormatter templateFormatter = SqlUtil::parseValue;
-    private final ClassLoader classLoader = this.getClass().getClassLoader();
     private final ReentrantLock lock = new ReentrantLock();
     protected final Map<String, IPipe<?>> pipeInstances = new HashMap<>();
     protected volatile boolean loading;
@@ -425,6 +424,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             return;
         }
         try {
+            ClassLoader classLoader = FileResource.getClassLoader();
             for (Map.Entry<String, String> entry : pipes.entrySet()) {
                 pipeInstances.put(entry.getKey(), (IPipe<?>) ReflectUtil.getInstance(classLoader.loadClass(entry.getValue())));
             }

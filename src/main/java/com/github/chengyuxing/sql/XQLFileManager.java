@@ -424,7 +424,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             return;
         }
         try {
-            ClassLoader classLoader = FileResource.getClassLoader();
+            final ClassLoader classLoader = FileResource.getClassLoader();
             for (Map.Entry<String, String> entry : pipes.entrySet()) {
                 pipeInstances.put(entry.getKey(), (IPipe<?>) ReflectUtil.getInstance(classLoader.loadClass(entry.getValue())));
             }

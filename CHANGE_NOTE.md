@@ -1,5 +1,9 @@
 # change note
 
+# 8.1.13
+
+- Fixed pipe class not found bug.
+
 # 8.1.12
 
 - Fixed first sql block comment bugs.

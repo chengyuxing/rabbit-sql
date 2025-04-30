@@ -1,5 +1,9 @@
 # change note
 
+# 9.0.10
+
+- Fixed pipe class not found bug.
+
 # 9.0.9
 
 - Fixed first sql block comment bugs.

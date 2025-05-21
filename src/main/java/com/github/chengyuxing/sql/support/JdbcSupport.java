@@ -119,8 +119,8 @@ public abstract class JdbcSupport {
     private void setPreparedStoreInParams(CallableStatement cs, Map<String, Param> args, Map<String, List<Integer>> names) throws SQLException {
         for (Map.Entry<String, List<Integer>> e : names.entrySet()) {
             Param param = args.get(e.getKey());
-            for (Integer i : e.getValue()) {
-                if (param.getParamMode() == ParamMode.IN || param.getParamMode() == ParamMode.IN_OUT) {
+            if (param.getParamMode() == ParamMode.IN || param.getParamMode() == ParamMode.IN_OUT) {
+                for (Integer i : e.getValue()) {
                     doHandleStatementValue(cs, i, param.getValue());
                 }
             }

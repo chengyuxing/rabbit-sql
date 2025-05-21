@@ -65,7 +65,7 @@ public interface Baki {
 
     /**
      * Get current database metadata.<br>
-     * Offline(which connection was closed) database metadata, maybe proxy databaseMetadata of
+     * Offline (which connection was closed) database metadata, maybe proxy databaseMetadata of
      * some datasource has different implementation.
      *
      * @return current database metadata

@@ -24,3 +24,17 @@ select 123
 /*[dkdkdk]*/
 select 'aaa'
 ;
+
+/*[newParamMode]*/
+select *
+from test.sum(1, 12)
+where 1 = :{id|date(yyyy-mm-dd,12,3.14)|upper|trim}
+and o = 10
+ and a = 90
+  and b = 89
+  and name = :{name}
+   and age > 0
+   and id != 1
+   and age <> 90
+   and address = '1111'
+;

@@ -19,8 +19,8 @@ public class BetweenCondition extends Condition<Object> {
     public Pair<String, Map<String, Object>> buildStatement(int index, char namedParamPrefix) {
         //noinspection unchecked
         Pair<Object, Object> pair = (Pair<Object, Object>) value;
-        String a = valueKey + "__" + index + "_0";
-        String b = valueKey + "__" + index + "_1";
+        String a = valueKey + "_" + index + "_0";
+        String b = valueKey + "_" + index + "_1";
         String statement = column + operator.padWithSpace() + namedParamPrefix + a + Logic.AND.padWithSpace() + namedParamPrefix + b;
         Map<String, Object> params = new HashMap<>();
         params.put(a, pair.getItem1());

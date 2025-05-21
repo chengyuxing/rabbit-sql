@@ -1,7 +1,7 @@
 package com.github.chengyuxing.sql;
 
+import com.github.chengyuxing.common.AroundExecutor;
 import com.github.chengyuxing.common.DataRow;
-import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.tuple.Triple;
 import com.github.chengyuxing.sql.datasource.DataSourceUtil;
@@ -26,6 +26,7 @@ import com.github.chengyuxing.sql.support.executor.GenericExecutor;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.annotation.SqlStatementType;
+import com.github.chengyuxing.sql.types.SqlStatement;
 import com.github.chengyuxing.sql.utils.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -39,7 +40,6 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -61,6 +61,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     private String databaseId;
     private SqlGenerator sqlGenerator;
     private EntityManager entityManager;
+    private AroundExecutor<SqlStatement> sqlAroundExecutor;
 
     //---------optional properties------
     /**
@@ -96,11 +97,6 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     private char namedParamPrefix = ':';
     /**
-     * Load {@code xql-file-manager-}{@link #databaseId() databaseId}{@code .yml} first if exists,
-     * otherwise {@code xql-file-manager.yml}
-     */
-    private boolean autoXFMConfig = false;
-    /**
      * Page query page number argument key.
      */
     private String pageKey = "page";
@@ -117,7 +113,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     private QueryCacheManager queryCacheManager;
     /**
-     * Query dsl condition operator white list.
+     * Query dsl condition operator whitelist.
      */
     private Set<String> operatorWhiteList;
 
@@ -137,6 +133,19 @@ public class BakiDao extends JdbcSupport implements Baki {
     protected void init() {
         this.sqlGenerator = new SqlGenerator(namedParamPrefix);
         this.entityManager = new EntityManager(namedParamPrefix);
+        this.sqlAroundExecutor = new AroundExecutor<>() {
+            @Override
+            protected void onStart(@NotNull SqlStatement identifier) {
+                identifier.setState("startTime", System.currentTimeMillis());
+            }
+
+            @Override
+            protected void onStop(@NotNull SqlStatement identifier, @Nullable Object result, @Nullable Throwable throwable) {
+                // Watch execute sql.
+                if (Objects.nonNull(sqlWatcher))
+                    sqlWatcher.watch(identifier.getSql(), identifier.getArgs(), identifier.getState("startTime"), System.currentTimeMillis(), throwable);
+            }
+        };
         this.statementValueHandler = (ps, index, value, metaData) -> JdbcUtil.setStatementValue(ps, index, value);
         this.queryTimeoutHandler = (sql, args) -> 0;
         this.using(c -> {
@@ -167,38 +176,64 @@ public class BakiDao extends JdbcSupport implements Baki {
         });
     }
 
-    /**
-     * Caches the query result if necessary.
-     *
-     * @param key  cache key
-     * @param sql  sql name or sql string
-     * @param args args
-     * @return query result
-     */
-    public Stream<DataRow> executeQueryStream(@NotNull final String key, @NotNull final String sql, Map<String, Object> args) {
-        if (Objects.isNull(queryCacheManager) || !queryCacheManager.isAvailable(key, args)) {
-            return executeQueryStream(sql, args);
-        }
-        String uniqueKey = queryCacheManager.uniqueKey(key, args);
-        Stream<DataRow> cache = queryCacheManager.get(uniqueKey);
-        if (Objects.nonNull(cache)) {
-            log.debug("Hits cache({}, {}), returns data from cache.", key, args);
-            return cache;
-        }
-        Object lock = queryCacheLocks.computeIfAbsent(uniqueKey, k -> new Object());
-        synchronized (lock) {
-            cache = queryCacheManager.get(uniqueKey);
-            if (Objects.nonNull(cache)) {
-                log.debug("Hits cache({}, {}) after lock, returns data from cache.", key, args);
-                return cache;
-            }
-            List<DataRow> prepareCache = new ArrayList<>();
-            Stream<DataRow> queryStream = executeQueryStream(sql, args)
-                    .peek(prepareCache::add)
-                    .onClose(() -> queryCacheManager.put(uniqueKey, prepareCache));
-            log.debug("Put query result({}, {}) to cache.", key, args);
-            return queryStream;
-        }
+    @Override
+    public DataRow execute(@NotNull String sql, Map<String, ?> args) {
+        return this.sqlAroundExecutor.call(new SqlStatement(SqlStatementType.unset, sql, args),
+                i -> super.execute(sql, args));
+    }
+
+    @Override
+    public Stream<DataRow> executeQueryStream(@NotNull String sql, Map<String, Object> args) {
+        return this.sqlAroundExecutor.call(new SqlStatement(SqlStatementType.query, sql, args),
+                i -> {
+                    if (Objects.isNull(queryCacheManager) || !queryCacheManager.isAvailable(sql, args)) {
+                        return super.executeQueryStream(sql, args);
+                    }
+                    String uniqueKey = queryCacheManager.uniqueKey(sql, args);
+                    Stream<DataRow> cache = queryCacheManager.get(uniqueKey);
+                    if (Objects.nonNull(cache)) {
+                        log.debug("Hits cache({}, {}), returns data from cache.", sql, args);
+                        return cache;
+                    }
+                    Object lock = queryCacheLocks.computeIfAbsent(uniqueKey, k -> new Object());
+                    synchronized (lock) {
+                        cache = queryCacheManager.get(uniqueKey);
+                        if (Objects.nonNull(cache)) {
+                            log.debug("Hits cache({}, {}) after lock, returns data from cache.", sql, args);
+                            return cache;
+                        }
+                        List<DataRow> prepareCache = new ArrayList<>();
+                        Stream<DataRow> queryStream = super.executeQueryStream(sql, args)
+                                .peek(prepareCache::add)
+                                .onClose(() -> queryCacheManager.put(uniqueKey, prepareCache));
+                        log.debug("Put query result({}, {}) to cache.", sql, args);
+                        return queryStream;
+                    }
+                });
+    }
+
+    @Override
+    public int executeUpdate(@NotNull String sql, Map<String, ?> args) {
+        return this.sqlAroundExecutor.call(new SqlStatement(SqlStatementType.dml, sql, args),
+                i -> super.executeUpdate(sql, args));
+    }
+
+    @Override
+    public int executeBatchUpdate(@NotNull String sql, @NotNull Collection<? extends Map<String, ?>> args, @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
+        return this.sqlAroundExecutor.call(new SqlStatement(SqlStatementType.dml, sql, args),
+                i -> super.executeBatchUpdate(sql, args, batchSize));
+    }
+
+    @Override
+    public DataRow executeCallStatement(@NotNull String procedure, Map<String, Param> args) {
+        return this.sqlAroundExecutor.call(new SqlStatement(SqlStatementType.procedure, procedure, args),
+                i -> super.executeCallStatement(procedure, args));
+    }
+
+    @Override
+    public int executeBatch(@NotNull List<String> sqls, @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
+        return this.sqlAroundExecutor.call(new SqlStatement(SqlStatementType.batch, String.join(";", sqls), null),
+                i -> super.executeBatch(sqls, batchSize));
     }
 
     @Override
@@ -206,7 +241,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         return new QueryExecutor(sql) {
             @Override
             public Stream<DataRow> stream() {
-                return watchSql(sql, sql, args, () -> executeQueryStream(sql, sql, args));
+                return executeQueryStream(sql, args);
             }
 
             @Override
@@ -395,18 +430,10 @@ public class BakiDao extends JdbcSupport implements Baki {
                                 throw new IllegalStateException("group by clause must have at least one column");
                             }
                             Triple<String, String, Map<String, Object>> query = createQuery();
-                            String key = entityCallKey(clazz, query.getItem1());
-                            return watchSql(key, query.getItem1(), query.getItem3(),
-                                    () -> executeQueryStream(
-                                            key,
-                                            query.getItem1(),
-                                            query.getItem3()
-                                    ));
+                            return executeQueryStream(query.getItem1(), query.getItem3());
                         }
                         Pair<String, Map<String, Object>> query = createGroupByObject().getQuerySql();
-                        String key = entityCallKey(clazz, query.getItem1());
-                        return watchSql(key, query.getItem1(), query.getItem2(),
-                                () -> executeQueryStream(key, query.getItem1(), query.getItem2()));
+                        return executeQueryStream(query.getItem1(), query.getItem2());
                     }
 
                     @Override
@@ -510,12 +537,9 @@ public class BakiDao extends JdbcSupport implements Baki {
                         }
                         query += where.getItem1();
                         final String existQuery = query;
-                        String key = entityCallKey(clazz, existQuery);
-                        return watchSql(key, existQuery, where.getItem2(), () -> {
-                            try (Stream<DataRow> s = executeQueryStream(key, existQuery, where.getItem2())) {
-                                return s.findFirst().isPresent();
-                            }
-                        });
+                        try (Stream<DataRow> s = executeQueryStream(existQuery, where.getItem2())) {
+                            return s.findFirst().isPresent();
+                        }
                     }
 
                     @Override
@@ -546,14 +570,11 @@ public class BakiDao extends JdbcSupport implements Baki {
                         }
                         final String countQuery = countSelect;
                         final Map<String, Object> myArgs = args;
-                        String key = entityCallKey(clazz, countQuery);
-                        return watchSql(key, countQuery, myArgs, () -> {
-                            try (Stream<DataRow> s = executeQueryStream(key, countQuery, myArgs)) {
-                                return s.findFirst()
-                                        .map(d -> d.getLong(0))
-                                        .orElse(0L);
-                            }
-                        });
+                        try (Stream<DataRow> s = executeQueryStream(countQuery, myArgs)) {
+                            return s.findFirst()
+                                    .map(d -> d.getLong(0))
+                                    .orElse(0L);
+                        }
                     }
 
                     @Override
@@ -594,8 +615,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             public int insert(@NotNull T entity) {
                 String insert = entityMeta.getInsert();
                 Map<String, Object> data = Args.ofEntity(entity);
-                String key = entityCallKey(clazz, insert);
-                return watchSql(key, insert, data, () -> executeUpdate(insert, data));
+                return executeUpdate(insert, data);
             }
 
             @Override
@@ -605,8 +625,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 List<Map<String, Object>> data = entities.stream()
                         .map(Args::ofEntity)
                         .collect(Collectors.toList());
-                String key = entityCallKey(clazz, insert);
-                return watchSql(key, insert, data, () -> executeBatchUpdate(insert, data, batchSize));
+                return executeBatchUpdate(insert, data, batchSize);
             }
 
             @Override
@@ -618,8 +637,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                         data,
                         true
                 ) + entityMeta.getWhereById() : entityMeta.getUpdateById();
-                String key = entityCallKey(clazz, update);
-                return watchSql(key, update, data, () -> executeUpdate(update, data));
+                return executeUpdate(update, data);
             }
 
             @Override
@@ -634,16 +652,14 @@ public class BakiDao extends JdbcSupport implements Baki {
                         data.get(0),
                         true
                 ) + entityMeta.getWhereById() : entityMeta.getUpdateById();
-                String key = entityCallKey(clazz, update);
-                return watchSql(key, update, data, () -> executeBatchUpdate(update, data, batchSize));
+                return executeBatchUpdate(update, data, batchSize);
             }
 
             @Override
             public int delete(@NotNull T entity) {
                 String delete = entityMeta.getDeleteById();
                 Map<String, Object> data = Args.ofEntity(entity);
-                String key = entityCallKey(clazz, delete);
-                return watchSql(key, delete, data, () -> executeUpdate(delete, data));
+                return executeUpdate(delete, data);
             }
 
             @Override
@@ -655,8 +671,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 List<Map<String, Object>> data = entities.stream()
                         .map(Args::ofEntity)
                         .collect(Collectors.toList());
-                String key = entityCallKey(clazz, delete);
-                return watchSql(key, delete, data, () -> executeBatchUpdate(delete, data, batchSize));
+                return executeBatchUpdate(delete, data, batchSize);
             }
         };
     }
@@ -666,74 +681,44 @@ public class BakiDao extends JdbcSupport implements Baki {
         return new GenericExecutor() {
             @Override
             public @NotNull DataRow execute() {
-                return watchSql(sql, sql, Collections.emptyMap(), () -> BakiDao.super.execute(sql, Collections.emptyMap()));
+                return BakiDao.super.execute(sql, Collections.emptyMap());
             }
 
             @Override
             public @NotNull DataRow execute(Map<String, ?> args) {
-                return watchSql(sql, sql, args, () -> BakiDao.super.execute(sql, args));
+                return BakiDao.super.execute(sql, args);
             }
 
             @Override
             public int executeBatch(@NotNull List<String> moreSql) {
                 List<String> sqlList = new ArrayList<>(moreSql);
                 sqlList.add(0, sql);
-                String s = String.join("###", moreSql);
-                return watchSql(s, s, Collections.emptyMap(), () -> BakiDao.super.executeBatch(sqlList, batchSize));
+                return BakiDao.super.executeBatch(sqlList, batchSize);
             }
 
             @Override
             public int executeBatch(@NotNull Collection<? extends Map<String, ?>> data) {
                 Map<String, ?> arg = data.isEmpty() ? new HashMap<>() : data.iterator().next();
-                Pair<String, Map<String, Object>> parsed = parseSql(sql, arg);
-                return watchSql(sql, parsed.getItem1(), data, () -> {
-                    Collection<? extends Map<String, ?>> newData;
-                    if (parsed.getItem2().containsKey(XQLFileManager.DynamicSqlParser.FOR_VARS_KEY) &&
-                            parsed.getItem1().contains(XQLFileManager.DynamicSqlParser.VAR_PREFIX)) {
-                        List<Map<String, Object>> list = new ArrayList<>();
-                        for (Map<String, ?> item : data) {
-                            list.add(parseSql(sql, item).getItem2());
-                        }
-                        newData = list;
-                    } else {
-                        newData = data;
+                SqlGenerator.GeneratedSqlMetaData parsed = prepareSql(sql, arg);
+                Collection<? extends Map<String, ?>> newData;
+                if (parsed.getArgs().containsKey(XQLFileManager.DynamicSqlParser.FOR_VARS_KEY) &&
+                        parsed.getPrepareSql().contains(XQLFileManager.DynamicSqlParser.VAR_PREFIX)) {
+                    List<Map<String, Object>> list = new ArrayList<>();
+                    for (Map<String, ?> item : data) {
+                        list.add(prepareSql(sql, item).getArgs());
                     }
-                    return executeBatchUpdate(parsed.getItem1(), newData, batchSize);
-                });
-
+                    newData = list;
+                } else {
+                    newData = data;
+                }
+                return executeBatchUpdate(parsed.getPrepareSql(), newData, batchSize);
             }
 
             @Override
             public @NotNull DataRow call(Map<String, Param> params) {
-                return watchSql(sql, sql, params, () -> executeCallStatement(sql, params));
+                return executeCallStatement(sql, params);
             }
         };
-    }
-
-    /**
-     * Watch sql execution status.
-     *
-     * @param sourceSql source sql
-     * @param targetSql target sql
-     * @param args      args
-     * @param supplier  supplier
-     * @param <T>       type
-     * @return any
-     */
-    protected <T> T watchSql(String sourceSql, String targetSql, Object args, Supplier<T> supplier) {
-        if (Objects.isNull(sqlWatcher)) {
-            return supplier.get();
-        }
-        long startTime = System.currentTimeMillis();
-        Throwable throwable = null;
-        try {
-            return supplier.get();
-        } catch (Exception e) {
-            throwable = e;
-            throw e;
-        } finally {
-            sqlWatcher.watch(sourceSql, targetSql, args, startTime, System.currentTimeMillis(), throwable);
-        }
     }
 
     @Override
@@ -1011,18 +996,16 @@ public class BakiDao extends JdbcSupport implements Baki {
 
         @Override
         public <T> PagedResource<T> collect(Function<DataRow, T> mapper) {
-            Pair<String, Map<String, Object>> result = parseSql(recordQuery, args);
-            String query = result.getItem1();
-            Map<String, Object> myArgs = result.getItem2();
+            SqlGenerator.GeneratedSqlMetaData result = prepareSql(recordQuery, args);
+            String sourceQuery = result.getSourceSql();
+            Map<String, Object> myArgs = result.getArgs();
             if (count == null) {
-                String cq = countQuery == null ? sqlGenerator.generateCountQuery(query) : countQuery;
-                count = watchSql(recordQuery, cq, myArgs, () -> {
-                    try (Stream<DataRow> s = executeQueryStream(recordQuery, cq, myArgs)) {
-                        return s.findFirst()
-                                .map(d -> d.getInt(0))
-                                .orElse(0);
-                    }
-                });
+                String cq = countQuery == null ? sqlGenerator.generateCountQuery(sourceQuery) : countQuery;
+                try (Stream<DataRow> s = executeQueryStream(cq, myArgs)) {
+                    count = s.findFirst()
+                            .map(d -> d.getInt(0))
+                            .orElse(0);
+                }
             }
 
             PageHelper pageHelper = null;
@@ -1037,28 +1020,15 @@ public class BakiDao extends JdbcSupport implements Baki {
             pageHelper.init(page, size, count);
             Args<Integer> pagedArgs = pageHelper.pagedArgs();
             myArgs.putAll(rewriteArgsFunc == null ? pagedArgs : rewriteArgsFunc.apply(pagedArgs));
-            String executeQuery = disablePageSql ? query : pageHelper.pagedSql(namedParamPrefix, query);
+            String executeQuery = disablePageSql ? sourceQuery : pageHelper.pagedSql(namedParamPrefix, sourceQuery);
             final PageHelper finalPageHelper = pageHelper;
-            return watchSql(recordQuery, executeQuery, myArgs, () -> {
-                try (Stream<DataRow> s = executeQueryStream(recordQuery, executeQuery, myArgs)) {
-                    List<T> list = s.peek(d -> d.remove(PageHelper.ROW_NUM_KEY))
-                            .map(mapper)
-                            .collect(Collectors.toList());
-                    return PagedResource.of(finalPageHelper, list);
-                }
-            });
+            try (Stream<DataRow> s = executeQueryStream(executeQuery, myArgs)) {
+                List<T> list = s.peek(d -> d.remove(PageHelper.ROW_NUM_KEY))
+                        .map(mapper)
+                        .collect(Collectors.toList());
+                return PagedResource.of(finalPageHelper, list);
+            }
         }
-    }
-
-    /**
-     * For {@link #watchSql(String, String, Object, Supplier)} and {@link #executeQueryStream(String, String, Map)}
-     *
-     * @param clazz entity type
-     * @param sql   sql
-     * @return unique key
-     */
-    protected String entityCallKey(Class<?> clazz, String sql) {
-        return "@" + clazz.getName() + ":" + sql;
     }
 
     /**
@@ -1098,25 +1068,6 @@ public class BakiDao extends JdbcSupport implements Baki {
         }
     }
 
-    /**
-     * Reload xql file manager by database id if necessary.
-     */
-    protected void loadXFMConfigByDatabaseId() {
-        if (Objects.nonNull(xqlFileManager)) {
-            String pathByDb = "xql-file-manager-" + databaseId + ".yml";
-            FileResource resource = new FileResource(pathByDb);
-            if (!resource.exists()) {
-                resource = new FileResource(XQLFileManager.YML);
-            }
-            if (resource.exists()) {
-                XQLFileManagerConfig config = new XQLFileManagerConfig();
-                config.loadYaml(resource);
-                config.copyStateTo(xqlFileManager);
-                xqlFileManager.init();
-                log.debug("{} detected by '{}' and loaded!", resource.getFileName(), databaseId);
-            }
-        }
-    }
 
     /**
      * Get sql from {@link XQLFileManager} by sql name if first arg starts with symbol ({@code &}).<br>
@@ -1129,13 +1080,14 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @throws IllegalSqlException  sql interceptor reject sql
      */
     @Override
-    protected Pair<String, Map<String, Object>> parseSql(@NotNull String sql, Map<String, ?> args) {
+    protected SqlGenerator.GeneratedSqlMetaData prepareSql(@NotNull String sql, Map<String, ?> args) {
         Map<String, Object> myArgs = new HashMap<>();
         if (Objects.nonNull(args)) {
             myArgs.putAll(args);
         }
         String mySql = SqlUtil.trimEnd(sql.trim());
         if (mySql.startsWith("&")) {
+            log.debug("SQL name: {}", mySql);
             if (Objects.nonNull(xqlFileManager)) {
                 Pair<String, Map<String, Object>> result = xqlFileManager.get(mySql.substring(1), myArgs);
                 mySql = result.getItem1();
@@ -1162,37 +1114,9 @@ public class BakiDao extends JdbcSupport implements Baki {
                 throw new IllegalSqlException("permission denied, reject to execute sql.\nSQL: " + mySql + "\nArgs: " + myArgs);
             }
         }
-        return Pair.of(mySql, myArgs);
-    }
-
-    @Override
-    protected String printExceptionMessage(String sourceSql, String executeSql, Object args) {
-        return (sourceSql.trim().startsWith("&") ? "SQL(" + sourceSql + ")" : "") + "\n" + executeSql + "\n" + args;
-    }
-
-    @Override
-    protected void debugSql(String sourceSql, String executeSql, Collection<? extends Map<String, ?>> args) {
-        if (log.isDebugEnabled()) {
-            log.debug("SQL{}: {}",
-                    sourceSql.trim().startsWith("&") ? "(" + sourceSql + ")" : "",
-                    SqlHighlighter.highlightIfAnsiCapable(executeSql));
-            for (Map<String, ?> arg : args) {
-                StringJoiner sb = new StringJoiner(", ", "{", "}");
-                arg.forEach((k, v) -> {
-                    if (v == null) {
-                        sb.add(k + " -> null");
-                    } else {
-                        sb.add(k + " -> " + v + "(" + v.getClass().getSimpleName() + ")");
-                    }
-                });
-                log.debug("Args: {}", sb);
-            }
-        }
-    }
-
-    @Override
-    protected @NotNull SqlGenerator sqlGenerator() {
-        return sqlGenerator;
+        log.debug("SQL: {}", SqlHighlighter.highlightIfAnsiCapable(mySql));
+        log.debug("Args: {}", myArgs);
+        return sqlGenerator.generatePreparedSql(mySql, myArgs);
     }
 
     @Override
@@ -1248,10 +1172,6 @@ public class BakiDao extends JdbcSupport implements Baki {
             this.xqlFileManager = xqlFileManager;
             this.xqlFileManager.setDatabaseId(databaseId);
             this.xqlFileManager.setTemplateFormatter(sqlGenerator.getTemplateFormatter());
-            if (autoXFMConfig) {
-                loadXFMConfigByDatabaseId();
-                return;
-            }
             if (!this.xqlFileManager.isInitialized()) {
                 this.xqlFileManager.init();
             }
@@ -1277,17 +1197,6 @@ public class BakiDao extends JdbcSupport implements Baki {
     public void setNamedParamPrefix(char namedParamPrefix) {
         this.namedParamPrefix = namedParamPrefix;
         this.sqlGenerator = new SqlGenerator(this.namedParamPrefix);
-    }
-
-    public boolean isAutoXFMConfig() {
-        return autoXFMConfig;
-    }
-
-    public void setAutoXFMConfig(boolean autoXFMConfig) {
-        this.autoXFMConfig = autoXFMConfig;
-        if (this.autoXFMConfig) {
-            loadXFMConfigByDatabaseId();
-        }
     }
 
     public String getPageKey() {

@@ -90,6 +90,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
             case insert:
             case update:
             case delete:
+            case dml:
                 return handleModify(baki, sqlRef, myArgs, method, returnType);
             case procedure:
             case function:

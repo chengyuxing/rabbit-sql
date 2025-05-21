@@ -20,7 +20,7 @@ public interface HomeMapper {
     @XQL(type = SqlStatementType.function)
     DataRow sum(@Arg("a") Param a, @Arg("b") Param b, @Arg("res") Param res);
 
-    @XQL(type = SqlStatementType.procedure)
+    @XQL(type = SqlStatementType.procedure, value = "maven_dependencies_query")
     DataRow mavenDependenciesQuery(@Arg("keywords") Param keywords);
 
     List<DataRow> queryAllGuests();

@@ -2,6 +2,7 @@ package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.MostDateTime;
+import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Range;
 import org.slf4j.Logger;
@@ -111,7 +112,7 @@ public class JdbcUtil {
 
     /**
      * Do execute query, ddl, dml or plsql statement to get result.<br>
-     * Get result by index {@code 0} or by name: {@code result} .
+     * Get a result by index {@code 0} or by name: {@code result} .
      *
      * @param statement preparedStatement
      * @param sql       executed sql
@@ -154,18 +155,26 @@ public class JdbcUtil {
         }
     }
 
-    public static void closeResultSet(ResultSet resultSet) throws SQLException {
+    public static void closeResultSet(ResultSet resultSet) {
         if (Objects.nonNull(resultSet)) {
-            if (!resultSet.isClosed()) {
-                resultSet.close();
+            try {
+                if (!resultSet.isClosed()) {
+                    resultSet.close();
+                }
+            } catch (SQLException e) {
+                throw new UncheckedSqlException("close result error.", e);
             }
         }
     }
 
-    public static void closeStatement(Statement statement) throws SQLException {
+    public static void closeStatement(Statement statement) {
         if (Objects.nonNull(statement)) {
-            if (!statement.isClosed()) {
-                statement.close();
+            try {
+                if (!statement.isClosed()) {
+                    statement.close();
+                }
+            } catch (SQLException e) {
+                throw new UncheckedSqlException("close statement error.", e);
             }
         }
     }

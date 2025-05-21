@@ -57,39 +57,39 @@ public class SqlGenerator {
      * Generated sql meta data.
      */
     public static final class GeneratedSqlMetaData {
-        private final String namedParamSql;
-        private final String resultSql;
+        private final String sourceSql;
+        private final String prepareSql;
         private final Map<String, List<Integer>> argNameIndexMapping;
-        private final Map<String, ?> args;
+        private final Map<String, Object> args;
 
         /**
          * Construct a new GeneratedSqlMetaData instance.
          *
-         * @param namedParamSql       named parameter sql
-         * @param resultSql           prepared sql or normal sql
+         * @param sourceSql           named parameter sql
+         * @param prepareSql          prepared sql
          * @param argNameIndexMapping prepared sql arg name index mapping
          * @param args                args
          */
-        public GeneratedSqlMetaData(String namedParamSql, String resultSql, Map<String, List<Integer>> argNameIndexMapping, Map<String, ?> args) {
-            this.namedParamSql = namedParamSql;
-            this.resultSql = resultSql;
+        public GeneratedSqlMetaData(String sourceSql, String prepareSql, Map<String, List<Integer>> argNameIndexMapping, Map<String, Object> args) {
+            this.sourceSql = sourceSql;
+            this.prepareSql = prepareSql;
             this.argNameIndexMapping = argNameIndexMapping;
             this.args = args;
         }
 
-        public String getNamedParamSql() {
-            return namedParamSql;
+        public String getSourceSql() {
+            return sourceSql;
         }
 
-        public String getResultSql() {
-            return resultSql;
+        public String getPrepareSql() {
+            return prepareSql;
         }
 
         public Map<String, List<Integer>> getArgNameIndexMapping() {
             return argNameIndexMapping;
         }
 
-        public Map<String, ?> getArgs() {
+        public Map<String, Object> getArgs() {
             return args;
         }
 
@@ -99,13 +99,13 @@ public class SqlGenerator {
             if (!(o instanceof GeneratedSqlMetaData)) return false;
 
             GeneratedSqlMetaData that = (GeneratedSqlMetaData) o;
-            return Objects.equals(getNamedParamSql(), that.getNamedParamSql()) && Objects.equals(getResultSql(), that.getResultSql()) && Objects.equals(getArgNameIndexMapping(), that.getArgNameIndexMapping()) && Objects.equals(getArgs(), that.getArgs());
+            return Objects.equals(getSourceSql(), that.getSourceSql()) && Objects.equals(getPrepareSql(), that.getPrepareSql()) && Objects.equals(getArgNameIndexMapping(), that.getArgNameIndexMapping()) && Objects.equals(getArgs(), that.getArgs());
         }
 
         @Override
         public int hashCode() {
-            int result = Objects.hashCode(getNamedParamSql());
-            result = 31 * result + Objects.hashCode(getResultSql());
+            int result = Objects.hashCode(getSourceSql());
+            result = 31 * result + Objects.hashCode(getPrepareSql());
             result = 31 * result + Objects.hashCode(getArgNameIndexMapping());
             result = 31 * result + Objects.hashCode(getArgs());
             return result;
@@ -127,14 +127,9 @@ public class SqlGenerator {
      * @param args data of named parameter
      * @return GeneratedSqlMetaData
      */
-    public GeneratedSqlMetaData generatePreparedSql(final String sql, Map<String, ?> args) {
-        // resolve the sql string template first
-        String fullSql = SqlUtil.formatSql(sql, args, templateFormatter);
-        if (fullSql.lastIndexOf(namedParamPrefix) < 0) {
-            return new GeneratedSqlMetaData(sql, fullSql, Collections.emptyMap(), args);
-        }
+    public GeneratedSqlMetaData generatePreparedSql(final String sql, Map<String, Object> args) {
         Map<String, List<Integer>> indexMap = new HashMap<>();
-        Matcher matcher = namedParamPattern.matcher(fullSql);
+        Matcher matcher = namedParamPattern.matcher(sql);
         int index = 1;
         StringBuffer buffer = new StringBuffer();
         while (matcher.find()) {
@@ -163,13 +158,8 @@ public class SqlGenerator {
      * @see #setTemplateFormatter(TemplateFormatter)
      */
     public String generateSql(final String sql, Map<String, ?> args) {
-        // resolve the sql string template first
-        String fullSql = SqlUtil.formatSql(sql, args, templateFormatter);
-        if (fullSql.lastIndexOf(namedParamPrefix) < 0) {
-            return fullSql;
-        }
         StringBuffer buffer = new StringBuffer();
-        Matcher matcher = namedParamPattern.matcher(fullSql);
+        Matcher matcher = namedParamPattern.matcher(sql);
         while (matcher.find()) {
             String name = matcher.group(1);
             String replacement;

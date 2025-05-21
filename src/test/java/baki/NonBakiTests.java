@@ -103,8 +103,8 @@ public class NonBakiTests {
 
         SqlGenerator sqlGenerator = new SqlGenerator(':');
         SqlGenerator.GeneratedSqlMetaData pair = sqlGenerator.generatePreparedSql(sql, Collections.emptyMap());
-        System.out.println(pair.getNamedParamSql());
-        System.out.println(pair.getResultSql());
+        System.out.println(pair.getPrepareSql());
+        System.out.println(pair.getSourceSql());
 
         Matcher m = sqlGenerator.getNamedParamPattern().matcher(sql);
         while (m.find()) {
@@ -137,7 +137,7 @@ public class NonBakiTests {
                 "username", "cyx"
         ));
         System.out.println(pair1.getArgs());
-        System.out.println(pair1.getResultSql());
+        System.out.println(pair1.getPrepareSql());
         System.out.println(pair1.getArgNameIndexMapping());
         System.out.println(sqlGenerator.generateSql(query, Args.of(
                 "id", 25,
@@ -157,7 +157,7 @@ public class NonBakiTests {
                 "age", 30,
                 "address", LocalDateTime.now()));
         System.out.println(sqla.getArgs());
-        System.out.println(sqla.getResultSql());
+        System.out.println(sqla.getPrepareSql());
     }
 
     @Test

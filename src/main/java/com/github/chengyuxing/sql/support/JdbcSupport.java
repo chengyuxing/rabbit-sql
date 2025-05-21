@@ -13,8 +13,6 @@ import com.github.chengyuxing.sql.utils.SqlGenerator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.sql.*;
@@ -36,9 +34,7 @@ import java.util.stream.StreamSupport;
  *
  * @see com.github.chengyuxing.sql.types.Variable
  */
-public abstract class JdbcSupport extends SqlParser {
-    private final static Logger log = LoggerFactory.getLogger(JdbcSupport.class);
-
+public abstract class JdbcSupport {
     /**
      * Get datasource.
      *
@@ -60,6 +56,15 @@ public abstract class JdbcSupport extends SqlParser {
      * @param dataSource datasource
      */
     protected abstract void releaseConnection(Connection connection, DataSource dataSource);
+
+    /**
+     * Parse sql to executable prepared sql.
+     *
+     * @param sql  sql
+     * @param args args
+     * @return generated sql meta data
+     */
+    protected abstract SqlGenerator.GeneratedSqlMetaData prepareSql(@NotNull String sql, Map<String, ?> args);
 
     /**
      * Handle prepared statement value.
@@ -93,7 +98,7 @@ public abstract class JdbcSupport extends SqlParser {
      * @param names ordered arg names
      * @throws SQLException if connection states error
      */
-    protected void setPreparedSqlArgs(PreparedStatement ps, Map<String, ?> args, Map<String, List<Integer>> names) throws SQLException {
+    private void setPreparedSqlArgs(PreparedStatement ps, Map<String, ?> args, Map<String, List<Integer>> names) throws SQLException {
         for (Map.Entry<String, List<Integer>> e : names.entrySet()) {
             String name = e.getKey();
             Object value = name.contains(".") ? ObjectUtil.getDeepValue(args, name) : args.get(name);
@@ -104,70 +109,40 @@ public abstract class JdbcSupport extends SqlParser {
     }
 
     /**
-     * Set callable statement args.
+     * Set callable statement in params.
      *
      * @param cs    store procedure/function statement object
      * @param args  args
      * @param names ordered arg names
      * @throws SQLException if connection states error
      */
-    protected void setPreparedStoreArgs(CallableStatement cs, Map<String, Param> args, Map<String, List<Integer>> names) throws SQLException {
-        if (args != null && !args.isEmpty()) {
-            // adapt postgresql
-            // out and inout param first
-            for (Map.Entry<String, List<Integer>> e : names.entrySet()) {
-                Param param = args.get(e.getKey());
-                if (param.getParamMode() == ParamMode.OUT || param.getParamMode() == ParamMode.IN_OUT) {
-                    for (Integer i : e.getValue()) {
-                        cs.registerOutParameter(i, param.getType().typeNumber());
-                    }
-                }
-            }
-            // in param next
-            for (Map.Entry<String, List<Integer>> e : names.entrySet()) {
-                Param param = args.get(e.getKey());
+    private void setPreparedStoreInParams(CallableStatement cs, Map<String, Param> args, Map<String, List<Integer>> names) throws SQLException {
+        for (Map.Entry<String, List<Integer>> e : names.entrySet()) {
+            Param param = args.get(e.getKey());
+            if (param.getParamMode() == ParamMode.IN || param.getParamMode() == ParamMode.IN_OUT) {
                 for (Integer i : e.getValue()) {
-                    if (param.getParamMode() == ParamMode.IN || param.getParamMode() == ParamMode.IN_OUT) {
-                        doHandleStatementValue(cs, i, param.getValue());
-                    }
+                    doHandleStatementValue(cs, i, param.getValue());
                 }
             }
         }
     }
 
     /**
-     * Execute any prepared sql.
+     * Register callable statement out params.
      *
-     * @param sql      sql
-     * @param callback statement callback
-     * @param <T>      result type
-     * @return any result
-     * @throws SqlRuntimeException sql execute error
+     * @param cs    store procedure/function statement object
+     * @param args  args
+     * @param names ordered arg names
+     * @throws SQLException if connection states error
      */
-    public <T> T execute(@NotNull final String sql, @NotNull StatementCallback<T> callback) {
-        PreparedStatement statement = null;
-        Connection connection = null;
-        try {
-            connection = getConnection();
-            //noinspection SqlSourceToSinkFlow
-            statement = connection.prepareStatement(sql);
-            return callback.doInStatement(statement);
-        } catch (SQLException e) {
-            try {
-                JdbcUtil.closeStatement(statement);
-            } catch (SQLException ex) {
-                e.addSuppressed(ex);
+    private void setPreparedStoreOutParams(CallableStatement cs, Map<String, Param> args, Map<String, List<Integer>> names) throws SQLException {
+        for (Map.Entry<String, List<Integer>> e : names.entrySet()) {
+            Param param = args.get(e.getKey());
+            if (param.getParamMode() == ParamMode.OUT || param.getParamMode() == ParamMode.IN_OUT) {
+                for (Integer i : e.getValue()) {
+                    cs.registerOutParameter(i, param.getType().typeNumber());
+                }
             }
-            statement = null;
-            releaseConnection(connection, getDataSource());
-            throw new SqlRuntimeException(printExceptionMessage(sql, sql, Collections.emptyMap()), e);
-        } finally {
-            try {
-                JdbcUtil.closeStatement(statement);
-            } catch (SQLException e) {
-                log.error("close statement error.", e);
-            }
-            releaseConnection(connection, getDataSource());
         }
     }
 
@@ -185,28 +160,33 @@ public abstract class JdbcSupport extends SqlParser {
      * @throws SqlRuntimeException sql execute error
      */
     public DataRow execute(@NotNull final String sql, Map<String, ?> args) {
-        SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepare(sql, args);
+        SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepareSql(sql, args);
         final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
-        final String preparedSql = sqlMetaData.getResultSql();
+        final String preparedSql = sqlMetaData.getPrepareSql();
         final Map<String, ?> myArgs = sqlMetaData.getArgs();
+        Connection connection = null;
+        PreparedStatement ps = null;
         try {
-            debugSql(sql, sqlMetaData.getNamedParamSql(), Collections.singletonList(myArgs));
-            return execute(preparedSql, ps -> {
-                ps.setQueryTimeout(queryTimeout(sql, myArgs));
-                setPreparedSqlArgs(ps, myArgs, argNames);
-                ps.execute();
-                JdbcUtil.printSqlConsole(ps);
-                return JdbcUtil.getResult(ps, preparedSql);
-            });
+            connection = getConnection();
+            //noinspection SqlSourceToSinkFlow
+            ps = connection.prepareStatement(preparedSql);
+            ps.setQueryTimeout(queryTimeout(sql, myArgs));
+            setPreparedSqlArgs(ps, myArgs, argNames);
+            ps.execute();
+            JdbcUtil.printSqlConsole(ps);
+            return JdbcUtil.getResult(ps, preparedSql);
         } catch (Exception e) {
-            throw new SqlRuntimeException(printExceptionMessage(sql, preparedSql, myArgs), e);
+            throw new SqlRuntimeException("SQL: " + sql + "\nArgs: " + myArgs, e);
+        } finally {
+            JdbcUtil.closeStatement(ps);
+            releaseConnection(connection, getDataSource());
         }
     }
 
     /**
-     * Lazy execute query based on {@link Stream} support, real execute query when terminal
-     * operation called, every Stream query hold a connection, in case connection pool dead
-     * do must have to close this stream finally, e.g.
+     * Lazily execute query based on {@link Stream} support, real execute query when terminal
+     * operation called, every Stream query holds a connection, in case connection pool dead
+     * do have to close this stream finally, e.g.
      * <p>Auto close by {@code try-with-resource}:</p>
      * <blockquote>
      * <pre>
@@ -227,10 +207,10 @@ public abstract class JdbcSupport extends SqlParser {
      * @return Stream query result
      * @throws UncheckedSqlException sql execute error
      */
-    public Stream<DataRow> executeQueryStream(@NotNull final String sql, Map<String, ?> args) {
-        SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepare(sql, args);
+    public Stream<DataRow> executeQueryStream(@NotNull final String sql, Map<String, Object> args) {
+        SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepareSql(sql, args);
         final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
-        final String preparedSql = sqlMetaData.getResultSql();
+        final String preparedSql = sqlMetaData.getPrepareSql();
         final Map<String, ?> myArgs = sqlMetaData.getArgs();
         UncheckedCloseable close = null;
         try {
@@ -238,7 +218,6 @@ public abstract class JdbcSupport extends SqlParser {
             // if this query is not in transaction, it's connection managed by Stream
             // if transaction is active connection will not be close when read stream to the end in 'try-with-resource' block
             close = UncheckedCloseable.wrap(() -> releaseConnection(connection, getDataSource()));
-            debugSql(sql, sqlMetaData.getNamedParamSql(), Collections.singletonList(myArgs));
             //noinspection SqlSourceToSinkFlow
             PreparedStatement ps = connection.prepareStatement(preparedSql);
             ps.setQueryTimeout(queryTimeout(sql, myArgs));
@@ -258,7 +237,7 @@ public abstract class JdbcSupport extends SqlParser {
                         action.accept(JdbcUtil.createDataRow(names, resultSet));
                         return true;
                     } catch (SQLException ex) {
-                        throw new UncheckedSqlException("reading result set of query error:\n" + preparedSql, ex);
+                        throw new UncheckedSqlException("reading result set of query error", ex);
                     }
                 }
             }, false).onClose(close);
@@ -270,12 +249,12 @@ public abstract class JdbcSupport extends SqlParser {
                     ex.addSuppressed(e);
                 }
             }
-            throw new SqlRuntimeException(printExceptionMessage(sql, preparedSql, myArgs), ex);
+            throw new SqlRuntimeException("SQL: " + sql + "\nArgs: " + myArgs, ex);
         }
     }
 
     /**
-     * Batch execute not prepared sql ({@code ddl} or {@code dml}).
+     * Batch executes not prepared sql ({@code ddl} or {@code dml}).
      *
      * @param sqls      more than 1 sql
      * @param batchSize batch size
@@ -287,18 +266,19 @@ public abstract class JdbcSupport extends SqlParser {
         if (sqls.isEmpty()) {
             return 0;
         }
+        Connection connection = null;
         Statement s = null;
-        Connection connection = getConnection();
         try {
+            connection = getConnection();
             s = connection.createStatement();
+            s.setQueryTimeout(queryTimeout(String.join(";", sqls), null));
             final Stream.Builder<int[]> result = Stream.builder();
             int i = 1;
             for (String sql : sqls) {
                 if (StringUtil.isEmpty(sql)) {
                     continue;
                 }
-                String parsedSql = parseSql(sql, Collections.emptyMap()).getItem1();
-                debugSql(sql, parsedSql, Collections.emptyList());
+                String parsedSql = prepareSql(sql, Collections.emptyMap()).getSourceSql();
                 //noinspection SqlSourceToSinkFlow
                 s.addBatch(parsedSql);
                 if (i % batchSize == 0) {
@@ -311,20 +291,9 @@ public abstract class JdbcSupport extends SqlParser {
             s.clearBatch();
             return result.build().flatMapToInt(IntStream::of).sum();
         } catch (SQLException e) {
-            try {
-                JdbcUtil.closeStatement(s);
-            } catch (SQLException ex) {
-                e.addSuppressed(ex);
-            }
-            s = null;
-            releaseConnection(connection, getDataSource());
-            throw new SqlRuntimeException("execute batch error.", e);
+            throw new SqlRuntimeException("SQLs: " + String.join(";\n"), e);
         } finally {
-            try {
-                JdbcUtil.closeStatement(s);
-            } catch (SQLException e) {
-                log.error("close statement error.", e);
-            }
+            JdbcUtil.closeStatement(s);
             releaseConnection(connection, getDataSource());
         }
     }
@@ -341,29 +310,44 @@ public abstract class JdbcSupport extends SqlParser {
                                   @NotNull Collection<? extends Map<String, ?>> args,
                                   @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
         Map<String, ?> first = args.iterator().next();
-        SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepare(sql, first);
+        SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepareSql(sql, first);
         final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
-        final String preparedSql = sqlMetaData.getResultSql();
+        final String preparedSql = sqlMetaData.getPrepareSql();
+        Connection connection = null;
+        PreparedStatement ps = null;
         try {
-            debugSql(sql, sqlMetaData.getNamedParamSql(), args);
-            return execute(preparedSql, ps -> {
-                final Stream.Builder<int[]> result = Stream.builder();
-                int i = 1;
-                for (Map<String, ?> item : args) {
-                    setPreparedSqlArgs(ps, item, argNames);
-                    ps.addBatch();
-                    if (i % batchSize == 0) {
-                        result.add(ps.executeBatch());
-                        ps.clearBatch();
-                    }
-                    i++;
+            connection = getConnection();
+            //noinspection SqlSourceToSinkFlow
+            ps = connection.prepareStatement(preparedSql);
+            ps.setQueryTimeout(queryTimeout(sql, first));
+            final Stream.Builder<int[]> result = Stream.builder();
+            int i = 1;
+            for (Map<String, ?> arg : args) {
+                setPreparedSqlArgs(ps, arg, argNames);
+                ps.addBatch();
+                if (i % batchSize == 0) {
+                    result.add(ps.executeBatch());
+                    ps.clearBatch();
                 }
-                result.add(ps.executeBatch());
-                ps.clearBatch();
-                return result.build().flatMapToInt(IntStream::of).sum();
-            });
+                i++;
+            }
+            result.add(ps.executeBatch());
+            ps.clearBatch();
+            return result.build().flatMapToInt(IntStream::of).sum();
         } catch (Exception e) {
-            throw new SqlRuntimeException(printExceptionMessage(sql, preparedSql, args), e);
+            StringJoiner argSb = new StringJoiner(",\n");
+            int i = 0;
+            for (Map<String, ?> arg : args) {
+                if (i++ >= 10) {
+                    argSb.add("......");
+                    break;
+                }
+                argSb.add(arg.toString());
+            }
+            throw new SqlRuntimeException("SQL: " + sql + "\nArgs: " + argSb, e);
+        } finally {
+            JdbcUtil.closeStatement(ps);
+            releaseConnection(connection, getDataSource());
         }
     }
 
@@ -383,22 +367,24 @@ public abstract class JdbcSupport extends SqlParser {
      * @return affect row count
      */
     public int executeUpdate(@NotNull final String sql, Map<String, ?> args) {
-        SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepare(sql, args);
+        SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepareSql(sql, args);
         final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
-        final String preparedSql = sqlMetaData.getResultSql();
+        final String preparedSql = sqlMetaData.getPrepareSql();
         final Map<String, ?> myArgs = sqlMetaData.getArgs();
+        Connection connection = null;
+        PreparedStatement ps = null;
         try {
-            debugSql(sql, sqlMetaData.getNamedParamSql(), Collections.singletonList(myArgs));
-            return execute(preparedSql, sc -> {
-                sc.setQueryTimeout(queryTimeout(sql, myArgs));
-                if (myArgs.isEmpty()) {
-                    return sc.executeUpdate();
-                }
-                setPreparedSqlArgs(sc, myArgs, argNames);
-                return sc.executeUpdate();
-            });
+            connection = getConnection();
+            //noinspection SqlSourceToSinkFlow
+            ps = connection.prepareStatement(preparedSql);
+            ps.setQueryTimeout(queryTimeout(sql, myArgs));
+            setPreparedSqlArgs(ps, myArgs, argNames);
+            return ps.executeUpdate();
         } catch (Exception e) {
-            throw new SqlRuntimeException(printExceptionMessage(sql, preparedSql, myArgs), e);
+            throw new SqlRuntimeException("SQL: " + sql + "\nArgs: " + myArgs, e);
+        } finally {
+            JdbcUtil.closeStatement(ps);
+            releaseConnection(connection, getDataSource());
         }
     }
 
@@ -425,14 +411,25 @@ public abstract class JdbcSupport extends SqlParser {
      * @throws UncheckedSqlException execute procedure error
      */
     public DataRow executeCallStatement(@NotNull final String procedure, Map<String, Param> args) {
-        SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepare(procedure, args);
-        final String sql = sqlMetaData.getResultSql();
+        SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepareSql(procedure, args);
+        final String sql = sqlMetaData.getPrepareSql();
         final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
-        Connection connection = getConnection();
+        Connection connection = null;
         CallableStatement cs = null;
         try {
+            connection = getConnection();
+            //noinspection SqlSourceToSinkFlow
+            cs = connection.prepareCall(sql);
+            cs.setQueryTimeout(queryTimeout(procedure, args));
+
             List<String> outNames = new ArrayList<>();
             if (!args.isEmpty()) {
+                // adapt postgresql
+                // out and inout param first
+                setPreparedStoreOutParams(cs, args, argNames);
+                // in param next
+                setPreparedStoreInParams(cs, args, argNames);
+
                 for (String name : argNames.keySet()) {
                     if (args.containsKey(name)) {
                         ParamMode mode = args.get(name).getParamMode();
@@ -443,12 +440,8 @@ public abstract class JdbcSupport extends SqlParser {
                 }
             }
 
-            debugSql(procedure, sqlMetaData.getNamedParamSql(), Collections.singletonList(args));
-            //noinspection SqlSourceToSinkFlow
-            cs = connection.prepareCall(sql);
-            cs.setQueryTimeout(queryTimeout(procedure, args));
-            setPreparedStoreArgs(cs, args, argNames);
             cs.execute();
+
             JdbcUtil.printSqlConsole(cs);
 
             if (outNames.isEmpty()) {
@@ -476,36 +469,10 @@ public abstract class JdbcSupport extends SqlParser {
             }
             return DataRow.of(outNames.toArray(new String[0]), values);
         } catch (SQLException e) {
-            try {
-                JdbcUtil.closeStatement(cs);
-            } catch (SQLException ex) {
-                e.addSuppressed(ex);
-            }
-            cs = null;
-            releaseConnection(connection, getDataSource());
-            throw new SqlRuntimeException(printExceptionMessage(procedure, sql, args), e);
+            throw new SqlRuntimeException("PROCEDURE: " + procedure + "\nArgs: " + args, e);
         } finally {
-            try {
-                JdbcUtil.closeStatement(cs);
-            } catch (SQLException e) {
-                log.error("close statement error.", e);
-            }
+            JdbcUtil.closeStatement(cs);
             releaseConnection(connection, getDataSource());
         }
-    }
-
-    protected String printExceptionMessage(String sourceSql, String executeSql, Object args) {
-        return executeSql + "\n" + args;
-    }
-
-    /**
-     * Debug executed sql and args.
-     *
-     * @param sourceSql  sql name
-     * @param executeSql sql
-     * @param args       args
-     */
-    protected void debugSql(String sourceSql, String executeSql, Collection<? extends Map<String, ?>> args) {
-        log.debug("SQL: {}, Args: {}", executeSql, args);
     }
 }

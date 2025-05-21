@@ -44,7 +44,7 @@ public class Tests {
         String sql = "insert into test.user(idd,name,id,age,address) values (:id,:name::integer,:idd::float,integer :age,date :address)";
         SqlGenerator.GeneratedSqlMetaData pair = new SqlGenerator(':').generatePreparedSql(str, Collections.emptyMap());
         System.out.println(pair.getArgs());
-        System.out.println(pair.getResultSql());
+        System.out.println(pair.getPrepareSql());
     }
 
     @Test
@@ -54,7 +54,7 @@ public class Tests {
                 .add("date", "2020-12-23 ${time}")
                 .add("time", "11:23:44"));
         System.out.println(sql.getArgs());
-        System.out.println(sql.getResultSql());
+        System.out.println(sql.getPrepareSql());
     }
 
     @Test

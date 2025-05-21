@@ -24,7 +24,7 @@ import java.util.stream.Stream;
  * DSL query operator.
  *
  * @param <T>    entity type
- * @param <SELF> self type
+ * @param <SELF> self-type
  */
 public interface Query<T, SELF extends Query<T, SELF>> {
     /**

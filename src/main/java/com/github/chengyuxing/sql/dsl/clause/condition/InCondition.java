@@ -23,7 +23,7 @@ public class InCondition<T> extends Condition<Collection<T>> {
         Map<String, Object> params = new HashMap<>();
         Object[] values = ObjectUtil.toArray(value);
         for (int i = 0; i < values.length; i++) {
-            String key = valueKey + "__" + index + "_" + i;
+            String key = valueKey + "_" + index + "_" + i;
             sb.add(namedParamPrefix + key);
             params.put(key, values[i]);
         }

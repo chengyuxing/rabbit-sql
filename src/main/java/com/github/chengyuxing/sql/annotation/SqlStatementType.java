@@ -7,7 +7,9 @@ public enum SqlStatementType {
     delete,
     procedure,
     function,
+    dml,
     ddl,
     plsql,
+    batch,
     unset
 }

@@ -35,7 +35,7 @@ public class Condition<T> implements Criteria {
     }
 
     public String getKey(int index) {
-        return valueKey + "__" + index;
+        return valueKey + "_" + index;
     }
 
     @Override

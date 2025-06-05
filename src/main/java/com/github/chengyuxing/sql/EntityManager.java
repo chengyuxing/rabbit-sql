@@ -166,8 +166,8 @@ public class EntityManager implements AutoCloseable {
             return countSelect;
         }
 
-        public String getExistsSelect() {
-            return existsSelect;
+        public String getExistsSelect(String where) {
+            return "select exists (" + existsSelect + where + ")";
         }
 
         public String getInsert() {

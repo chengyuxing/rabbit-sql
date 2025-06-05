@@ -1,5 +1,9 @@
 # change note
 
+# 8.1.15
+
+- dsl query optimized.
+
 # 8.1.14
 
 - Some optimized.

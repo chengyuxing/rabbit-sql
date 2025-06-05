@@ -16,7 +16,6 @@ import org.jetbrains.annotations.Unmodifiable;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -29,8 +28,7 @@ import java.util.stream.Stream;
 public interface Query<T, SELF extends Query<T, SELF>> {
     /**
      * Where clause.
-     * <p>Support flatten style and nested style to build the complex condition struct, and invoke
-     * {@link Where#peek(BiConsumer)} to check the build result.</p>
+     * <p>Support flatten style and nested style to build the complex condition struct.</p>
      * <p>By default, all condition concat with {@code and}, excepted {@link Where#and(Function, boolean...)}
      * and {@link Where#or(Function, boolean...)} .</p>
      * SQL:
@@ -108,12 +106,12 @@ public interface Query<T, SELF extends Query<T, SELF>> {
     SELF deselect(@NotNull List<FieldReference<T>> columns);
 
     /**
-     * Check the built result currently.
+     * Fetch top number pieces of data.
      *
-     * @param consumer (sql, (name parameter sql, params)) -&gt; _
-     * @return self
+     * @param n number
+     * @return stream
      */
-    SELF peek(@NotNull BiConsumer<String, Pair<String, Map<String, Object>>> consumer);
+    SELF top(@Range(from = 1, to = Integer.MAX_VALUE) int n);
 
     /**
      * Collect result to DataRow stream (use {@code try-with-resource} to close at the end).
@@ -124,7 +122,7 @@ public interface Query<T, SELF extends Query<T, SELF>> {
     Stream<DataRow> toRowStream();
 
     /**
-     * Collect result to DataRow stream (use {@code try-with-resource} to close at the end).
+     * Collect result to entity stream (use {@code try-with-resource} to close at the end).
      *
      * @return stream
      * @see com.github.chengyuxing.sql.support.JdbcSupport#executeQueryStream(String, Map) java8 stream query

@@ -228,7 +228,6 @@ public class NewBakiTests {
                                 .in(Guest::getName, Arrays.asList("cyx", "jack"))
                         )
                         .of(Guest::getAddress, () -> "~", "kunming")
-                        .peek((a, b) -> System.out.println(a))
                 )
                 .groupBy(g -> g.count()
                         .max(Guest::getAge)
@@ -270,8 +269,6 @@ public class NewBakiTests {
                 .where(w -> w.and(o -> o.lt(Guest::getAge, 15)
                                 .gt(Guest::getAge, 60))
                         .eq(Guest::getName, "cyx")
-
-                        .peek((sql, arg) -> System.out.println(sql))
                 )
                 .deselect(Arrays.asList(Guest::getId, Guest::getAge))
                 .toList()
@@ -287,7 +284,6 @@ public class NewBakiTests {
                                         .or(r -> r.eq(Guest::getName, "jack")
                                                 .eq(Guest::getAge, 60))
                                 )
-                                .peek((sql, arg) -> System.out.println(sql))
                 )
                 .toList();
     }

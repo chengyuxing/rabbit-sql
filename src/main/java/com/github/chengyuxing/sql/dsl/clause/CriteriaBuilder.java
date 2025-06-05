@@ -48,7 +48,7 @@ public abstract class CriteriaBuilder<T> extends ColumnHelper<T> {
                     sb.append(result.getItem1());
                     params.putAll(result.getItem2());
                 } else if (condition instanceof BetweenCondition) {
-                    Pair<String, Map<String, Object>> result = ((BetweenCondition) condition).buildStatement(unique, namedParamPrefix());
+                    @SuppressWarnings({"rawtypes", "unchecked"}) Pair<String, Map<String, Object>> result = ((BetweenCondition) condition).buildStatement(unique, namedParamPrefix());
                     sb.append(result.getItem1());
                     params.putAll(result.getItem2());
                 } else {
@@ -93,7 +93,7 @@ public abstract class CriteriaBuilder<T> extends ColumnHelper<T> {
             if (i < j - 1) {
                 sb.append("\n").append(ident);
                 Criteria next = criteriaList.get(i + 1);
-                // set current logical operator where the next 'and' and 'or' group invoked
+                // set the current logical operator where the next 'and' and 'or' group invoked
                 if (next instanceof AndGroup) {
                     sb.append(Logic.AND.padWithSpace());
                 } else if (next instanceof OrGroup) {

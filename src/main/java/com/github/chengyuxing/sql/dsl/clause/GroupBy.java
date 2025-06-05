@@ -1,5 +1,6 @@
 package com.github.chengyuxing.sql.dsl.clause;
 
+import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.sql.dsl.types.FieldReference;
 import com.github.chengyuxing.sql.dsl.types.StandardAggFunction;
 import org.jetbrains.annotations.NotNull;
@@ -13,7 +14,7 @@ import java.util.function.Function;
  * @param <T> entity type
  */
 public abstract class GroupBy<T> extends ColumnHelper<T> {
-    protected final Set<String> aggColumns = new LinkedHashSet<>();
+    protected final Set<Pair<String, String>> aggColumns = new LinkedHashSet<>();
     protected final Set<String> groupColumns = new LinkedHashSet<>();
 
     /**
@@ -23,18 +24,6 @@ public abstract class GroupBy<T> extends ColumnHelper<T> {
      */
     protected GroupBy(@NotNull Class<T> clazz) {
         super(clazz);
-    }
-
-    /**
-     * Construct a new Group by builder with initial Group by builder.
-     *
-     * @param clazz entity class
-     * @param other group by builder
-     */
-    protected GroupBy(@NotNull Class<T> clazz, @NotNull GroupBy<T> other) {
-        super(clazz);
-        this.aggColumns.addAll(other.aggColumns);
-        this.groupColumns.addAll(other.groupColumns);
     }
 
     /**
@@ -136,27 +125,29 @@ public abstract class GroupBy<T> extends ColumnHelper<T> {
     private void addAggColumn(StandardAggFunction aggFunction, String column) {
         if (aggFunction == StandardAggFunction.COUNT) {
             if (column.equals("*")) {
-                aggColumns.add(aggFunction.apply(column) + columnWithAlias(aggFunction.getName(), "all"));
+                aggColumns.add(Pair.of(aggFunction.apply(column), columnAlias(aggFunction.getName(), "all")));
                 return;
             }
         }
         if (isIllegalColumn(column)) {
             throw new IllegalArgumentException("Illegal agg function column: '" + column + "'");
         }
-        aggColumns.add(aggFunction.apply(column) + columnWithAlias(aggFunction.getName(), column));
+        aggColumns.add(Pair.of(aggFunction.apply(column), columnAlias(aggFunction.getName(), column)));
     }
 
-    private String columnWithAlias(String aggName, String column) {
-        return " as " + aggName + "_" + column;
+    private String columnAlias(String aggName, String column) {
+        return aggName + "_" + column;
     }
 
     protected final @NotNull Set<String> getSelectColumns() {
         Set<String> columns = new LinkedHashSet<>(groupColumns);
-        columns.addAll(aggColumns);
+        for (Pair<String, String> p : aggColumns) {
+            columns.add(p.getItem1() + " as " + p.getItem2());
+        }
         return columns;
     }
 
-    protected final String buildGroupByClause() {
+    protected final String build() {
         if (groupColumns.isEmpty()) {
             return "";
         }

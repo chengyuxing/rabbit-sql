@@ -30,7 +30,7 @@ public class Condition<T> implements Criteria {
         return operator;
     }
 
-    public Object getValue() {
+    public T getValue() {
         return value;
     }
 

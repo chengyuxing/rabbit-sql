@@ -25,17 +25,6 @@ public abstract class OrderBy<T> extends ColumnHelper<T> {
     }
 
     /**
-     * Construct a new Order by builder with initial Order by builder.
-     *
-     * @param clazz entity class
-     * @param other order by builder
-     */
-    public OrderBy(@NotNull Class<T> clazz, @NotNull OrderBy<T> other) {
-        super(clazz);
-        this.orders.addAll(other.orders);
-    }
-
-    /**
      * Order by.
      *
      * @param column column

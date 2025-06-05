@@ -11,7 +11,7 @@ import java.util.Map;
 @FunctionalInterface
 public interface QueryTimeoutHandler {
     /**
-     * Do handle sql execute timeout.
+     * Do handle SQL execute timeout.
      *
      * @param sql  sql
      * @param args args

@@ -6,18 +6,19 @@ import baki.entity.User;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.io.FileResource;
+import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.sql.*;
+import com.github.chengyuxing.sql.dsl.types.OrderByType;
 import com.github.chengyuxing.sql.dsl.types.StandardOperator;
 import com.github.chengyuxing.sql.page.PageHelper;
+import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.github.chengyuxing.sql.plugins.PageHelperProvider;
-import com.github.chengyuxing.sql.plugins.SqlWatcher;
 import com.github.chengyuxing.sql.support.executor.QueryExecutor;
 import com.github.chengyuxing.sql.transaction.Tx;
 import com.github.chengyuxing.sql.types.StandardOutParamType;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.utils.JdbcUtil;
-import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -55,7 +56,7 @@ public class NewBakiTests {
             }
             JdbcUtil.setStatementValue(ps, index, value);
         });
-        bakiDao.setSqlWatcher(new SqlWatcher.SqlWatchLogger());
+//        bakiDao.setSqlWatcher(new SqlWatcher.SqlWatchLogger());
 
 //        bakiDao.setQueryCacheManager(new QueryCacheManager() {
 //            @Override
@@ -99,7 +100,7 @@ public class NewBakiTests {
                 if (dbName.equals("kingbasees")) {
                     return new PGPageHelper();
                 }
-                return null;
+                return new OraclePageHelper();
             }
         });
     }
@@ -187,10 +188,13 @@ public class NewBakiTests {
     public void testDslQuery4() {
         Object res = baki.entity(Guest.class)
                 .query()
-                .where(w -> w.gt(Guest::getId, 10))
-                .groupBy(g -> g.count().by(Guest::getAge).having(h -> h.count(StandardOperator.GT, 1)))
+                .where(w -> w.gt(Guest::getAge, 1))
+                .groupBy(g -> g.count().by(Guest::getAge).having(h -> h.count(StandardOperator.GT, 0)))
                 .orderBy(o -> o.asc(Guest::getAge))
-                .toPagedRowResource(1, 10)
+                .top(5)
+                .toList()
+//                .toRows()
+//                .toPagedResource(1, 10)
 //                .count()
 //                .exists()
                 ;
@@ -211,11 +215,12 @@ public class NewBakiTests {
                 .where(g -> g.gt(Guest::getId, 5))
                 .where(g -> g.lt(Guest::getId, 10))
                 .where(g -> g.or(o -> o.in(Guest::getId, Arrays.asList(17, 18, 19))))
+                .orderBy(o -> o.asc(Guest::getAge))
                 .toList()
                 .forEach(System.out::println);
 
         System.out.println("---");
-
+//
         Object sql = baki.entity(Guest.class).query()
                 .where(g -> g.gt(Guest::getId, 5)
                         .lt(Guest::getId, 10)
@@ -236,7 +241,6 @@ public class NewBakiTests {
                                 .in(Guest::getName, Arrays.asList("cyx", "jack"))
                         )
                         .of(Guest::getAddress, () -> "~", "kunming")
-                        .peek((a, b) -> System.out.println(a))
                 )
                 .groupBy(g -> g.count()
                         .max(Guest::getAge)
@@ -248,7 +252,7 @@ public class NewBakiTests {
                         .by(Guest::getAge)
                         .having(h -> h.count(StandardOperator.GT, 1))
                 )
-                .orderBy(o -> o.asc(Guest::getAge))
+                .orderBy(o -> o.by("max_age", OrderByType.DESC))
                 .toList()
                 .forEach(System.out::println)
         ;
@@ -256,10 +260,12 @@ public class NewBakiTests {
 
     @Test
     public void testDslGroupBy() {
-        PagedResource<DataRow> res = baki.entity(Guest.class).query()
+        PagedResource<Guest> res = baki.entity(Guest.class).query()
                 .where(w -> w.gt(Guest::getAge, 23))
                 .groupBy(g -> g.count(Guest::getId).max(Guest::getAge).by(Guest::getAge)
-                        .having(h -> h.min(Guest::getId, StandardOperator.IS_NOT_NULL, 18980)))
+                        .having(h -> h.min(Guest::getId, StandardOperator.IS_NOT_NULL, 18980))
+                        .having(h -> h.max(Guest::getId, StandardOperator.BETWEEN, Pair.of(1, 10)))
+                )
                 .groupBy(g -> g.sum(Guest::getAge)
                         .by(Guest::getName)
                         .having(h -> h.sum(Guest::getAge, StandardOperator.GT, 935))
@@ -268,7 +274,7 @@ public class NewBakiTests {
                                         .max(Guest::getAge, StandardOperator.EQ, 1)))
                 )
                 .orderBy(o -> o.asc(Guest::getAge))
-                .toPagedRowResource(1, 5);
+                .toPagedResource(1, 5);
         System.out.println(res);
     }
 
@@ -278,8 +284,6 @@ public class NewBakiTests {
                 .where(w -> w.and(o -> o.lt(Guest::getAge, 15)
                                 .gt(Guest::getAge, 60))
                         .eq(Guest::getName, "cyx")
-
-                        .peek((sql, arg) -> System.out.println(sql))
                 )
                 .deselect(Arrays.asList(Guest::getId, Guest::getAge))
                 .toList()
@@ -295,7 +299,6 @@ public class NewBakiTests {
                                         .or(r -> r.eq(Guest::getName, "jack")
                                                 .eq(Guest::getAge, 60))
                                 )
-                                .peek((sql, arg) -> System.out.println(sql))
                 )
                 .toList();
     }

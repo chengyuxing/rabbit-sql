@@ -7,24 +7,22 @@ import com.github.chengyuxing.sql.dsl.types.StandardOperator;
 import java.util.HashMap;
 import java.util.Map;
 
-public class BetweenCondition extends Condition<Object> {
-    public BetweenCondition(String column, StandardOperator operator, Pair<Object, Object> value) {
+public class BetweenCondition<T> extends Condition<Pair<T, T>> {
+    public BetweenCondition(String column, StandardOperator operator, Pair<T, T> value) {
         super(column, operator, value);
     }
 
-    public BetweenCondition(String column, StandardOperator operator, Object value, String valueKey) {
+    public BetweenCondition(String column, StandardOperator operator, Pair<T, T> value, String valueKey) {
         super(column, operator, value, valueKey);
     }
 
     public Pair<String, Map<String, Object>> buildStatement(int index, char namedParamPrefix) {
-        //noinspection unchecked
-        Pair<Object, Object> pair = (Pair<Object, Object>) value;
         String a = valueKey + "_" + index + "_0";
         String b = valueKey + "_" + index + "_1";
         String statement = column + operator.padWithSpace() + namedParamPrefix + a + Logic.AND.padWithSpace() + namedParamPrefix + b;
         Map<String, Object> params = new HashMap<>();
-        params.put(a, pair.getItem1());
-        params.put(b, pair.getItem2());
+        params.put(a, value.getItem1());
+        params.put(b, value.getItem2());
         return Pair.of(statement, params);
     }
 }

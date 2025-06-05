@@ -14,7 +14,6 @@ import com.github.chengyuxing.sql.dsl.clause.condition.Criteria;
 import com.github.chengyuxing.sql.dsl.types.FieldReference;
 import com.github.chengyuxing.sql.dsl.types.OrderByType;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
-import com.github.chengyuxing.sql.exceptions.IllegalSqlException;
 import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 import com.github.chengyuxing.sql.page.IPageable;
 import com.github.chengyuxing.sql.page.PageHelper;
@@ -38,7 +37,6 @@ import javax.sql.DataSource;
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -322,63 +320,94 @@ public class BakiDao extends JdbcSupport implements Baki {
             public <SELF extends Query<T, SELF>> Query<T, SELF> query() {
                 return new Query<T, SELF>() {
                     private final Set<String> selectColumns = new LinkedHashSet<>();
-                    private final List<Criteria> finalWhereCriteria = new ArrayList<>();
-                    private final Set<Pair<String, OrderByType>> finalOrderBy = new LinkedHashSet<>();
-                    private final Set<String> finalGroupByAggColumns = new LinkedHashSet<>();
-                    private final Set<String> finalGroupByColumns = new LinkedHashSet<>();
-                    private final List<Criteria> finalHavingCriteria = new ArrayList<>();
+                    private final List<Criteria> whereCriteria = new ArrayList<>();
+                    private final Set<Pair<String, OrderByType>> orderByColumns = new LinkedHashSet<>();
+                    private final Set<Pair<String, String>> groupByAggColumns = new LinkedHashSet<>();
+                    private final Set<String> groupByColumns = new LinkedHashSet<>();
+                    private final List<Criteria> havingCriteria = new ArrayList<>();
+                    private int topN = 0;
 
-                    private Triple<String, String, Map<String, Object>> createQuery() {
-                        String select = selectColumns.isEmpty() ? entityMeta.getSelect() : entityMeta.getSelect(selectColumns);
+                    /**
+                     * Create query sql object.
+                     * @param enableTopN do limit top number or not
+                     * @return [record query, count query, args]
+                     */
+                    private Triple<String, String, Map<String, Object>> createQuery(boolean enableTopN) {
+                        final InternalWhere<T> where = new InternalWhere<>(clazz, whereCriteria);
+                        final InternalGroupBy<T> groupBy = new InternalGroupBy<>(clazz, groupByAggColumns, groupByColumns);
+                        final InternalHaving<T> having = new InternalHaving<>(clazz, havingCriteria);
+                        final InternalOrderBy<T> orderBy = new InternalOrderBy<>(clazz, orderByColumns, groupByAggColumns);
+
+                        boolean hasGroupBy = !groupByColumns.isEmpty();
+
+                        // select a, b, c from table
+                        String recordSelect = selectColumns.isEmpty() ? entityMeta.getSelect() : entityMeta.getSelect(selectColumns);
+                        // select count(*) from table
                         String countSelect = entityMeta.getCountSelect();
-
-                        Pair<String, Map<String, Object>> where = new InternalWhere<>(clazz, finalWhereCriteria).getWhere();
-                        if (!where.getItem1().isEmpty()) {
-                            select += where.getItem1();
-                            countSelect += where.getItem1();
+                        if (hasGroupBy) {
+                            // select a, max(a), count(*) from table
+                            recordSelect = entityMeta.getSelect(groupBy.getAllSelectColumns());
+                            // select a from table
+                            countSelect = entityMeta.getSelect(groupBy.getGroupColumns());
                         }
-                        String orderBy = new InternalOrderBy<>(clazz, finalOrderBy).getOrderBy();
-                        if (!orderBy.isEmpty()) {
-                            select += orderBy;
-                        }
-                        return Triple.of(select, countSelect, where.getItem2());
-                    }
 
-                    private InternalGroupBy<T> createGroupByObject() {
-                        Pair<String, Map<String, Object>> where = new InternalWhere<>(clazz, finalWhereCriteria).getWhere();
-                        String orderBy = new InternalOrderBy<>(clazz, finalOrderBy).getOrderBy();
-                        InternalGroupBy<T> groupBy = new InternalGroupBy<>(clazz, finalGroupByAggColumns, finalGroupByColumns, finalHavingCriteria);
-                        groupBy.setWhereClause(where.getItem1());
-                        groupBy.setOrderByClause(orderBy);
-                        groupBy.setArgs(where.getItem2());
-                        return groupBy;
+                        // where
+                        Pair<String, Map<String, Object>> w = where.getWhereClause();
+                        recordSelect += w.getItem1();
+                        countSelect += w.getItem1();
+
+                        // group by
+                        recordSelect += groupBy.getGroupByClause();
+                        countSelect += groupBy.getGroupByClause();
+
+                        // having
+                        Pair<String, Map<String, Object>> h = having.getHavingClause();
+                        recordSelect += h.getItem1();
+                        countSelect += h.getItem1();
+
+                        // order by
+                        recordSelect += orderBy.getOrderBy();
+
+                        // select count(*) from (select id from table group by id) t
+                        if (hasGroupBy) {
+                            countSelect = sqlGenerator.generateCountQuery(countSelect);
+                        }
+
+                        Map<String, Object> allArgs = new HashMap<>(w.getItem2());
+                        allArgs.putAll(h.getItem2());
+
+                        if (enableTopN && topN > 0) {
+                            PageHelper pageHelper = builtinPager();
+                            pageHelper.init(1, topN, topN);
+                            recordSelect = pageHelper.pagedSql(namedParamPrefix, recordSelect);
+                            allArgs.putAll(pageHelper.pagedArgs());
+                        }
+
+                        return Triple.of(recordSelect, countSelect, allArgs);
                     }
 
                     @Override
                     public SELF where(@NotNull Function<Where<T>, Where<T>> where) {
-                        Where<T> gotten = where.apply(new InternalWhere<>(clazz));
-                        InternalWhere<T> wrapper = new InternalWhere<>(clazz, gotten);
-                        finalWhereCriteria.addAll(wrapper.getCriteria());
+                        InternalWhere<T> gotten = (InternalWhere<T>) where.apply(new InternalWhere<>(clazz));
+                        whereCriteria.addAll(gotten.getCriteria());
                         //noinspection unchecked
                         return (SELF) this;
                     }
 
                     @Override
                     public SELF groupBy(@NotNull Function<GroupBy<T>, GroupBy<T>> groupBy) {
-                        GroupBy<T> gotten = groupBy.apply(new InternalGroupBy<>(clazz));
-                        InternalGroupBy<T> wrapper = new InternalGroupBy<>(clazz, gotten);
-                        finalGroupByAggColumns.addAll(wrapper.getAggColumns());
-                        finalGroupByColumns.addAll(wrapper.getGroupColumns());
-                        finalHavingCriteria.addAll(wrapper.getHavingCriteria());
+                        InternalGroupBy<T> gotten = (InternalGroupBy<T>) groupBy.apply(new InternalGroupBy<>(clazz));
+                        groupByAggColumns.addAll(gotten.getAggColumns());
+                        groupByColumns.addAll(gotten.getGroupColumns());
+                        havingCriteria.addAll(gotten.getHavingCriteria());
                         //noinspection unchecked
                         return (SELF) this;
                     }
 
                     @Override
                     public SELF orderBy(@NotNull Function<OrderBy<T>, OrderBy<T>> orderBy) {
-                        OrderBy<T> gotten = orderBy.apply(new InternalOrderBy<>(clazz));
-                        InternalOrderBy<T> wrapper = new InternalOrderBy<>(clazz, gotten);
-                        finalOrderBy.addAll(wrapper.getOrders());
+                        InternalOrderBy<T> gotten = (InternalOrderBy<T>) orderBy.apply(new InternalOrderBy<>(clazz));
+                        orderByColumns.addAll(gotten.getOrders());
                         //noinspection unchecked
                         return (SELF) this;
                     }
@@ -415,25 +444,16 @@ public class BakiDao extends JdbcSupport implements Baki {
                     }
 
                     @Override
-                    public SELF peek(@NotNull BiConsumer<String, Pair<String, Map<String, Object>>> consumer) {
-                        Triple<String, String, Map<String, Object>> query = createQuery();
-                        consumer.accept(query.getItem1(), Pair.of(query.getItem2(), Collections.unmodifiableMap(query.getItem3())));
+                    public SELF top(@Range(from = 1, to = Integer.MAX_VALUE) int n) {
+                        topN = n;
                         //noinspection unchecked
                         return (SELF) this;
                     }
 
                     @Override
                     public Stream<DataRow> toRowStream() {
-                        // there is no any group by columns, just execute query without group by clause.
-                        if (finalGroupByColumns.isEmpty()) {
-                            if (!finalGroupByAggColumns.isEmpty()) {
-                                throw new IllegalStateException("group by clause must have at least one column");
-                            }
-                            Triple<String, String, Map<String, Object>> query = createQuery();
-                            return executeQueryStream(query.getItem1(), query.getItem3());
-                        }
-                        Pair<String, Map<String, Object>> query = createGroupByObject().getQuerySql();
-                        return executeQueryStream(query.getItem1(), query.getItem2());
+                        Triple<String, String, Map<String, Object>> query = createQuery(true);
+                        return executeQueryStream(query.getItem1(), query.getItem3());
                     }
 
                     @Override
@@ -471,11 +491,11 @@ public class BakiDao extends JdbcSupport implements Baki {
                     public @NotNull PagedResource<T> toPagedResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
                                                                      @Range(from = 1, to = Integer.MAX_VALUE) int size,
                                                                      @Nullable PageHelperProvider pageHelperProvider) {
-                        Triple<String, String, Map<String, Object>> query = createQuery();
+                        Triple<String, String, Map<String, Object>> query = createQuery(false);
                         return new SimplePageable(query.getItem1(), page, size)
+                                .count(query.getItem2())
                                 .args(query.getItem3())
                                 .pageHelper(pageHelperProvider)
-                                .count(query.getItem2())
                                 .collect(d -> EntityUtil.mapToEntity(d, clazz));
                     }
 
@@ -489,36 +509,11 @@ public class BakiDao extends JdbcSupport implements Baki {
                     public @NotNull PagedResource<DataRow> toPagedRowResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
                                                                               @Range(from = 1, to = Integer.MAX_VALUE) int size,
                                                                               @Nullable PageHelperProvider pageHelperProvider) {
-                        String query;
-                        String countQuery;
-                        Map<String, Object> args;
-                        if (finalGroupByColumns.isEmpty()) {
-                            if (!finalGroupByAggColumns.isEmpty()) {
-                                throw new IllegalStateException("group by clause must have at least one column");
-                            }
-                            Triple<String, String, Map<String, Object>> queryObj = createQuery();
-                            query = queryObj.getItem1();
-                            countQuery = queryObj.getItem2();
-                            args = queryObj.getItem3();
-                        } else {
-                            // group by paged query
-                            InternalGroupBy<T> groupBy = createGroupByObject();
-
-                            Pair<String, Map<String, Object>> querySqlObj = groupBy.getQuerySql();
-                            query = querySqlObj.getItem1();
-                            args = querySqlObj.getItem2();
-
-                            countQuery = sqlGenerator.generateCountQuery(
-                                    entityMeta.getSelect(groupBy.getGroupColumns()) +
-                                            groupBy.getWhereClause() +
-                                            groupBy.getGroupByClause() +
-                                            groupBy.getHavingClause().getItem1()
-                            );
-                        }
-                        return new SimplePageable(query, page, size)
-                                .args(args)
+                        Triple<String, String, Map<String, Object>> query = createQuery(false);
+                        return new SimplePageable(query.getItem1(), page, size)
+                                .count(query.getItem2())
+                                .args(query.getItem3())
                                 .pageHelper(pageHelperProvider)
-                                .count(countQuery)
                                 .collect();
                     }
 
@@ -530,47 +525,20 @@ public class BakiDao extends JdbcSupport implements Baki {
 
                     @Override
                     public boolean exists() {
-                        String query = entityMeta.getExistsSelect();
-                        Pair<String, Map<String, Object>> where = new InternalWhere<>(clazz, finalWhereCriteria).getWhere();
+                        Pair<String, Map<String, Object>> where = new InternalWhere<>(clazz, whereCriteria).getWhereClause();
                         if (where.getItem1().isEmpty()) {
-                            throw new IllegalSqlException("Exists query must have condition.");
+                            throw new IllegalStateException("where condition is required.");
                         }
-                        query += where.getItem1();
-                        final String existQuery = query;
-                        try (Stream<DataRow> s = executeQueryStream(existQuery, where.getItem2())) {
+                        String query = entityMeta.getExistsSelect(where.getItem1());
+                        try (Stream<DataRow> s = executeQueryStream(query, where.getItem2())) {
                             return s.findFirst().isPresent();
                         }
                     }
 
                     @Override
                     public @Range(from = 0, to = Long.MAX_VALUE) long count() {
-                        String countSelect;
-                        Map<String, Object> args = Collections.emptyMap();
-                        if (finalGroupByColumns.isEmpty()) {
-                            if (!finalGroupByAggColumns.isEmpty()) {
-                                throw new IllegalStateException("group by clause must have at least one column");
-                            }
-                            countSelect = entityMeta.getCountSelect();
-
-                            Pair<String, Map<String, Object>> where = new InternalWhere<>(clazz, finalWhereCriteria).getWhere();
-                            if (!where.getItem1().isEmpty()) {
-                                countSelect += where.getItem1();
-                                args = where.getItem2();
-                            }
-                        } else {
-                            InternalGroupBy<T> groupBy = createGroupByObject();
-
-                            countSelect = sqlGenerator.generateCountQuery(
-                                    entityMeta.getSelect(groupBy.getGroupColumns()) +
-                                            groupBy.getWhereClause() +
-                                            groupBy.getGroupByClause() +
-                                            groupBy.getHavingClause().getItem1()
-                            );
-                            args = groupBy.getQuerySql().getItem2();
-                        }
-                        final String countQuery = countSelect;
-                        final Map<String, Object> myArgs = args;
-                        try (Stream<DataRow> s = executeQueryStream(countQuery, myArgs)) {
+                        Triple<String, String, Map<String, Object>> query = createQuery(true);
+                        try (Stream<DataRow> s = executeQueryStream(query.getItem2(), query.getItem3())) {
                             return s.findFirst()
                                     .map(d -> d.getLong(0))
                                     .orElse(0L);
@@ -605,7 +573,7 @@ public class BakiDao extends JdbcSupport implements Baki {
 
                     @Override
                     public @NotNull Pair<String, Map<String, Object>> getSql() {
-                        Triple<String, String, Map<String, Object>> query = createQuery();
+                        Triple<String, String, Map<String, Object>> query = createQuery(true);
                         return Pair.of(query.getItem1(), Collections.unmodifiableMap(query.getItem3()));
                     }
                 };
@@ -744,24 +712,18 @@ public class BakiDao extends JdbcSupport implements Baki {
 
     final class InternalWhere<T> extends Where<T> {
         private final Class<T> clazz;
-        private final Map<String, EntityManager.ColumnMeta> columns;
+        private final Set<String> columns = new HashSet<>();
 
         InternalWhere(Class<T> clazz) {
             super(clazz);
             this.clazz = clazz;
-            this.columns = entityManager.getColumns(this.clazz);
-        }
-
-        InternalWhere(Class<T> clazz, Where<T> other) {
-            super(clazz, other);
-            this.clazz = clazz;
-            this.columns = entityManager.getColumns(clazz);
+            this.columns.addAll(entityManager.getColumns(this.clazz).keySet());
         }
 
         InternalWhere(Class<T> clazz, List<Criteria> criteria) {
             super(clazz);
             this.clazz = clazz;
-            this.columns = entityManager.getColumns(clazz);
+            this.columns.addAll(entityManager.getColumns(clazz).keySet());
             this.criteria.addAll(criteria);
         }
 
@@ -777,7 +739,7 @@ public class BakiDao extends JdbcSupport implements Baki {
 
         @Override
         protected Set<String> columnWhiteList() {
-            return columns.keySet();
+            return columns;
         }
 
         @Override
@@ -785,7 +747,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             return operatorWhiteList;
         }
 
-        private Pair<String, Map<String, Object>> getWhere() {
+        private Pair<String, Map<String, Object>> getWhereClause() {
             return build();
         }
 
@@ -795,22 +757,20 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     final class InternalOrderBy<T> extends OrderBy<T> {
-        private final Map<String, EntityManager.ColumnMeta> columns;
+        private final Set<String> columns = new HashSet<>();
 
         InternalOrderBy(Class<T> clazz) {
             super(clazz);
-            this.columns = entityManager.getColumns(clazz);
+            this.columns.addAll(entityManager.getColumns(clazz).keySet());
         }
 
-        InternalOrderBy(Class<T> clazz, OrderBy<T> other) {
-            super(clazz, other);
-            this.columns = entityManager.getColumns(clazz);
-        }
-
-        InternalOrderBy(Class<T> clazz, Set<Pair<String, OrderByType>> orders) {
+        InternalOrderBy(Class<T> clazz, Set<Pair<String, OrderByType>> orders, Set<Pair<String, String>> groupByAggColumns) {
             super(clazz);
-            this.columns = entityManager.getColumns(clazz);
             this.orders.addAll(orders);
+            this.columns.addAll(entityManager.getColumns(clazz).keySet());
+            for (Pair<String, String> p : groupByAggColumns) {
+                this.columns.add(p.getItem2());
+            }
         }
 
         private Set<Pair<String, OrderByType>> getOrders() {
@@ -823,7 +783,7 @@ public class BakiDao extends JdbcSupport implements Baki {
 
         @Override
         protected Set<String> columnWhiteList() {
-            return columns.keySet();
+            return columns;
         }
 
         @Override
@@ -833,41 +793,31 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     final class InternalGroupBy<T> extends GroupBy<T> {
-        private final Map<String, EntityManager.ColumnMeta> columns;
-        private String whereClause = "";
-        private String orderByClause = "";
-        private Map<String, Object> args = Collections.emptyMap();
+        private final Set<String> columns = new HashSet<>();
         private final List<Criteria> havingCriteria = new ArrayList<>();
 
         InternalGroupBy(@NotNull Class<T> clazz) {
             super(clazz);
-            this.columns = entityManager.getColumns(clazz);
+            this.columns.addAll(entityManager.getColumns(clazz).keySet());
         }
 
-        InternalGroupBy(@NotNull Class<T> clazz, Set<String> aggColumns, Set<String> groupColumns, List<Criteria> havingCriteria) {
+        InternalGroupBy(@NotNull Class<T> clazz, Set<Pair<String, String>> aggColumns, Set<String> groupColumns) {
             super(clazz);
-            this.columns = entityManager.getColumns(clazz);
+            this.columns.addAll(entityManager.getColumns(clazz).keySet());
             this.groupColumns.addAll(groupColumns);
             this.aggColumns.addAll(aggColumns);
-            this.havingCriteria.addAll(havingCriteria);
-        }
-
-        InternalGroupBy(@NotNull Class<T> clazz, GroupBy<T> other) {
-            super(clazz, other);
-            this.columns = entityManager.getColumns(clazz);
         }
 
         @Override
         public GroupBy<T> having(Function<Having<T>, Having<T>> having) {
-            Having<T> gotten = having.apply(new InternalHaving<>(clazz));
-            InternalHaving<T> wrapper = new InternalHaving<>(clazz, gotten);
-            havingCriteria.addAll(wrapper.getCriteria());
+            InternalHaving<T> gotten = (InternalHaving<T>) having.apply(new InternalHaving<>(clazz));
+            havingCriteria.addAll(gotten.getCriteria());
             return this;
         }
 
         @Override
         protected Set<String> columnWhiteList() {
-            return columns.keySet();
+            return columns;
         }
 
         @Override
@@ -875,84 +825,30 @@ public class BakiDao extends JdbcSupport implements Baki {
             return operatorWhiteList;
         }
 
-        private Pair<String, Map<String, Object>> getQuerySql() {
-            Map<String, Object> allArgs = new HashMap<>();
-            String query = entityManager.getEntityMeta(clazz).getSelect(getSelectColumns());
-            if (!whereClause.isEmpty()) {
-                query += whereClause;
-            }
-
-            String groupByClause = buildGroupByClause();
-            if (!groupByClause.isEmpty()) {
-                query += groupByClause;
-            }
-
-            Pair<String, Map<String, Object>> having = new InternalHaving<>(clazz, havingCriteria).getHavingClause();
-            if (!having.getItem1().isEmpty()) {
-                query += having.getItem1();
-            }
-
-            if (!orderByClause.isEmpty()) {
-                query += orderByClause;
-            }
-            allArgs.putAll(args);
-            allArgs.putAll(having.getItem2());
-            return Pair.of(query, allArgs);
-        }
-
-        private Pair<String, Map<String, Object>> getHavingClause() {
-            return new InternalHaving<>(clazz, havingCriteria).getHavingClause();
-        }
-
         private List<Criteria> getHavingCriteria() {
             return havingCriteria;
         }
 
-        public Map<String, Object> getArgs() {
-            return args;
-        }
-
-        public String getWhereClause() {
-            return whereClause;
-        }
-
-        public String getOrderByClause() {
-            return orderByClause;
-        }
-
         public String getGroupByClause() {
-            return buildGroupByClause();
-        }
-
-        private void setWhereClause(String whereClause) {
-            this.whereClause = whereClause;
-        }
-
-        private void setOrderByClause(String orderByClause) {
-            this.orderByClause = orderByClause;
-        }
-
-        private void setArgs(Map<String, Object> args) {
-            this.args = args;
+            return build();
         }
 
         private Set<String> getGroupColumns() {
             return groupColumns;
         }
 
-        private Set<String> getAggColumns() {
+        private Set<Pair<String, String>> getAggColumns() {
             return aggColumns;
+        }
+
+        private Set<String> getAllSelectColumns() {
+            return getSelectColumns();
         }
     }
 
     final class InternalHaving<T> extends Having<T> {
-
         InternalHaving(@NotNull Class<T> clazz) {
             super(clazz);
-        }
-
-        InternalHaving(@NotNull Class<T> clazz, Having<T> other) {
-            super(clazz, other);
         }
 
         InternalHaving(@NotNull Class<T> clazz, List<Criteria> criteria) {
@@ -1015,7 +911,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
 
             if (pageHelper == null) {
-                pageHelper = defaultPager();
+                pageHelper = builtinPager();
             }
             pageHelper.init(page, size, count);
             Args<Integer> pagedArgs = pageHelper.pagedArgs();
@@ -1038,7 +934,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @throws UnsupportedOperationException there is no default implementation of your database
      * @throws ConnectionStatusException     connection status exception
      */
-    protected PageHelper defaultPager() {
+    protected PageHelper builtinPager() {
         if (Objects.nonNull(globalPageHelperProvider)) {
             PageHelper pageHelper = globalPageHelperProvider.customPageHelper(metaData, databaseId, namedParamPrefix);
             if (Objects.nonNull(pageHelper)) {
@@ -1077,7 +973,6 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @param args args
      * @return sql
      * @throws NullPointerException if first arg starts with symbol ({@code &}) but {@link XQLFileManager} not configured
-     * @throws IllegalSqlException  sql interceptor reject sql
      */
     @Override
     protected SqlGenerator.GeneratedSqlMetaData prepareSql(@NotNull String sql, Map<String, ?> args) {
@@ -1086,6 +981,9 @@ public class BakiDao extends JdbcSupport implements Baki {
             myArgs.putAll(args);
         }
         String mySql = SqlUtil.trimEnd(sql.trim());
+        if (Objects.nonNull(sqlInterceptor)) {
+            sqlInterceptor.preHandle(mySql, myArgs, metaData);
+        }
         if (mySql.startsWith("&")) {
             log.debug("SQL name: {}", mySql);
             if (Objects.nonNull(xqlFileManager)) {
@@ -1099,19 +997,13 @@ public class BakiDao extends JdbcSupport implements Baki {
                 throw new NullPointerException("can not find property 'xqlFileManager'.");
             }
         }
+        if (Objects.nonNull(sqlParseChecker)) {
+            mySql = sqlParseChecker.handle(mySql, myArgs);
+        }
         if (mySql.contains("${")) {
             mySql = SqlUtil.formatSql(mySql, myArgs, sqlGenerator.getTemplateFormatter());
             if (Objects.nonNull(xqlFileManager)) {
                 mySql = SqlUtil.formatSql(mySql, xqlFileManager.getConstants(), sqlGenerator.getTemplateFormatter());
-            }
-        }
-        if (Objects.nonNull(sqlParseChecker)) {
-            mySql = sqlParseChecker.handle(mySql, myArgs);
-        }
-        if (Objects.nonNull(sqlInterceptor)) {
-            boolean request = sqlInterceptor.preHandle(mySql, myArgs, metaData);
-            if (!request) {
-                throw new IllegalSqlException("permission denied, reject to execute sql.\nSQL: " + mySql + "\nArgs: " + myArgs);
             }
         }
         log.debug("SQL: {}", SqlHighlighter.highlightIfAnsiCapable(mySql));

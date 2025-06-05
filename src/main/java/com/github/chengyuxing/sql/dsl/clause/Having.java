@@ -7,13 +7,11 @@ import com.github.chengyuxing.sql.dsl.types.FieldReference;
 import com.github.chengyuxing.sql.dsl.types.Logic;
 import com.github.chengyuxing.sql.dsl.types.StandardAggFunction;
 import com.github.chengyuxing.sql.dsl.types.StandardOperator;
-import com.github.chengyuxing.sql.utils.SqlGenerator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 /**
@@ -31,17 +29,6 @@ public abstract class Having<T> extends CriteriaBuilder<T> {
      */
     protected Having(@NotNull Class<T> clazz) {
         super(clazz);
-    }
-
-    /**
-     * Construct a new Having builder with initial Having builder.
-     *
-     * @param clazz entity class
-     * @param other having builder
-     */
-    protected Having(@NotNull Class<T> clazz, Having<T> other) {
-        super(clazz);
-        this.criteria.addAll(other.criteria);
     }
 
     /**
@@ -154,19 +141,6 @@ public abstract class Having<T> extends CriteriaBuilder<T> {
         return this;
     }
 
-    /**
-     * Returns a having condition consisting of the having builder, check the built result currently.
-     *
-     * @param consumer built result consumer (sql, (name parameter sql, params)) -&gt; _
-     * @return self
-     */
-    public Having<T> peek(BiConsumer<String, Pair<String, Map<String, Object>>> consumer) {
-        Pair<String, Map<String, Object>> where = build();
-        String sql = new SqlGenerator(namedParamPrefix()).generateSql(where.getItem1(), where.getItem2());
-        consumer.accept(sql, where);
-        return this;
-    }
-
     protected @NotNull @Unmodifiable Pair<String, Map<String, Object>> build() {
         Pair<String, Map<String, Object>> having = build(new AtomicInteger(1000), criteria, Logic.AND, 0);
         if (!having.getItem1().isEmpty()) {
@@ -179,11 +153,16 @@ public abstract class Having<T> extends CriteriaBuilder<T> {
         String aggColumn = agg.apply(column);
         String valueKey = column.equals("*") ? "all" : column;
         if (operator == StandardOperator.BETWEEN || operator == StandardOperator.NOT_BETWEEN) {
+            if (value instanceof Pair) {
+                //noinspection unchecked
+                criteria.add(new BetweenCondition<>(aggColumn, operator, (Pair<Object, Object>) value, valueKey));
+                return;
+            }
             Object[] arr = ObjectUtil.toArray(value);
             if (arr.length != 2) {
                 throw new IllegalArgumentException("between operator must takes two values");
             }
-            criteria.add(new BetweenCondition(aggColumn, operator, Pair.of(arr[0], arr[1]), valueKey));
+            criteria.add(new BetweenCondition<>(aggColumn, operator, Pair.of(arr[0], arr[1]), valueKey));
             return;
         }
         if (operator == StandardOperator.IN || operator == StandardOperator.NOT_IN) {

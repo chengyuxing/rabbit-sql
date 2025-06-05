@@ -5,13 +5,11 @@ import com.github.chengyuxing.sql.dsl.clause.condition.*;
 import com.github.chengyuxing.sql.dsl.types.FieldReference;
 import com.github.chengyuxing.sql.dsl.types.Logic;
 import com.github.chengyuxing.sql.dsl.types.Operator;
-import com.github.chengyuxing.sql.utils.SqlGenerator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiConsumer;
 import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -33,17 +31,6 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
      */
     public Where(@NotNull Class<T> clazz) {
         super(clazz);
-    }
-
-    /**
-     * Construct a new Where builder with initial Where builder.
-     *
-     * @param clazz entity class
-     * @param other where builder
-     */
-    public Where(@NotNull Class<T> clazz, @NotNull Where<T> other) {
-        super(clazz);
-        this.criteria.addAll(other.criteria);
     }
 
     /**
@@ -233,7 +220,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
     @SafeVarargs
     public final <E> Where<T> between(FieldReference<T> column, E a, E b, BiPredicate<E, E>... predicates) {
         if (isConditionMatched(a, b, predicates)) {
-            criteria.add(new BetweenCondition(getColumnName(column), BETWEEN, Pair.of(a, b)));
+            criteria.add(new BetweenCondition<>(getColumnName(column), BETWEEN, Pair.of(a, b)));
         }
         return this;
     }
@@ -251,7 +238,7 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
     @SafeVarargs
     public final <E> Where<T> notBetween(FieldReference<T> column, E a, E b, BiPredicate<E, E>... predicates) {
         if (isConditionMatched(a, b, predicates)) {
-            criteria.add(new BetweenCondition(getColumnName(column), NOT_BETWEEN, Pair.of(a, b)));
+            criteria.add(new BetweenCondition<>(getColumnName(column), NOT_BETWEEN, Pair.of(a, b)));
         }
         return this;
     }
@@ -430,19 +417,6 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
             List<Criteria> criteriaList = andGroup.apply(newInstance()).criteria;
             criteria.add(new OrGroup(criteriaList));
         }
-        return this;
-    }
-
-    /**
-     * Returns a where condition consisting of the where builder, check the built result currently.
-     *
-     * @param consumer built result consumer (sql, (name parameter sql, params)) -&gt; _
-     * @return where builder
-     */
-    public Where<T> peek(BiConsumer<String, Pair<String, Map<String, Object>>> consumer) {
-        Pair<String, Map<String, Object>> where = build();
-        String sql = new SqlGenerator(namedParamPrefix()).generateSql(where.getItem1(), where.getItem2());
-        consumer.accept(sql, where);
         return this;
     }
 

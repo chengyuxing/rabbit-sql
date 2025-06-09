@@ -348,7 +348,10 @@ public class NewBakiTests {
             guest.setAge(i + 9000);
             list.add(guest);
         }
-        int i = baki.entity(Guest.class).update(list, true, w -> w.identity(Guest::getAge, StandardOperator.LTE).gte(Guest::getId, 12222));
+        int i = baki.entity(Guest.class).update(list, true,
+                w -> w.identity(Guest::getAge, StandardOperator.GT)
+                        .identity(Guest::getAge, StandardOperator.LTE)
+                        .gte(Guest::getId, 12222));
         System.out.println(i);
     }
 

@@ -1,5 +1,9 @@
 # change note
 
+# 8.1.16
+
+- Support where condition in delete and update.
+
 # 8.1.15
 
 - dsl query optimized.

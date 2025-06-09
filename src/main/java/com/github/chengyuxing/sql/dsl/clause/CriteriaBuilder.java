@@ -1,20 +1,21 @@
 package com.github.chengyuxing.sql.dsl.clause;
 
 import com.github.chengyuxing.common.tuple.Pair;
+import com.github.chengyuxing.common.tuple.Triple;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.dsl.clause.condition.*;
 import com.github.chengyuxing.sql.dsl.types.Logic;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.github.chengyuxing.sql.dsl.types.StandardOperator.IS_NOT_NULL;
 import static com.github.chengyuxing.sql.dsl.types.StandardOperator.IS_NULL;
 
 public abstract class CriteriaBuilder<T> extends ColumnHelper<T> {
+    protected static final Object IDENTITY = new Object();
+
     protected CriteriaBuilder(@NotNull Class<T> clazz) {
         super(clazz);
     }
@@ -30,10 +31,11 @@ public abstract class CriteriaBuilder<T> extends ColumnHelper<T> {
         }
     }
 
-    protected final @NotNull Pair<String, Map<String, Object>> build(AtomicInteger uniqueIndex, List<Criteria> criteriaList, Logic logicOperator, int identLevel) {
+    protected final @NotNull Triple<String, Map<String, Object>, Set<String>> build(AtomicInteger uniqueIndex, List<Criteria> criteriaList, Logic logicOperator, int identLevel) {
         StringBuilder sb = new StringBuilder();
         String ident = StringUtil.repeat("    ", identLevel);
         Map<String, Object> params = new HashMap<>();
+        Set<String> identity = new HashSet<>();
         for (int i = 0, j = criteriaList.size(); i < j; i++) {
             Criteria criteria = criteriaList.get(i);
             if (criteria instanceof Condition) {
@@ -57,11 +59,18 @@ public abstract class CriteriaBuilder<T> extends ColumnHelper<T> {
                                 .append(" ")
                                 .append(condition.getOperator().getValue());
                     } else {
+                        boolean isIdentity = condition.getValue() == IDENTITY;
                         String key = condition.getKey(unique);
+                        if (isIdentity) {
+                            key = condition.getColumn();
+                            identity.add(key);
+                        }
                         sb.append(condition.getColumn())
                                 .append(condition.getOperator().padWithSpace())
                                 .append(namedParamPrefix()).append(key);
-                        params.put(key, condition.getValue());
+                        if (!isIdentity) {
+                            params.put(key, condition.getValue());
+                        }
                     }
                 }
             } else if (criteria instanceof AndGroup) {
@@ -103,6 +112,6 @@ public abstract class CriteriaBuilder<T> extends ColumnHelper<T> {
                 }
             }
         }
-        return Pair.of(sb.toString(), params);
+        return Triple.of(sb.toString(), params, identity);
     }
 }

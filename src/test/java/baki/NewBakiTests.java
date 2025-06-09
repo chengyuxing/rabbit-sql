@@ -100,7 +100,7 @@ public class NewBakiTests {
                 if (dbName.equals("kingbasees")) {
                     return new PGPageHelper();
                 }
-                return new OraclePageHelper();
+                return null;
             }
         });
     }
@@ -204,8 +204,24 @@ public class NewBakiTests {
     @Test
     public void testDslDelete() {
         Guest guest = new Guest();
-        guest.setId(14);
-        int i = baki.entity(Guest.class).delete(guest);
+        guest.setId(140);
+        int i = baki.entity(Guest.class).delete(guest,
+                w -> w.identity(Guest::getId, StandardOperator.GT)
+                        .in(Guest::getId, Arrays.asList(1, 2, 3))
+                        .identity(Guest::getAddress, StandardOperator.LIKE));
+        System.out.println(i);
+    }
+
+    @Test
+    public void testDslDelete2() {
+        List<Guest> list = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            Guest guest = new Guest();
+            guest.setAge(i + 1000);
+            list.add(guest);
+        }
+        int i = baki.entity(Guest.class).delete(list, w -> w.gt(Guest::getAge, 100)
+                .identity(Guest::getId, StandardOperator.GT));
         System.out.println(i);
     }
 
@@ -295,10 +311,10 @@ public class NewBakiTests {
     public void testDslQuery3() {
         baki.entity(Guest.class).query()
                 .where(w -> w.and(o -> o.or(a -> a.eq(Guest::getName, "cyx")
-                                                .eq(Guest::getAge, 30))
-                                        .or(r -> r.eq(Guest::getName, "jack")
-                                                .eq(Guest::getAge, 60))
-                                )
+                                        .eq(Guest::getAge, 30))
+                                .or(r -> r.eq(Guest::getName, "jack")
+                                        .eq(Guest::getAge, 60))
+                        )
                 )
                 .toList();
     }
@@ -315,9 +331,24 @@ public class NewBakiTests {
     @Test
     public void testDslUpdate2() {
         Guest guest = new Guest();
-        guest.setId(15);
+        guest.setId(1895);
         guest.setAddress("China");
-        int i = baki.entity(Guest.class).update(guest, true);
+        guest.setAge(230);
+        int i = baki.entity(Guest.class).update(guest, true, w -> w.lt(Guest::getAge, 9000));
+        System.out.println(i);
+    }
+
+    @Test
+    public void testDslUpdate3() {
+        List<Guest> list = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            Guest guest = new Guest();
+            guest.setId(i + 1000);
+            guest.setAddress("Shanghai");
+            guest.setAge(i + 9000);
+            list.add(guest);
+        }
+        int i = baki.entity(Guest.class).update(list, true, w -> w.identity(Guest::getAge, StandardOperator.LTE).gte(Guest::getId, 12222));
         System.out.println(i);
     }
 

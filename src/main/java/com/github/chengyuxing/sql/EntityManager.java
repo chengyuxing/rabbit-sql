@@ -112,7 +112,9 @@ public class EntityManager implements AutoCloseable {
         private final String countSelect;
         private final String existsSelect;
         private final String insert;
+        private final String updateBy;
         private final String updateById;
+        private final String deleteBy;
         private final String deleteById;
 
         public EntityMeta(char namedParamPrefix, String tableName, Map<String, ColumnMeta> columns) {
@@ -127,8 +129,10 @@ public class EntityManager implements AutoCloseable {
             this.countSelect = genCountSelect();
             this.existsSelect = genExistSelect();
             this.insert = genInsert();
-            this.updateById = genUpdate();
-            this.deleteById = genDelete();
+            this.updateBy = genUpdate("");
+            this.updateById = genUpdate(whereById);
+            this.deleteBy = genDelete("");
+            this.deleteById = genDelete(whereById);
         }
 
         public String getPrimaryKey() {
@@ -175,12 +179,20 @@ public class EntityManager implements AutoCloseable {
             return insert;
         }
 
+        public String getUpdateBy(String where) {
+            return updateBy + where;
+        }
+
         public String getUpdateById() {
             return updateById;
         }
 
         public String getDeleteById() {
             return deleteById;
+        }
+
+        public String getDeleteBy(String where) {
+            return deleteBy + where;
         }
 
         private String checkPrimaryKey() {
@@ -244,16 +256,16 @@ public class EntityManager implements AutoCloseable {
             return setColumns;
         }
 
-        private String genUpdate() {
+        private String genUpdate(String where) {
             StringJoiner sets = new StringJoiner(",\n\t");
             for (String column : updateColumns) {
                 sets.add(column + StandardOperator.EQ.padWithSpace() + namedParamPrefix + column);
             }
-            return "update " + tableName + "\nset " + sets + whereById;
+            return "update " + tableName + "\nset " + sets + where;
         }
 
-        private String genDelete() {
-            return "delete from " + tableName + whereById;
+        private String genDelete(String where) {
+            return "delete from " + tableName + where;
         }
     }
 

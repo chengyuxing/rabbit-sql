@@ -16,6 +16,7 @@ import com.github.chengyuxing.sql.XQLFileManagerConfig;
 import com.github.chengyuxing.sql.annotation.XQLMapper;
 import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
+import com.github.chengyuxing.sql.types.Variable;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.utils.SqlHighlighter;
 import com.github.chengyuxing.sql.utils.SqlUtil;
@@ -34,9 +35,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Map;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -329,6 +328,16 @@ public class NonBakiTests {
                 System.out.println(n + " -> " + sql.getContent());
             });
         });
+    }
+
+    @Test
+    public void testV() {
+        Set<Object> set = new HashSet<>();
+        for (int i = 0; i < 10; i++) {
+            set.add(Variable.IDENTITY);
+        }
+        System.out.println(set);
+        System.out.println(set.size());
     }
 
     @Test

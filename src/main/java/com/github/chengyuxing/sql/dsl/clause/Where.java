@@ -1,6 +1,7 @@
 package com.github.chengyuxing.sql.dsl.clause;
 
 import com.github.chengyuxing.common.tuple.Pair;
+import com.github.chengyuxing.common.tuple.Triple;
 import com.github.chengyuxing.sql.dsl.clause.condition.*;
 import com.github.chengyuxing.sql.dsl.types.FieldReference;
 import com.github.chengyuxing.sql.dsl.types.Logic;
@@ -60,6 +61,22 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
         }
         return this;
     }
+
+    /**
+     * Add a condition as the identity, the value is in the entity.
+     *
+     * @param column   column
+     * @param operator {@link com.github.chengyuxing.sql.dsl.types.StandardOperator StandardOperator} or other trusted operator
+     * @return where builder
+     */
+    public Where<T> identity(FieldReference<T> column, @NotNull Operator operator) {
+        if (operator == Logic.AND || operator == Logic.OR) {
+            throw new IllegalArgumentException("logic operator '" + operator.getValue() + "' invalid at this time");
+        }
+        addCondition(column, operator, IDENTITY);
+        return this;
+    }
+
 
     /**
      * {@code =}
@@ -423,12 +440,12 @@ public abstract class Where<T> extends CriteriaBuilder<T> {
     /**
      * Returns where clause and params.
      *
-     * @return where clause and params.
+     * @return where clause, params, identity columns.
      */
-    protected @NotNull @Unmodifiable Pair<String, Map<String, Object>> build() {
-        Pair<String, Map<String, Object>> where = build(new AtomicInteger(0), criteria, Logic.AND, 0);
+    protected @NotNull @Unmodifiable Triple<String, Map<String, Object>, Set<String>> build() {
+        Triple<String, Map<String, Object>, Set<String>> where = build(new AtomicInteger(0), criteria, Logic.AND, 0);
         if (!where.getItem1().isEmpty()) {
-            return Pair.of("\nwhere " + where.getItem1(), Collections.unmodifiableMap(where.getItem2()));
+            return Triple.of("\nwhere " + where.getItem1(), Collections.unmodifiableMap(where.getItem2()), Collections.unmodifiableSet(where.getItem3()));
         }
         return where;
     }

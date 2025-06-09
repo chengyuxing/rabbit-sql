@@ -6,10 +6,7 @@ import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.tuple.Triple;
 import com.github.chengyuxing.sql.datasource.DataSourceUtil;
 import com.github.chengyuxing.sql.dsl.*;
-import com.github.chengyuxing.sql.dsl.clause.GroupBy;
-import com.github.chengyuxing.sql.dsl.clause.Having;
-import com.github.chengyuxing.sql.dsl.clause.OrderBy;
-import com.github.chengyuxing.sql.dsl.clause.Where;
+import com.github.chengyuxing.sql.dsl.clause.*;
 import com.github.chengyuxing.sql.dsl.clause.condition.Criteria;
 import com.github.chengyuxing.sql.dsl.types.FieldReference;
 import com.github.chengyuxing.sql.dsl.types.OrderByType;
@@ -609,6 +606,25 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
 
             @Override
+            public int update(@NotNull T entity, boolean ignoreNull, Function<Where<T>, Where<T>> where) {
+                InternalWhere<T> gotten = (InternalWhere<T>) where.apply(new InternalWhere<>(clazz));
+                Triple<String, Map<String, Object>, Set<String>> whereClause = gotten.getWhereClause();
+                Map<String, Object> data = Args.ofEntity(entity);
+                data.putAll(whereClause.getItem2());
+
+                Set<String> updateColumns = entityMeta.getUpdateColumns();
+                updateColumns.removeAll(whereClause.getItem3());
+
+                String update = sqlGenerator.generateNamedParamUpdate(
+                        entityMeta.getTableName(),
+                        updateColumns,
+                        data,
+                        ignoreNull
+                ) + whereClause.getItem1();
+                return executeUpdate(update, data);
+            }
+
+            @Override
             public int update(@NotNull Collection<T> entities, boolean ignoreNull) {
                 if (entities.isEmpty()) return 0;
                 List<Map<String, Object>> data = entities.stream()
@@ -624,9 +640,41 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
 
             @Override
+            public int update(@NotNull Collection<T> entities, boolean ignoreNull, Function<Where<T>, Where<T>> where) {
+                if (entities.isEmpty()) return 0;
+                InternalWhere<T> gotten = (InternalWhere<T>) where.apply(new InternalWhere<>(clazz));
+                Triple<String, Map<String, Object>, Set<String>> whereClause = gotten.getWhereClause();
+                List<Map<String, Object>> data = entities.stream()
+                        .map(Args::ofEntity)
+                        .peek(args -> args.putAll(whereClause.getItem2()))
+                        .collect(Collectors.toList());
+
+                Set<String> updateColumns = entityMeta.getUpdateColumns();
+                updateColumns.removeAll(whereClause.getItem3());
+
+                String update = sqlGenerator.generateNamedParamUpdate(
+                        entityMeta.getTableName(),
+                        updateColumns,
+                        data.get(0),
+                        ignoreNull
+                ) + whereClause.getItem1();
+                return executeBatchUpdate(update, data, batchSize);
+            }
+
+            @Override
             public int delete(@NotNull T entity) {
                 String delete = entityMeta.getDeleteById();
                 Map<String, Object> data = Args.ofEntity(entity);
+                return executeUpdate(delete, data);
+            }
+
+            @Override
+            public int delete(@NotNull T entity, Function<Where<T>, Where<T>> where) {
+                InternalWhere<T> gotten = (InternalWhere<T>) where.apply(new InternalWhere<>(clazz));
+                Pair<String, Map<String, Object>> whereClause = gotten.getWhereClause();
+                String delete = entityMeta.getDeleteBy(whereClause.getItem1());
+                Map<String, Object> data = Args.ofEntity(entity);
+                data.putAll(whereClause.getItem2());
                 return executeUpdate(delete, data);
             }
 
@@ -638,6 +686,21 @@ public class BakiDao extends JdbcSupport implements Baki {
                 String delete = entityMeta.getDeleteById();
                 List<Map<String, Object>> data = entities.stream()
                         .map(Args::ofEntity)
+                        .collect(Collectors.toList());
+                return executeBatchUpdate(delete, data, batchSize);
+            }
+
+            @Override
+            public int delete(@NotNull Collection<T> entities, Function<Where<T>, Where<T>> where) {
+                if (entities.isEmpty()) {
+                    return 0;
+                }
+                InternalWhere<T> gotten = (InternalWhere<T>) where.apply(new InternalWhere<>(clazz));
+                Pair<String, Map<String, Object>> whereClause = gotten.getWhereClause();
+                String delete = entityMeta.getDeleteBy(whereClause.getItem1());
+                List<Map<String, Object>> data = entities.stream()
+                        .map(Args::ofEntity)
+                        .peek(args -> args.putAll(whereClause.getItem2()))
                         .collect(Collectors.toList());
                 return executeBatchUpdate(delete, data, batchSize);
             }
@@ -747,7 +810,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             return operatorWhiteList;
         }
 
-        private Pair<String, Map<String, Object>> getWhereClause() {
+        private Triple<String, Map<String, Object>, Set<String>> getWhereClause() {
             return build();
         }
 

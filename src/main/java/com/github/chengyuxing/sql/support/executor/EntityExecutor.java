@@ -1,10 +1,12 @@
 package com.github.chengyuxing.sql.support.executor;
 
 import com.github.chengyuxing.sql.dsl.Query;
+import com.github.chengyuxing.sql.dsl.clause.Where;
 import org.jetbrains.annotations.ApiStatus;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Collection;
+import java.util.function.Function;
 
 /**
  * Entity executor.
@@ -54,6 +56,17 @@ public interface EntityExecutor<T> {
     int update(@NotNull T entity, boolean ignoreNull);
 
     /**
+     * Update by condition.
+     *
+     * @param entity     entity
+     * @param ignoreNull ignore null value or not for update sets
+     * @param where      where condition
+     * @return affected rows
+     * @see jakarta.persistence.Entity @Entity
+     */
+    int update(@NotNull T entity, boolean ignoreNull, Function<Where<T>, Where<T>> where);
+
+    /**
      * Batch update by {@link jakarta.persistence.Id id}.
      * <p>Notice: the real update statement depends on first data,
      * it means 'ignoreNull' just available on first data.</p>
@@ -67,6 +80,19 @@ public interface EntityExecutor<T> {
     int update(@NotNull Collection<T> entities, boolean ignoreNull);
 
     /**
+     * Batch update by condition.
+     * <p>Notice: the real update statement depends on first data,
+     * it means 'ignoreNull' just available on first data.</p>
+     *
+     * @param entities   entities
+     * @param ignoreNull ignore null value or not for update sets
+     * @param where      where condition
+     * @return affected rows
+     * @see jakarta.persistence.Entity @Entity
+     */
+    int update(@NotNull Collection<T> entities, boolean ignoreNull, Function<Where<T>, Where<T>> where);
+
+    /**
      * Delete by {@link jakarta.persistence.Id id}.
      *
      * @param entity entity
@@ -77,6 +103,16 @@ public interface EntityExecutor<T> {
     int delete(@NotNull T entity);
 
     /**
+     * Delete by condition.
+     *
+     * @param entity entity
+     * @param where  where condition
+     * @return affected rows
+     * @see jakarta.persistence.Entity @Entity
+     */
+    int delete(@NotNull T entity, Function<Where<T>, Where<T>> where);
+
+    /**
      * Batch delete by {@link jakarta.persistence.Id id}.
      *
      * @param entities entities
@@ -85,4 +121,14 @@ public interface EntityExecutor<T> {
      */
     @ApiStatus.AvailableSince("8.0.1")
     int delete(@NotNull Collection<T> entities);
+
+    /**
+     * Batch delete by condition.
+     *
+     * @param entities entities
+     * @param where    where condition
+     * @return affected rows
+     * @see jakarta.persistence.Entity @Entity
+     */
+    int delete(@NotNull Collection<T> entities, Function<Where<T>, Where<T>> where);
 }

@@ -334,7 +334,6 @@ public class NonBakiTests {
     public void testV() {
         Set<Object> set = new HashSet<>();
         for (int i = 0; i < 10; i++) {
-            set.add(Variable.IDENTITY);
         }
         System.out.println(set);
         System.out.println(set.size());

@@ -64,6 +64,7 @@ public interface EntityExecutor<T> {
      * @return affected rows
      * @see jakarta.persistence.Entity @Entity
      */
+    @ApiStatus.AvailableSince("8.1.16")
     int update(@NotNull T entity, boolean ignoreNull, Function<Where<T>, Where<T>> where);
 
     /**
@@ -90,6 +91,7 @@ public interface EntityExecutor<T> {
      * @return affected rows
      * @see jakarta.persistence.Entity @Entity
      */
+    @ApiStatus.AvailableSince("8.1.16")
     int update(@NotNull Collection<T> entities, boolean ignoreNull, Function<Where<T>, Where<T>> where);
 
     /**
@@ -110,6 +112,7 @@ public interface EntityExecutor<T> {
      * @return affected rows
      * @see jakarta.persistence.Entity @Entity
      */
+    @ApiStatus.AvailableSince("8.1.16")
     int delete(@NotNull T entity, Function<Where<T>, Where<T>> where);
 
     /**
@@ -130,5 +133,6 @@ public interface EntityExecutor<T> {
      * @return affected rows
      * @see jakarta.persistence.Entity @Entity
      */
+    @ApiStatus.AvailableSince("8.1.16")
     int delete(@NotNull Collection<T> entities, Function<Where<T>, Where<T>> where);
 }

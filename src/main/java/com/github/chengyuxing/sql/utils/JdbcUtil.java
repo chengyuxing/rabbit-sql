@@ -192,7 +192,7 @@ public class JdbcUtil {
         int columnCount = metaData.getColumnCount();
         String[] names = new String[columnCount];
         for (int i = 0; i < columnCount; i++) {
-            String columnName = metaData.getColumnName(i + 1);
+            String columnName = metaData.getColumnLabel(i + 1);
             if (!executedSql.contains("\"" + columnName + "\"")) {
                 columnName = columnName.toLowerCase();
             }

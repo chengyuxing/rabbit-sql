@@ -94,14 +94,11 @@ public class NewBakiTests {
 
         baki = bakiDao;
 
-        bakiDao.setGlobalPageHelperProvider(new PageHelperProvider() {
-            @Override
-            public @Nullable PageHelper customPageHelper(@NotNull DatabaseMetaData databaseMetaData, @NotNull String dbName, char namedParamPrefix) {
-                if (dbName.equals("kingbasees")) {
-                    return new PGPageHelper();
-                }
-                return null;
+        bakiDao.setGlobalPageHelperProvider((databaseMetaData, dbName, namedParamPrefix) -> {
+            if (dbName.equals("kingbasees")) {
+                return new PGPageHelper();
             }
+            return null;
         });
     }
 
@@ -521,8 +518,9 @@ public class NewBakiTests {
     @Test
     public void testCall() {
 
-        Object res = baki.of("{call test.mvn_dependencies_query(:keyword)}")
-                .call(Args.of("keyword", Param.IN("chengyuxing")));
+        var res = baki.of("{call test.mvn_dependencies_query(:keyword)}")
+                .call(Args.of("keyword", Param.IN("chengyuxing")))
+                .<List<DataRow>>getAs(0);
 
         System.out.println(res);
     }

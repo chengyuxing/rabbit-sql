@@ -1,5 +1,9 @@
 # change note
 
+# 9.0.15
+
+- Fixed column name bug.
+
 # 9.0.14
 
 - Support where condition in delete and update.

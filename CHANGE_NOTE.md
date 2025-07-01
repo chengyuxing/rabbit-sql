@@ -1,5 +1,9 @@
 # change note
 
+# 8.1.19
+
+- exception error msg optimized.
+
 # 8.1.18
 
 - Fixed generate page sql error which ends with line comment.

@@ -1,5 +1,9 @@
 # change note
 
+# 8.1.18
+
+- Fixed generate page sql error which ends with line comment.
+
 # 8.1.17
 
 - Fixed column name bug.

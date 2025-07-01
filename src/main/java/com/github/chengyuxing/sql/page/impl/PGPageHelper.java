@@ -27,7 +27,7 @@ public class PGPageHelper extends PageHelper {
 
     @Override
     public @NotNull String pagedSql(char namedParamPrefix, @NotNull String sql) {
-        return sql + " limit " + namedParamPrefix + START_NUM_KEY + " offset " + namedParamPrefix + END_NUM_KEY;
+        return sql + "\nlimit " + namedParamPrefix + START_NUM_KEY + " offset " + namedParamPrefix + END_NUM_KEY;
     }
 
     @Override

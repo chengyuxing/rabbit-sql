@@ -218,13 +218,13 @@ public class SqlGenerator {
     }
 
     /**
-     * Generate count query by record query.
+     * Generate a count query by record query.
      *
      * @param recordQuery record query
      * @return count query
      */
     public String generateCountQuery(@NotNull final String recordQuery) {
-        return "select count(*) from (" + recordQuery + ") t_4_rabbit";
+        return "select count(*) from (\n" + recordQuery + "\n) t_4_rabbit";
     }
 
     public Pattern getNamedParamPattern() {

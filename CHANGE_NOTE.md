@@ -1,5 +1,13 @@
 # change note
 
+# 9.0.17
+
+- exception error msg optimized.
+
+# 9.0.16
+
+- Fixed generate page sql error which ends with line comment.
+
 # 9.0.15
 
 - Fixed column name bug.

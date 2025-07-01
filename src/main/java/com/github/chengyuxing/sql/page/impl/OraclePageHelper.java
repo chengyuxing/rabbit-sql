@@ -32,7 +32,7 @@ public class OraclePageHelper extends PageHelper {
     public @NotNull String pagedSql(char namedParamPrefix, @NotNull String sql) {
         return "select *\n" +
                 "from (select t.*, rownum " + ROW_NUM_KEY + "\n" +
-                "          from (" + sql + ") t\n" +
+                "          from (\n" + sql + "\n) t\n" +
                 "          where rownum <= " + namedParamPrefix + END_NUM_KEY + ")\n" +
                 " where " + ROW_NUM_KEY + " >= " + namedParamPrefix + START_NUM_KEY;
     }

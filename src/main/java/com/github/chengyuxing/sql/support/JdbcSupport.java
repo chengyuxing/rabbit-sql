@@ -176,7 +176,7 @@ public abstract class JdbcSupport {
             JdbcUtil.printSqlConsole(ps);
             return JdbcUtil.getResult(ps, preparedSql);
         } catch (Exception e) {
-            throw new SqlRuntimeException("SQL: " + sql + "\nArgs: " + myArgs, e);
+            throw new SqlRuntimeException("SQL: " + sql + "\n" + sqlMetaData.getSourceSql() + "\nArgs: " + myArgs, e);
         } finally {
             JdbcUtil.closeStatement(ps);
             releaseConnection(connection, getDataSource());
@@ -249,7 +249,7 @@ public abstract class JdbcSupport {
                     ex.addSuppressed(e);
                 }
             }
-            throw new SqlRuntimeException("SQL: " + sql + "\nArgs: " + myArgs, ex);
+            throw new SqlRuntimeException("SQL: " + sql + "\n" + sqlMetaData.getSourceSql() + "\nArgs: " + myArgs, ex);
         }
     }
 
@@ -344,7 +344,7 @@ public abstract class JdbcSupport {
                 }
                 argSb.add(arg.toString());
             }
-            throw new SqlRuntimeException("SQL: " + sql + "\nArgs: " + argSb, e);
+            throw new SqlRuntimeException("SQL: " + sql + "\n" + sqlMetaData.getSourceSql() + "\nArgs: " + argSb, e);
         } finally {
             JdbcUtil.closeStatement(ps);
             releaseConnection(connection, getDataSource());
@@ -381,7 +381,7 @@ public abstract class JdbcSupport {
             setPreparedSqlArgs(ps, myArgs, argNames);
             return ps.executeUpdate();
         } catch (Exception e) {
-            throw new SqlRuntimeException("SQL: " + sql + "\nArgs: " + myArgs, e);
+            throw new SqlRuntimeException("SQL: " + sql + "\n" + sqlMetaData.getSourceSql() + "\nArgs: " + myArgs, e);
         } finally {
             JdbcUtil.closeStatement(ps);
             releaseConnection(connection, getDataSource());
@@ -469,7 +469,7 @@ public abstract class JdbcSupport {
             }
             return DataRow.of(outNames.toArray(new String[0]), values);
         } catch (SQLException e) {
-            throw new SqlRuntimeException("PROCEDURE: " + procedure + "\nArgs: " + args, e);
+            throw new SqlRuntimeException("PROCEDURE: " + procedure + "\n" + sqlMetaData.getSourceSql() + "\nArgs: " + args, e);
         } finally {
             JdbcUtil.closeStatement(cs);
             releaseConnection(connection, getDataSource());

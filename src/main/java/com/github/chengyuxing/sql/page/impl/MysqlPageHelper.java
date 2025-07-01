@@ -28,7 +28,7 @@ public class MysqlPageHelper extends PageHelper {
 
     @Override
     public @NotNull String pagedSql(char namedParamPrefix, @NotNull String sql) {
-        return sql + " limit " + namedParamPrefix + START_NUM_KEY + ", " + namedParamPrefix + END_NUM_KEY;
+        return sql + "\nlimit " + namedParamPrefix + START_NUM_KEY + ", " + namedParamPrefix + END_NUM_KEY;
     }
 
     @Override

@@ -14,6 +14,6 @@ import org.jetbrains.annotations.NotNull;
 public class SqlServer2012PageHelper extends PGPageHelper {
     @Override
     public @NotNull String pagedSql(char namedParamPrefix, @NotNull String sql) {
-        return sql + " offset " + namedParamPrefix + END_NUM_KEY + " rows fetch next " + namedParamPrefix + START_NUM_KEY + " rows only";
+        return sql + "\noffset " + namedParamPrefix + END_NUM_KEY + " rows fetch next " + namedParamPrefix + START_NUM_KEY + " rows only";
     }
 }

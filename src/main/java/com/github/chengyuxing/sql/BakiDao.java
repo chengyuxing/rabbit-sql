@@ -969,7 +969,7 @@ public class BakiDao extends JdbcSupport implements Baki {
 
             if (count == 0) {
                 log.debug("No records found, just returning empty result.");
-                return PagedResource.empty();
+                return PagedResource.empty(page, size);
             }
 
             PageHelper pageHelper = null;
@@ -1054,7 +1054,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             sqlInterceptor.preHandle(mySql, myArgs, metaData);
         }
         if (mySql.startsWith("&")) {
-            log.debug("SQL name: {}", mySql);
+            log.debug("SQL: {}", mySql);
             if (Objects.nonNull(xqlFileManager)) {
                 Pair<String, Map<String, Object>> result = xqlFileManager.get(mySql.substring(1), myArgs);
                 mySql = result.getItem1();

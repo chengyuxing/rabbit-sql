@@ -39,8 +39,8 @@ public final class PagedResource<T> {
      * @param <T> data type
      * @return empty PagedResource
      */
-    public static <T> PagedResource<T> empty() {
-        return of(new PageHelper() {
+    public static <T> PagedResource<T> empty(int page, int size) {
+        PageHelper pageHelper = new PageHelper() {
             @Override
             public @NotNull String pagedSql(char namedParamPrefix, @NotNull String sql) {
                 return "";
@@ -50,7 +50,9 @@ public final class PagedResource<T> {
             public @NotNull Args<Integer> pagedArgs() {
                 return Args.of();
             }
-        }, Collections.emptyList());
+        };
+        pageHelper.init(page, size, 0);
+        return of(pageHelper, Collections.emptyList());
     }
 
     /**

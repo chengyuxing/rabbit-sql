@@ -36,7 +36,9 @@ public final class PagedResource<T> {
     /**
      * Returns an empty PagedResource.
      *
-     * @param <T> data type
+     * @param page page number
+     * @param size page size
+     * @param <T>  data type
      * @return empty PagedResource
      */
     public static <T> PagedResource<T> empty(int page, int size) {

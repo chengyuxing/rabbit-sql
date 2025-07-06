@@ -21,7 +21,7 @@ public interface QueryCacheManager {
      * @param args args
      * @return the unique key
      */
-    default @NotNull String uniqueKey(@NotNull String sql, Map<String, Object> args) {
+    default @NotNull String uniqueKey(@NotNull String sql, Map<String, ?> args) {
         String argsStr = Objects.nonNull(args) ? "@" + StringUtil.hash(args.toString(), "MD5") : "";
         if (sql.startsWith("&")) {
             return sql + argsStr;
@@ -55,6 +55,6 @@ public interface QueryCacheManager {
      * @param args args
      * @return true or false
      */
-    boolean isAvailable(@NotNull String sql, Map<String, Object> args);
+    boolean isAvailable(@NotNull String sql, Map<String, ?> args);
 
 }

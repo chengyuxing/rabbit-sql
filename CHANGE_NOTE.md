@@ -1,5 +1,10 @@
 # change note
 
+# 8.1.20
+
+- Optimized page query.
+- Fixed executeBatch bug.
+
 # 8.1.19
 
 - exception error msg optimized.

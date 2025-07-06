@@ -967,6 +967,11 @@ public class BakiDao extends JdbcSupport implements Baki {
                 }
             }
 
+            if (count == 0) {
+                log.debug("No records found, just returning empty result.");
+                return PagedResource.empty();
+            }
+
             PageHelper pageHelper = null;
 
             if (pageHelperProvider != null) {
@@ -1006,9 +1011,11 @@ public class BakiDao extends JdbcSupport implements Baki {
         }
         switch (databaseId) {
             case "oracle":
+            case "dm dbms":
                 return new OraclePageHelper();
             case "postgresql":
             case "sqlite":
+            case "kingbasees":
                 return new PGPageHelper();
             case "mysql":
             case "mariadb":

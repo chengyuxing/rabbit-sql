@@ -345,7 +345,7 @@ public class NonBakiTests {
 
     @Test
     public void testRR() {
-        PagedResource<DataRow> resource = PagedResource.empty();
+        PagedResource<DataRow> resource = PagedResource.empty(1,10);
         System.out.println(resource);
     }
 

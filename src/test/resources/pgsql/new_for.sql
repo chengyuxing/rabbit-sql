@@ -15,7 +15,7 @@ from ${db}.${tableName} limit 4
 ;
 
 /*[insert]*/
-insert into test.user (name, age, address, dt)
+insert into test.guest (name, age, address)
 values (
            -- #for item of :users delimiter ', '
            -- #if :item <> blank

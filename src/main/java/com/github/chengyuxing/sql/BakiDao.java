@@ -178,7 +178,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public Stream<DataRow> executeQueryStream(@NotNull String sql, Map<String, Object> args) {
+    public Stream<DataRow> executeQueryStream(@NotNull String sql, Map<String, ?> args) {
         return this.sqlAroundExecutor.call(new SqlStatement(SqlStatementType.query, sql, args),
                 i -> {
                     if (Objects.isNull(queryCacheManager) || !queryCacheManager.isAvailable(sql, args)) {
@@ -742,7 +742,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 } else {
                     newData = data;
                 }
-                return executeBatchUpdate(parsed.getPrepareSql(), newData, batchSize);
+                return executeBatchUpdate(parsed.getSourceSql(), newData, batchSize);
             }
 
             @Override
@@ -1026,7 +1026,6 @@ public class BakiDao extends JdbcSupport implements Baki {
                 throw new UnsupportedOperationException("pager of \"" + databaseId + "\" default not implement currently, see method 'setGlobalPageHelperProvider'.");
         }
     }
-
 
     /**
      * Get sql from {@link XQLFileManager} by sql name if first arg starts with symbol ({@code &}).<br>

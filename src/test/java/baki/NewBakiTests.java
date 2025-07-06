@@ -494,8 +494,8 @@ public class NewBakiTests {
     @Test
     public void testInsertScript() {
         List<Args<Object>> args = new ArrayList<>();
-        for (int i = 0; i < 10000; i++) {
-            args.add(Args.of("users", Arrays.asList("chengyuxing", i, "昆明市", LocalDateTime.now())));
+        for (int i = 0; i < 10; i++) {
+            args.add(Args.of("users", Arrays.asList("chengyuxing", i, "昆明市")));
         }
         int i = baki.of("&new.insert").executeBatch(args);
         System.out.println(i);

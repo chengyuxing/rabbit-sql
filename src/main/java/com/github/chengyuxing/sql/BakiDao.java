@@ -968,7 +968,6 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
 
             if (count == 0) {
-                log.debug("No records found, just returning empty result.");
                 return PagedResource.empty(page, size);
             }
 
@@ -1075,8 +1074,18 @@ public class BakiDao extends JdbcSupport implements Baki {
                 mySql = SqlUtil.formatSql(mySql, xqlFileManager.getConstants(), sqlGenerator.getTemplateFormatter());
             }
         }
-        log.debug("SQL: {}", SqlHighlighter.highlightIfAnsiCapable(mySql));
-        log.debug("Args: {}", myArgs);
+        if (log.isDebugEnabled()) {
+            log.debug("SQL: {}", SqlHighlighter.highlightIfAnsiCapable(mySql));
+            StringJoiner sj = new StringJoiner(", ", "{", "}");
+            myArgs.forEach((k, v) -> {
+                if (v == null) {
+                    sj.add(k + "=null");
+                } else {
+                    sj.add(k + "=" + v + "(" + v.getClass().getSimpleName() + ")");
+                }
+            });
+            log.debug("Args: {}", sj);
+        }
         return sqlGenerator.generatePreparedSql(mySql, myArgs);
     }
 

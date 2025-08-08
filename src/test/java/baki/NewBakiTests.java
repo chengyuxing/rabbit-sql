@@ -107,6 +107,7 @@ public class NewBakiTests {
         PagedResource<DataRow> resource = baki.query("select * from test.guest where id > :id")
                 .args("id", 1999, "page", 1, "size", 10)
                 .pageable()
+                .count(500)
                 .collect();
         System.out.println(resource);
     }

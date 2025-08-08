@@ -1,10 +1,13 @@
 # change note
 
+# 9.0.19
+
+- Some optimized.
+
 # 9.0.18
 
 - Optimized page query.
 - Fixed executeBatch bug.
-
 
 # 9.0.17
 

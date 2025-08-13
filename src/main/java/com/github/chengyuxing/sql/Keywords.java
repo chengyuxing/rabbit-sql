@@ -59,7 +59,7 @@ public final class Keywords {
             "xmlelement", "xmlexists", "xmlforest", "xmlnamespaces", "xmlparse", "xmlpi", "xmlroot",
             "xmlserialize", "xmltable", "year", "yes", "zone", "loop", "json", "return",
             // postgresql
-            "raise", "notice", "slice", "jsonb", "record", "elsif", "minutes", "days", "hours",
+            "raise", "notice", "slice", "jsonb", "record", "elsif", "minutes", "days", "hours", "epoch",
             "seconds", "foreach", "exception", "internal", "bytea", "number"
     };
 }

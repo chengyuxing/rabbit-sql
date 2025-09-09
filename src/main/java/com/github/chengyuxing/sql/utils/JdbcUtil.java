@@ -58,25 +58,25 @@ public class JdbcUtil {
         if (Objects.isNull(value)) {
             ps.setNull(index, Types.NULL);
         } else if (value instanceof java.util.Date) {
-            ps.setObject(index, new Timestamp(((java.util.Date) value).getTime()));
+            ps.setTimestamp(index, Timestamp.from(((java.util.Date) value).toInstant()));
         } else if (value instanceof LocalDateTime) {
-            ps.setObject(index, new Timestamp(((LocalDateTime) value).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
+            ps.setTimestamp(index, Timestamp.valueOf((LocalDateTime) value));
         } else if (value instanceof LocalDate) {
-            ps.setObject(index, new Date(((LocalDate) value).atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()));
+            ps.setDate(index, Date.valueOf((LocalDate) value));
         } else if (value instanceof LocalTime) {
-            ps.setObject(index, new Time(((LocalTime) value).atDate(LocalDate.now()).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()));
+            ps.setTime(index, Time.valueOf((LocalTime) value));
         } else if (value instanceof OffsetDateTime) {
-            ps.setObject(index, new Timestamp(((OffsetDateTime) value).toInstant().toEpochMilli()));
+            ps.setTimestamp(index, Timestamp.from(((OffsetDateTime) value).toInstant()));
         } else if (value instanceof OffsetTime) {
-            ps.setObject(index, new Time(((OffsetTime) value).atDate(LocalDate.now()).toInstant().toEpochMilli()));
+            ps.setTime(index, Time.valueOf(((OffsetTime) value).toLocalTime()));
         } else if (value instanceof ZonedDateTime) {
-            ps.setObject(index, new Timestamp(((ZonedDateTime) value).toInstant().toEpochMilli()));
+            ps.setTimestamp(index, Timestamp.from(((ZonedDateTime) value).toInstant()));
         } else if (value instanceof Instant) {
-            ps.setObject(index, new Timestamp(((Instant) value).toEpochMilli()));
+            ps.setTimestamp(index, Timestamp.from((Instant) value));
         } else if (value instanceof MostDateTime) {
-            ps.setObject(index, new Timestamp(((MostDateTime) value).toInstant().toEpochMilli()));
+            ps.setTimestamp(index, Timestamp.from(((MostDateTime) value).toInstant()));
         } else if (value instanceof UUID) {
-            ps.setObject(index, value.toString().replace("-", ""));
+            ps.setString(index, value.toString().replace("-", ""));
         } else if (value instanceof InputStream) {
             ps.setBinaryStream(index, (InputStream) value);
         } else if (value instanceof Path) {

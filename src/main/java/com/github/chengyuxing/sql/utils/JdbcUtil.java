@@ -30,7 +30,11 @@ public class JdbcUtil {
             className = obj.getClass().getName();
         }
         if (obj instanceof Blob) {
-            obj = getBytes((Blob) obj);
+            try {
+                obj = FileResource.readBytes(((Blob) obj).getBinaryStream());
+            } catch (IOException e) {
+                throw new UncheckedIOException("read blob error.", e);
+            }
         } else if (obj instanceof Clob) {
             Clob clob = (Clob) obj;
             obj = clob.getSubString(1, (int) clob.length());
@@ -94,17 +98,6 @@ public class JdbcUtil {
             }
         } else {
             ps.setObject(index, value);
-        }
-    }
-
-    public static byte[] getBytes(Blob blob) throws SQLException {
-        if (Objects.isNull(blob)) {
-            return null;
-        }
-        try {
-            return FileResource.readBytes(blob.getBinaryStream());
-        } catch (IOException e) {
-            throw new UncheckedIOException("read blob catch an error.", e);
         }
     }
 

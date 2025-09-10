@@ -5,6 +5,7 @@ import com.github.chengyuxing.common.MostDateTime;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,7 +24,10 @@ import java.util.*;
 public class JdbcUtil {
     private static final Logger log = LoggerFactory.getLogger(JdbcUtil.class);
 
-    public static Object getResultValue(@NotNull ResultSet resultSet, @Range(from = 1, to = Integer.MAX_VALUE) int index) throws SQLException {
+    public static Object getResultValue(@Nullable ResultSet resultSet, @Range(from = 1, to = Integer.MAX_VALUE) int index) throws SQLException {
+        if (Objects.isNull(resultSet)) {
+            return null;
+        }
         Object obj = resultSet.getObject(index);
         String className = null;
         if (Objects.nonNull(obj)) {
@@ -110,7 +114,7 @@ public class JdbcUtil {
      * @return DataRow
      * @throws SQLException sql exp
      */
-    public static DataRow getResult(PreparedStatement statement, final String sql) throws SQLException {
+    public static DataRow getResult(@NotNull PreparedStatement statement, @NotNull final String sql) throws SQLException {
         ResultSet resultSet = statement.getResultSet();
         if (Objects.nonNull(resultSet)) {
             List<DataRow> result = JdbcUtil.createDataRows(resultSet, sql, -1);
@@ -132,7 +136,7 @@ public class JdbcUtil {
      *
      * @param sc sql statement object
      */
-    public static void printSqlConsole(Statement sc) {
+    public static void printSqlConsole(@NotNull Statement sc) {
         if (log.isWarnEnabled()) {
             try {
                 SQLWarning warning = sc.getWarnings();
@@ -146,7 +150,7 @@ public class JdbcUtil {
         }
     }
 
-    public static void closeResultSet(ResultSet resultSet) {
+    public static void closeResultSet(@Nullable ResultSet resultSet) {
         if (Objects.nonNull(resultSet)) {
             try {
                 if (!resultSet.isClosed()) {
@@ -158,7 +162,7 @@ public class JdbcUtil {
         }
     }
 
-    public static void closeStatement(Statement statement) {
+    public static void closeStatement(@Nullable Statement statement) {
         if (Objects.nonNull(statement)) {
             try {
                 if (!statement.isClosed()) {
@@ -178,7 +182,7 @@ public class JdbcUtil {
      * @return fields array
      * @throws SQLException ex
      */
-    public static String[] createNames(ResultSet resultSet, final String executedSql) throws SQLException {
+    public static String[] createNames(@NotNull ResultSet resultSet, @NotNull final String executedSql) throws SQLException {
         ResultSetMetaData metaData = resultSet.getMetaData();
         int columnCount = metaData.getColumnCount();
         String[] names = new String[columnCount];
@@ -203,7 +207,7 @@ public class JdbcUtil {
      * @return DataRow
      * @throws SQLException ex
      */
-    public static DataRow createDataRow(String[] names, ResultSet resultSet) throws SQLException {
+    public static DataRow createDataRow(String[] names, @Nullable ResultSet resultSet) throws SQLException {
         DataRow row = new DataRow(names.length);
         for (int i = 0; i < names.length; i++) {
             row.put(names[i], getResultValue(resultSet, i + 1));
@@ -220,7 +224,7 @@ public class JdbcUtil {
      * @return DataRows
      * @throws SQLException ex
      */
-    public static List<DataRow> createDataRows(final ResultSet resultSet, final String executedSql, @Range(from = -1, to = Long.MAX_VALUE) final long fetchSize) throws SQLException {
+    public static List<DataRow> createDataRows(@Nullable final ResultSet resultSet, @NotNull final String executedSql, @Range(from = -1, to = Long.MAX_VALUE) final long fetchSize) throws SQLException {
         if (Objects.isNull(resultSet)) {
             return Collections.emptyList();
         }

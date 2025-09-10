@@ -128,7 +128,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     protected void init() {
         this.sqlGenerator = new SqlGenerator(namedParamPrefix);
         this.entityManager = new EntityManager(namedParamPrefix);
-        this.sqlAroundExecutor = new AroundExecutor<>() {
+        this.sqlAroundExecutor = new AroundExecutor<SqlStatement>() {
             @Override
             protected void onStart(@NotNull SqlStatement identifier) {
                 identifier.setState("startTime", System.currentTimeMillis());

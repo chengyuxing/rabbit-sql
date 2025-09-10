@@ -20,6 +20,7 @@ import com.github.chengyuxing.sql.types.Variable;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.utils.SqlHighlighter;
 import com.github.chengyuxing.sql.utils.SqlUtil;
+import jakarta.persistence.Column;
 import org.junit.Test;
 import tests.User;
 
@@ -341,7 +342,7 @@ public class NonBakiTests {
 
     @Test
     public void testRR() {
-        PagedResource<DataRow> resource = PagedResource.empty(1,90);
+        PagedResource<DataRow> resource = PagedResource.empty(1, 90);
         System.out.println(resource);
     }
 
@@ -399,5 +400,26 @@ public class NonBakiTests {
             Method m = clazz.getDeclaredMethod("schema");
             System.out.println(m.invoke(a));
         }
+    }
+
+    @Test
+    public void testDatarow1() {
+        var row = DataRow.of("xm", "cyx", "mm", "123456", "age", "1d7");
+        var a = row.toEntity(User.class, field -> {
+            if (field.isAnnotationPresent(Column.class)) {
+                var colum = field.getDeclaredAnnotation(Column.class);
+                return colum.name();
+            }
+            return field.getName();
+        }, (mValueType, entityVType, c) -> {
+            System.out.println(mValueType);
+            System.out.println(entityVType);
+            if (c.equals("1d7")) {
+                return 17;
+            }
+            return c;
+        });
+        System.out.println(a);
+
     }
 }

@@ -1,7 +1,11 @@
 package tests;
 
+import jakarta.persistence.Column;
+
 public class User {
+    @Column(name = "xm")
     private String name;
+    @Column(name = "mm")
     private String password;
     private int age;
 
@@ -27,5 +31,14 @@ public class User {
 
     public void setAge(int age) {
         this.age = age;
+    }
+
+    @Override
+    public String toString() {
+        return "User{" +
+                "name='" + name + '\'' +
+                ", password='" + password + '\'' +
+                ", age=" + age +
+                '}';
     }
 }

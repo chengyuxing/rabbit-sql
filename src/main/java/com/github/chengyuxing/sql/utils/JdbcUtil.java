@@ -2,6 +2,7 @@ package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.MostDateTime;
+import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Range;
@@ -97,17 +98,14 @@ public class JdbcUtil {
     }
 
     public static byte[] getBytes(Blob blob) throws SQLException {
-        byte[] bytes = new byte[0];
-        if (Objects.nonNull(blob)) {
-            try (InputStream ins = blob.getBinaryStream()) {
-                bytes = new byte[(int) blob.length()];
-                //noinspection ResultOfMethodCallIgnored
-                ins.read(bytes);
-            } catch (IOException e) {
-                throw new UncheckedIOException("read blob catch an error.", e);
-            }
+        if (Objects.isNull(blob)) {
+            return null;
         }
-        return bytes;
+        try {
+            return FileResource.readBytes(blob.getBinaryStream());
+        } catch (IOException e) {
+            throw new UncheckedIOException("read blob catch an error.", e);
+        }
     }
 
     /**

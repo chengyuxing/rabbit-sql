@@ -9,6 +9,7 @@ import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.io.FileResource;
+import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.PagedResource;
 import com.github.chengyuxing.sql.XQLFileManager;
@@ -16,14 +17,14 @@ import com.github.chengyuxing.sql.XQLFileManagerConfig;
 import com.github.chengyuxing.sql.annotation.XQLMapper;
 import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
-import com.github.chengyuxing.sql.types.Variable;
+import com.github.chengyuxing.sql.plugins.EntityFieldMapper;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.utils.SqlHighlighter;
 import com.github.chengyuxing.sql.utils.SqlUtil;
-import jakarta.persistence.Column;
 import org.junit.Test;
 import tests.User;
 
+import javax.persistence.Column;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
@@ -97,7 +98,7 @@ public class NonBakiTests {
                 "from test.score where id::number = :id*/;";
 
         SqlGenerator sqlGenerator = new SqlGenerator(':');
-        SqlGenerator.GeneratedSqlMetaData pair = sqlGenerator.generatePreparedSql(sql, Collections.emptyMap());
+        SqlGenerator.PreparedSqlMetaData pair = sqlGenerator.generatePreparedSql(sql, Collections.emptyMap());
         System.out.println(pair.getSourceSql());
         System.out.println(pair.getPrepareSql());
 
@@ -126,7 +127,7 @@ public class NonBakiTests {
     @Test
     public void testPs3() {
         SqlGenerator sqlGenerator = new SqlGenerator(':');
-        SqlGenerator.GeneratedSqlMetaData pair1 = sqlGenerator.generatePreparedSql(query, Args.of(
+        SqlGenerator.PreparedSqlMetaData pair1 = sqlGenerator.generatePreparedSql(query, Args.of(
                 "id", 25,
                 "idc", 15,
                 "username", "cyx"
@@ -139,7 +140,7 @@ public class NonBakiTests {
     public void test23() {
         SqlGenerator sqlGenerator = new SqlGenerator('*');
         System.out.println(sqlGenerator.getNamedParamPattern());
-        SqlGenerator.GeneratedSqlMetaData sqla = sqlGenerator.generatePreparedSql(insert, Args.of("id", 12,
+        SqlGenerator.PreparedSqlMetaData sqla = sqlGenerator.generatePreparedSql(insert, Args.of("id", 12,
                 "name", "chengyuxing",
                 "idd", 16,
                 "age", 30,
@@ -153,6 +154,26 @@ public class NonBakiTests {
         System.out.println(SqlUtil.formatSql("select *, '${now}' as now from test.user where dt < ${!current}",
                 Args.of("now", LocalDateTime.now(),
                         "current", LocalDateTime.now())));
+    }
+
+    @Test
+    public void testMappingValue() {
+        EntityFieldMapper func = f -> {
+            if (f.isAnnotationPresent(Column.class)) {
+                return f.getAnnotation(Column.class).name();
+            }
+            return f.getName();
+        };
+
+        entity.type.User user = new entity.type.User();
+        user.setId(1);
+        user.setName("cyx");
+        Object map = ObjectUtil.entityToMap(user, func::apply, HashMap::new);
+        System.out.println(map);
+
+        DataRow row = DataRow.of("id", 2, "xm", "chengyuxing");
+        Object obj = ObjectUtil.mapToEntity(row, entity.type.User.class, func::apply, null);
+        System.out.println(obj);
     }
 
     @Test
@@ -400,26 +421,5 @@ public class NonBakiTests {
             Method m = clazz.getDeclaredMethod("schema");
             System.out.println(m.invoke(a));
         }
-    }
-
-    @Test
-    public void testDatarow1() {
-        var row = DataRow.of("xm", "cyx", "mm", "123456", "age", "1d7");
-        var a = row.toEntity(User.class, field -> {
-            if (field.isAnnotationPresent(Column.class)) {
-                var colum = field.getDeclaredAnnotation(Column.class);
-                return colum.name();
-            }
-            return field.getName();
-        }, (mValueType, entityVType, c) -> {
-            System.out.println(mValueType);
-            System.out.println(entityVType);
-            if (c.equals("1d7")) {
-                return 17;
-            }
-            return c;
-        });
-        System.out.println(a);
-
     }
 }

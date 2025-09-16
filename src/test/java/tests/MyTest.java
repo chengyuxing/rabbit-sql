@@ -243,7 +243,7 @@ public class MyTest {
 
     @Test
     public void line() throws Exception {
-        DataRow row = baki.of("do\n" +
+        DataRow row = baki.execute("do\n" +
                 "$$\n" +
                 "    declare\n" +
                 "        x    integer[];\n" +
@@ -255,7 +255,7 @@ public class MyTest {
                 "            end loop;\n" +
                 "    end;\n" +
                 "\n" +
-                "$$;").execute();
+                "$$;", Args.of());
         System.out.println(row);
     }
 
@@ -302,7 +302,7 @@ public class MyTest {
 
     @Test
     public void loadData() throws Exception {
-        baki.of("copy test.fruit from '/Users/chengyuxing/test/fruit2.txt' with delimiter ','");
+        baki.execute("copy test.fruit from '/Users/chengyuxing/test/fruit2.txt' with delimiter ','", Args.of());
 //        baki.execute("copy test.fruit from '/Users/chengyuxing/test/fruit2.txt' with delimiter ','");
     }
 
@@ -482,8 +482,7 @@ public class MyTest {
             paramMap.put("success", Param.OUT(StandardOutParamType.BOOLEAN));
             paramMap.put("res", Param.OUT(StandardOutParamType.REF_CURSOR));
             paramMap.put("msg", Param.OUT(StandardOutParamType.VARCHAR));
-            DataRow row = baki.of("call test.multi_res(12, :success, :res, :msg)")
-                    .call(paramMap);
+            DataRow row = baki.call("call test.multi_res(12, :success, :res, :msg)", paramMap);
             System.out.println(row);
         });
     }
@@ -519,7 +518,7 @@ public class MyTest {
         params.put("b", Param.IN(22));
         params.put("sum", Param.OUT(StandardOutParamType.INTEGER));
         params.put("tm", Param.OUT(new TIME()));
-        DataRow row = baki.of("{call test.fun_now(:a, :b, :sum, :dt, :tm)}").call(params);
+        DataRow row = baki.call("{call test.fun_now(:a, :b, :sum, :dt, :tm)}", params);
         Timestamp dt = row.getAs("dt");
         System.out.println(dt.toLocalDateTime());
         System.out.println(row);

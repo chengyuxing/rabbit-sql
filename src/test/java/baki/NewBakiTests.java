@@ -1,32 +1,23 @@
 package baki;
 
 import baki.entity.AnotherUser;
-import baki.entity.Guest;
 import baki.entity.User;
+import baki.op.ExecuteCostWatcher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.io.FileResource;
-import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.sql.*;
-import com.github.chengyuxing.sql.dsl.types.OrderByType;
-import com.github.chengyuxing.sql.dsl.types.StandardOperator;
-import com.github.chengyuxing.sql.page.PageHelper;
-import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
-import com.github.chengyuxing.sql.plugins.PageHelperProvider;
-import com.github.chengyuxing.sql.support.executor.QueryExecutor;
+import com.github.chengyuxing.sql.plugins.QueryExecutor;
 import com.github.chengyuxing.sql.transaction.Tx;
 import com.github.chengyuxing.sql.types.StandardOutParamType;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.utils.JdbcUtil;
 import com.zaxxer.hikari.HikariDataSource;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.sql.CallableStatement;
-import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -90,8 +81,6 @@ public class NewBakiTests {
 //            }
 //        });
 
-        bakiDao.setOperatorWhiteList(new HashSet<>(Arrays.asList("~")));
-
         baki = bakiDao;
 
         bakiDao.setGlobalPageHelperProvider((databaseMetaData, dbName, namedParamPrefix) -> {
@@ -100,6 +89,7 @@ public class NewBakiTests {
             }
             return null;
         });
+        bakiDao.setExecutionWatcher(new ExecuteCostWatcher());
     }
 
     @Test
@@ -114,8 +104,7 @@ public class NewBakiTests {
 
     @Test
     public void testMoreRes() {
-        var res = baki.of("update test.guest set name = 'ccc' where id = :id")
-                .execute(Args.of("id", 17));
+        Object res = baki.update("update test.guest set name = 'ccc' where id = :id", Args.of("id", 17));
         System.out.println(res);
     }
 
@@ -140,7 +129,7 @@ public class NewBakiTests {
 
     @Test
     public void testPlsql() {
-        DataRow row = baki.of("do\n" +
+        DataRow row = baki.execute("do\n" +
                 "$$\n" +
                 "    declare\n" +
                 "        x    integer[];\n" +
@@ -152,7 +141,7 @@ public class NewBakiTests {
                 "            end loop;\n" +
                 "    end;\n" +
                 "\n" +
-                "$$;").execute();
+                "$$;", Args.of());
         System.out.println(row);
     }
 
@@ -169,8 +158,8 @@ public class NewBakiTests {
 
     @Test
     public void testInterceptor() {
-        DataRow res = baki.of("create table test.temp(id int,content text,file bytea,dt timestamp)")
-                .execute();
+        DataRow res = baki.execute("create table test.temp(id int,content text,file bytea,dt timestamp)",
+                Args.of("id", 1));
         System.out.println(res);
     }
 
@@ -184,196 +173,13 @@ public class NewBakiTests {
     }
 
     @Test
-    public void testDslQuery4() {
-        Object res = baki.entity(Guest.class)
-                .query()
-                .where(w -> w.gt(Guest::getAge, 1))
-                .groupBy(g -> g.count().by(Guest::getAge).having(h -> h.count(StandardOperator.GT, 0)))
-                .orderBy(o -> o.asc(Guest::getAge))
-                .top(5)
-                .toList()
-//                .toRows()
-//                .toPagedResource(1, 10)
-//                .count()
-//                .exists()
-                ;
-        System.out.println(res);
-    }
-
-    @Test
-    public void testDslDelete() {
-        Guest guest = new Guest();
-        guest.setId(140);
-        int i = baki.entity(Guest.class).delete(guest,
-                w -> w.identity(Guest::getId, StandardOperator.GT)
-                        .in(Guest::getId, Arrays.asList(1, 2, 3))
-                        .identity(Guest::getAddress, StandardOperator.LIKE));
-        System.out.println(i);
-    }
-
-    @Test
-    public void testDslDelete2() {
-        List<Guest> list = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            Guest guest = new Guest();
-            guest.setAge(i + 1000);
-            list.add(guest);
-        }
-        int i = baki.entity(Guest.class).delete(list, w -> w.gt(Guest::getAge, 100)
-                .identity(Guest::getId, StandardOperator.GT));
-        System.out.println(i);
-    }
-
-    @Test
-    public void testDslQuery2() {
-        baki.entity(Guest.class).query()
-                .where(g -> g.gt(Guest::getId, 5))
-                .where(g -> g.lt(Guest::getId, 10))
-                .where(g -> g.or(o -> o.in(Guest::getId, Arrays.asList(17, 18, 19))))
-                .orderBy(o -> o.asc(Guest::getAge))
-                .toList()
-                .forEach(System.out::println);
-
-        System.out.println("---");
-//
-        Object sql = baki.entity(Guest.class).query()
-                .where(g -> g.gt(Guest::getId, 5)
-                        .lt(Guest::getId, 10)
-                        .or(o -> o.in(Guest::getId, Arrays.asList(17, 18, 19))))
-                .getSql();
-
-        System.out.println(sql);
-    }
-
-    @Test
-    public void testDslQuery() {
-        baki.entity(Guest.class).query()
-                .where(w -> w.isNotNull(Guest::getId)
-                        .gt(Guest::getId, 1)
-                        .and(and -> and.in(Guest::getId, Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8))
-                                .startsWith(Guest::getName, "cyx")
-                                .or(s -> s.between(Guest::getAge, 1, 100).notBetween(Guest::getAge, 100, 1000))
-                                .in(Guest::getName, Arrays.asList("cyx", "jack"))
-                        )
-                        .of(Guest::getAddress, () -> "~", "kunming")
-                )
-                .groupBy(g -> g.count()
-                        .max(Guest::getAge)
-                        .avg(Guest::getAge)
-                        .count(Guest::getAge)
-                        .count(Guest::getName)
-                        .min(Guest::getAge)
-                        .min(Guest::getId)
-                        .by(Guest::getAge)
-                        .having(h -> h.count(StandardOperator.GT, 1))
-                )
-                .orderBy(o -> o.by("max_age", OrderByType.DESC))
-                .toList()
-                .forEach(System.out::println)
-        ;
-    }
-
-    @Test
-    public void testDslGroupBy() {
-        PagedResource<Guest> res = baki.entity(Guest.class).query()
-                .where(w -> w.gt(Guest::getAge, 23))
-                .groupBy(g -> g.count(Guest::getId).max(Guest::getAge).by(Guest::getAge)
-                        .having(h -> h.min(Guest::getId, StandardOperator.IS_NOT_NULL, 18980))
-                        .having(h -> h.max(Guest::getId, StandardOperator.BETWEEN, Pair.of(1, 10)))
-                )
-                .groupBy(g -> g.sum(Guest::getAge)
-                        .by(Guest::getName)
-                        .having(h -> h.sum(Guest::getAge, StandardOperator.GT, 935))
-                        .having(h -> h.max(Guest::getAddress, StandardOperator.EQ, "kunming")
-                                .or(o -> o.min(Guest::getAge, StandardOperator.GT, 28)
-                                        .max(Guest::getAge, StandardOperator.EQ, 1)))
-                )
-                .orderBy(o -> o.asc(Guest::getAge))
-                .toPagedResource(1, 5);
-        System.out.println(res);
-    }
-
-    @Test
-    public void testDlsQuery2() {
-        baki.entity(Guest.class).query()
-                .where(w -> w.and(o -> o.lt(Guest::getAge, 15)
-                                .gt(Guest::getAge, 60))
-                        .eq(Guest::getName, "cyx")
-                )
-                .deselect(Arrays.asList(Guest::getId, Guest::getAge))
-                .toList()
-                .forEach(System.out::println);
-
-    }
-
-    @Test
-    public void testDslQuery3() {
-        baki.entity(Guest.class).query()
-                .where(w -> w.and(o -> o.or(a -> a.eq(Guest::getName, "cyx")
-                                        .eq(Guest::getAge, 30))
-                                .or(r -> r.eq(Guest::getName, "jack")
-                                        .eq(Guest::getAge, 60))
-                        )
-                )
-                .toList();
-    }
-
-    @Test
-    public void testDslUpdate() {
-        Guest guest = new Guest();
-        guest.setId(16);
-        guest.setAddress("Shanghai");
-        int i = baki.entity(Guest.class).update(guest, true);
-        System.out.println(i);
-    }
-
-    @Test
-    public void testDslUpdate2() {
-        Guest guest = new Guest();
-        guest.setId(1895);
-        guest.setAddress("China");
-        guest.setAge(230);
-        int i = baki.entity(Guest.class).update(guest, true, w -> w.lt(Guest::getAge, 9000));
-        System.out.println(i);
-    }
-
-    @Test
-    public void testDslUpdate3() {
-        List<Guest> list = new ArrayList<>();
-        for (int i = 0; i < 10; i++) {
-            Guest guest = new Guest();
-            guest.setId(i + 1000);
-            guest.setAddress("Shanghai");
-            guest.setAge(i + 9000);
-            list.add(guest);
-        }
-        int i = baki.entity(Guest.class).update(list, true,
-                w -> w.identity(Guest::getAge, StandardOperator.GT)
-                        .identity(Guest::getAge, StandardOperator.LTE)
-                        .gte(Guest::getId, 12222));
-        System.out.println(i);
-    }
-
-    @Test
     public void testCallA() {
         Tx.using(() -> {
-            DataRow res = baki.of("{call getGuestBy(:w, :res)}")
-                    .call(Args.of("w", Param.IN("id = 1"))
+            DataRow res = baki.call("{call getGuestBy(:w, :res)}",
+                    Args.of("w", Param.IN("id = 1"))
                             .add("res", Param.OUT(StandardOutParamType.REF_CURSOR)));
             System.out.println(res);
         });
-    }
-
-    @Test
-    public void testDslInsert() {
-        Guest guest = new Guest();
-        guest.setId(1000);
-        guest.setAddress("BBC");
-        guest.setAge(89);
-        guest.setCount(1919);
-        guest.setName("chengyuxing");
-        int i = baki.entity(Guest.class).insert(guest);
-        System.out.println(i);
     }
 
     @Test
@@ -387,28 +193,15 @@ public class NewBakiTests {
 
     @Test
     public void testInsertReturning() {
-        DataRow res = baki.of("insert into test.guest(name, address, age)\n" +
-                        "values ('xxx', 'kunming', 37)\n" +
-                        "returning id")
-                .execute();
+        DataRow res = baki.execute("insert into test.guest(name, address, age)\n" +
+                "values ('xxx', 'kunming', 37)\n" +
+                "returning id", Args.of("id", 1));
         System.out.println(res);
     }
 
     @Test
-    public void testUpdateEntity() {
-        AnotherUser user = new AnotherUser();
-        user.setNl(76);
-//        user.setXm("cyx");
-        user.setUserId(2120056);
-        baki.entity(AnotherUser.class).update(user, true)
-//                .save(user, Where.of().eq("id", 1))
-        ;
-//        System.out.println(i);
-    }
-
-    @Test
     public void testUpdate2() {
-        DataRow res = baki.of("&new.update").execute(Args.of(
+        DataRow res = baki.execute("&new.update", Args.of(
                 "id", 11,
                 "sets", Args.of(
                         "name", "chengyuxing",
@@ -427,15 +220,6 @@ public class NewBakiTests {
 //        int i = baki.delete(AnotherUser.class)
 //                .save(user, Where.of().eq("id", 1));
 //        System.out.println(i);
-    }
-
-    @Test
-    public void testUpdate() {
-        Guest user = new Guest();
-        user.setId(11);
-        user.setAddress("昆明市西山区福海街道");
-        int i = baki.entity(Guest.class).update(user, true);
-        System.out.println(i);
     }
 
     @Test
@@ -499,7 +283,7 @@ public class NewBakiTests {
         for (int i = 0; i < 10; i++) {
             args.add(Args.of("users", Arrays.asList("chengyuxing", i, "昆明市")));
         }
-        int i = baki.of("&new.insert").executeBatch(args);
+        int i = baki.execute("&new.insert", args);
         System.out.println(i);
     }
 
@@ -519,9 +303,8 @@ public class NewBakiTests {
 
     @Test
     public void testCall() {
-
-        var res = baki.of("{call test.mvn_dependencies_query(:keyword)}")
-                .call(Args.of("keyword", Param.IN("chengyuxing")))
+        Object res = baki.call("{call test.mvn_dependencies_query(:keyword)}",
+                        Args.of("keyword", Param.IN("chengyuxing")))
                 .<List<DataRow>>getAs(0);
 
         System.out.println(res);
@@ -530,8 +313,8 @@ public class NewBakiTests {
     @Test
     public void testCall3() {
         baki.query("&new.qqq")
-                .args("page", 1, "size", 4)
-                .arg("orderBy", "id desc")
+                .args("page", 1, "size", 4, "id", 10)
+                .arg("orderBy", "order by id desc")
                 .pageable()
                 .collect()
                 .getData()
@@ -556,10 +339,10 @@ public class NewBakiTests {
 
     @Test
     public void testCall2() {
-        baki.of("{:res = call test.sum(:a, :b)}")
-                .call(Args.of("res", Param.OUT(StandardOutParamType.INTEGER))
-                        .add("a", Param.IN(34))
-                        .add("b", Param.IN(56)))
+        baki.call("{:res = call test.sum(:a, :b)}",
+                        Args.of("res", Param.OUT(StandardOutParamType.INTEGER))
+                                .add("a", Param.IN(34))
+                                .add("b", Param.IN(9956)))
                 .getOptional("res")
                 .ifPresent(System.out::println);
     }
@@ -573,7 +356,7 @@ public class NewBakiTests {
 
     @Test
     public void testS() {
-        baki.of("select current_date").execute()
+        baki.execute("select current_date", Args.of())
                 .forEach((k, v) -> {
                     System.out.println(k + " -> " + v);
                 });

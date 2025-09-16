@@ -1,11 +1,7 @@
 package tests;
 
-import jakarta.persistence.Column;
-
 public class User {
-    @Column(name = "xm")
     private String name;
-    @Column(name = "mm")
     private String password;
     private int age;
 

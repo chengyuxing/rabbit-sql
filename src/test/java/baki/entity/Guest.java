@@ -1,20 +1,12 @@
 package baki.entity;
 
 
-import jakarta.persistence.*;
-
-@Entity
-@Table(schema = "test")
 public class Guest {
-    @Id
-    @Column(insertable = false, updatable = false)
     private Integer id;
     private String name;
     private Integer age;
     private String address;
 
-    @Transient
-    @Column(name = "count_all")
     private Integer count;
 
     @Override

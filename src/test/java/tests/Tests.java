@@ -42,7 +42,7 @@ public class Tests {
     public void sqlReplace() throws Exception {
         String str = "select t.id || 'number' || 'age:age,name:cyx', '{\"name\":\"user\"}'::jsonb from test.user where id =:id::integer and id >:idc and name=text :username";
         String sql = "insert into test.user(idd,name,id,age,address) values (:id,:name::integer,:idd::float,integer :age,date :address)";
-        SqlGenerator.GeneratedSqlMetaData pair = new SqlGenerator(':').generatePreparedSql(str, Collections.emptyMap());
+        SqlGenerator.PreparedSqlMetaData pair = new SqlGenerator(':').generatePreparedSql(str, Collections.emptyMap());
         System.out.println(pair.getPrepareSql());
         System.out.println(pair.getArgs());
     }
@@ -50,7 +50,7 @@ public class Tests {
     @Test
     public void sqlPlaceHolder() throws Exception {
         String query = "select * from test where id = ?_i.d and id = ?id and idCard = '5301111' or name = ?na_me ${cnd}";
-        SqlGenerator.GeneratedSqlMetaData sql = new SqlGenerator('?').generatePreparedSql(query, DataRow.of("cnd", "and date <= '${date}'")
+        SqlGenerator.PreparedSqlMetaData sql = new SqlGenerator('?').generatePreparedSql(query, DataRow.of("cnd", "and date <= '${date}'")
                 .add("date", "2020-12-23 ${time}")
                 .add("time", "11:23:44"));
         System.out.println(sql.getPrepareSql());

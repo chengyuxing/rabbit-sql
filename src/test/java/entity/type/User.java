@@ -1,18 +1,19 @@
 package entity.type;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
 
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 import java.time.LocalDateTime;
 
-@Table(name = "user", schema = "test")
+@Entity
+@Table
 public class User {
     @Id
     private Integer id;
-    @Column
+    @Column(name = "xm")
     private String name;
-    @Column
     private LocalDateTime now;
 
     @Override

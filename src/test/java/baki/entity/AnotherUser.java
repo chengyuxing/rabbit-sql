@@ -1,20 +1,10 @@
 package baki.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
 
-@Entity
-@Table(schema = "test")
 public class AnotherUser {
-    @Id
     private Integer userId;
-    @Column(name = "name")
     private String xm;
-    @Column(name = "address")
     private String xxdz;
-    @Column(name = "age")
     private Integer nl;
 
     @Override

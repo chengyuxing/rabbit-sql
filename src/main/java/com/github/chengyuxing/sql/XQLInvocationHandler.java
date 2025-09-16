@@ -1,16 +1,14 @@
 package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.sql.annotation.*;
 import com.github.chengyuxing.sql.page.IPageable;
 import com.github.chengyuxing.sql.page.PageHelper;
-import com.github.chengyuxing.sql.plugins.PageHelperProvider;
-import com.github.chengyuxing.sql.plugins.SqlInvokeHandler;
-import com.github.chengyuxing.sql.support.executor.QueryExecutor;
+import com.github.chengyuxing.sql.plugins.*;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.annotation.SqlStatementType;
-import com.github.chengyuxing.sql.utils.EntityUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.annotation.Annotation;
@@ -35,6 +33,14 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
     private final ClassLoader classLoader = this.getClass().getClassLoader();
 
     protected abstract @NotNull BakiDao baki();
+
+    protected EntityFieldMapper entityFieldMapper() {
+        return baki().getEntityFieldMapper();
+    }
+
+    protected EntityValueMapper entityValueMapper() {
+        return baki().getEntityValueMapper();
+    }
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -128,7 +134,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
             throw new IllegalStateException(method.getDeclaringClass() + "#" + method.getName() + " return type must be Map");
         }
         //noinspection unchecked
-        return baki.of(sqlRef).execute((Map<String, Object>) args);
+        return baki.execute(sqlRef, (Map<String, Object>) args);
     }
 
     protected int handleModify(BakiDao baki, String sqlRef, Object args, Method method, Class<?> returnType) {
@@ -137,10 +143,10 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
         }
         if (args instanceof Map) {
             //noinspection unchecked
-            return baki.of(sqlRef).execute((Map<String, Object>) args).getFirstAs();
+            return baki.execute(sqlRef, (Map<String, Object>) args).getFirstAs();
         }
         //noinspection unchecked
-        return baki.of(sqlRef).executeBatch((Collection<? extends Map<String, ?>>) args);
+        return baki.execute(sqlRef, (Iterable<? extends Map<String, Object>>) args);
     }
 
     protected DataRow handleProcedure(BakiDao baki, String sqlRef, Object args, Method method, Class<?> returnType) {
@@ -155,7 +161,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
         for (Map.Entry<String, Object> entry : ((Map<String, Object>) args).entrySet()) {
             myPaArgs.put(entry.getKey(), (Param) entry.getValue());
         }
-        return baki.of(sqlRef).call(myPaArgs);
+        return baki.call(sqlRef, myPaArgs);
     }
 
     protected Object handleQuery(BakiDao baki, String alias, String sqlName, Object args, Method method, Class<?> returnType, Class<?> genericType) {
@@ -275,7 +281,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
             if (genericType.isAssignableFrom(d.getClass())) {
                 return d;
             }
-            return EntityUtil.mapToEntity(d, genericType);
+            return d.toEntity(genericType, entityFieldMapper()::apply, entityValueMapper()::apply);
         };
     }
 
@@ -295,15 +301,15 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
             Annotation[] annotations = parameters[0].getAnnotations();
             if (annotations.length == 0) {
                 Object arg = args[0];
-                if (arg instanceof Collection) {
-                    List<Object> myArgs = new ArrayList<>(((Collection<?>) arg).size());
-                    for (Object o : (Collection<?>) arg) {
+                if (arg instanceof Iterable) {
+                    List<Object> myArgs = new ArrayList<>();
+                    for (Object o : (Iterable<?>) arg) {
                         if (o instanceof Map) {
                             myArgs.add(o);
                             continue;
                         }
                         if (!arg.getClass().getName().startsWith("java.")) {
-                            myArgs.add(EntityUtil.entityToMap(arg, HashMap::new));
+                            myArgs.add(ObjectUtil.entityToMap(arg, entityFieldMapper()::apply, HashMap::new));
                             continue;
                         }
                         throw new IllegalArgumentException(method.getDeclaringClass() + "." + method.getName() + " unsupported arg type: " + arg.getClass().getName());
@@ -314,7 +320,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
                     return arg;
                 }
                 if (!ReflectUtil.isBasicType(arg)) {
-                    return EntityUtil.entityToMap(arg, HashMap::new);
+                    return ObjectUtil.entityToMap(arg, entityFieldMapper()::apply, HashMap::new);
                 }
             }
         }

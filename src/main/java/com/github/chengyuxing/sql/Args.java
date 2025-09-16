@@ -2,11 +2,11 @@ package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.MapExtends;
 import com.github.chengyuxing.common.utils.ObjectUtil;
-import com.github.chengyuxing.sql.utils.EntityUtil;
 import org.jetbrains.annotations.NotNull;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
-import java.util.Map;
+import java.util.function.Function;
 
 /**
  * Simple sql args tool.
@@ -61,23 +61,23 @@ public final class Args<V> extends HashMap<String, V> implements MapExtends<Args
     /**
      * Returns an Args from standard java bean entity.
      *
-     * @param entity standard java bean with annotation {@link jakarta.persistence.Entity @Entity}.
+     * @param entity standard java bean
      * @param <T>    entity type
      * @return Args instance
      */
     public static <T> Args<Object> ofEntity(T entity) {
-        return EntityUtil.entityToMap(entity, Args::new);
+        return ObjectUtil.entityToMap(entity, Args::new);
     }
 
     /**
-     * Returns an entity.
+     * Returns an Args from standard java bean entity.
      *
-     * @param entityClass standard java bean class with annotation {@link jakarta.persistence.Entity @Entity}.
-     * @param <E>         entity type
-     * @return entity
+     * @param entity      standard java bean (entity field) -&gt; (map property)
+     * @param fieldMapper entity field mapper
+     * @param <T>         entity type
+     * @return Args instance
      */
-    @SuppressWarnings("unchecked")
-    public <E> E toEntity(@NotNull Class<E> entityClass) {
-        return EntityUtil.mapToEntity((Map<String, Object>) this, entityClass);
+    public static <T> Args<Object> ofEntity(T entity, @NotNull Function<Field, String> fieldMapper) {
+        return ObjectUtil.entityToMap(entity, fieldMapper, Args::new);
     }
 }

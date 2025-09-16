@@ -34,6 +34,16 @@ public abstract class PageHelper {
      */
     public abstract @NotNull Args<Integer> pagedArgs();
 
+    /**
+     * Create count query sql.
+     *
+     * @param sql record query sql
+     * @return count query sql
+     */
+    public String countSql(@NotNull String sql) {
+        return "select count(*) from (\n" + sql + "\n) t_4_rabbit";
+    }
+
     public @Range(from = 0, to = Integer.MAX_VALUE) int getPageCount() {
         return pageCount;
     }

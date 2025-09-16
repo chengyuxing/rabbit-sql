@@ -1,13 +1,13 @@
 package com.github.chengyuxing.sql;
 
-import com.github.chengyuxing.sql.support.executor.EntityExecutor;
-import com.github.chengyuxing.sql.support.executor.GenericExecutor;
-import com.github.chengyuxing.sql.support.executor.QueryExecutor;
-import org.jetbrains.annotations.ApiStatus;
+import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.sql.plugins.QueryExecutor;
+import com.github.chengyuxing.sql.types.Param;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.util.Map;
 import java.util.function.Function;
 
 /**
@@ -18,41 +18,99 @@ public interface Baki {
     /**
      * Query executor.
      *
-     * @param sql sql statement or sql name
+     * @param sql sql statement
      * @return Query executor
      */
     QueryExecutor query(@NotNull String sql);
 
     /**
-     * Entity executor.
-     * <p>Basic single entity CRUD depends on JPA.<br>
-     * Implemented annotations: {@link jakarta.persistence.Entity @Entity}
-     * {@link jakarta.persistence.Table @Table}
-     * {@link jakarta.persistence.Id @Id}
-     * {@link jakarta.persistence.Column @Column}
-     * {@link jakarta.persistence.Transient @Transient}
-     * </p>
+     * Execute insert.
      *
-     * @param clazz entity class
-     * @param <T>   entity type
-     * @return Entity executor
+     * @param tableName table name
+     * @param data      data
+     * @return affected row count
      */
-    @ApiStatus.AvailableSince("9.0.3")
-    <T> EntityExecutor<T> entity(@NotNull Class<T> clazz);
+    int insert(@NotNull String tableName, @NotNull Map<String, Object> data);
 
     /**
-     * Basic executor.
+     * Execute batch insert.
      *
-     * @param sql Support：<ul>
-     *            <li>ddl</li>
-     *            <li>dml</li>
-     *            <li>query</li>
-     *            <li>function/procedure</li>
-     *            <li>plsql</li>
-     *            </ul>
-     * @return Basic executor
+     * @param tableName table name
+     * @param data      some data
+     * @return affected row count
      */
-    GenericExecutor of(@NotNull String sql);
+    int insert(@NotNull String tableName, @NotNull Iterable<? extends Map<String, Object>> data);
+
+    /**
+     * Execute update.
+     *
+     * @param sql  sql
+     * @param args args
+     * @return affected row count
+     */
+    int update(@NotNull String sql, Map<String, Object> args);
+
+    /**
+     * Execute batch update.
+     *
+     * @param sql  sql
+     * @param args args
+     * @return affected row count
+     */
+    int update(@NotNull String sql, @NotNull Iterable<? extends Map<String, Object>> args);
+
+    /**
+     * Execute delete.
+     *
+     * @param sql  sql
+     * @param args args
+     * @return affected row count
+     */
+    int delete(@NotNull String sql, Map<String, Object> args);
+
+    /**
+     * Execute batch delete.
+     *
+     * @param sql  sql
+     * @param args args
+     * @return affected row count
+     */
+    int delete(@NotNull String sql, @NotNull Iterable<? extends Map<String, Object>> args);
+
+    /**
+     * Execute store procedure or function.
+     *
+     * @param procedure procedure or function statement
+     * @param params    in,out and in_out params
+     * @return DataRow
+     */
+    @NotNull DataRow call(@NotNull String procedure, Map<String, Param> params);
+
+    /**
+     * Execute sql (ddl, dml, query or plsql).
+     *
+     * @param sql  sql statement
+     * @param args args
+     * @return DataRow
+     */
+    @NotNull DataRow execute(@NotNull String sql, Map<String, Object> args);
+
+    /**
+     * Execute batch prepared dml sql.
+     *
+     * @param sql  sql statement
+     * @param args args
+     * @return affected row count
+     */
+    int execute(@NotNull String sql, @NotNull Iterable<? extends Map<String, Object>> args);
+
+    /**
+     * Batch execute non-prepared sql (dml, ddl).
+     *
+     * @param sqlList sql statements
+     * @return affected row count
+     */
+    int execute(@NotNull Iterable<String> sqlList);
 
     /**
      * Get an auto-closeable connection.

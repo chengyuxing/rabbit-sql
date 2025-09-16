@@ -5,13 +5,16 @@ import com.github.chengyuxing.sql.annotation.SqlStatementType;
 import java.util.HashMap;
 import java.util.Map;
 
-public class SqlStatement {
+/**
+ * SQL Execute data info holder.
+ */
+public class Execution {
     private final SqlStatementType type;
     private final String sql;
     private final Object args;
     private final Map<String, Object> status = new HashMap<>();
 
-    public SqlStatement(SqlStatementType type, String sql, Object args) {
+    public Execution(SqlStatementType type, String sql, Object args) {
         this.type = type;
         this.sql = sql;
         this.args = args;

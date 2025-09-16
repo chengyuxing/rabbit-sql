@@ -3,7 +3,6 @@ package com.github.chengyuxing.sql.support;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.UncheckedCloseable;
 import com.github.chengyuxing.common.utils.ObjectUtil;
-import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.exceptions.SqlRuntimeException;
 import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 import com.github.chengyuxing.sql.types.Param;
@@ -64,7 +63,7 @@ public abstract class JdbcSupport {
      * @param args args
      * @return generated sql meta data
      */
-    protected abstract SqlGenerator.GeneratedSqlMetaData prepareSql(@NotNull String sql, Map<String, ?> args);
+    protected abstract SqlGenerator.PreparedSqlMetaData prepareSql(@NotNull String sql, Map<String, ?> args);
 
     /**
      * Handle prepared statement value.
@@ -98,50 +97,12 @@ public abstract class JdbcSupport {
      * @param names ordered arg names
      * @throws SQLException if connection states error
      */
-    private void setPreparedSqlArgs(PreparedStatement ps, Map<String, ?> args, Map<String, List<Integer>> names) throws SQLException {
+    protected void setPreparedSqlArgs(PreparedStatement ps, Map<String, ?> args, Map<String, List<Integer>> names) throws SQLException {
         for (Map.Entry<String, List<Integer>> e : names.entrySet()) {
             String name = e.getKey();
             Object value = name.contains(".") ? ObjectUtil.getDeepValue(args, name) : args.get(name);
             for (Integer i : e.getValue()) {
                 doHandleStatementValue(ps, i, value);
-            }
-        }
-    }
-
-    /**
-     * Set callable statement in params.
-     *
-     * @param cs    store procedure/function statement object
-     * @param args  args
-     * @param names ordered arg names
-     * @throws SQLException if connection states error
-     */
-    private void setPreparedStoreInParams(CallableStatement cs, Map<String, Param> args, Map<String, List<Integer>> names) throws SQLException {
-        for (Map.Entry<String, List<Integer>> e : names.entrySet()) {
-            Param param = args.get(e.getKey());
-            if (param.getParamMode() == ParamMode.IN || param.getParamMode() == ParamMode.IN_OUT) {
-                for (Integer i : e.getValue()) {
-                    doHandleStatementValue(cs, i, param.getValue());
-                }
-            }
-        }
-    }
-
-    /**
-     * Register callable statement out params.
-     *
-     * @param cs    store procedure/function statement object
-     * @param args  args
-     * @param names ordered arg names
-     * @throws SQLException if connection states error
-     */
-    private void setPreparedStoreOutParams(CallableStatement cs, Map<String, Param> args, Map<String, List<Integer>> names) throws SQLException {
-        for (Map.Entry<String, List<Integer>> e : names.entrySet()) {
-            Param param = args.get(e.getKey());
-            if (param.getParamMode() == ParamMode.OUT || param.getParamMode() == ParamMode.IN_OUT) {
-                for (Integer i : e.getValue()) {
-                    cs.registerOutParameter(i, param.getType().typeNumber());
-                }
             }
         }
     }
@@ -159,8 +120,8 @@ public abstract class JdbcSupport {
      * @return Query: List{@code <DataRow>}, DML: affected row count, DDL: 0
      * @throws SqlRuntimeException sql execute error
      */
-    public DataRow execute(@NotNull final String sql, Map<String, ?> args) {
-        SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepareSql(sql, args);
+    protected DataRow executeAny(@NotNull final String sql, Map<String, ?> args) {
+        SqlGenerator.PreparedSqlMetaData sqlMetaData = prepareSql(sql, args);
         final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
         final String preparedSql = sqlMetaData.getPrepareSql();
         final Map<String, ?> myArgs = sqlMetaData.getArgs();
@@ -207,8 +168,8 @@ public abstract class JdbcSupport {
      * @return Stream query result
      * @throws UncheckedSqlException sql execute error
      */
-    public Stream<DataRow> executeQueryStream(@NotNull final String sql, Map<String, ?> args) {
-        SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepareSql(sql, args);
+    protected Stream<DataRow> executeQueryStream(@NotNull final String sql, Map<String, ?> args) {
+        SqlGenerator.PreparedSqlMetaData sqlMetaData = prepareSql(sql, args);
         final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
         final String preparedSql = sqlMetaData.getPrepareSql();
         final Map<String, ?> myArgs = sqlMetaData.getArgs();
@@ -220,8 +181,8 @@ public abstract class JdbcSupport {
             close = UncheckedCloseable.wrap(() -> releaseConnection(connection, getDataSource()));
             //noinspection SqlSourceToSinkFlow
             PreparedStatement ps = connection.prepareStatement(preparedSql);
-            ps.setQueryTimeout(queryTimeout(sql, myArgs));
             close = close.nest(ps);
+            ps.setQueryTimeout(queryTimeout(sql, myArgs));
             setPreparedSqlArgs(ps, myArgs, argNames);
             ResultSet resultSet = ps.executeQuery();
             close = close.nest(resultSet);
@@ -256,28 +217,22 @@ public abstract class JdbcSupport {
     /**
      * Batch executes not prepared sql ({@code ddl} or {@code dml}).
      *
-     * @param sqls      more than 1 sql
+     * @param sqlList      more than 1 sql
      * @param batchSize batch size
      * @return affected row count
      * @throws UncheckedSqlException    execute sql error
-     * @throws IllegalArgumentException if sqls count less than 1
+     * @throws IllegalArgumentException if sql count less than 1
      */
-    public int executeBatch(@NotNull final List<String> sqls, @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
-        if (sqls.isEmpty()) {
-            return 0;
-        }
+    protected int executeBatch(@NotNull final Iterable<String> sqlList, @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
         Connection connection = null;
         Statement s = null;
         try {
             connection = getConnection();
             s = connection.createStatement();
-            s.setQueryTimeout(queryTimeout(String.join(";", sqls), null));
+            s.setQueryTimeout(queryTimeout(String.join(";", sqlList), null));
             final Stream.Builder<int[]> result = Stream.builder();
             int i = 1;
-            for (String sql : sqls) {
-                if (StringUtil.isEmpty(sql)) {
-                    continue;
-                }
+            for (String sql : sqlList) {
                 String parsedSql = prepareSql(sql, Collections.emptyMap()).getSourceSql();
                 //noinspection SqlSourceToSinkFlow
                 s.addBatch(parsedSql);
@@ -306,11 +261,11 @@ public abstract class JdbcSupport {
      * @param batchSize batch size
      * @return affected row count
      */
-    public int executeBatchUpdate(@NotNull final String sql,
-                                  @NotNull Collection<? extends Map<String, ?>> args,
+    protected int executeBatchUpdate(@NotNull final String sql,
+                                  @NotNull Iterable<? extends Map<String, ?>> args,
                                   @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
         Map<String, ?> first = args.iterator().next();
-        SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepareSql(sql, first);
+        SqlGenerator.PreparedSqlMetaData sqlMetaData = prepareSql(sql, first);
         final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
         final String preparedSql = sqlMetaData.getPrepareSql();
         Connection connection = null;
@@ -366,8 +321,8 @@ public abstract class JdbcSupport {
      * @param args args
      * @return affect row count
      */
-    public int executeUpdate(@NotNull final String sql, Map<String, ?> args) {
-        SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepareSql(sql, args);
+    protected int executeUpdate(@NotNull final String sql, Map<String, ?> args) {
+        SqlGenerator.PreparedSqlMetaData sqlMetaData = prepareSql(sql, args);
         final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
         final String preparedSql = sqlMetaData.getPrepareSql();
         final Map<String, ?> myArgs = sqlMetaData.getArgs();
@@ -410,8 +365,8 @@ public abstract class JdbcSupport {
      * @return DataRow
      * @throws UncheckedSqlException execute procedure error
      */
-    public DataRow executeCallStatement(@NotNull final String procedure, Map<String, Param> args) {
-        SqlGenerator.GeneratedSqlMetaData sqlMetaData = prepareSql(procedure, args);
+    protected DataRow executeCallStatement(@NotNull final String procedure, Map<String, Param> args) {
+        SqlGenerator.PreparedSqlMetaData sqlMetaData = prepareSql(procedure, args);
         final String sql = sqlMetaData.getPrepareSql();
         final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
         Connection connection = null;
@@ -426,15 +381,21 @@ public abstract class JdbcSupport {
             if (!args.isEmpty()) {
                 // adapt postgresql
                 // out and inout param first
-                setPreparedStoreOutParams(cs, args, argNames);
+                for (Map.Entry<String, List<Integer>> e : argNames.entrySet()) {
+                    Param param = args.get(e.getKey());
+                    if (param.getParamMode() == ParamMode.OUT || param.getParamMode() == ParamMode.IN_OUT) {
+                        for (Integer i : e.getValue()) {
+                            cs.registerOutParameter(i, param.getType().typeNumber());
+                        }
+                        outNames.add(e.getKey());
+                    }
+                }
                 // in param next
-                setPreparedStoreInParams(cs, args, argNames);
-
-                for (String name : argNames.keySet()) {
-                    if (args.containsKey(name)) {
-                        ParamMode mode = args.get(name).getParamMode();
-                        if (mode == ParamMode.OUT || mode == ParamMode.IN_OUT) {
-                            outNames.add(name);
+                for (Map.Entry<String, List<Integer>> e : argNames.entrySet()) {
+                    Param param = args.get(e.getKey());
+                    if (param.getParamMode() == ParamMode.IN || param.getParamMode() == ParamMode.IN_OUT) {
+                        for (Integer i : e.getValue()) {
+                            doHandleStatementValue(cs, i, param.getValue());
                         }
                     }
                 }

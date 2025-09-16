@@ -2,10 +2,8 @@ package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.script.expression.Patterns;
 import com.github.chengyuxing.common.utils.ObjectUtil;
-import com.github.chengyuxing.sql.dsl.types.StandardOperator;
 import com.github.chengyuxing.sql.plugins.NamedParamFormatter;
 import com.github.chengyuxing.sql.plugins.TemplateFormatter;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -45,6 +43,7 @@ public class SqlGenerator {
         this.namedParamPattern = Pattern.compile(String.format(
                         "(?<!\\%1$s)\\%1$s(%2$s)|" +        // Named parameters
                                 "'(?:''|[^'])*'|" +         // String literals
+                                "\"(?:\"\"|[^\"])*\"|" +    // Identifier literals
                                 "--.*?$|" +                 // Line comments
                                 "/\\*.*?\\*/|" +            // Block comments
                                 "::\\w+",                   // PostgreSQL type casts
@@ -56,7 +55,7 @@ public class SqlGenerator {
     /**
      * Generated sql meta data.
      */
-    public static final class GeneratedSqlMetaData {
+    public static final class PreparedSqlMetaData {
         private final String sourceSql;
         private final String prepareSql;
         private final Map<String, List<Integer>> argNameIndexMapping;
@@ -70,7 +69,7 @@ public class SqlGenerator {
          * @param argNameIndexMapping prepared sql arg name index mapping
          * @param args                args
          */
-        public GeneratedSqlMetaData(String sourceSql, String prepareSql, Map<String, List<Integer>> argNameIndexMapping, Map<String, Object> args) {
+        public PreparedSqlMetaData(String sourceSql, String prepareSql, Map<String, List<Integer>> argNameIndexMapping, Map<String, Object> args) {
             this.sourceSql = sourceSql;
             this.prepareSql = prepareSql;
             this.argNameIndexMapping = argNameIndexMapping;
@@ -96,9 +95,9 @@ public class SqlGenerator {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (!(o instanceof GeneratedSqlMetaData)) return false;
+            if (!(o instanceof PreparedSqlMetaData)) return false;
 
-            GeneratedSqlMetaData that = (GeneratedSqlMetaData) o;
+            PreparedSqlMetaData that = (PreparedSqlMetaData) o;
             return Objects.equals(getSourceSql(), that.getSourceSql()) && Objects.equals(getPrepareSql(), that.getPrepareSql()) && Objects.equals(getArgNameIndexMapping(), that.getArgNameIndexMapping()) && Objects.equals(getArgs(), that.getArgs());
         }
 
@@ -127,11 +126,11 @@ public class SqlGenerator {
      * @param args data of named parameter
      * @return GeneratedSqlMetaData
      */
-    public GeneratedSqlMetaData generatePreparedSql(final String sql, Map<String, Object> args) {
+    public PreparedSqlMetaData generatePreparedSql(final String sql, Map<String, Object> args) {
         Map<String, List<Integer>> indexMap = new HashMap<>();
         Matcher matcher = namedParamPattern.matcher(sql);
         int index = 1;
-        StringBuilder buffer = new StringBuilder();
+        StringBuffer buffer = new StringBuffer();
         while (matcher.find()) {
             String name = matcher.group(1);
             String replacement;
@@ -145,7 +144,7 @@ public class SqlGenerator {
             matcher.appendReplacement(buffer, Matcher.quoteReplacement(replacement));
         }
         matcher.appendTail(buffer);
-        return new GeneratedSqlMetaData(sql, buffer.toString(), indexMap, args);
+        return new PreparedSqlMetaData(sql, buffer.toString(), indexMap, args);
     }
 
     /**
@@ -158,7 +157,7 @@ public class SqlGenerator {
      * @see #setTemplateFormatter(TemplateFormatter)
      */
     public String generateSql(final String sql, Map<String, ?> args) {
-        StringBuilder buffer = new StringBuilder();
+        StringBuffer buffer = new StringBuffer();
         Matcher matcher = namedParamPattern.matcher(sql);
         while (matcher.find()) {
             String name = matcher.group(1);
@@ -178,19 +177,13 @@ public class SqlGenerator {
     /**
      * Generate named parameter insert statement.
      *
-     * @param tableName  table name
-     * @param data       data
-     * @param columns    table columns
-     * @param ignoreNull ignore null value or not
+     * @param tableName table name
      * @return named parameter insert statement
      */
-    public String generateNamedParamInsert(final String tableName, Collection<String> columns, final Map<String, ?> data, boolean ignoreNull) {
+    public String generateNamedParamInsert(final String tableName, Collection<String> columns) {
         StringJoiner f = new StringJoiner(", ");
         StringJoiner h = new StringJoiner(", ");
         for (String column : columns) {
-            if (ignoreNull && Objects.isNull(data.get(column))) {
-                continue;
-            }
             f.add(column);
             h.add(namedParamPrefix + column);
         }
@@ -200,31 +193,16 @@ public class SqlGenerator {
     /**
      * Generate named parameter update statement.
      *
-     * @param tableName  table name
-     * @param data       data
-     * @param columns    table columns
-     * @param ignoreNull ignore null value or not
+     * @param tableName table name
+     * @param columns   table columns
      * @return named parameter update sets statement
      */
-    public String generateNamedParamUpdate(String tableName, Collection<String> columns, Map<String, ?> data, boolean ignoreNull) {
+    public String generateNamedParamUpdate(String tableName, Collection<String> columns) {
         StringJoiner sb = new StringJoiner(",\n\t");
         for (String column : columns) {
-            if (ignoreNull && Objects.isNull(data.get(column))) {
-                continue;
-            }
-            sb.add(column + StandardOperator.EQ.padWithSpace() + namedParamPrefix + column);
+            sb.add(column + " = " + namedParamPrefix + column);
         }
         return "update " + tableName + "\nset " + sb;
-    }
-
-    /**
-     * Generate a count query by record query.
-     *
-     * @param recordQuery record query
-     * @return count query
-     */
-    public String generateCountQuery(@NotNull final String recordQuery) {
-        return "select count(*) from (\n" + recordQuery + "\n) t_4_rabbit";
     }
 
     public Pattern getNamedParamPattern() {

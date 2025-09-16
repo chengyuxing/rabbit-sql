@@ -3,13 +3,7 @@ package com.github.chengyuxing.sql;
 import com.github.chengyuxing.common.AroundExecutor;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.common.tuple.Triple;
 import com.github.chengyuxing.sql.datasource.DataSourceUtil;
-import com.github.chengyuxing.sql.dsl.*;
-import com.github.chengyuxing.sql.dsl.clause.*;
-import com.github.chengyuxing.sql.dsl.clause.condition.Criteria;
-import com.github.chengyuxing.sql.dsl.types.FieldReference;
-import com.github.chengyuxing.sql.dsl.types.OrderByType;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
 import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 import com.github.chengyuxing.sql.page.IPageable;
@@ -17,12 +11,9 @@ import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.impl.*;
 import com.github.chengyuxing.sql.plugins.*;
 import com.github.chengyuxing.sql.support.*;
-import com.github.chengyuxing.sql.support.executor.EntityExecutor;
-import com.github.chengyuxing.sql.support.executor.GenericExecutor;
-import com.github.chengyuxing.sql.support.executor.QueryExecutor;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.annotation.SqlStatementType;
-import com.github.chengyuxing.sql.types.SqlStatement;
+import com.github.chengyuxing.sql.types.Execution;
 import com.github.chengyuxing.sql.utils.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -31,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
+import java.lang.reflect.Field;
 import java.sql.*;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
@@ -55,8 +47,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     private DatabaseMetaData metaData;
     private String databaseId;
     private SqlGenerator sqlGenerator;
-    private EntityManager entityManager;
-    private AroundExecutor<SqlStatement> sqlAroundExecutor;
+    private AroundExecutor<Execution> sqlAroundExecutor;
 
     //---------optional properties------
     /**
@@ -75,10 +66,6 @@ public class BakiDao extends JdbcSupport implements Baki {
      * Do something after parse dynamic sql.
      */
     private SqlParseChecker sqlParseChecker;
-    /**
-     * Sql watcher.
-     */
-    private SqlWatcher sqlWatcher;
     /**
      * XQL file manager.
      */
@@ -108,9 +95,17 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     private QueryCacheManager queryCacheManager;
     /**
-     * Query dsl condition operator whitelist.
+     * Execution watchers.
      */
-    private Set<String> operatorWhiteList;
+    private ExecutionWatcher executionWatcher;
+    /**
+     * Map to Entity field mapper.
+     */
+    private EntityFieldMapper entityFieldMapper;
+    /**
+     * Map to Entity value mapper.
+     */
+    private EntityValueMapper entityValueMapper;
 
     /**
      * Constructs a new BakiDao with initial datasource.
@@ -127,22 +122,21 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     protected void init() {
         this.sqlGenerator = new SqlGenerator(namedParamPrefix);
-        this.entityManager = new EntityManager(namedParamPrefix);
-        this.sqlAroundExecutor = new AroundExecutor<SqlStatement>() {
+        this.sqlAroundExecutor = new AroundExecutor<Execution>() {
             @Override
-            protected void onStart(@NotNull SqlStatement identifier) {
-                identifier.setState("startTime", System.currentTimeMillis());
+            protected void onStart(@NotNull Execution identifier) {
+                if (executionWatcher != null) executionWatcher.onStart(identifier);
             }
 
             @Override
-            protected void onStop(@NotNull SqlStatement identifier, @Nullable Object result, @Nullable Throwable throwable) {
-                // Watch execute sql.
-                if (Objects.nonNull(sqlWatcher))
-                    sqlWatcher.watch(identifier.getSql(), identifier.getArgs(), identifier.getState("startTime"), System.currentTimeMillis(), throwable);
+            protected void onStop(@NotNull Execution identifier, @Nullable Object result, @Nullable Throwable throwable) {
+                if (executionWatcher != null) executionWatcher.onStop(identifier, result, throwable);
             }
         };
         this.statementValueHandler = (ps, index, value, metaData) -> JdbcUtil.setStatementValue(ps, index, value);
         this.queryTimeoutHandler = (sql, args) -> 0;
+        this.entityFieldMapper = Field::getName;
+        this.entityValueMapper = null;
         this.using(c -> {
             try {
                 this.metaData = c.getMetaData();
@@ -172,14 +166,14 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public DataRow execute(@NotNull String sql, Map<String, ?> args) {
-        return this.sqlAroundExecutor.call(new SqlStatement(SqlStatementType.unset, sql, args),
-                i -> super.execute(sql, args));
+    public DataRow executeAny(@NotNull String sql, Map<String, ?> args) {
+        return this.sqlAroundExecutor.call(new Execution(SqlStatementType.unset, sql, args),
+                i -> super.executeAny(sql, args));
     }
 
     @Override
     public Stream<DataRow> executeQueryStream(@NotNull String sql, Map<String, ?> args) {
-        return this.sqlAroundExecutor.call(new SqlStatement(SqlStatementType.query, sql, args),
+        return this.sqlAroundExecutor.call(new Execution(SqlStatementType.query, sql, args),
                 i -> {
                     if (Objects.isNull(queryCacheManager) || !queryCacheManager.isAvailable(sql, args)) {
                         return super.executeQueryStream(sql, args);
@@ -209,25 +203,25 @@ public class BakiDao extends JdbcSupport implements Baki {
 
     @Override
     public int executeUpdate(@NotNull String sql, Map<String, ?> args) {
-        return this.sqlAroundExecutor.call(new SqlStatement(SqlStatementType.dml, sql, args),
+        return this.sqlAroundExecutor.call(new Execution(SqlStatementType.dml, sql, args),
                 i -> super.executeUpdate(sql, args));
     }
 
     @Override
-    public int executeBatchUpdate(@NotNull String sql, @NotNull Collection<? extends Map<String, ?>> args, @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
-        return this.sqlAroundExecutor.call(new SqlStatement(SqlStatementType.dml, sql, args),
+    public int executeBatchUpdate(@NotNull String sql, @NotNull Iterable<? extends Map<String, ?>> args, @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
+        return this.sqlAroundExecutor.call(new Execution(SqlStatementType.dml, sql, args),
                 i -> super.executeBatchUpdate(sql, args, batchSize));
     }
 
     @Override
     public DataRow executeCallStatement(@NotNull String procedure, Map<String, Param> args) {
-        return this.sqlAroundExecutor.call(new SqlStatement(SqlStatementType.procedure, procedure, args),
+        return this.sqlAroundExecutor.call(new Execution(SqlStatementType.procedure, procedure, args),
                 i -> super.executeCallStatement(procedure, args));
     }
 
     @Override
-    public int executeBatch(@NotNull List<String> sqls, @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
-        return this.sqlAroundExecutor.call(new SqlStatement(SqlStatementType.batch, String.join(";", sqls), null),
+    public int executeBatch(@NotNull Iterable<String> sqls, @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
+        return this.sqlAroundExecutor.call(new Execution(SqlStatementType.batch, String.join(";", sqls), null),
                 i -> super.executeBatch(sqls, batchSize));
     }
 
@@ -256,7 +250,8 @@ public class BakiDao extends JdbcSupport implements Baki {
             @Override
             public <T> List<T> entities(Class<T> entityClass) {
                 try (Stream<DataRow> s = stream()) {
-                    return s.map(d -> EntityUtil.mapToEntity(d, entityClass)).collect(Collectors.toList());
+                    return s.map(d -> d.toEntity(entityClass, entityFieldMapper::apply, entityValueMapper::apply))
+                            .collect(Collectors.toList());
                 }
             }
 
@@ -296,7 +291,9 @@ public class BakiDao extends JdbcSupport implements Baki {
 
             @Override
             public <T> T findFirstEntity(Class<T> entityClass) {
-                return findFirst().map(d -> EntityUtil.mapToEntity(d, entityClass)).orElse(null);
+                return findFirst()
+                        .map(d -> d.toEntity(entityClass, entityFieldMapper::apply, entityValueMapper::apply))
+                        .orElse(null);
             }
 
             @Override
@@ -309,447 +306,56 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public <T> EntityExecutor<T> entity(@NotNull Class<T> clazz) {
-        return new EntityExecutor<T>() {
-            final EntityManager.EntityMeta entityMeta = entityManager.getEntityMeta(clazz);
-
-            @Override
-            public <SELF extends Query<T, SELF>> Query<T, SELF> query() {
-                return new Query<T, SELF>() {
-                    private final Set<String> selectColumns = new LinkedHashSet<>();
-                    private final List<Criteria> whereCriteria = new ArrayList<>();
-                    private final Set<Pair<String, OrderByType>> orderByColumns = new LinkedHashSet<>();
-                    private final Set<Pair<String, String>> groupByAggColumns = new LinkedHashSet<>();
-                    private final Set<String> groupByColumns = new LinkedHashSet<>();
-                    private final List<Criteria> havingCriteria = new ArrayList<>();
-                    private int topN = 0;
-
-                    /**
-                     * Create query sql object.
-                     * @param enableTopN do limit top number or not
-                     * @return [record query, count query, args]
-                     */
-                    private Triple<String, String, Map<String, Object>> createQuery(boolean enableTopN) {
-                        final InternalWhere<T> where = new InternalWhere<>(clazz, whereCriteria);
-                        final InternalGroupBy<T> groupBy = new InternalGroupBy<>(clazz, groupByAggColumns, groupByColumns);
-                        final InternalHaving<T> having = new InternalHaving<>(clazz, havingCriteria);
-                        final InternalOrderBy<T> orderBy = new InternalOrderBy<>(clazz, orderByColumns, groupByAggColumns);
-
-                        boolean hasGroupBy = !groupByColumns.isEmpty();
-
-                        // select a, b, c from table
-                        String recordSelect = selectColumns.isEmpty() ? entityMeta.getSelect() : entityMeta.getSelect(selectColumns);
-                        // select count(*) from table
-                        String countSelect = entityMeta.getCountSelect();
-                        if (hasGroupBy) {
-                            // select a, max(a), count(*) from table
-                            recordSelect = entityMeta.getSelect(groupBy.getAllSelectColumns());
-                            // select a from table
-                            countSelect = entityMeta.getSelect(groupBy.getGroupColumns());
-                        }
-
-                        // where
-                        Pair<String, Map<String, Object>> w = where.getWhereClause();
-                        recordSelect += w.getItem1();
-                        countSelect += w.getItem1();
-
-                        // group by
-                        recordSelect += groupBy.getGroupByClause();
-                        countSelect += groupBy.getGroupByClause();
-
-                        // having
-                        Pair<String, Map<String, Object>> h = having.getHavingClause();
-                        recordSelect += h.getItem1();
-                        countSelect += h.getItem1();
-
-                        // order by
-                        recordSelect += orderBy.getOrderBy();
-
-                        // select count(*) from (select id from table group by id) t
-                        if (hasGroupBy) {
-                            countSelect = sqlGenerator.generateCountQuery(countSelect);
-                        }
-
-                        Map<String, Object> allArgs = new HashMap<>(w.getItem2());
-                        allArgs.putAll(h.getItem2());
-
-                        if (enableTopN && topN > 0) {
-                            PageHelper pageHelper = builtinPager();
-                            pageHelper.init(1, topN, topN);
-                            recordSelect = pageHelper.pagedSql(namedParamPrefix, recordSelect);
-                            allArgs.putAll(pageHelper.pagedArgs());
-                        }
-
-                        return Triple.of(recordSelect, countSelect, allArgs);
-                    }
-
-                    @Override
-                    public SELF where(@NotNull Function<Where<T>, Where<T>> where) {
-                        InternalWhere<T> gotten = (InternalWhere<T>) where.apply(new InternalWhere<>(clazz));
-                        whereCriteria.addAll(gotten.getCriteria());
-                        //noinspection unchecked
-                        return (SELF) this;
-                    }
-
-                    @Override
-                    public SELF groupBy(@NotNull Function<GroupBy<T>, GroupBy<T>> groupBy) {
-                        InternalGroupBy<T> gotten = (InternalGroupBy<T>) groupBy.apply(new InternalGroupBy<>(clazz));
-                        groupByAggColumns.addAll(gotten.getAggColumns());
-                        groupByColumns.addAll(gotten.getGroupColumns());
-                        havingCriteria.addAll(gotten.getHavingCriteria());
-                        //noinspection unchecked
-                        return (SELF) this;
-                    }
-
-                    @Override
-                    public SELF orderBy(@NotNull Function<OrderBy<T>, OrderBy<T>> orderBy) {
-                        InternalOrderBy<T> gotten = (InternalOrderBy<T>) orderBy.apply(new InternalOrderBy<>(clazz));
-                        orderByColumns.addAll(gotten.getOrders());
-                        //noinspection unchecked
-                        return (SELF) this;
-                    }
-
-                    @Override
-                    public SELF select(@NotNull List<FieldReference<T>> columns) {
-                        selectColumns.clear();
-                        for (FieldReference<T> column : columns) {
-                            String columnName = EntityUtil.getFieldNameWithCache(column);
-                            // excludes the field which annotated with @Transient
-                            if (entityMeta.getColumns().containsKey(columnName)) {
-                                selectColumns.add(columnName);
-                            }
-                        }
-                        //noinspection unchecked
-                        return (SELF) this;
-                    }
-
-                    @Override
-                    public SELF deselect(@NotNull List<FieldReference<T>> columns) {
-                        if (columns.isEmpty()) {
-                            //noinspection unchecked
-                            return (SELF) this;
-                        }
-                        selectColumns.clear();
-                        Set<String> deselectColumns = columns.stream().map(EntityUtil::getFieldNameWithCache).collect(Collectors.toSet());
-                        for (String column : entityMeta.getColumns().keySet()) {
-                            if (!deselectColumns.contains(column)) {
-                                selectColumns.add(column);
-                            }
-                        }
-                        //noinspection unchecked
-                        return (SELF) this;
-                    }
-
-                    @Override
-                    public SELF top(@Range(from = 1, to = Integer.MAX_VALUE) int n) {
-                        topN = n;
-                        //noinspection unchecked
-                        return (SELF) this;
-                    }
-
-                    @Override
-                    public Stream<DataRow> toRowStream() {
-                        Triple<String, String, Map<String, Object>> query = createQuery(true);
-                        return executeQueryStream(query.getItem1(), query.getItem3());
-                    }
-
-                    @Override
-                    public Stream<T> toStream() {
-                        return toRowStream().map(d -> EntityUtil.mapToEntity(d, clazz));
-                    }
-
-                    @Override
-                    public @NotNull List<T> toList() {
-                        try (Stream<T> s = toStream()) {
-                            return s.collect(Collectors.toList());
-                        }
-                    }
-
-                    @Override
-                    public <R> @NotNull List<R> toList(@NotNull Function<T, R> mapper) {
-                        try (Stream<T> s = toStream()) {
-                            return s.map(mapper).collect(Collectors.toList());
-                        }
-                    }
-
-                    @Override
-                    public @NotNull Optional<T> findFirst() {
-                        try (Stream<T> s = toStream()) {
-                            return s.findFirst();
-                        }
-                    }
-
-                    @Override
-                    public @Nullable T getFirst() {
-                        return findFirst().orElse(null);
-                    }
-
-                    @Override
-                    public @NotNull PagedResource<T> toPagedResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
-                                                                     @Range(from = 1, to = Integer.MAX_VALUE) int size,
-                                                                     @Nullable PageHelperProvider pageHelperProvider) {
-                        Triple<String, String, Map<String, Object>> query = createQuery(false);
-                        return new SimplePageable(query.getItem1(), page, size)
-                                .count(query.getItem2())
-                                .args(query.getItem3())
-                                .pageHelper(pageHelperProvider)
-                                .collect(d -> EntityUtil.mapToEntity(d, clazz));
-                    }
-
-                    @Override
-                    public @NotNull PagedResource<T> toPagedResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
-                                                                     @Range(from = 1, to = Integer.MAX_VALUE) int size) {
-                        return toPagedResource(page, size, null);
-                    }
-
-                    @Override
-                    public @NotNull PagedResource<DataRow> toPagedRowResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
-                                                                              @Range(from = 1, to = Integer.MAX_VALUE) int size,
-                                                                              @Nullable PageHelperProvider pageHelperProvider) {
-                        Triple<String, String, Map<String, Object>> query = createQuery(false);
-                        return new SimplePageable(query.getItem1(), page, size)
-                                .count(query.getItem2())
-                                .args(query.getItem3())
-                                .pageHelper(pageHelperProvider)
-                                .collect();
-                    }
-
-                    @Override
-                    public @NotNull PagedResource<DataRow> toPagedRowResource(@Range(from = 1, to = Integer.MAX_VALUE) int page,
-                                                                              @Range(from = 1, to = Integer.MAX_VALUE) int size) {
-                        return toPagedRowResource(page, size, null);
-                    }
-
-                    @Override
-                    public boolean exists() {
-                        Pair<String, Map<String, Object>> where = new InternalWhere<>(clazz, whereCriteria).getWhereClause();
-                        if (where.getItem1().isEmpty()) {
-                            throw new IllegalStateException("where condition is required.");
-                        }
-                        String query = entityMeta.getExistsSelect(where.getItem1());
-                        try (Stream<DataRow> s = executeQueryStream(query, where.getItem2())) {
-                            return s.findFirst().isPresent();
-                        }
-                    }
-
-                    @Override
-                    public @Range(from = 0, to = Long.MAX_VALUE) long count() {
-                        Triple<String, String, Map<String, Object>> query = createQuery(true);
-                        try (Stream<DataRow> s = executeQueryStream(query.getItem2(), query.getItem3())) {
-                            return s.findFirst()
-                                    .map(d -> d.getLong(0))
-                                    .orElse(0L);
-                        }
-                    }
-
-                    @Override
-                    public @NotNull Optional<DataRow> findFirstRow() {
-                        try (Stream<DataRow> s = toRowStream()) {
-                            return s.findFirst();
-                        }
-                    }
-
-                    @Override
-                    public @NotNull DataRow getFirstRow() {
-                        return findFirstRow().orElse(DataRow.of());
-                    }
-
-                    @Override
-                    public @NotNull List<DataRow> toRows() {
-                        try (Stream<DataRow> s = toRowStream()) {
-                            return s.collect(Collectors.toList());
-                        }
-                    }
-
-                    @Override
-                    public @NotNull List<Map<String, Object>> toMaps() {
-                        try (Stream<DataRow> s = toRowStream()) {
-                            return s.collect(Collectors.toList());
-                        }
-                    }
-
-                    @Override
-                    public @NotNull Pair<String, Map<String, Object>> getSql() {
-                        Triple<String, String, Map<String, Object>> query = createQuery(true);
-                        return Pair.of(query.getItem1(), Collections.unmodifiableMap(query.getItem3()));
-                    }
-                };
-            }
-
-            @Override
-            public int insert(@NotNull T entity) {
-                String insert = entityMeta.getInsert();
-                Map<String, Object> data = Args.ofEntity(entity);
-                return executeUpdate(insert, data);
-            }
-
-            @Override
-            public int insert(@NotNull Collection<T> entities) {
-                if (entities.isEmpty()) return 0;
-                String insert = entityMeta.getInsert();
-                List<Map<String, Object>> data = entities.stream()
-                        .map(Args::ofEntity)
-                        .collect(Collectors.toList());
-                return executeBatchUpdate(insert, data, batchSize);
-            }
-
-            @Override
-            public int update(@NotNull T entity, boolean ignoreNull) {
-                Map<String, Object> data = Args.ofEntity(entity);
-                String update = ignoreNull ? sqlGenerator.generateNamedParamUpdate(
-                        entityMeta.getTableName(),
-                        entityMeta.getUpdateColumns(),
-                        data,
-                        true
-                ) + entityMeta.getWhereById() : entityMeta.getUpdateById();
-                return executeUpdate(update, data);
-            }
-
-            @Override
-            public int update(@NotNull T entity, boolean ignoreNull, Function<Where<T>, Where<T>> where) {
-                InternalWhere<T> gotten = (InternalWhere<T>) where.apply(new InternalWhere<>(clazz));
-                Triple<String, Map<String, Object>, Set<String>> whereClause = gotten.getWhereClause();
-                Map<String, Object> data = Args.ofEntity(entity);
-                data.putAll(whereClause.getItem2());
-
-                Set<String> updateColumns = entityMeta.getUpdateColumns();
-                updateColumns.removeAll(whereClause.getItem3());
-
-                String update = sqlGenerator.generateNamedParamUpdate(
-                        entityMeta.getTableName(),
-                        updateColumns,
-                        data,
-                        ignoreNull
-                ) + whereClause.getItem1();
-                return executeUpdate(update, data);
-            }
-
-            @Override
-            public int update(@NotNull Collection<T> entities, boolean ignoreNull) {
-                if (entities.isEmpty()) return 0;
-                List<Map<String, Object>> data = entities.stream()
-                        .map(Args::ofEntity)
-                        .collect(Collectors.toList());
-                String update = ignoreNull ? sqlGenerator.generateNamedParamUpdate(
-                        entityMeta.getTableName(),
-                        entityMeta.getUpdateColumns(),
-                        data.get(0),
-                        true
-                ) + entityMeta.getWhereById() : entityMeta.getUpdateById();
-                return executeBatchUpdate(update, data, batchSize);
-            }
-
-            @Override
-            public int update(@NotNull Collection<T> entities, boolean ignoreNull, Function<Where<T>, Where<T>> where) {
-                if (entities.isEmpty()) return 0;
-                InternalWhere<T> gotten = (InternalWhere<T>) where.apply(new InternalWhere<>(clazz));
-                Triple<String, Map<String, Object>, Set<String>> whereClause = gotten.getWhereClause();
-                List<Map<String, Object>> data = entities.stream()
-                        .map(Args::ofEntity)
-                        .peek(args -> args.putAll(whereClause.getItem2()))
-                        .collect(Collectors.toList());
-
-                Set<String> updateColumns = entityMeta.getUpdateColumns();
-                updateColumns.removeAll(whereClause.getItem3());
-
-                String update = sqlGenerator.generateNamedParamUpdate(
-                        entityMeta.getTableName(),
-                        updateColumns,
-                        data.get(0),
-                        ignoreNull
-                ) + whereClause.getItem1();
-                return executeBatchUpdate(update, data, batchSize);
-            }
-
-            @Override
-            public int delete(@NotNull T entity) {
-                String delete = entityMeta.getDeleteById();
-                Map<String, Object> data = Args.ofEntity(entity);
-                return executeUpdate(delete, data);
-            }
-
-            @Override
-            public int delete(@NotNull T entity, Function<Where<T>, Where<T>> where) {
-                InternalWhere<T> gotten = (InternalWhere<T>) where.apply(new InternalWhere<>(clazz));
-                Pair<String, Map<String, Object>> whereClause = gotten.getWhereClause();
-                String delete = entityMeta.getDeleteBy(whereClause.getItem1());
-                Map<String, Object> data = Args.ofEntity(entity);
-                data.putAll(whereClause.getItem2());
-                return executeUpdate(delete, data);
-            }
-
-            @Override
-            public int delete(@NotNull Collection<T> entities) {
-                if (entities.isEmpty()) {
-                    return 0;
-                }
-                String delete = entityMeta.getDeleteById();
-                List<Map<String, Object>> data = entities.stream()
-                        .map(Args::ofEntity)
-                        .collect(Collectors.toList());
-                return executeBatchUpdate(delete, data, batchSize);
-            }
-
-            @Override
-            public int delete(@NotNull Collection<T> entities, Function<Where<T>, Where<T>> where) {
-                if (entities.isEmpty()) {
-                    return 0;
-                }
-                InternalWhere<T> gotten = (InternalWhere<T>) where.apply(new InternalWhere<>(clazz));
-                Pair<String, Map<String, Object>> whereClause = gotten.getWhereClause();
-                String delete = entityMeta.getDeleteBy(whereClause.getItem1());
-                List<Map<String, Object>> data = entities.stream()
-                        .map(Args::ofEntity)
-                        .peek(args -> args.putAll(whereClause.getItem2()))
-                        .collect(Collectors.toList());
-                return executeBatchUpdate(delete, data, batchSize);
-            }
-        };
+    public int insert(@NotNull String tableName, @NotNull Map<String, Object> data) {
+        String insert = sqlGenerator.generateNamedParamInsert(tableName, data.keySet());
+        return executeUpdate(insert, data);
     }
 
     @Override
-    public GenericExecutor of(@NotNull String sql) {
-        return new GenericExecutor() {
-            @Override
-            public @NotNull DataRow execute() {
-                return BakiDao.super.execute(sql, Collections.emptyMap());
-            }
+    public int insert(@NotNull String tableName, @NotNull Iterable<? extends Map<String, Object>> data) {
+        Map<String, Object> first = data.iterator().next();
+        String insert = sqlGenerator.generateNamedParamInsert(tableName, first.keySet());
+        return executeBatchUpdate(insert, data, batchSize);
+    }
 
-            @Override
-            public @NotNull DataRow execute(Map<String, ?> args) {
-                return BakiDao.super.execute(sql, args);
-            }
+    @Override
+    public int update(@NotNull String sql, Map<String, Object> args) {
+        return executeUpdate(sql, args);
+    }
 
-            @Override
-            public int executeBatch(@NotNull List<String> moreSql) {
-                List<String> sqlList = new ArrayList<>(moreSql);
-                sqlList.add(0, sql);
-                return BakiDao.super.executeBatch(sqlList, batchSize);
-            }
+    @Override
+    public int update(@NotNull String sql, @NotNull Iterable<? extends Map<String, Object>> args) {
+        return executeBatchUpdate(sql, args, batchSize);
+    }
 
-            @Override
-            public int executeBatch(@NotNull Collection<? extends Map<String, ?>> data) {
-                Map<String, ?> arg = data.isEmpty() ? new HashMap<>() : data.iterator().next();
-                SqlGenerator.GeneratedSqlMetaData parsed = prepareSql(sql, arg);
-                Collection<? extends Map<String, ?>> newData;
-                if (parsed.getArgs().containsKey(XQLFileManager.DynamicSqlParser.FOR_VARS_KEY) &&
-                        parsed.getPrepareSql().contains(XQLFileManager.DynamicSqlParser.VAR_PREFIX)) {
-                    List<Map<String, Object>> list = new ArrayList<>();
-                    for (Map<String, ?> item : data) {
-                        list.add(prepareSql(sql, item).getArgs());
-                    }
-                    newData = list;
-                } else {
-                    newData = data;
-                }
-                return executeBatchUpdate(parsed.getSourceSql(), newData, batchSize);
-            }
+    @Override
+    public int delete(@NotNull String sql, Map<String, Object> args) {
+        return executeUpdate(sql, args);
+    }
 
-            @Override
-            public @NotNull DataRow call(Map<String, Param> params) {
-                return executeCallStatement(sql, params);
-            }
-        };
+    @Override
+    public int delete(@NotNull String sql, @NotNull Iterable<? extends Map<String, Object>> args) {
+        return executeBatchUpdate(sql, args, batchSize);
+    }
+
+    @Override
+    public @NotNull DataRow call(@NotNull String procedure, Map<String, Param> params) {
+        return executeCallStatement(procedure, params);
+    }
+
+    @Override
+    public @NotNull DataRow execute(@NotNull String sql, Map<String, Object> args) {
+        return executeAny(sql, args);
+    }
+
+    @Override
+    public int execute(@NotNull String sql, @NotNull Iterable<? extends Map<String, Object>> args) {
+        return executeBatchUpdate(sql, args, batchSize);
+    }
+
+    @Override
+    public int execute(@NotNull Iterable<String> sqlList) {
+        return executeBatch(sqlList, batchSize);
     }
 
     @Override
@@ -773,171 +379,6 @@ public class BakiDao extends JdbcSupport implements Baki {
         return this.databaseId;
     }
 
-    final class InternalWhere<T> extends Where<T> {
-        private final Class<T> clazz;
-        private final Set<String> columns = new HashSet<>();
-
-        InternalWhere(Class<T> clazz) {
-            super(clazz);
-            this.clazz = clazz;
-            this.columns.addAll(entityManager.getColumns(this.clazz).keySet());
-        }
-
-        InternalWhere(Class<T> clazz, List<Criteria> criteria) {
-            super(clazz);
-            this.clazz = clazz;
-            this.columns.addAll(entityManager.getColumns(clazz).keySet());
-            this.criteria.addAll(criteria);
-        }
-
-        @Override
-        protected Where<T> newInstance() {
-            return new InternalWhere<>(clazz);
-        }
-
-        @Override
-        protected char namedParamPrefix() {
-            return namedParamPrefix;
-        }
-
-        @Override
-        protected Set<String> columnWhiteList() {
-            return columns;
-        }
-
-        @Override
-        protected Set<String> operatorWhiteList() {
-            return operatorWhiteList;
-        }
-
-        private Triple<String, Map<String, Object>, Set<String>> getWhereClause() {
-            return build();
-        }
-
-        private List<Criteria> getCriteria() {
-            return criteria;
-        }
-    }
-
-    final class InternalOrderBy<T> extends OrderBy<T> {
-        private final Set<String> columns = new HashSet<>();
-
-        InternalOrderBy(Class<T> clazz) {
-            super(clazz);
-            this.columns.addAll(entityManager.getColumns(clazz).keySet());
-        }
-
-        InternalOrderBy(Class<T> clazz, Set<Pair<String, OrderByType>> orders, Set<Pair<String, String>> groupByAggColumns) {
-            super(clazz);
-            this.orders.addAll(orders);
-            this.columns.addAll(entityManager.getColumns(clazz).keySet());
-            for (Pair<String, String> p : groupByAggColumns) {
-                this.columns.add(p.getItem2());
-            }
-        }
-
-        private Set<Pair<String, OrderByType>> getOrders() {
-            return orders;
-        }
-
-        private String getOrderBy() {
-            return build();
-        }
-
-        @Override
-        protected Set<String> columnWhiteList() {
-            return columns;
-        }
-
-        @Override
-        protected Set<String> operatorWhiteList() {
-            return operatorWhiteList;
-        }
-    }
-
-    final class InternalGroupBy<T> extends GroupBy<T> {
-        private final Set<String> columns = new HashSet<>();
-        private final List<Criteria> havingCriteria = new ArrayList<>();
-
-        InternalGroupBy(@NotNull Class<T> clazz) {
-            super(clazz);
-            this.columns.addAll(entityManager.getColumns(clazz).keySet());
-        }
-
-        InternalGroupBy(@NotNull Class<T> clazz, Set<Pair<String, String>> aggColumns, Set<String> groupColumns) {
-            super(clazz);
-            this.columns.addAll(entityManager.getColumns(clazz).keySet());
-            this.groupColumns.addAll(groupColumns);
-            this.aggColumns.addAll(aggColumns);
-        }
-
-        @Override
-        public GroupBy<T> having(Function<Having<T>, Having<T>> having) {
-            InternalHaving<T> gotten = (InternalHaving<T>) having.apply(new InternalHaving<>(clazz));
-            havingCriteria.addAll(gotten.getCriteria());
-            return this;
-        }
-
-        @Override
-        protected Set<String> columnWhiteList() {
-            return columns;
-        }
-
-        @Override
-        protected Set<String> operatorWhiteList() {
-            return operatorWhiteList;
-        }
-
-        private List<Criteria> getHavingCriteria() {
-            return havingCriteria;
-        }
-
-        public String getGroupByClause() {
-            return build();
-        }
-
-        private Set<String> getGroupColumns() {
-            return groupColumns;
-        }
-
-        private Set<Pair<String, String>> getAggColumns() {
-            return aggColumns;
-        }
-
-        private Set<String> getAllSelectColumns() {
-            return getSelectColumns();
-        }
-    }
-
-    final class InternalHaving<T> extends Having<T> {
-        InternalHaving(@NotNull Class<T> clazz) {
-            super(clazz);
-        }
-
-        InternalHaving(@NotNull Class<T> clazz, List<Criteria> criteria) {
-            super(clazz);
-            this.criteria.addAll(criteria);
-        }
-
-        @Override
-        protected Having<T> newInstance() {
-            return new InternalHaving<>(clazz);
-        }
-
-        @Override
-        protected char namedParamPrefix() {
-            return namedParamPrefix;
-        }
-
-        public Pair<String, Map<String, Object>> getHavingClause() {
-            return build();
-        }
-
-        private List<Criteria> getCriteria() {
-            return criteria;
-        }
-    }
-
     /**
      * Simple page helper implementation.
      */
@@ -955,11 +396,20 @@ public class BakiDao extends JdbcSupport implements Baki {
 
         @Override
         public <T> PagedResource<T> collect(Function<DataRow, T> mapper) {
-            SqlGenerator.GeneratedSqlMetaData result = prepareSql(recordQuery, args);
+            // fetch the page helper.
+            PageHelper pageHelper = null;
+            if (pageHelperProvider != null) {
+                pageHelper = pageHelperProvider.customPageHelper(metaData, databaseId, namedParamPrefix);
+            }
+            if (pageHelper == null) {
+                pageHelper = builtinPager();
+            }
+            // build query
+            SqlGenerator.PreparedSqlMetaData result = prepareSql(recordQuery, args);
             String sourceQuery = result.getSourceSql();
             Map<String, Object> myArgs = result.getArgs();
             if (count == null) {
-                String cq = countQuery == null ? sqlGenerator.generateCountQuery(sourceQuery) : countQuery;
+                String cq = countQuery == null ? pageHelper.countSql(sourceQuery) : countQuery;
                 try (Stream<DataRow> s = executeQueryStream(cq, myArgs)) {
                     count = s.findFirst()
                             .map(d -> d.getInt(0))
@@ -971,25 +421,17 @@ public class BakiDao extends JdbcSupport implements Baki {
                 return PagedResource.empty(page, size);
             }
 
-            PageHelper pageHelper = null;
-
-            if (pageHelperProvider != null) {
-                pageHelper = pageHelperProvider.customPageHelper(metaData, databaseId, namedParamPrefix);
-            }
-
-            if (pageHelper == null) {
-                pageHelper = builtinPager();
-            }
             pageHelper.init(page, size, count);
+
             Args<Integer> pagedArgs = pageHelper.pagedArgs();
             myArgs.putAll(rewriteArgsFunc == null ? pagedArgs : rewriteArgsFunc.apply(pagedArgs));
             String executeQuery = disablePageSql ? sourceQuery : pageHelper.pagedSql(namedParamPrefix, sourceQuery);
-            final PageHelper finalPageHelper = pageHelper;
+
             try (Stream<DataRow> s = executeQueryStream(executeQuery, myArgs)) {
                 List<T> list = s.peek(d -> d.remove(PageHelper.ROW_NUM_KEY))
                         .map(mapper)
                         .collect(Collectors.toList());
-                return PagedResource.of(finalPageHelper, list);
+                return PagedResource.of(pageHelper, list);
             }
         }
     }
@@ -1043,7 +485,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @throws NullPointerException if first arg starts with symbol ({@code &}) but {@link XQLFileManager} not configured
      */
     @Override
-    protected SqlGenerator.GeneratedSqlMetaData prepareSql(@NotNull String sql, Map<String, ?> args) {
+    protected SqlGenerator.PreparedSqlMetaData prepareSql(@NotNull String sql, Map<String, ?> args) {
         Map<String, Object> myArgs = new HashMap<>();
         if (Objects.nonNull(args)) {
             myArgs.putAll(args);
@@ -1185,10 +627,6 @@ public class BakiDao extends JdbcSupport implements Baki {
         this.sizeKey = sizeKey;
     }
 
-    public void setSqlWatcher(SqlWatcher sqlWatcher) {
-        this.sqlWatcher = sqlWatcher;
-    }
-
     public void setQueryTimeoutHandler(QueryTimeoutHandler queryTimeoutHandler) {
         if (Objects.nonNull(queryTimeoutHandler)) {
             this.queryTimeoutHandler = queryTimeoutHandler;
@@ -1224,11 +662,27 @@ public class BakiDao extends JdbcSupport implements Baki {
         this.sqlParseChecker = sqlParseChecker;
     }
 
-    public Set<String> getOperatorWhiteList() {
-        return operatorWhiteList;
+    public ExecutionWatcher getExecutionWatcher() {
+        return executionWatcher;
     }
 
-    public void setOperatorWhiteList(Set<String> operatorWhiteList) {
-        this.operatorWhiteList = operatorWhiteList;
+    public void setExecutionWatcher(ExecutionWatcher executionWatcher) {
+        this.executionWatcher = executionWatcher;
+    }
+
+    public EntityFieldMapper getEntityFieldMapper() {
+        return entityFieldMapper;
+    }
+
+    public void setEntityFieldMapper(EntityFieldMapper entityFieldMapper) {
+        this.entityFieldMapper = entityFieldMapper;
+    }
+
+    public EntityValueMapper getEntityValueMapper() {
+        return entityValueMapper;
+    }
+
+    public void setEntityValueMapper(EntityValueMapper entityValueMapper) {
+        this.entityValueMapper = entityValueMapper;
     }
 }

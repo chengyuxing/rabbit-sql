@@ -79,7 +79,7 @@ public class FeaturedConstructor extends Constructor {
             return value;
         }
         Matcher matcher = VAR_PATTERN.matcher(value);
-        StringBuilder sb = new StringBuilder();
+        StringBuffer sb = new StringBuffer();
         while (matcher.find()) {
             String holder = matcher.group(1);
             String varType = resolveVarType(holder);

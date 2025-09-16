@@ -1,4 +1,4 @@
-package com.github.chengyuxing.sql.support.executor;
+package com.github.chengyuxing.sql.plugins;
 
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.Args;

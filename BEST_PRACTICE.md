@@ -23,23 +23,13 @@ Create maven project.
 
 **pom.xml**：
 
-_java 17+_
+_java 8+_
 
 ```xml
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql-spring-boot-starter</artifactId>
-    <version>4.0.18</version>
-</dependency>
-```
-
-_java 8_
-
-```xml
-<dependency>
-    <groupId>com.github.chengyuxing</groupId>
-    <artifactId>rabbit-sql-spring-boot-starter</artifactId>
-    <version>3.2.12</version>
+    <version>5.0.0</version>
 </dependency>
 ```
 
@@ -156,7 +146,6 @@ When the SQL is written, Quickly generate **interface** and **documentation** by
 >
 > ```java
 > // Rabbit-SQL plugin - Your methods  //CODE-BEGIN:methods
-> @Insert("users")
 > int addUser(User user);
 > // Rabbit-SQL plugin - End of your methods  //CODE-END:methods
 > ```
@@ -192,7 +181,6 @@ Except for interface mapping, by default the [Baki][baki] is provided also.
 
 - Using the Baki interface to perform basic database operations such as add, delete, modify, and transaction operations, avoiding direct interaction with JDBC.
 - Each SQL operation is performed by passing in the SQL name, along with the parameter mapping.
-- Single-table CRUD recommends using basic JPA entities for operations.
 
 **Named SQL Example**:
 
@@ -204,18 +192,6 @@ public Stream<DataRow> getUsersByName() {
     return baki.query("&example.queryAllUsers").args().stream();
 }
 ```
-
-**JPA Example**:
-
-```java
-baki.query(Guest.class)
-    .where(g -> g.gt(Guest::getId, 5))
-    .where(g -> g.lt(Guest::getId, 10))
-    .where(g -> g.or(o -> o.in(Guest::getId, Arrays.asList(17, 18, 19))))
-    .toList()
-```
-
-Refer to the [documentation][jpa] for more detailed usage.
 
 #### Transaction
 
@@ -256,14 +232,14 @@ If operations such as secondary processing and conversion are required for query
 Batch submission is recommended for operations such as batch insert and update to reduce the number of network interactions and improve database performance.
 
 ```java
-baki.insert("<table>").save(Collection<? extends Map<String, ?>> data);
+baki.insert('<tableName>', <Collection>);
 ```
 
 ```java
-baki.of("&<sql name>").executeBatch(...);
+baki.execute("&<sql名>", <Collection>);
 ```
 
-> insert, update, delete batch operations are performed by passing in the collection, or batch operations are performed by executing `executeBatch`.
+> insert, update, delete batch operations are performed by passing in the collection.
 
 ##### Cache repeat query
 

@@ -14,33 +14,23 @@ Get [Best practice](https://github.com/chengyuxing/rabbit-sql/blob/master/BEST_P
 
 This is a lightweight persistence layer framework, provides a complete database operation solution, through encapsulation and abstraction, simplifies the complexity of database access, but also provides flexibility and scalability for developers. simple, stable and efficient as the goal, some features following:
 
-- Native SQL executor and basic [JPA support](#JPA) for single table CRUD;
-- [execute procedure/function](#Procedure);
-- simple [transaction](#Transaction);
-- [prepare sql](#Prepare-SQL);
-- [sql in file](#XQLFileManager);
-- [dynamic sql](#Dynamic-SQL);
+- [execute procedure/function](#Procedure)
+- simple [transaction](#Transaction)
+- [prepare sql](#Prepare-SQL)
+- [sql in file](#XQLFileManager)
+- [dynamic sql](#Dynamic-SQL)
 - [interface mapping](#Interface-Mapping)
+- [entity mapping](Entity-Mapping)
 
 ## Maven dependency
 
-_java 11+_
-
-```xml
-<dependency>
-    <groupId>com.github.chengyuxing</groupId>
-    <artifactId>rabbit-sql</artifactId>
-    <version>9.0.20</version>
-</dependency>
-```
-
-_java 8_
+_java 8+_
 
 ```xml
 <dependency>
   <groupId>com.github.chengyuxing</groupId>
   <artifactId>rabbit-sql</artifactId>
-  <version>8.1.22</version>
+  <version>10.0.0</version>
 </dependency>
 ```
 
@@ -75,18 +65,20 @@ Datasource datasource = new HikariDataSource();
 ...
 BakiDao baki = new BakiDao(dataSource);
 
-XQLFileManager xqlFileManager = new XQLFileManager();
+XQLFileManager xqlFileManager = new XQLFileManager("xql-file-manager.yml");
 ...
 baki.setXqlFileManager(xqlFileManager);
 ```
 
 ### Interface-Mapping
 
+Supports registered **xql** file mapping(`BakiDao#proxyXQLMapper`) to interface which annotated with `@XQLMapper`, do some sql operation by invoke dynamic proxy method.
+
 ```java
 ExampleMapper mapper = baki.proxyXQLMapper(ExampleMapper.class)
 ```
 
-Supports registered **xql** file mapping(`BakiDao#proxyXQLMapper`) to interface which annotated with `@XQLMapper`, do some sql operation by invoke dynamic proxy method, e.g **query** .
+If Springboot is used, the annotation `@XQLMapperScan` can be directly added to the boot class to automatically register it in the context through the interface scanning mechanism, and then the interface can be injected Specific can consult [document](https://github.com/chengyuxing/rabbit-sql-spring-boot-starter) .
 
 `example.xql`
 
@@ -225,120 +217,34 @@ PagedResource<DataRow> res = baki.query("&data.custom_paged")
 #### Procedure
 
 ```java
-baki.of("{:res = call test.sum(:a, :b)}")
-      .call(Args.of("res", Param.OUT(StandardOutParamType.INTEGER))
+baki.call("{:res = call test.sum(:a, :b)}",
+      Args.of("res", Param.OUT(StandardOutParamType.INTEGER))
               .add("a", Param.IN(34))
-              .add("b", Param.IN(56)))
-      .getOptional("res")
+              .add("b", Param.IN(56))
+      ).getOptional("res")
       .ifPresent(System.out::println);
 ```
 
 > If **postgresql**, you must use transaction when returns cursor.
 
-#### JPA
+### Entity-Mapping
 
-Implemented JPA annotations: `@Entity` , `@Table` , `@Id` , `@Column` , `@Transient` , support **Lambda** style for CRUD, the CRUD logic basically follows the JPA specification.
-
-A simple entity:
+To achieve the purest execution of SQL in this framework, the entity mapping logic will no longer be hard-coded internally to reach the maximum compatibility with various frameworks. The core of entity mapping is the `DataRow` class, which provides the methods` toEntity` and `ofEntity`. If there are special entity mapping requirements, Custom parsing can be achieved by configuring the attribute `BakiDao#entityFieldMapper`. For example, if the standard entity of JPA has the annotation @Column, then a simple mapping implementation is as follows:
 
 ```java
-@Entity
-@Table(schema = "test")
-public class Guest {
-    @Id
-    @Column(insertable = false, updatable = false)
-    private Integer id;
-    private String name;
-    private Integer age;
-    private String address;
-
-    @Transient
-    @Column(name = "count_all")
-    private Integer count;
-  
-    // getter, setter
+class MyEntityFieldMapper implements EntityFieldMapper {
+    @Override
+    public String apply(Field field) {
+        if (field.isAnnotationPresent(Column.class)) {
+            Column column = field.getAnnotation(Column.class);
+            return column.name();
+        }
+        return field.getName();
+    }
 }
 ```
 
-Query supports structure:
-
-```sql
-select ... from table [where ...] [group by ...] [having ...] [order by ...]
-```
-
-A complete example:
-
-```sql
-baki.query(Guest.class)
-    .where(w -> w.isNotNull(Guest::getId)
-               .gt(Guest::getId, 1)
-               .and(a -> a.in(Guest::getId, Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8))
-                         .startsWith(Guest::getName, "cyx")
-                         .or(s -> s.between(Guest::getAge, 1, 100)
-                                  .notBetween(Guest::getAge, 100, 1000)
-                         )
-                         .in(Guest::getName, Arrays.asList("cyx", "jack"))
-               )
-               .of(Guest::getAddress, () -> "~", "kunming")
-               .peek((a, b) -> System.out.println(a))
-    )
-   .groupBy(g -> g.count()
-           .max(Guest::getAge)
-           .avg(Guest::getAge)
-           .by(Guest::getAge)
-           .having(h -> h.count(StandardOperator.GT, 1))
-           )
-   .orderBy(o -> o.asc(Guest::getAge))
-   .toList()
-```
-
-- Check the currently built SQL structure by method `peek` on the development phase.
-- Support custom operator(`() -> "~"`) by invoke [operator white list](#operatorWhiteList).
-
-**Select** can build complex **where** nest conditions, the **having** logic same as **where**, supports the flatten style and nest style, by default multiple conditions concated by `and` .
-
-**SQL**:
-
-```sql
-where id > 5 and id < 10 or id in (17, 18, 19)
-```
-
-**Flatten style**:
-
-```java
-.where(g -> g.gt(Guest::getId, 5))
-.where(g -> g.lt(Guest::getId, 10))
-.where(g -> g.or(o -> o.in(Guest::getId, Arrays.asList(17, 18, 19))))
-```
-
-**Nest style**:
-
-```java
-.where(g -> g.gt(Guest::getId, 5)
-        .lt(Guest::getId, 10)
-        .or(o -> o.in(Guest::getId, Arrays.asList(17, 18, 19))))
-```
-
-Notice the `and` and `or` :  adjustments have been made for most common situations: 
-
-- all condition will be concat with `or` in the **and group**;
-- all condition will be concat with `and` in the **or group**;
-
-**SQL**:
-
-```sql
-((name = 'cyx' and age = 30) or (name = 'jack' and age = 60))
-```
-
-**Nest structure**:
-
-```java
-.where(w -> w.and(o -> o.or(a -> a.eq(Guest::getName, "cyx")
-                                 .eq(Guest::getAge, 30))
-                       .or(r -> r.eq(Guest::getName, "jack")
-                                 .eq(Guest::getAge, 60))
-               )
-```
+In other frameworks, even custom field annotation parsing can meet the requirements and is no longer limited by the entity mapping rules of other frameworks.
 
 ### Transaction
 
@@ -694,16 +600,6 @@ Default implement of interface **Baki**, support some basic operation.
 
 #### Options
 
-##### autoXFMConfig
-
-Default: `false`
-
-Auto load xql file manager config by database name.
-
-If `true`, find the suitable `xql-file-manager-*.yml` by database name, database name depends on **jdbc driver** `DatabaseMetaData#getDatabaseProductName().toLowerCase()` .
-
-E.g. current database is **oracle**, it will be load `xql-file-manager-oracle.yml` first if exists, otherwise load `xql-file-manager.yml` .
-
 ##### sqlInterceptor
 
 Custom sql interceptor, default:
@@ -732,7 +628,7 @@ Default: `null`
 
 When the dynamic sql is parsed, secondary processing is performed before it is actually executed.
 
-##### sqlWatcher
+##### executionWatcher
 
 Default: `null`
 
@@ -782,11 +678,21 @@ The query cache manager caches query results to improve performance, increase co
 
 Make a reasonable automatic cache expiration policy to prevent data from being updated in time.
 
-##### operatorWhiteList
+##### entityFieldMapper
 
-Default：`null`
+Default：the entity field name
 
-The JPA entity query where condition builds a custom action whitelist to support other trusted, non-built-in operators.
+All operations involving the return of entities within the framework's internal interfaces will use this function to map and match the fields.
+
+e.g. `baki.query(...).findFirstEntity(class)`
+
+##### entityValueMapper
+
+Default: `null`
+
+All operations involving the return of entities within the framework's internal interfaces will use this function to map and convert the value types of fields.
+
+e.g. `baki.query(...).findFirstEntity(class)`
 
 ### XQLFileManager
 
@@ -834,10 +740,8 @@ order by id;
 
 - **new XQLFileManager()**
 
-  If source root `.../src/main/resources` contains file what is named `xql-file-manager.yml`, optional properties will be init by this file.
-
   Default options:
-  
+
   `xql-file-manager.yml`
   
   `!path` tag use for merge list to path string.
@@ -866,8 +770,6 @@ order by id;
 ##### files
 
 Sql file mapping dictionary, key is alias, value is sql file name, you can get sql statement  by `alias.your_sql_name` when sql file added, as above example: `my.sql`;
-
-##### pipeInstances
 
 ##### pipes
 

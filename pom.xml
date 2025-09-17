@@ -8,17 +8,16 @@
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
     <packaging>jar</packaging>
-    <version>9.0.20</version>
+    <version>10.0.0</version>
     <name>rabbit-sql</name>
     <url>https://github.com/chengyuxing/rabbit-sql</url>
 
     <properties>
-        <maven.compiler.source>11</maven.compiler.source>
-        <maven.compiler.target>11</maven.compiler.target>
-        <snakeyaml.version>2.0</snakeyaml.version>
-        <jpa.version>3.1.0</jpa.version>
+        <maven.compiler.source>8</maven.compiler.source>
+        <maven.compiler.target>8</maven.compiler.target>
+        <snakeyaml.version>1.33</snakeyaml.version>
         <slf4j.version>1.7.25</slf4j.version>
-        <rabbit.common.version>3.0.4</rabbit.common.version>
+        <rabbit.common.version>3.0.5</rabbit.common.version>
     </properties>
 
     <licenses>
@@ -57,13 +56,6 @@
         </dependency>
 
         <dependency>
-            <groupId>jakarta.persistence</groupId>
-            <artifactId>jakarta.persistence-api</artifactId>
-            <version>${jpa.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>${slf4j.version}</version>
@@ -73,6 +65,13 @@
             <groupId>com.github.jsqlparser</groupId>
             <artifactId>jsqlparser</artifactId>
             <version>5.0</version>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>javax.persistence</groupId>
+            <artifactId>javax.persistence-api</artifactId>
+            <version>2.2</version>
             <scope>test</scope>
         </dependency>
 

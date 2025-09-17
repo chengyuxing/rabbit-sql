@@ -23,23 +23,13 @@
 
 **pom.xml**：
 
-_java 17+_
+_java 8+_
 
 ```xml
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql-spring-boot-starter</artifactId>
-    <version>4.0.18</version>
-</dependency>
-```
-
-_java 8_
-
-```xml
-<dependency>
-    <groupId>com.github.chengyuxing</groupId>
-    <artifactId>rabbit-sql-spring-boot-starter</artifactId>
-    <version>3.2.12</version>
+    <version>5.0.0</version>
 </dependency>
 ```
 
@@ -157,7 +147,6 @@ select * from users where
 >
 > ```java
 > // Rabbit-SQL plugin - Your methods  //CODE-BEGIN:methods
-> @Insert("users")
 > int addUser(User user);
 > // Rabbit-SQL plugin - End of your methods  //CODE-END:methods
 > ```
@@ -193,7 +182,6 @@ private ExampleMapper exampleMapper;
 
 - 通过 Baki 接口来执行增删改查、事务操作等基本数据库操作，避免直接与 JDBC 交互。
 - 每个 SQL 操作都通过传递 SQL 名称来执行，并传入参数映射。
-- 单表CRUD推荐使用基本的JPA的实体来进行操作。
 
 **SQL名示例**：
 
@@ -205,18 +193,6 @@ public Stream<DataRow> getUsersByName() {
     return baki.query("&example.queryAllUsers").args().stream();
 }
 ```
-
-**JPA示例**：
-
-```java
-baki.query(Guest.class)
-    .where(g -> g.gt(Guest::getId, 5))
-    .where(g -> g.lt(Guest::getId, 10))
-    .where(g -> g.or(o -> o.in(Guest::getId, Arrays.asList(17, 18, 19))))
-    .toList()
-```
-
-更详细的使用方法可参考[文档][jpa]。
 
 #### 事务处理
 
@@ -257,14 +233,14 @@ public void b(){
 对于批量插入、更新等操作，推荐使用批量提交，减少数据库的网络交互次数，提升性能。
 
 ```java
-baki.insert(Collection<Entity> data);
+baki.insert('<tableName>', <Collection>);
 ```
 
 ```java
-baki.of("&<sql名>").executeBatch(...);
+baki.execute("&<sql名>", <Collection>);
 ```
 
-> insert, update, delete 通过传入集合来执行批量操作，或者通过 `executeBatch` 来执行批量操作。
+> insert, update, delete 通过传入集合来执行批量操作。
 
 ##### 缓存重复查询
 

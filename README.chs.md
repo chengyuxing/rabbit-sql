@@ -14,33 +14,23 @@
 
 这是一个轻量级的持久层框架，提供了完整的数据库操作解决方案，通过封装和抽象，简化了数据库访问的复杂性，同时也为开发者提供了灵活性和可扩展性，以追求简单稳定高效为目标，此库基本功能如下：
 
-- 原生SQL执行和基本的[JPA单表](#JPA)CRUD；
-- [执行存储过程/函数](#调用存储过程函数)；
-- 简单的[事务](#事务)；
-- [预编译sql](#预编译SQL)；
-- [代码与sql分离](#XQLFileManager)；
-- [动态sql解析](#动态SQL)；
-- [接口映射](#接口映射)；
+- [执行存储过程/函数](#调用存储过程函数)
+- 简单的[事务](#事务)
+- [预编译sql](#预编译SQL)
+- [代码与sql分离](#XQLFileManager)
+- [动态sql解析](#动态SQL)
+- [接口映射](#接口映射)
+- [实体映射](#实体映射)
 
 ## Maven dependency
 
-_java 11+_
+_java 8+_
 
 ```xml
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>9.0.20</version>
-</dependency>
-```
-
-_java 8_
-
-```xml
-<dependency>
-    <groupId>com.github.chengyuxing</groupId>
-    <artifactId>rabbit-sql</artifactId>
-    <version>8.1.22</version>
+    <version>10.0.0</version>
 </dependency>
 ```
 
@@ -77,18 +67,20 @@ Datasource datasource = new HikariDataSource();
 ...
 BakiDao baki = new BakiDao(dataSource);
 
-XQLFileManager xqlFileManager = new XQLFileManager();
+XQLFileManager xqlFileManager = new XQLFileManager("xql-file-manager.yml");
 ...
 baki.setXqlFileManager(xqlFileManager);
 ```
 
 ### 接口映射
 
+支持已注册到**XQLFileManager**的**xql**文件映射（`BakiDao#proxyXQLMapper`）到标记了注解`@XQLMapper`的接口，通过动态代理调用方法来执行相应的查询等操作。
+
 ```java
 ExampleMapper mapper = baki.proxyXQLMapper(ExampleMapper.class)
 ```
 
-支持已注册到**XQLFileManager**的**xql**文件映射（`BakiDao#proxyXQLMapper`）到标记了注解`@XQLMapper`的接口，通过动态代理调用方法来执行相应的查询等操作。
+如果使用 Springboot 则，可以直接通过在启动类上加上注解 ` @XQLMapperScan` 通过接口扫描机制自动注册到上下文中，注入接口即可，具体可以参考[文档](https://github.com/chengyuxing/rabbit-sql-spring-boot-starter)。
 
 `example.xql`
 
@@ -227,117 +219,34 @@ PagedResource<DataRow> res = baki.query("&data.custom_paged")
 #### 调用存储过程/函数
 
 ```java
-baki.of("{:res = call test.sum(:a, :b)}")
-      .call(Args.of("res", Param.OUT(StandardOutParamType.INTEGER))
+baki.call("{:res = call test.sum(:a, :b)}",
+      Args.of("res", Param.OUT(StandardOutParamType.INTEGER))
               .add("a", Param.IN(34))
-              .add("b", Param.IN(56)))
-      .getOptional("res")
+              .add("b", Param.IN(56))
+      ).getOptional("res")
       .ifPresent(System.out::println);
 ```
 
 > 如果是**postgresql**数据库，返回值有游标需要使用[事务](#事务)进行包裹。
 
-#### JPA
+### 实体映射
 
-已实现的JPA注解包括：`@Entity` , `@Table` , `@Id` , `@Column` , `@Transient` ，支持基本**Lambda**风格的CRUD操作，CRUD逻辑基本遵循JPA规范即可。
-
-一个简单的实体如下：
+本框架为了做到最纯粹的执行 SQL ，内部将不再硬编码实体映射逻辑，以到达与各种框架做到最大的兼容性，实体映射核心为 `DataRow` 类，其提供了方法 `toEntity` 和 `ofEntity` ，如果有特殊实体映射需求，通过配置属性 `BakiDao#entityFieldMapper` 来实现自定义解析，例如 JPA 的标准实体有注解 `@Column` ，那么简单的映射实现如下：
 
 ```java
-@Entity
-@Table(schema = "test")
-public class Guest {
-    @Id
-    @Column(insertable = false, updatable = false)
-    private Integer id;
-    private String name;
-    private Integer age;
-    private String address;
-
-    @Transient
-    @Column(name = "count_all")
-    private Integer count;
-  
-    // getter, setter
+class MyEntityFieldMapper implements EntityFieldMapper {
+    @Override
+    public String apply(Field field) {
+        if (field.isAnnotationPresent(Column.class)) {
+            Column column = field.getAnnotation(Column.class);
+            return column.name();
+        }
+        return field.getName();
+    }
 }
 ```
 
-查询支持构建形如：
-
-```sql
-select ... from table [where ...] [group by ...] [having ...] [order by ...]
-```
-
-一个完整的例子如下：
-
-```java
-baki.query(Guest.class)
-    .where(w -> w.isNotNull(Guest::getId)
-               .gt(Guest::getId, 1)
-               .and(a -> a.in(Guest::getId, Arrays.asList(1, 2, 3, 4, 5, 6, 7, 8))
-                         .startsWith(Guest::getName, "cyx")
-                         .or(s -> s.between(Guest::getAge, 1, 100)
-                                  .notBetween(Guest::getAge, 100, 1000)
-                         )
-                         .in(Guest::getName, Arrays.asList("cyx", "jack"))
-               )
-               .of(Guest::getAddress, () -> "~", "kunming")
-               .peek((a, b) -> System.out.println(a))
-    )
-   .groupBy(g -> g.count()
-           .max(Guest::getAge)
-           .avg(Guest::getAge)
-           .by(Guest::getAge)
-           .having(h -> h.count(StandardOperator.GT, 1))
-           )
-   .orderBy(o -> o.asc(Guest::getAge))
-   .toList()
-```
-
-- 在开发阶段构建复杂条件时可以通过 `peek` 方法来输出查看当前构建出的SQL结构；
-- 通过[操作符白名](#operatorWhiteList)单可支持自定义操作符（`() -> "~"`）。
-
-**查询**可构建复杂的**where**嵌套条件，分组**having**逻辑同**where**一样，支持展平风格和嵌套风格，其最终构建的SQL都一样，默认情况下多个条件以` and` 连接。
-
-**SQL**：
-
-```sql
-where id > 5 and id < 10 or id in (17, 18, 19)
-```
-
-**展平风格**：
-
-```java
-.where(g -> g.gt(Guest::getId, 5))
-.where(g -> g.lt(Guest::getId, 10))
-.where(g -> g.or(o -> o.in(Guest::getId, Arrays.asList(17, 18, 19))))
-```
-
-**嵌套风格**：
-
-```java
-.where(g -> g.gt(Guest::getId, 5)
-        .lt(Guest::getId, 10)
-        .or(o -> o.in(Guest::getId, Arrays.asList(17, 18, 19))))
-```
-
-其中 `and` 和 `or` 的嵌套需要注意，根据大部分常见情况做了调整，`and` 组里面的多个条件以 `or` 连接，`or` 组里面的多个条件以 `and` 连接。
-
-**SQL**:
-
-```sql
-((name = 'cyx' and age = 30) or (name = 'jack' and age = 60))
-```
-
-**嵌套结构**：
-
-```java
-.where(w -> w.and(o -> o.or(a -> a.eq(Guest::getName, "cyx")
-                                 .eq(Guest::getAge, 30))
-                       .or(r -> r.eq(Guest::getName, "jack")
-                                 .eq(Guest::getAge, 60))
-               )
-```
+在其他框架中，甚至自定义字段注解解析也可以满足需求，不再受限于其他框架的实体映射规则。
 
 ### 事务
 
@@ -693,16 +602,6 @@ where id = 3
 
 #### 配置项
 
-##### autoXFMConfig
-
-默认值为：`false`
-
-自动根据数据库名称加载合适的配置文件。
-
-如果为 `true` ，根据数据库名称自动寻找合适的 `xql-file-manager-*.yml`，数据库名称来自于 **jdbc驱动** `DatabaseMetaData#getDatabaseProductName().toLowerCase()`。
-
-例如当前数据库为**oracle**，则优先加载 `xql-file-manager-oracle.yml` 文件，如果文件不存在，再加载 `xql-file-manager.yml`。
-
 ##### sqlInterceptor
 
 sql 拦截器，默认值为：
@@ -731,7 +630,7 @@ sql 拦截器，默认值为：
 
 当解析完成动态sql时，在真正执行之前，来进行二次处理。
 
-##### sqlWatcher
+##### executionWatcher
 
 默认值：`null`
 
@@ -781,11 +680,21 @@ JDBC底层执行批量操作每次提交数据数量。
 
 合理制定缓存的自动过期策略，以免数据更新不及时。
 
-##### operatorWhiteList
+##### entityFieldMapper
+
+默认值：返回字段名称
+
+框架内部接口涉及到实体返回实体的操作都将使用此函数来对字段进行映射匹配。
+
+例如：`baki.query(...).findFirstEntity(class)`
+
+##### entityValueMapper
 
 默认值：`null`
 
-JPA实体查询**where**条件构建自定义操作符白名单，用于支持其他受信任的非内建操作符。
+框架内部接口涉及到实体返回实体的操作都将使用此函数来对字段的值类型进行映射转换。
+
+例如：`baki.query(...).findFirstEntity(class)`
 
 ### XQLFileManager
 
@@ -830,10 +739,8 @@ order by id;
 
 - **new XQLFileManager()**
 
-  如果源路径 `.../src/main/resources/`下有文件 `xql-file-manager.yml` 则根据此文件进行配置项初始化。
-
   初始化默认可选配置项：
-  
+
   `xql-file-manager.yml`
   
   内置`!path` 标签函数：可用于连接列表为一个路径字符串。
@@ -862,8 +769,6 @@ order by id;
 ##### files
 
 sql文件字典集合，键为别名，值为sql文件名，可通过 `别名.sql名` 来获取sql，如上例子：`my.query`；
-
-##### pipeInstances
 
 ##### pipes
 

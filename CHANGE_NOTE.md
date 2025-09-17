@@ -1,5 +1,11 @@
 # change note
 
+# 10.0.0
+
+- Remove jpa supports.
+- New baki interface methods.
+- Some more changes.
+
 # 9.0.20
 
 - Some optimized.

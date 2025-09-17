@@ -8,6 +8,7 @@ import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.sql.*;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
+import com.github.chengyuxing.sql.plugins.EntityFieldMapper;
 import com.github.chengyuxing.sql.plugins.QueryExecutor;
 import com.github.chengyuxing.sql.transaction.Tx;
 import com.github.chengyuxing.sql.types.StandardOutParamType;
@@ -17,6 +18,8 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import javax.persistence.Column;
+import java.lang.reflect.Field;
 import java.sql.CallableStatement;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
@@ -90,6 +93,19 @@ public class NewBakiTests {
             return null;
         });
         bakiDao.setExecutionWatcher(new ExecuteCostWatcher());
+        bakiDao.setEntityFieldMapper(new MyEntityFieldMapper());
+    }
+
+    static class MyEntityFieldMapper implements EntityFieldMapper {
+
+        @Override
+        public String apply(Field field) {
+            if (field.isAnnotationPresent(Column.class)) {
+                Column column = field.getAnnotation(Column.class);
+                return column.name();
+            }
+            return field.getName();
+        }
     }
 
     @Test
@@ -169,7 +185,7 @@ public class NewBakiTests {
         baki.query("select * from test.guest")
                 .stream()
 //                .map(d -> d.toEntity(AnotherUser.class))
-                .forEach(d ->{
+                .forEach(d -> {
                     System.out.println(d);
                 });
     }

@@ -99,11 +99,11 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     private ExecutionWatcher executionWatcher;
     /**
-     * Map to Entity field mapper.
+     * Default Map to Entity field mapper support.
      */
     private EntityFieldMapper entityFieldMapper;
     /**
-     * Map to Entity value mapper.
+     * Default Map to Entity value mapper support.
      */
     private EntityValueMapper entityValueMapper;
 

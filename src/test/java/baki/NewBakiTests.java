@@ -168,8 +168,10 @@ public class NewBakiTests {
         // language=sql
         baki.query("select * from test.guest")
                 .stream()
-                .map(d -> d.toEntity(AnotherUser.class))
-                .forEach(System.out::println);
+//                .map(d -> d.toEntity(AnotherUser.class))
+                .forEach(d ->{
+                    System.out.println(d);
+                });
     }
 
     @Test
@@ -193,9 +195,9 @@ public class NewBakiTests {
 
     @Test
     public void testInsertReturning() {
-        DataRow res = baki.execute("insert into test.guest(name, address, age)\n" +
-                "values ('xxx', 'kunming', 37)\n" +
-                "returning id", Args.of("id", 1));
+        DataRow res = baki.execute("insert into test.guest(name, address, age, photo)\n" +
+                "values ('xxx', 'kunming', 37, :photo)\n" +
+                "returning id", Args.of("photo", new FileResource("log4j.properties").getInputStream()));
         System.out.println(res);
     }
 

@@ -4,7 +4,7 @@
 [![Maven][badge:maven]][maven-repository]
 [![Version][badge:version]][versions]
 
-<img src="imgs/pluginIcon.svg" style="width:220px;" />
+<a href="https://rabbitsql.cn" target="_blank"><img src="imgs/pluginIcon.svg" style="width:220px;" /></a>
 
 语言：[English](https://github.com/chengyuxing/rabbit-sql) | 简体中文
 

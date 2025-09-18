@@ -1,6 +1,6 @@
 # rabbit-sql 最佳实践
 
-<img src="imgs/pluginIcon.svg" style="width:220px;" />
+<a href="https://rabbitsql.cn" target="_blank"><img src="imgs/pluginIcon.svg" style="width:220px;" /></a>
 
 语言：[English](https://github.com/chengyuxing/rabbit-sql/blob/master/BEST_PRACTICE.md) | 简体中文
 

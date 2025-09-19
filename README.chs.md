@@ -231,7 +231,11 @@ baki.call("{:res = call test.sum(:a, :b)}",
 
 ### 实体映射
 
-本框架为了做到最纯粹的执行 SQL ，内部将不再硬编码实体映射逻辑，以到达与各种框架做到最大的兼容性，实体映射核心为 `DataRow` 类，其提供了方法 `toEntity` 和 `ofEntity` ，如果有特殊实体映射需求，通过配置属性 `BakiDao#entityFieldMapper` 来实现自定义解析，例如 JPA 的标准实体有注解 `@Column` ，那么简单的映射实现如下：
+本框架为了做到最纯粹的执行 SQL ，内部将不再硬编码实体映射逻辑，以到达与各种框架做到最大的兼容性。
+
+实体映射核心为 `DataRow` 类，其提供了方法 `toEntity` 和 `ofEntity` ，如果有特殊实体映射需求，通过配置属性 `BakiDao#entityFieldMapper` 来实现自定义解析。
+
+例如 JPA 的标准实体有注解 `@Column` ，那么简单的映射实现如下：
 
 ```java
 class MyEntityFieldMapper implements EntityFieldMapper {

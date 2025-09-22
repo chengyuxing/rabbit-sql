@@ -179,14 +179,14 @@ public class BakiDao extends JdbcSupport implements Baki {
                         return super.executeQueryStream(sql, args);
                     }
                     String uniqueKey = queryCacheManager.uniqueKey(sql, args);
-                    Stream<DataRow> cache = queryCacheManager.get(uniqueKey);
+                    Stream<DataRow> cache = queryCacheManager.get(uniqueKey, args);
                     if (Objects.nonNull(cache)) {
                         log.debug("Hits cache({}, {}), returns data from cache.", sql, args);
                         return cache;
                     }
                     Object lock = queryCacheLocks.computeIfAbsent(uniqueKey, k -> new Object());
                     synchronized (lock) {
-                        cache = queryCacheManager.get(uniqueKey);
+                        cache = queryCacheManager.get(uniqueKey, args);
                         if (Objects.nonNull(cache)) {
                             log.debug("Hits cache({}, {}) after lock, returns data from cache.", sql, args);
                             return cache;

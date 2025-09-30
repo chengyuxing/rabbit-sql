@@ -198,8 +198,8 @@ public class SqlUtil {
      * @return sql string
      */
     public static String trimEnd(String sql) {
-        // oracle procedure syntax end with ';' is required.
-        if (StringUtil.startsWithIgnoreCase(sql, "begin") && StringUtil.endsWithIgnoreCase(sql, "end")) {
+        // oracle pl/sql syntax end with ';' is required.
+        if (StringUtil.startsWithsIgnoreCase(sql, "begin", "declare")) {
             return sql;
         }
         return sql.replaceAll("([\\s;]*)$", "");

@@ -583,7 +583,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         if (Objects.nonNull(xqlFileManager)) {
             this.xqlFileManager = xqlFileManager;
             this.xqlFileManager.setDatabaseId(databaseId);
-            this.xqlFileManager.setTemplateFormatter(sqlGenerator.getTemplateFormatter());
+            this.xqlFileManager.setSqlGenerator(sqlGenerator);
             if (!this.xqlFileManager.isInitialized()) {
                 this.xqlFileManager.init();
             }

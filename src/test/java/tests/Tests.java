@@ -63,6 +63,11 @@ public class Tests {
     }
 
     @Test
+    public void testRep() {
+        System.out.println("abc;;;;;".replaceAll(";$", ""));
+    }
+
+    @Test
     public void pageTest() throws Exception {
         OraclePageHelper page = new OraclePageHelper();
         page.init(1, 10, 100);

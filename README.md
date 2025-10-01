@@ -30,7 +30,7 @@ _java 8+_
 <dependency>
   <groupId>com.github.chengyuxing</groupId>
   <artifactId>rabbit-sql</artifactId>
-  <version>10.0.0</version>
+  <version>10.0.1</version>
 </dependency>
 ```
 
@@ -307,7 +307,11 @@ Dynamic SQL depends on [XQLFileManager](#XQLFileManager), based on resolve speci
 
 Annotation mark must be pair and follows **open-close** tag.
 
+It should be particularly noted that if a value type string literal is not a pure number or keyword (`null`, `blank`, `true`, `false`), it does not need to be enclosed in quotation marks and defaults to a string. For example, in `:name = bob`, the quotation mark for `'bob'` is not necessary.
+
 #### if-else-fi
+
+The IF conditional judgment statement has the same logical effect as the if in programming languages.
 
 ```sql
 -- #if :user <> null
@@ -317,7 +321,19 @@ Annotation mark must be pair and follows **open-close** tag.
 -- #fi
 ```
 
+#### guard-throw
+
+Guard statement: If the condition is met, the branch processing logic is executed; otherwise, `#throw` is executed to throw the exception information and terminate all subsequent operations.
+
+```sql
+-- #guard :user <> blank
+    ...
+-- #throw 'message'
+```
+
 #### switch-case-end
+
+The switch flow control statement has the same effect as the switch in programming languages. It matches each case branch in sequence and directly exits the entire switch when the first condition is met.
 
 ```sql
 -- #switch :name
@@ -336,6 +352,8 @@ Annotation mark must be pair and follows **open-close** tag.
 
 #### choose-when-end
 
+The choose flow control statement is similar in effect to the switch statement. It matches each when branch in sequence and directly exits the entire choose when the first condition is met.
+
 ```sql
 -- #choose
        -- #when :id >= 0
@@ -349,6 +367,8 @@ Annotation mark must be pair and follows **open-close** tag.
 ```
 
 #### for-done
+
+The for loop statement, similar to programming languages, traverses a collection and accumulates the contents within the loop body.
 
 ```sql
 -- #for item,idx of :list delimiter ',' open '' close ''

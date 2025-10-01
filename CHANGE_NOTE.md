@@ -1,5 +1,11 @@
 # change note
 
+# 10.0.1
+
+- Dynamic sql add supports #guard...#throw expression block.
+- QueryCacheManager#get add 2nd parameter query args.
+- Some optimized.
+
 # 10.0.0
 
 - Remove jpa supports.

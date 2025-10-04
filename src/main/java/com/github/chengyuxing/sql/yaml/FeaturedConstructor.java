@@ -1,6 +1,6 @@
 package com.github.chengyuxing.sql.yaml;
 
-import com.github.chengyuxing.common.script.expression.Patterns;
+import com.github.chengyuxing.common.Patterns;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.constructor.AbstractConstruct;
 import org.yaml.snakeyaml.constructor.Constructor;

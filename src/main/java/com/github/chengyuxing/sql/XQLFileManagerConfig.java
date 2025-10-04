@@ -2,7 +2,7 @@ package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.io.TypedProperties;
-import com.github.chengyuxing.common.script.expression.IPipe;
+import com.github.chengyuxing.common.script.pipe.IPipe;
 import com.github.chengyuxing.sql.exceptions.YamlDeserializeException;
 import com.github.chengyuxing.sql.yaml.FeaturedConstructor;
 import org.jetbrains.annotations.NotNull;

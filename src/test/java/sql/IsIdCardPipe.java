@@ -1,11 +1,11 @@
 package sql;
 
 
-import com.github.chengyuxing.common.script.expression.IPipe;
+import com.github.chengyuxing.common.script.pipe.IPipe;
 
 public class IsIdCardPipe implements IPipe<Boolean> {
     @Override
-    public Boolean transform(Object value) {
+    public Boolean transform(Object value, Object... params) {
         if (value == null) {
             return false;
         }

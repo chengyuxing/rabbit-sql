@@ -1,6 +1,6 @@
 package com.github.chengyuxing.sql.utils;
 
-import com.github.chengyuxing.common.script.expression.Patterns;
+import com.github.chengyuxing.common.Patterns;
 import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.sql.plugins.NamedParamFormatter;
 import com.github.chengyuxing.sql.plugins.TemplateFormatter;

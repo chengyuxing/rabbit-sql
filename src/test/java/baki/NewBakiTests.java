@@ -6,6 +6,7 @@ import baki.op.ExecuteCostWatcher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.io.FileResource;
+import com.github.chengyuxing.common.script.exception.CheckViolationException;
 import com.github.chengyuxing.sql.*;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.github.chengyuxing.sql.plugins.EntityFieldMapper;
@@ -105,6 +106,17 @@ public class NewBakiTests {
                 return column.name();
             }
             return field.getName();
+        }
+    }
+
+    @Test
+    public void testNewDynamic() {
+        try {
+            baki.query("&new.new-dynamic").args("age", 34)
+                    .rows()
+                    .forEach(System.out::println);
+        } catch (CheckViolationException e) {
+            System.out.println(e.getMessage());
         }
     }
 

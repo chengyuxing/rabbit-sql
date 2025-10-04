@@ -20,7 +20,7 @@ public class XQLFileManagerTests {
     @Test
     public void test() {
         Yaml yaml = new Yaml(new FeaturedConstructor());
-//        yaml.addImplicitResolver(new Tag("!!merge"), Pattern.compile("!!merge"), "[");
+//        yaml.addImplicitResolver(new Language("!!merge"), Pattern.compile("!!merge"), "[");
         Map<String, Object> res = yaml.loadAs(new FileResource("xql-file-manager.old.yml").getInputStream(), Map.class);
         System.out.println(res);
     }

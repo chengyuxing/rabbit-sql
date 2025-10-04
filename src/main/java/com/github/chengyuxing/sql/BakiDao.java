@@ -499,10 +499,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             if (Objects.nonNull(xqlFileManager)) {
                 Pair<String, Map<String, Object>> result = xqlFileManager.get(mySql.substring(1), myArgs);
                 mySql = result.getItem1();
-                // #for expression temp variables stored in _for variable.
-                if (!result.getItem2().isEmpty()) {
-                    myArgs.put(XQLFileManager.DynamicSqlParser.FOR_VARS_KEY, result.getItem2());
-                }
+                myArgs.putAll(result.getItem2());
             } else {
                 throw new NullPointerException("can not find property 'xqlFileManager'.");
             }

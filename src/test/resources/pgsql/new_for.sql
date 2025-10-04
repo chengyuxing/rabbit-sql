@@ -74,3 +74,17 @@ from test.guest
 /*[sum]*/
 {:res = call test.sum(:a, :b)}
 ;
+
+/*[new-dynamic]*/
+-- #check :age > 30 throw '年龄不能大于30岁'
+-- #var safeAge = :age
+-- #var id = 14
+-- #var users='a,xxx,c' | split(',')
+select * from test.guest where id = :id
+and name in (
+    -- #for item of :users delimiter ', '
+        :item
+    -- #done
+        )
+and age < :safeAge
+;

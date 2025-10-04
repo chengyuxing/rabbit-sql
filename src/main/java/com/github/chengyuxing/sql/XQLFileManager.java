@@ -1,15 +1,16 @@
 package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.io.FileResource;
-import com.github.chengyuxing.common.script.lexer.FlowControlLexer;
-import com.github.chengyuxing.common.script.parser.FlowControlParser;
+import com.github.chengyuxing.common.script.lexer.RabbitScriptLexer;
+import com.github.chengyuxing.common.script.parser.RabbitScriptParser;
 import com.github.chengyuxing.common.script.exception.ScriptSyntaxException;
-import com.github.chengyuxing.common.script.expression.IPipe;
+import com.github.chengyuxing.common.script.pipe.IPipe;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.exceptions.DuplicateException;
+import com.github.chengyuxing.sql.exceptions.DynamicSqlParseException;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.utils.SqlHighlighter;
 import com.github.chengyuxing.sql.utils.SqlUtil;
@@ -81,7 +82,7 @@ import static com.github.chengyuxing.common.utils.StringUtil.containsAnyIgnoreCa
  * check example following class path file: {@code home.xql.template}.
  * <p>Invoke method {@link #get(String, Map)} to enjoy the dynamic sql!</p>
  *
- * @see FlowControlParser
+ * @see RabbitScriptParser
  */
 public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(XQLFileManager.class);
@@ -297,11 +298,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @param desc     sql description
      * @return sql object
      */
-    protected Sql scanSql(String alias, String filename, String sqlName, String sql, String desc) {
+    protected @NotNull Sql scanSql(@NotNull String alias, @NotNull String filename, @NotNull String sqlName, @NotNull String sql, @NotNull String desc) {
         try {
             newDynamicSqlParser(sql).verify();
         } catch (ScriptSyntaxException e) {
-            throw new ScriptSyntaxException("File: " + filename + " -> '" + sqlName + "' dynamic sql script syntax error.", e);
+            throw new DynamicSqlParseException("File: " + filename + " -> '" + sqlName + "' has script syntax error", e);
         }
         Sql sqlObj = new Sql(sql);
         sqlObj.setDescription(desc);
@@ -495,7 +496,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      *
      * @return sql fragment names set
      */
-    public Set<String> names() {
+    public @NotNull Set<String> names() {
         Set<String> names = new HashSet<>();
         foreach((k, r) -> r.getEntry().keySet().forEach(n -> names.add(encodeSqlReference(k, n))));
         return names;
@@ -520,7 +521,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @param alias sql file alias
      * @return sql resource
      */
-    public Resource getResource(String alias) {
+    public @Nullable Resource getResource(@NotNull String alias) {
         return files.getResource(alias);
     }
 
@@ -539,8 +540,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @param name sql reference name ({@code <alias>.<sqlName>})
      * @return true if exists or false
      */
-    public boolean contains(String name) {
-        if (Objects.isNull(name)) return false;
+    public boolean contains(@NotNull String name) {
         Pair<String, String> p = decodeSqlReference(name);
         Resource resource = files.getResources().get(p.getItem1());
         if (Objects.isNull(resource)) {
@@ -557,10 +557,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @throws NoSuchElementException   if sql fragment name not exists
      * @throws IllegalArgumentException if sql reference name format error
      */
-    public Sql getSqlObject(String name) {
-        if (Objects.isNull(name)) {
-            throw new IllegalArgumentException("sql object name is null");
-        }
+    public Sql getSqlObject(@NotNull String name) {
         Pair<String, String> p = decodeSqlReference(name);
         Resource resource = getResource(p.getItem1());
         if (Objects.isNull(resource)) {
@@ -581,7 +578,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @throws NoSuchElementException   if sql fragment name not exists
      * @throws IllegalArgumentException if sql reference name format error
      */
-    public String get(String name) {
+    public String get(@NotNull String name) {
         String sql = getSqlObject(name).getContent();
         return SqlUtil.trimEnd(sql);
     }
@@ -591,17 +588,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      *
      * @param name sql name ({@code <alias>.<sqlName>})
      * @param args dynamic sql script expression args
-     * @return parsed sql and extra args calculated by {@code #for} expression if exists
-     * @throws NoSuchElementException if sql fragment name not exists
-     * @throws ScriptSyntaxException  dynamic sql script syntax error
+     * @return parsed sql and extra args calculated by expression if exists
      * @see DynamicSqlParser
      */
-    public Pair<String, Map<String, Object>> get(String name, Map<String, ?> args) {
-        try {
-            return parseDynamicSql(get(name), args);
-        } catch (Exception e) {
-            throw new ScriptSyntaxException("an error occurred when getting dynamic sql of name: " + name, e);
-        }
+    public Pair<String, Map<String, Object>> get(@NotNull String name, Map<String, ?> args) {
+        return parseDynamicSql(get(name), args);
     }
 
     /**
@@ -612,7 +603,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @return parsed sql and extra args calculated by {@code #for} expression if exists
      */
     public Pair<String, Map<String, Object>> parseDynamicSql(@NotNull String sql, @Nullable Map<String, ?> args) {
-        if (!containsAnyIgnoreCase(sql, FlowControlLexer.KEYWORDS)) {
+        if (!containsAnyIgnoreCase(sql, RabbitScriptLexer.DIRECTIVES)) {
             return Pair.of(sql, Collections.emptyMap());
         }
         Map<String, Object> myArgs = new HashMap<>();
@@ -623,7 +614,28 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         myArgs.put("_databaseId", databaseId);
         DynamicSqlParser parser = newDynamicSqlParser(sql);
         String parsedSql = parser.parse(myArgs);
-        return Pair.of(parsedSql, parser.getForContextVars());
+        Map<String, Object> vars = collectParserVars(parser);
+        return Pair.of(parsedSql, vars);
+    }
+
+    /**
+     * Collect dynamic parser's parsed result variables.
+     *
+     * @param parser Parser
+     * @return {@code #for} and {@code #var} variables
+     */
+    private @NotNull Map<String, Object> collectParserVars(DynamicSqlParser parser) {
+        Map<String, Object> vars = new HashMap<>(parser.getDefinedVars());
+        Map<String, Object> forContextVars = parser.getForContextVars();
+        if (!forContextVars.isEmpty()) {
+            // #for expression temp variables stored in _for variable.
+            if (!vars.containsKey(DynamicSqlParser.FOR_VARS_KEY)) {
+                vars.put(DynamicSqlParser.FOR_VARS_KEY, forContextVars);
+            } else {
+                throw new IllegalArgumentException("#var cannot define the name " + DynamicSqlParser.FOR_VARS_KEY + " when #for directive exists.");
+            }
+        }
+        return vars;
     }
 
     /**
@@ -704,7 +716,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     /**
      * Dynamic sql parser.
      */
-    public class DynamicSqlParser extends FlowControlParser {
+    public class DynamicSqlParser extends RabbitScriptParser {
         public static final String FOR_VARS_KEY = "_for";
         public static final String VAR_PREFIX = FOR_VARS_KEY + '.';
 

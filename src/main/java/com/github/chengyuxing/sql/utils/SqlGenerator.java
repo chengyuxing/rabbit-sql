@@ -178,6 +178,7 @@ public class SqlGenerator {
      * Generate named parameter insert statement.
      *
      * @param tableName table name
+     * @param columns   table columns
      * @return named parameter insert statement
      */
     public String generateNamedParamInsert(final String tableName, Collection<String> columns) {

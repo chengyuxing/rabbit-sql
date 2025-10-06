@@ -12,23 +12,27 @@
 /*#more
   description...
   #*/
-select *
-from test."user" t ${part1};
+select * from table t ${part1};
 
 /*{part1}*/
-where id = :id
-${order};
+where id = :id ${order};
 
 /*{order}*/
 order by id;
 
-/*[for]*/
-select *
-from test.user
-where id = 1
--- #for id of :ids delimiter ', ' open ' or id in (' close ')'
-    -- #if :id > 0
-    :id
-    -- #fi
--- #done
+/*[directives]*/
+-- #check :age > 30 throw 'Age cannot gt 30.'
+-- #var id = 14
+-- #var safeAge = :age
+-- #var users='a,xxx,c' | split(',')
+select * from table where id = :id and name in (
+    -- #for user of :users delimiter ', '
+        -- #if user == 'xxx'
+        'guest'
+        --else
+        :item
+        -- #fi
+    -- #done
+    )
+and age < :safeAge
 ;

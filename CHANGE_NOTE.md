@@ -2,7 +2,10 @@
 
 # 10.0.1
 
-- Dynamic sql add supports #guard...#throw expression block.
+- Dynamic sql add supports: #guard...#throw, #check exp throw, #var ...
+- Dynamic sql verify logic optimized and fixed #else verify bug.
+- Dynamic sql pipe supports params.
+- Dynamic sql parser optimized.
 - QueryCacheManager#get add 2nd parameter query args.
 - Some optimized.
 

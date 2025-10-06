@@ -315,6 +315,31 @@ select name, age from ... where id in ('I''m Ok!', 'book', 'warning') or id = ?;
 
 需要特别说明过一下，值类型字符串字面量如果不是纯数字和关键字（`null`, `blank`, `true`, `false`）的话，可以不需要加引号，默认为字符串，例如 `:name = bob`, `'bob'` 的引号不是必要的。
 
+#### check
+
+前置条件检查语句，如果满足条件则抛出异常信息（`CheckViolationException`）。
+
+在数据库真正执行sql之前，对参数做一次合法性验证，避免数据库层面的参数类型错误异常，以节省资源。
+
+```sql
+-- #check :id > 10 throw 'ID cannot gt 10.'
+...
+```
+
+#### var
+
+变量定义语句，变量值可以是常量，也可以是传入的参数经过管道处理，通过扩展管道，实现各种复杂的变量定义。
+
+```sql
+-- #var list = 'cyx,jack,mike' | split(',')
+-- #var newId = :id
+select * from table where id = :newId and name in (
+-- #for item of :list
+  :item
+-- #done
+)
+```
+
 #### if-else-fi
 
 IF 条件判断语句，逻辑效果和程序语言的 if 一样。
@@ -444,19 +469,21 @@ C --pipeN--> D[...]
 ```
 
 ```sql
--- 传入的name参数经过名为length的管道输出长度和3进行大小比较
+-- 传入的name参数经过名为 length 的管道输出长度和3进行大小比较
 :name|length <= 3
 ```
 
-通过实现接口 `com.github.chengyuxing.common.script.IPipe` 并添加到 [XQLFileManager](#XQLFileManager) 来使用管道。
+通过实现接口 `com.github.chengyuxing.common.script.pipe.IPipe` 并添加到 [XQLFileManager](#XQLFileManager) 来使用管道。
 
 **内置管道**：
 
 - **length**：获取字符串的长度；
 - **upper**：转大写；
 - **lower**：转小写；
-- **pairs**：map转为一个二元组集合 `List<Pair>`；
-- **kv**：对象或map转为一个键值对集合 `List<KeyValue>`。
+- **kv**：对象或 map 转为一个键值对集合 `List<KeyValue>`；
+- **nvl**：如果值为 `null` 则返回默认值 ，e.g. `nvl('default')`；
+- **type**：返回值的 Java 对象类型；
+- **split**：根据分隔符将字符串分割为数组，e.g. `split(',')`；
 
 ### 例子
 

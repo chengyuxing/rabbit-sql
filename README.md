@@ -309,6 +309,31 @@ Annotation mark must be pair and follows **open-close** tag.
 
 It should be particularly noted that if a value type string literal is not a pure number or keyword (`null`, `blank`, `true`, `false`), it does not need to be enclosed in quotation marks and defaults to a string. For example, in `:name = bob`, the quotation mark for `'bob'` is not necessary.
 
+#### check
+
+The precondition check statement throws an exception message (`CheckViolationException`) if the condition is met.
+
+Before the database actually executes the sql, conduct a validity verification of the parameters to avoid parameter type error anomalies at the database level and save resources.
+
+```sql
+-- #check :id > 10 throw 'ID cannot gt 10.'
+...
+```
+
+#### var
+
+Variable definition statements: Variable values can be constants or passed parameters processed through pipelines. By extending pipelines, various complex variable definitions can be achieved.
+
+```sql
+-- #var list = 'cyx,jack,mike' | split(',')
+-- #var newId = :id
+select * from table where id = :newId and name in (
+-- #for item of :list
+  :item
+-- #done
+)
+```
+
 #### if-else-fi
 
 The IF conditional judgment statement has the same logical effect as the if in programming languages.
@@ -442,15 +467,17 @@ C --pipeN--> D[...]
 :name|length <= 3
 ```
 
-Implement  `com.github.chengyuxing.common.script.IPipe`  interface and add to [XQLFileManager](#XQLFileManager)  to use pipe.
+Implement  `com.github.chengyuxing.common.script.pipe.IPipe`  interface and add to [XQLFileManager](#XQLFileManager)  to use pipe.
 
 **Built-In pipes:**
 
 - **length**: get length of string value;
 - **upper**: convert to upper case;
 - **lower**: convert to lower case;
-- **pairs**: map convert to pairs `List<Pair>` ; 
-- **kv**: object or map convert to keyValues `List<KeyValue>` .
+- **kv**: object or map convert to keyValues `List<KeyValue>` ;
+- **nvl**: if value is null, the default will be returned, e.g. `nvl('default')` ;
+- **type**: returns the Java object type name;
+- **split**: split string to string array by delimiter, e.g. `split(',')` ;
 
 ### Example
 

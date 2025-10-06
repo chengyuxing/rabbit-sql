@@ -80,6 +80,7 @@ import static com.github.chengyuxing.common.utils.StringUtil.containsAnyIgnoreCa
  * <p>
  * {@linkplain DynamicSqlParser Dynamic sql script} write in line annotation where starts with {@code --},
  * check example following class path file: {@code home.xql.template}.
+ * <p>Supported Directives: {@link com.github.chengyuxing.common.script.Directives Directives}</p>
  * <p>Invoke method {@link #get(String, Map)} to enjoy the dynamic sql!</p>
  *
  * @see RabbitScriptParser
@@ -600,7 +601,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      *
      * @param sql  dynamic sql
      * @param args dynamic sql script expression args
-     * @return parsed sql and extra args calculated by {@code #for} expression if exists
+     * @return parsed sql and extra args calculated by directives if exists
      */
     public Pair<String, Map<String, Object>> parseDynamicSql(@NotNull String sql, @Nullable Map<String, ?> args) {
         if (!containsAnyIgnoreCase(sql, RabbitScriptLexer.DIRECTIVES)) {
@@ -614,17 +615,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         myArgs.put("_databaseId", databaseId);
         DynamicSqlParser parser = newDynamicSqlParser(sql);
         String parsedSql = parser.parse(myArgs);
-        Map<String, Object> vars = collectParserVars(parser);
-        return Pair.of(parsedSql, vars);
-    }
 
-    /**
-     * Collect dynamic parser's parsed result variables.
-     *
-     * @param parser Parser
-     * @return {@code #for} and {@code #var} variables
-     */
-    private @NotNull Map<String, Object> collectParserVars(DynamicSqlParser parser) {
         Map<String, Object> vars = new HashMap<>(parser.getDefinedVars());
         Map<String, Object> forContextVars = parser.getForContextVars();
         if (!forContextVars.isEmpty()) {
@@ -635,7 +626,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                 throw new IllegalArgumentException("#var cannot define the name " + DynamicSqlParser.FOR_VARS_KEY + " when #for directive exists.");
             }
         }
-        return vars;
+        return Pair.of(parsedSql, vars);
     }
 
     /**

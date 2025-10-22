@@ -478,6 +478,7 @@ Implement  `com.github.chengyuxing.common.script.pipe.IPipe`  interface and add 
 - **nvl**: if value is null, the default will be returned, e.g. `nvl('default')` ;
 - **type**: returns the Java object type name;
 - **split**: split string to string array by delimiter, e.g. `split(',')` ;
+- **in**: returns the params is containing the value or not, e.g. `in('a','b','c')`
 
 ### Example
 

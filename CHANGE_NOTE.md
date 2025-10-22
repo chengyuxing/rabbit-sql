@@ -1,5 +1,10 @@
 # change note
 
+# 10.0.2
+
+- Dynamic sql add new pipe 'in'
+- `ClasspathResource` optimized
+
 # 10.0.1
 
 - Dynamic sql add supports: #guard...#throw, #check exp throw, #var ...

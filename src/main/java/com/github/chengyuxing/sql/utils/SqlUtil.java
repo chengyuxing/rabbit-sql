@@ -6,7 +6,6 @@ import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.plugins.TemplateFormatter;
-import com.github.chengyuxing.sql.types.Variable;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -51,7 +50,6 @@ public class SqlUtil {
      * @param data           data
      * @param valueFormatter function for value format to string literal value
      * @return formatted sql string
-     * @see Variable
      */
     public static String formatSql(final String template, final Map<String, ?> data, TemplateFormatter valueFormatter) {
         return FMT.format(template, data, valueFormatter::format);
@@ -85,12 +83,10 @@ public class SqlUtil {
      * or id = 'b'
      * and dt &lt;= to_timestamp('2023-11-14 19:14:34', 'yyyy-mm-dd hh24:mi:ss')</pre>
      * </blockquote>
-     * Notice: If {@link Variable} type detected, {@link Variable#stringLiteral() stringLiteral()} method will be invoked.
      *
      * @param template sql string with template variable
      * @param data     data
      * @return formatted sql string
-     * @see Variable
      */
     public static String formatSql(final String template, final Map<String, ?> data) {
         return formatSql(template, data, SqlUtil::parseValue);
@@ -134,16 +130,13 @@ public class SqlUtil {
     /**
      * Parse object value to string literal.
      *
-     * @param value object/array value and special value type: {@link Variable}
+     * @param value object/array value
      * @param quote single quotes or not
      * @return string literal value
      */
     public static String parseValue(Object value, boolean quote) {
         if (Objects.isNull(value)) {
             return "null";
-        }
-        if (value instanceof Variable) {
-            return ((Variable) value).stringLiteral();
         }
         Object[] values = ObjectUtil.toArray(value);
         StringJoiner sb = new StringJoiner(", ");

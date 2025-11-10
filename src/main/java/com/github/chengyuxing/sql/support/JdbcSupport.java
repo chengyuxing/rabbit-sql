@@ -31,7 +31,6 @@ import java.util.stream.StreamSupport;
  * or id in (${!idList}) ${cnd};</pre>
  * </blockquote>
  *
- * @see com.github.chengyuxing.sql.types.Variable
  */
 public abstract class JdbcSupport {
     /**

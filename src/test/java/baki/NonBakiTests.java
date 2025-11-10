@@ -10,6 +10,7 @@ import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.utils.ObjectUtil;
+import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.PagedResource;
 import com.github.chengyuxing.sql.XQLFileManager;
@@ -151,7 +152,7 @@ public class NonBakiTests {
 
     @Test
     public void testSqlFormat() {
-        System.out.println(SqlUtil.formatSql("select *, '${now}' as now from test.user where dt < ${!current}",
+        System.out.println(StringUtil.FMT.format("select *, '${now}' as now from test.user where dt < ${!current}",
                 Args.of("now", LocalDateTime.now(),
                         "current", LocalDateTime.now())));
     }

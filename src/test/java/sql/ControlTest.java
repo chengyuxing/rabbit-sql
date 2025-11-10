@@ -83,10 +83,10 @@ public class ControlTest {
 //        }
 //        System.out.println(sqls.length);
         SqlGenerator sqlGenerator = new SqlGenerator(':');
-        System.out.println(SqlUtil.formatSql(sql, args));
+        System.out.println(StringUtil.FMT.format(sql, args));
 
         System.out.println("-----");
-        String first = SqlUtil.formatSql(sql, args);
+        String first = StringUtil.FMT.format(sql, args);
         System.out.println(first);
 //        String second = sqlGenerator.resolveSqlStrTemplateRec2(first, args);
 //        System.out.println(second);

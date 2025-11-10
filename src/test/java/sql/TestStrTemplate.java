@@ -23,7 +23,7 @@ public class TestStrTemplate {
 
     @Test
     public void testOld() throws Exception {
-        System.out.println(SqlUtil.formatSql(sql, args));
+        System.out.println(StringUtil.FMT.format(sql, args));
         System.out.println("---");
     }
 

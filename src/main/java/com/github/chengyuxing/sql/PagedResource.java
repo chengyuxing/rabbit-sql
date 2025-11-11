@@ -6,6 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 
 /**
  * Paged resource object.
@@ -74,6 +75,17 @@ public final class PagedResource<T> {
      */
     public <R> R to(BiFunction<PageHelper, List<T>, R> converter) {
         return converter.apply(pager, data);
+    }
+
+    /**
+     * Convert paged resource to custom structured result
+     *
+     * @param converter (PagedResource) -&gt; (new result)
+     * @param <R>       result type
+     * @return new structured result
+     */
+    public <R> R to(Function<PagedResource<T>, R> converter) {
+        return converter.apply(this);
     }
 
     public List<T> getData() {

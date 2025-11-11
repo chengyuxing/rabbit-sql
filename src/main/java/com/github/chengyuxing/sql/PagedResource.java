@@ -78,7 +78,7 @@ public final class PagedResource<T> {
     }
 
     /**
-     * Convert paged resource to custom structured result
+     * Convert paged resource to custom structured result.
      *
      * @param converter (PagedResource) -&gt; (new result)
      * @param <R>       result type

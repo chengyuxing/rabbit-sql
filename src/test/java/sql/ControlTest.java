@@ -14,7 +14,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 
-
 public class ControlTest {
 
     @Test
@@ -28,7 +27,7 @@ public class ControlTest {
         String sql = "insert into user (x, xm ,xb) values (:xx,:x, :xm, :xb)";
         System.out.println(sql.length());
         SqlGenerator sqlGenerator = new SqlGenerator(':');
-        System.out.println(sqlGenerator.generateSql(sql, DataRow.of()));
+        System.out.println(sqlGenerator.generateSql(sql, DataRow.of(), Object::toString));
     }
 
     @Test

@@ -6,7 +6,6 @@ import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
-import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
 
 import java.util.*;
@@ -55,11 +54,6 @@ public class Tests {
                 .add("time", "11:23:44"));
         System.out.println(sql.getPrepareSql());
         System.out.println(sql.getArgs());
-    }
-
-    @Test
-    public void trimEnds() throws Exception {
-        System.out.println(SqlUtil.trimEnd("where id = 10\r\n;  ;;;\t\r\n"));
     }
 
     @Test

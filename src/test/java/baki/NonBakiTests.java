@@ -8,6 +8,7 @@ import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.common.MostDateTime;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
@@ -36,6 +37,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -277,16 +279,19 @@ public class NonBakiTests {
     }
 
     @Test
+    public void testSafeQuote() {
+        System.out.println(SqlUtil.toSqlLiteral(Arrays.asList("he'--s book!", 34, null, true, LocalDateTime.now()), true));
+        System.out.println(DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.now()));
+        System.out.println(MostDateTime.of(new Date()));
+        System.out.println(new Date());
+        System.out.println(MostDateTime.of("Wed Nov 12 11:32:10 CST 2025"));
+    }
+
+    @Test
     public void test45() {
         String sql = "select * from test.user where id = :id and dt = ${!now} and o = ${!now}";
         SqlGenerator sqlGenerator = new SqlGenerator(':');
-        sqlGenerator.setTemplateFormatter((v, b) -> {
-            if (b) {
-                return SqlUtil.safeQuote(v.toString());
-            }
-            return v.toString();
-        });
-        System.out.println(sqlGenerator.generateSql(sql, Args.of("id", null, "now", LocalDateTime.now())));
+        System.out.println(sqlGenerator.generateSql(sql, Args.of("id", null, "now", LocalDateTime.now()),Object::toString));
     }
 
     @Test

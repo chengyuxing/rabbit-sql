@@ -93,11 +93,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public static final String XQL_DESC_QUOTE = "@@@";
     public static final String YML = "xql-file-manager.yml";
 
-    /**
-     * Template ({@code ${key}}) formatter.
-     * Default implementation: {@link SqlUtil#parseValue(Object, boolean) parseValue(value, boolean)}
-     */
-    private TemplateFormatter templateFormatter = SqlUtil::parseValue;
     private final ReentrantLock lock = new ReentrantLock();
     protected final Map<String, IPipe<?>> pipeInstances = new HashMap<>();
     protected volatile boolean loading;
@@ -372,8 +367,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             Sql sql = e.getValue();
             String sqlContent = sql.getContent();
             if (sqlContent.contains("${")) {
-                sqlContent = SqlUtil.formatSql(sqlContent, templates, templateFormatter);
-                sqlContent = SqlUtil.formatSql(sqlContent, constants, templateFormatter);
+                sqlContent = SqlUtil.formatSql(sqlContent, templates);
+                sqlContent = SqlUtil.formatSql(sqlContent, constants);
                 // remove empty line.
                 sql.setContent(StringUtil.removeEmptyLine(sqlContent));
             }
@@ -701,14 +696,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         return result;
     }
 
-    public TemplateFormatter getTemplateFormatter() {
-        return templateFormatter;
-    }
-
-    public void setTemplateFormatter(TemplateFormatter templateFormatter) {
-        this.templateFormatter = templateFormatter;
-    }
-
     /**
      * Dynamic sql parser.
      */
@@ -760,7 +747,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         protected String forLoopBodyFormatter(int forIndex, int varIndex, String varName, String idxName, String body, Map<String, Object> args) {
             String formatted = body;
             if (body.contains("${")) {
-                formatted = SqlUtil.formatSql(body, args, templateFormatter);
+                formatted = SqlUtil.formatSql(body, args);
             }
             if (formatted.contains(namedParamPrefix + varName) || formatted.contains(namedParamPrefix + idxName)) {
                 StringBuilder sb = new StringBuilder();

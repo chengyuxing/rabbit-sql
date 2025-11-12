@@ -514,9 +514,9 @@ public class BakiDao extends JdbcSupport implements Baki {
             mySql = sqlParseChecker.handle(mySql, myArgs);
         }
         if (mySql.contains("${")) {
-            mySql = SqlUtil.formatSql(mySql, myArgs, sqlGenerator.getTemplateFormatter());
+            mySql = SqlUtil.formatSql(mySql, myArgs);
             if (Objects.nonNull(xqlFileManager)) {
-                mySql = SqlUtil.formatSql(mySql, xqlFileManager.getConstants(), sqlGenerator.getTemplateFormatter());
+                mySql = SqlUtil.formatSql(mySql, xqlFileManager.getConstants());
             }
         }
         if (log.isDebugEnabled()) {
@@ -586,7 +586,6 @@ public class BakiDao extends JdbcSupport implements Baki {
         if (Objects.nonNull(xqlFileManager)) {
             this.xqlFileManager = xqlFileManager;
             this.xqlFileManager.setDatabaseId(databaseId);
-            this.xqlFileManager.setTemplateFormatter(sqlGenerator.getTemplateFormatter());
             if (!this.xqlFileManager.isInitialized()) {
                 this.xqlFileManager.init();
             }

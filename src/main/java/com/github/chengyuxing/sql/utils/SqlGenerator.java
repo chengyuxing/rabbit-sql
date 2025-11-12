@@ -2,14 +2,11 @@ package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.Patterns;
 import com.github.chengyuxing.common.utils.ObjectUtil;
-import com.github.chengyuxing.sql.plugins.NamedParamFormatter;
-import com.github.chengyuxing.sql.plugins.TemplateFormatter;
 
 import java.util.*;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import static com.github.chengyuxing.sql.utils.SqlUtil.*;
 
 /**
  * Sql generate tool.
@@ -20,15 +17,6 @@ public class SqlGenerator {
      * Named parameter pattern.
      */
     private final Pattern namedParamPattern;
-    /**
-     * Default implementation: {@link SqlUtil#parseValue(Object, boolean) parseValue(value, true)}
-     */
-    private NamedParamFormatter namedParamFormatter = v -> parseValue(v, true);
-    /**
-     * Sql template ({@code ${[!]key}}) formatter.
-     * Default implementation: {@link SqlUtil#parseValue(Object, boolean) parseValue(value, boolean)}
-     */
-    private TemplateFormatter templateFormatter = SqlUtil::parseValue;
 
     /**
      * Constructs a new SqlGenerator with named parameter prefix.
@@ -153,10 +141,8 @@ public class SqlGenerator {
      * @param sql  named parameter sql
      * @param args data of named parameter
      * @return normal sql
-     * @see #setNamedParamFormatter(NamedParamFormatter)
-     * @see #setTemplateFormatter(TemplateFormatter)
      */
-    public String generateSql(final String sql, Map<String, ?> args) {
+    public String generateSql(final String sql, Map<String, ?> args, Function<Object, String> namedParamFormatter) {
         StringBuffer buffer = new StringBuffer();
         Matcher matcher = namedParamPattern.matcher(sql);
         while (matcher.find()) {
@@ -164,7 +150,7 @@ public class SqlGenerator {
             String replacement;
             if (name != null) {
                 Object value = name.contains(".") ? ObjectUtil.getDeepValue(args, name) : args.get(name);
-                replacement = namedParamFormatter.format(value);
+                replacement = namedParamFormatter.apply(value);
             } else {
                 replacement = matcher.group();
             }
@@ -212,21 +198,5 @@ public class SqlGenerator {
 
     public char getNamedParamPrefix() {
         return namedParamPrefix;
-    }
-
-    public NamedParamFormatter getNamedParamFormatter() {
-        return namedParamFormatter;
-    }
-
-    public void setNamedParamFormatter(NamedParamFormatter namedParamFormatter) {
-        this.namedParamFormatter = namedParamFormatter;
-    }
-
-    public TemplateFormatter getTemplateFormatter() {
-        return templateFormatter;
-    }
-
-    public void setTemplateFormatter(TemplateFormatter templateFormatter) {
-        this.templateFormatter = templateFormatter;
     }
 }

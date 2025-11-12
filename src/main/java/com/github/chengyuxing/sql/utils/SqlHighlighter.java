@@ -9,8 +9,7 @@ import com.github.chengyuxing.sql.Keywords;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -20,7 +19,8 @@ import java.util.regex.Pattern;
  */
 public final class SqlHighlighter {
     private static final Logger log = LoggerFactory.getLogger(SqlHighlighter.class);
-    private static final Pattern BLOCK_ANNOTATION_PATTERN = Pattern.compile("(/\\*.*?\\*/)", Pattern.DOTALL | Pattern.MULTILINE);
+    public static final Pattern STR_PATTERN = Pattern.compile("'(''|[^'])*'", Pattern.MULTILINE);
+    public static final Pattern BLOCK_COMMENT_PATTERN = Pattern.compile("(/\\*.*?\\*/)", Pattern.DOTALL | Pattern.MULTILINE);
 
     public enum TAG {
         FUNCTION,
@@ -34,8 +34,8 @@ public final class SqlHighlighter {
         POSTGRESQL_FUNCTION_BODY_SYMBOL,
         ASTERISK,
         SINGLE_QUOTE_STRING,
-        LINE_ANNOTATION,
-        BLOCK_ANNOTATION,
+        LINE_COMMENT,
+        BLOCK_COMMENT,
         NAMED_PARAMETER,
         OTHER
     }
@@ -73,9 +73,9 @@ public final class SqlHighlighter {
                     return Printer.colorful(content, Color.DARK_GREEN);
                 case ASTERISK:
                     return Printer.colorful(content, Color.YELLOW);
-                case LINE_ANNOTATION:
+                case LINE_COMMENT:
                     return Printer.colorful(content, Color.SILVER);
-                case BLOCK_ANNOTATION:
+                case BLOCK_COMMENT:
                     return Printer.colorful(content.replaceAll("\033\\[\\d{2}m|\033\\[0m", ""), Color.SILVER);
                 case NAMED_PARAMETER:
                     return Printer.colorful(content, Color.CYAN);
@@ -94,7 +94,7 @@ public final class SqlHighlighter {
      */
     public static String highlight(String sql, BiFunction<TAG, String, String> replacer) {
         try {
-            Pair<String, Map<String, String>> r = SqlUtil.escapeSubstring(sql);
+            Pair<String, Map<String, String>> r = escapeSubstring(sql);
             String rSql = r.getItem1();
             Pair<List<String>, List<String>> x = StringUtil.regexSplit(rSql, "(?<d>[\\s,\\[\\]():;{}]+)", "d");
             List<String> words = x.getItem1();
@@ -137,26 +137,26 @@ public final class SqlHighlighter {
             for (String key : subStr.keySet()) {
                 colorfulSql = colorfulSql.replace(key, replacer.apply(TAG.SINGLE_QUOTE_STRING, subStr.get(key)));
             }
-            // resolve single annotation
+            // resolve single comment
             String[] sqlLines = colorfulSql.split("\n");
             for (int i = 0; i < sqlLines.length; i++) {
                 String line = sqlLines[i];
                 if (line.trim().startsWith("--")) {
-                    sqlLines[i] = replacer.apply(TAG.LINE_ANNOTATION, line);
+                    sqlLines[i] = replacer.apply(TAG.LINE_COMMENT, line);
                 } else if (line.contains("--")) {
                     int idx = line.indexOf("--");
-                    sqlLines[i] = line.substring(0, idx) + replacer.apply(TAG.LINE_ANNOTATION, line.substring(idx));
+                    sqlLines[i] = line.substring(0, idx) + replacer.apply(TAG.LINE_COMMENT, line.substring(idx));
                 }
             }
             colorfulSql = String.join("\n", sqlLines);
-            // resolve block annotation
+            // resolve block comment
             StringBuilder parsedSql = new StringBuilder();
-            Matcher matcher = BLOCK_ANNOTATION_PATTERN.matcher(colorfulSql);
+            Matcher matcher = BLOCK_COMMENT_PATTERN.matcher(colorfulSql);
             int lastMatchEnd = 0;
             while (matcher.find()) {
                 String match = matcher.group();
                 parsedSql.append(colorfulSql, lastMatchEnd, matcher.start());
-                parsedSql.append(replacer.apply(TAG.BLOCK_ANNOTATION, match));
+                parsedSql.append(replacer.apply(TAG.BLOCK_COMMENT, match));
                 lastMatchEnd = matcher.end();
             }
             parsedSql.append(colorfulSql.substring(lastMatchEnd));
@@ -192,5 +192,33 @@ public final class SqlHighlighter {
         int idx = i > 0 ? i - 1 : i;
         String prefix = delimiters.get(idx).trim();
         return prefix.endsWith(":") && !prefix.endsWith("::");
+    }
+
+    /**
+     * Escape sql substring (single quotes) to unique string holder and save the substring map.
+     *
+     * @param sql sql string
+     * @return [sql string with unique string holder, substring map]
+     */
+    private static Pair<String, Map<String, String>> escapeSubstring(final String sql) {
+        //noinspection UnnecessaryUnicodeEscape
+        if (!sql.contains("'")) {
+            return Pair.of(sql, Collections.emptyMap());
+        }
+        Matcher m = STR_PATTERN.matcher(sql);
+        Map<String, String> map = new HashMap<>();
+        StringBuilder sb = new StringBuilder();
+        int pos = 0;
+        while (m.find()) {
+            int start = m.start();
+            int end = m.end();
+            String str = m.group();
+            String holder = UUID.randomUUID().toString();
+            map.put(holder, str);
+            sb.append(sql, pos, start).append(holder);
+            pos = end;
+        }
+        sb.append(sql, pos, sql.length());
+        return Pair.of(sb.toString(), map);
     }
 }

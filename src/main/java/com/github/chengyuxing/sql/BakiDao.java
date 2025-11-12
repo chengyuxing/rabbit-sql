@@ -490,7 +490,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         if (Objects.nonNull(args)) {
             myArgs.putAll(args);
         }
-        String mySql = SqlUtil.trimEnd(sql.trim());
+        String mySql = sql.trim();
         if (Objects.nonNull(sqlInterceptor)) {
             sqlInterceptor.preHandle(mySql, myArgs, metaData);
         }
@@ -499,9 +499,15 @@ public class BakiDao extends JdbcSupport implements Baki {
             if (Objects.nonNull(xqlFileManager)) {
                 Pair<String, Map<String, Object>> result = xqlFileManager.get(mySql.substring(1), myArgs);
                 mySql = result.getItem1();
-                myArgs.putAll(result.getItem2());
+                for (Map.Entry<String, Object> e : result.getItem2().entrySet()) {
+                    if (!myArgs.containsKey(e.getKey())) {
+                        myArgs.put(e.getKey(), e.getValue());
+                    } else {
+                        log.debug("SQL: [{}] variable '{}' overridden by external parameter: {} -> {}", mySql, e.getKey(), e.getValue(), myArgs.get(e.getKey()));
+                    }
+                }
             } else {
-                throw new NullPointerException("can not find property 'xqlFileManager'.");
+                throw new NullPointerException("can not find property 'xqlFileManager'");
             }
         }
         if (Objects.nonNull(sqlParseChecker)) {

@@ -1,5 +1,13 @@
 # change note
 
+# 10.0.3
+
+- Remove config field `XQLFileManager#delimiter`, xql parsing optimized.
+- Template formatter optimized,Remove `TemplateFormatter`.
+- Dynamic sql make user parameters overridden internal `#var` parameters.
+- New method `PagedResource#to`.
+- `XQLFileManager` parsing template optimized.
+
 # 10.0.2
 
 - Dynamic sql add new pipe 'in'

@@ -30,7 +30,7 @@ _java 8+_
 <dependency>
   <groupId>com.github.chengyuxing</groupId>
   <artifactId>rabbit-sql</artifactId>
-  <version>10.0.2</version>
+  <version>10.0.3</version>
 </dependency>
 ```
 
@@ -750,7 +750,7 @@ Supported file extension with `.sql` or `.xql`, you can write any standard sql c
 
 :bulb: Recommend use `.xql` file to get [plugin](#IDEA-plugin-support) supports.
 
-Every managed sql file must follows **"k-v"** structure, e.g.
+Every managed sql file must follows **"k-v"** structure, and each sql object must be marked with a semicolon `;` Ending, e.g.
 
 `my.sql`
 

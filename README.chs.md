@@ -30,7 +30,7 @@ _java 8+_
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>10.0.2</version>
+    <version>10.0.3</version>
 </dependency>
 ```
 
@@ -756,7 +756,7 @@ SQL文件管理器，对普通sql文件的标准进行了**扩展**，不破坏�
 
 :bulb: 推荐使用 `.xql` 来获得[插件](#IDEA插件支持)的支持！
 
-每个被XQLFileManager管理的sql文件都必须遵循 **"k-v"** 结构，例如`my.sql`：
+每个被XQLFileManager管理的sql文件都必须遵循 **"k-v"** 结构，并且每个sql对象都必须以分号 `;` 结尾，例如`my.sql`：
 
 ```sql
 /*#some description...#*/

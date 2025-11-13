@@ -95,46 +95,4 @@ public class SqlUtil {
         }
         return sb.toString();
     }
-
-    /**
-     * Escape sql substring (single quotes) to unique string holder and save the substring map.
-     *
-     * @param sql sql string
-     * @return [sql string with unique string holder, substring map]
-     */
-    public static Pair<String, Map<String, String>> escapeSubstring(final String sql) {
-        //noinspection UnnecessaryUnicodeEscape
-        if (!sql.contains("'")) {
-            return Pair.of(sql, Collections.emptyMap());
-        }
-        Matcher m = STR_PATTERN.matcher(sql);
-        Map<String, String> map = new HashMap<>();
-        StringBuilder sb = new StringBuilder();
-        int pos = 0;
-        while (m.find()) {
-            int start = m.start();
-            int end = m.end();
-            String str = m.group();
-            String holder = UUID.randomUUID().toString();
-            map.put(holder, str);
-            sb.append(sql, pos, start).append(holder);
-            pos = end;
-        }
-        sb.append(sql, pos, sql.length());
-        return Pair.of(sb.toString(), map);
-    }
-
-    /**
-     * Trim sql string ends ({@code \t\n\r;}).
-     *
-     * @param sql sql string
-     * @return sql string
-     */
-    public static String trimEnd(String sql) {
-        // oracle pl/sql syntax end with ';' is required.
-        if (StringUtil.startsWithsIgnoreCase(sql, "begin", "declare")) {
-            return sql;
-        }
-        return sql.replaceAll("([\\s;]*)$", "");
-    }
 }

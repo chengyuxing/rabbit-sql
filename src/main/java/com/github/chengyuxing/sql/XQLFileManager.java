@@ -11,7 +11,6 @@ import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
 import com.github.chengyuxing.sql.exceptions.DuplicateException;
 import com.github.chengyuxing.sql.exceptions.DynamicSqlParseException;
-import com.github.chengyuxing.sql.plugins.TemplateFormatter;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.utils.SqlHighlighter;
 import com.github.chengyuxing.sql.utils.SqlUtil;
@@ -39,7 +38,7 @@ import static com.github.chengyuxing.common.utils.StringUtil.containsAnyIgnoreCa
 
 /**
  * <h2>Dynamic SQL File Manager</h2>
- * <p>Use standard sql block annotation ({@code /**}{@code /}), line annotation ({@code --}),
+ * <p>Use standard sql block comment ({@code /**}{@code /}), line comment ({@code --}),
  * named parameter ({@code :name}) and string template variable ({@code ${template}}) to
  * extends SQL file standard syntax with special content format, brings more features to
  * SQL file and follow the strict SQL file syntax.</p>
@@ -59,7 +58,10 @@ import static com.github.chengyuxing.common.utils.StringUtil.containsAnyIgnoreCa
  * Rabbit-SQL IDEA Plugin</a> only support detect {@code .xql} file.</p>
  *
  * <h3>File content structure</h3>
- * <p>{@code key-value} format, key is sql name, value is sql statement,  e.g.</p>
+ * <p>The xql object is {@code key-value} format, key is sql name, value is sql statement,
+ * every xql object is delimited by single symbol {@code ;} at the end.</p>
+ * <p>For some statement blocks that contain internal {@code ;} (such as PostgreSQL's {@code DO $$...$$} or PLSQL procedure body)
+ * A comment marker {@code --} can be used at the end of a sentence line to prevent premature truncation, e.g.</p>
  * <blockquote>
  * <pre>
  * /&#42;[sqlName1]&#42;/
@@ -75,11 +77,18 @@ import static com.github.chengyuxing.common.utils.StringUtil.containsAnyIgnoreCa
  *
  * /&#42;{order}&#42;/
  * order by id desc;
- * ...
+ *
+ * /&#42;#This is a description comment mark.#&#42;/
+ * /&#42;[plsql]&#42;/
+ * /&#42;#This is a plsql statement block!#&#42;/
+ * begin;--
+ *     select ... ;--
+ * end;--
+ * ;
  * </pre>
  * </blockquote>
  * <p>
- * {@linkplain DynamicSqlParser Dynamic sql script} write in line annotation where starts with {@code --},
+ * {@linkplain DynamicSqlParser Dynamic sql script} write in line comment where starts with {@code --},
  * check example following class path file: {@code home.xql.template}.
  * <p>Supported Directives: {@link com.github.chengyuxing.common.script.Directives Directives}</p>
  * <p>Invoke method {@link #get(String, Map)} to enjoy the dynamic sql!</p>
@@ -89,7 +98,6 @@ import static com.github.chengyuxing.common.utils.StringUtil.containsAnyIgnoreCa
 public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(XQLFileManager.class);
     public static final Pattern KEY_PATTERN = Pattern.compile("/\\*\\s*(\\[\\s*(?<sqlName>[^\\s\\[\\]{}]+)\\s*]|\\{\\s*(?<partName>[^\\s\\[\\]{}]+)\\s*})\\s*\\*/");
-    public static final String SQL_DESC_START = "/*#";
     public static final String XQL_DESC_QUOTE = "@@@";
     public static final String YML = "xql-file-manager.yml";
 
@@ -133,7 +141,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     public void add(@NotNull String alias, @NotNull String fileName) {
         if (files.containsKey(alias)) {
-            throw new DuplicateException("duplicate alias: " + alias);
+            throw new DuplicateException("Duplicate alias: " + alias);
         }
         files.put(alias, fileName);
     }
@@ -189,17 +197,17 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     String partName = matcher.group("partName");
                     String name = sqlName != null ? sqlName : "${" + partName + "}";
                     if (sqlBuffer.length() != 0) {
-                        throw new IllegalStateException("the sql which before the name '" + ObjectUtil.coalesce(sqlName, partName) + "' does not seem to end with the '" + delimiter + "' in " + filename);
+                        throw new IllegalStateException("The sql which before the name '" + ObjectUtil.coalesce(sqlName, partName) + "' does not seem to end with the ';' in " + filename);
                     }
                     if (entry.containsKey(name)) {
-                        throw new DuplicateException("duplicate name: '" + ObjectUtil.coalesce(sqlName, partName) + "' in " + filename);
+                        throw new DuplicateException("Duplicate name: '" + ObjectUtil.coalesce(sqlName, partName) + "' in " + filename);
                     }
                     currentName = name;
                     continue;
                 }
                 if (trimLine.startsWith("/*")) {
                     // /*#...#*/
-                    if (trimLine.startsWith(SQL_DESC_START)) {
+                    if (trimLine.startsWith("/*#")) {
                         if (trimLine.endsWith("*/")) {
                             String description = trimLine.substring(3, trimLine.length() - 2);
                             if (description.endsWith("#")) {
@@ -262,8 +270,9 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                 }
                 if (currentName != null) {
                     sqlBuffer.append(line).append(NEW_LINE);
-                    if (trimLine.endsWith(delimiter)) {
-                        String sql = sqlBuffer.toString().trim().replaceAll(delimiter + "$", "");
+                    if (trimLine.endsWith(";")) {
+                        String sql = sqlBuffer.toString().trim();
+                        sql = sql.substring(0, sql.length() - 1);
                         String desc = descriptionBuffer.toString().trim();
                         entry.put(currentName, scanSql(alias, filename, currentName, sql, desc));
                         currentName = null;
@@ -272,9 +281,9 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     }
                 }
             }
-            // if last part of sql is not ends with delimiter symbol
+            // if last part of sql is not ends with ';' symbol
             if (currentName != null) {
-                String lastSql = sqlBuffer.toString().trim().replaceAll(delimiter + "$", "");
+                String lastSql = sqlBuffer.toString().trim();
                 String lastDesc = descriptionBuffer.toString().trim();
                 entry.put(currentName, scanSql(alias, filename, currentName, lastSql, lastDesc));
             }
@@ -307,7 +316,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         }
         Sql sqlObj = new Sql(sql);
         sqlObj.setDescription(desc);
-        log.debug("scan({}) {} to get sql [{}.{}]: {}", delimiter, filename, alias, sqlName, SqlHighlighter.highlightIfAnsiCapable(sql));
+        log.debug("scan(;) {} to get sql [{}.{}]: {}", filename, alias, sqlName, SqlHighlighter.highlightIfAnsiCapable(sql));
         return sqlObj;
     }
 
@@ -403,13 +412,13 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                         resource.setLastModified(parsed.getLastModified());
                     }
                 } else {
-                    throw new FileNotFoundException("sql file '" + filename + "' of name '" + alias + "' not found!");
+                    throw new FileNotFoundException("Sql file '" + filename + "' of name '" + alias + "' not found!");
                 }
             }
         } catch (IOException e) {
-            throw new UncheckedIOException("load sql file error.", e);
+            throw new UncheckedIOException("Load sql file error.", e);
         } catch (URISyntaxException e) {
-            throw new RuntimeException("sql file uri syntax error.", e);
+            throw new RuntimeException("Sql file uri syntax error.", e);
         }
     }
 
@@ -428,7 +437,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             }
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
                  InvocationTargetException | NoSuchMethodException e) {
-            throw new RuntimeException("init pipe error.", e);
+            throw new RuntimeException("Init pipe error.", e);
         }
         if (log.isDebugEnabled()) {
             if (!pipeInstances.isEmpty())
@@ -566,7 +575,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         }
         Sql sql = resource.getEntry().get(p.getItem2());
         if (Objects.isNull(sql)) {
-            throw new NoSuchElementException(String.format("no SQL named [%s] was found.", p.getItem2()));
+            throw new NoSuchElementException(String.format("No SQL named [%s] was found in [%s].", p.getItem2(), p.getItem1()));
         }
         return sql;
     }
@@ -580,8 +589,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @throws IllegalArgumentException if sql reference name format error
      */
     public String get(@NotNull String name) {
-        String sql = getSqlObject(name).getContent();
-        return SqlUtil.trimEnd(sql);
+        return getSqlObject(name).getContent();
     }
 
     /**

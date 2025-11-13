@@ -291,8 +291,6 @@ Args.<Object>of("id","uuid")
   .add("words", Arrays.asList("I'm OK!", "book", "warning"));
 ```
 
-> Special variable type: `com.github.chengyuxing.sql.types.Variable`, for implements custom format content.
-
 generate sql:
 
 ```sql
@@ -301,11 +299,11 @@ select name, age from ... where id in ('I''m Ok!', 'book', 'warning') or id = ?;
 
 ## Dynamic-SQL
 
-Dynamic SQL depends on [XQLFileManager](#XQLFileManager), based on resolve special annotation mark, dynamic compile without breaking sql file standards.
+Dynamic SQL depends on [XQLFileManager](#XQLFileManager), based on resolve special comment mark, dynamic compile without breaking sql file standards.
 
-### Annotation mark
+### Comment mark
 
-Annotation mark must be pair and follows **open-close** tag.
+Comment mark must be pair and follows **open-close** tag.
 
 It should be particularly noted that if a value type string literal is not a pure number or keyword (`null`, `blank`, `true`, `false`), it does not need to be enclosed in quotation marks and defaults to a string. For example, in `:name = bob`, the quotation mark for `'bob'` is not necessary.
 
@@ -744,11 +742,11 @@ e.g. `baki.query(...).findFirstEntity(class)`
 
 ### XQLFileManager
 
-SQL file manager extends standard sql annotation implement more features, for support [dynamic sql](#Dynamic-SQL) and expression scripts logic judgment without breaking standard sql structure, also it's more powerful SQL file resolver.
+SQL file manager extends standard sql comment implement more features, for support [dynamic sql](#Dynamic-SQL) and expression scripts logic judgment without breaking standard sql structure, also it's more powerful SQL file resolver.
 
 you can get sql syntax highlight, intelligent suggestions and error check when using sql develop tools cause support sql file with extension `.sql`, dba developer     work with java developer together so easy.
 
-Supported file extension with `.sql` or `.xql`, you can write any standard sql annotation in file, format reference `template.xql`.
+Supported file extension with `.sql` or `.xql`, you can write any standard sql comment in file, format reference `template.xql`.
 
 :bulb: Recommend use `.xql` file to get [plugin](#IDEA-plugin-support) supports.
 
@@ -806,7 +804,6 @@ order by id;
   pipes:
   #  upper: org.example.Upper
   
-  delimiter: ;
   charset: UTF-8
   named-param-prefix: ':'
   database-id:
@@ -822,12 +819,6 @@ Sql file mapping dictionary, key is alias, value is sql file name, you can get s
 ##### pipes
 
 Custom [pipe](#Pipe) dictionary, **key** is pipe name, **value** is pipe class, for dynamic sql expression's value, get more [dynamic sql expression](#Expression-script)'s features by implement custom pipe;
-
-##### delimiter
-
-Sql file **"k-v"** structure delimiter **default `;`**, follows standard multi sql structure delimiter by `;`, but there is a condition, if you have plsql in file  e.g. `create function...` or `create procedure...`, it will be multi sql statement in one sql object, you need specific custom delimiter for resolve correctly:
-
-- e.g. ( `;;`) double semicolon.
 
 ##### constants
 

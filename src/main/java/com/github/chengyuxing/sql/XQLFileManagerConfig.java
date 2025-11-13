@@ -32,7 +32,6 @@ public class XQLFileManagerConfig {
     protected Map<String, Object> constants = new HashMap<>();
     protected Map<String, String> pipes = new HashMap<>();
     protected String charset = "UTF-8";
-    protected String delimiter = ";";
     protected Character namedParamPrefix = ':';
     protected String databaseId;
     // ----------------optional properties------------------
@@ -77,7 +76,7 @@ public class XQLFileManagerConfig {
             }
             config.copyStateTo(this);
         } catch (Exception e) {
-            throw new YamlDeserializeException("load yaml config error.", e);
+            throw new YamlDeserializeException("Load yaml config error.", e);
         }
     }
 
@@ -111,7 +110,6 @@ public class XQLFileManagerConfig {
             config.setFiles(localFiles);
             config.setConstants(localConstants);
             config.setPipes(localPipes);
-            config.setDelimiter(properties.getProperty("delimiter"));
             config.setCharset(properties.getProperty("charset"));
             config.setNamedParamPrefix(properties.getProperty("namedParamPrefix", ":").charAt(0));
             config.setDatabaseId(properties.getProperty("databaseId"));
@@ -255,28 +253,6 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * Get delimiter of multi sql fragment/template, symbol ({@code ;}) is default.
-     *
-     * @return delimiter
-     */
-    public String getDelimiter() {
-        return delimiter;
-    }
-
-    /**
-     * Set delimiter of multi sql fragment/template, symbol ({@code ;}) is default.<br>
-     * Sometimes default delimiter is not enough, such as one procedure body or plsql maybe contains
-     * more than one sql statement which ends with  {@code ;}, for correct set to other is necessary, like {@code ;;} .
-     *
-     * @param delimiter multi sql fragment/template delimiter
-     */
-    public void setDelimiter(String delimiter) {
-        if (Objects.nonNull(delimiter) && !delimiter.trim().isEmpty()) {
-            this.delimiter = delimiter;
-        }
-    }
-
-    /**
      * Get named parameter prefix.
      *
      * @return named parameter prefix
@@ -325,7 +301,6 @@ public class XQLFileManagerConfig {
         if (!getConstants().equals(config.getConstants())) return false;
         if (!getPipes().equals(config.getPipes())) return false;
         if (!getCharset().equals(config.getCharset())) return false;
-        if (!getDelimiter().equals(config.getDelimiter())) return false;
         if (!getNamedParamPrefix().equals(config.getNamedParamPrefix())) return false;
         return getDatabaseId() != null ? getDatabaseId().equals(config.getDatabaseId()) : config.getDatabaseId() == null;
     }
@@ -336,7 +311,6 @@ public class XQLFileManagerConfig {
         result = 31 * result + getConstants().hashCode();
         result = 31 * result + getPipes().hashCode();
         result = 31 * result + getCharset().hashCode();
-        result = 31 * result + getDelimiter().hashCode();
         result = 31 * result + getNamedParamPrefix().hashCode();
         result = 31 * result + (getDatabaseId() != null ? getDatabaseId().hashCode() : 0);
         return result;

@@ -297,8 +297,6 @@ Args.<Object>of("id","uuid")
   .add("words", Arrays.asList("I'm OK!", "book", "warning"));
 ```
 
-> 特殊变量类型：`com.github.chengyuxing.sql.types.Variable`, 可实现自定义的格式化内容。
-
 最终生成的sql：
 
 ```sql
@@ -809,7 +807,6 @@ order by id;
   pipes:
   #  upper: org.example.Upper
   
-  delimiter: ;
   charset: UTF-8
   named-param-prefix: ':'
   database-id:
@@ -825,12 +822,6 @@ sql文件字典集合，键为别名，值为sql文件名，可通过 `别名.sq
 ##### pipes
 
 自定义[管道](#管道)字典集合，**key**为管道名，**value**为管道类名，用于动态sql脚本的参数值，通过添加实现自定义的管道来增强[动态sql表达式](#表达式脚本)的功能；
-
-##### delimiter
-
-sql文件 **"k-v"** 结构分隔符，**默认是单个分号（;）**遵循标准sql文件多段sql分隔符，但是有一种情况，如果sql文件内有plsql：**create function...** 或 **create procedure...**等， 内部会包含多段sql多个分号，为防止解析异常，单独设置自定义的分隔符:
-
-- 例如（ `;;` ）双分号，也是标准sql所支持的, **并且支持仅扫描已命名的sql**。
 
 ##### constants
 

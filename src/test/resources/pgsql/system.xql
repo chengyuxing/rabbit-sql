@@ -56,6 +56,20 @@ where
 -- #fi
 ;
 
+/*[plsql]*/
+do
+$$
+    declare
+        x    integer[];--
+        nums integer[] := array [[1,2,3],[4,5,6],[7,8,9]];--
+    begin
+        foreach x slice 1 in array nums
+            loop
+                raise warning 'num:%',x;--
+            end loop;--
+    end;--
+$$;;
+
 /*[getModulesByUser]*/
 select menu_id, m.title, m.path
 from (select rm.menu_id

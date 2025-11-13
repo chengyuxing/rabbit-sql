@@ -84,7 +84,7 @@ public final class Tx {
             commit();
         } catch (Exception e) {
             rollback();
-            throw new TransactionException("transaction is rollback.", e);
+            throw new TransactionException("Transaction is rollback.", e);
         }
     }
 
@@ -109,7 +109,7 @@ public final class Tx {
             return result;
         } catch (Exception e) {
             rollback();
-            throw new TransactionException("transaction is rollback.", e);
+            throw new TransactionException("Transaction is rollback.", e);
         }
     }
 
@@ -155,7 +155,7 @@ public final class Tx {
                 try {
                     holder.getConnection().commit();
                 } catch (SQLException e) {
-                    throw new TransactionException("transaction commit failed.", e);
+                    throw new TransactionException("Transaction commit failed.", e);
                 }
             }
         });
@@ -168,7 +168,7 @@ public final class Tx {
                 try {
                     holder.getConnection().rollback();
                 } catch (SQLException e) {
-                    throw new TransactionException("transaction rollback failed.", e);
+                    throw new TransactionException("Transaction rollback failed.", e);
                 }
             }
         });

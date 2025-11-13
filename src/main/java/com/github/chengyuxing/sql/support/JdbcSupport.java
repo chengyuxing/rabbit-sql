@@ -197,7 +197,7 @@ public abstract class JdbcSupport {
                         action.accept(JdbcUtil.createDataRow(names, resultSet));
                         return true;
                     } catch (SQLException ex) {
-                        throw new UncheckedSqlException("reading result set of query error", ex);
+                        throw new UncheckedSqlException("Reading result set of query error", ex);
                     }
                 }
             }, false).onClose(close);

@@ -45,7 +45,7 @@ public abstract class AbstractTransactionSyncManager {
     public static void unbindResource(Object key) {
         ConnectionHolder value = doUnbindResource(key);
         if (value == null) {
-            throw new IllegalStateException("no value for key bound to thread: " + Thread.currentThread().getName());
+            throw new IllegalStateException("No value for key bound to thread: " + Thread.currentThread().getName());
         }
     }
 
@@ -73,7 +73,7 @@ public abstract class AbstractTransactionSyncManager {
 
     public static void registerSynchronization(TransactionSynchronization synchronization) {
         if (!isSynchronizationActive()) {
-            throw new IllegalStateException("transaction synchronization not active");
+            throw new IllegalStateException("Transaction synchronization not active");
         }
         synchronizations.get().add(synchronization);
     }

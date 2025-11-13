@@ -143,7 +143,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 this.databaseId = this.metaData.getDatabaseProductName().toLowerCase();
                 return 0;
             } catch (SQLException e) {
-                throw new UncheckedSqlException("initialize metadata error.", e);
+                throw new UncheckedSqlException("Initialize metadata error.", e);
             }
         });
     }
@@ -266,7 +266,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 Integer page = (Integer) args.get(pageKey);
                 Integer size = (Integer) args.get(sizeKey);
                 if (page == null || size == null) {
-                    throw new IllegalArgumentException("page or size is null.");
+                    throw new IllegalArgumentException("Page or size is null.");
                 }
                 return pageable(page, size);
             }
@@ -471,7 +471,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             case "microsoft sql server":
                 return new SqlServer2012PageHelper();
             default:
-                throw new UnsupportedOperationException("pager of \"" + databaseId + "\" default not implement currently, see method 'setGlobalPageHelperProvider'.");
+                throw new UnsupportedOperationException("Pager of \"" + databaseId + "\" default not implement currently, see method 'setGlobalPageHelperProvider'.");
         }
     }
 
@@ -507,7 +507,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                     }
                 }
             } else {
-                throw new NullPointerException("can not find property 'xqlFileManager'");
+                throw new NullPointerException("Can not find property 'xqlFileManager'");
             }
         }
         if (Objects.nonNull(sqlParseChecker)) {
@@ -544,7 +544,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         try {
             return DataSourceUtil.getConnection(dataSource);
         } catch (SQLException e) {
-            throw new ConnectionStatusException("fetch connection failed.", e);
+            throw new ConnectionStatusException("Fetch connection failed.", e);
         }
     }
 

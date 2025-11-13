@@ -25,7 +25,7 @@ public class SqlGenerator {
      */
     public SqlGenerator(char namedParamPrefix) {
         if (namedParamPrefix == ' ') {
-            throw new IllegalArgumentException("prefix char cannot be empty.");
+            throw new IllegalArgumentException("Prefix char cannot be empty.");
         }
         this.namedParamPrefix = namedParamPrefix;
         this.namedParamPattern = Pattern.compile(String.format(

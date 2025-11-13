@@ -37,7 +37,7 @@ public class JdbcUtil {
             try {
                 obj = FileResource.readBytes(((Blob) obj).getBinaryStream());
             } catch (IOException e) {
-                throw new UncheckedIOException("read blob error.", e);
+                throw new UncheckedIOException("Read blob error.", e);
             }
         } else if (obj instanceof Clob) {
             Clob clob = (Clob) obj;
@@ -92,13 +92,13 @@ public class JdbcUtil {
             try {
                 ps.setBinaryStream(index, Files.newInputStream((Path) value));
             } catch (IOException e) {
-                throw new SQLException("set binary value failed.", e);
+                throw new SQLException("Set binary value failed.", e);
             }
         } else if (value instanceof File) {
             try {
                 ps.setBinaryStream(index, new FileInputStream((File) value));
             } catch (FileNotFoundException e) {
-                throw new SQLException("set binary value failed.", e);
+                throw new SQLException("Set binary value failed.", e);
             }
         } else {
             ps.setObject(index, value);
@@ -157,7 +157,7 @@ public class JdbcUtil {
                     resultSet.close();
                 }
             } catch (SQLException e) {
-                throw new UncheckedSqlException("close result error.", e);
+                throw new UncheckedSqlException("Close result error.", e);
             }
         }
     }
@@ -169,7 +169,7 @@ public class JdbcUtil {
                     statement.close();
                 }
             } catch (SQLException e) {
-                throw new UncheckedSqlException("close statement error.", e);
+                throw new UncheckedSqlException("Close statement error.", e);
             }
         }
     }

@@ -138,8 +138,9 @@ public class SqlGenerator {
     /**
      * Generate normal sql by named parameter sql.
      *
-     * @param sql  named parameter sql
-     * @param args data of named parameter
+     * @param sql                 named parameter sql
+     * @param args                data of named parameter
+     * @param namedParamFormatter named param string literal formatter
      * @return normal sql
      */
     public String generateSql(final String sql, Map<String, ?> args, Function<Object, String> namedParamFormatter) {

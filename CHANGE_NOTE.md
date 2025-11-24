@@ -1,5 +1,11 @@
 # change note
 
+# 10.0.4
+
+- pipe's params add support variable name.
+- parsing `#var` in `#for` body optimized.
+- strict params cannot same as `#var` variables.
+
 # 10.0.3
 
 - Remove config field `XQLFileManager#delimiter`, xql parsing optimized.

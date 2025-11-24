@@ -1,5 +1,9 @@
 # change note
 
+# 10.0.5
+
+- Some optimized.
+
 # 10.0.4
 
 - pipe's params add support variable name.

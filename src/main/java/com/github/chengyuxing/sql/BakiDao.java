@@ -499,13 +499,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             if (Objects.nonNull(xqlFileManager)) {
                 Pair<String, Map<String, Object>> result = xqlFileManager.get(mySql.substring(1), myArgs);
                 mySql = result.getItem1();
-                for (Map.Entry<String, Object> e : result.getItem2().entrySet()) {
-                    if (!myArgs.containsKey(e.getKey())) {
-                        myArgs.put(e.getKey(), e.getValue());
-                    } else {
-                        log.debug("SQL: [{}] variable '{}' overridden by external parameter: {} -> {}", mySql, e.getKey(), e.getValue(), myArgs.get(e.getKey()));
-                    }
-                }
+                myArgs.putAll(result.getItem2());
             } else {
                 throw new NullPointerException("Can not find property 'xqlFileManager'");
             }

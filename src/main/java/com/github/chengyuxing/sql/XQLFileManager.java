@@ -619,17 +619,16 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         if (Objects.nonNull(args)) {
             myArgs.putAll(args);
         }
-        myArgs.put("_parameter", args);
         myArgs.put("_databaseId", databaseId);
+
         DynamicSqlParser parser = newDynamicSqlParser(sql);
         String parsedSql = parser.parse(myArgs);
-
         Map<String, Object> vars = new HashMap<>(parser.getDefinedVars());
-        Map<String, Object> forContextVars = parser.getForContextVars();
-        if (!forContextVars.isEmpty()) {
+        Map<String, Object> forGeneratedVars = parser.getForGeneratedVars();
+        if (!forGeneratedVars.isEmpty()) {
             // #for expression temp variables stored in _for variable.
             if (!vars.containsKey(DynamicSqlParser.FOR_VARS_KEY)) {
-                vars.put(DynamicSqlParser.FOR_VARS_KEY, forContextVars);
+                vars.put(DynamicSqlParser.FOR_VARS_KEY, forGeneratedVars);
             } else {
                 throw new IllegalArgumentException("#var cannot define the name " + DynamicSqlParser.FOR_VARS_KEY + " when #for directive exists.");
             }
@@ -743,21 +742,19 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
          * </pre>
          * </blockquote>
          *
-         * @param forIndex each for loop auto index
-         * @param varIndex for var auto index
-         * @param varName  for var name,  e.g. {@code <user>}
-         * @param idxName  for index name,  e.g. {@code <idx>}
-         * @param body     content in for loop
-         * @param args     each for loop args (index and value) which created by for expression
+         * @param forIndex  each for loop auto index
+         * @param itemIndex for var auto index
+         * @param body      content in for loop
+         * @param context   each for loop args which created by for expression
          * @return formatted content
          */
         @Override
-        protected String forLoopBodyFormatter(int forIndex, int varIndex, String varName, String idxName, String body, Map<String, Object> args) {
+        protected String forLoopBodyFormatter(int forIndex, int itemIndex, String body, Map<String, Object> context) {
             String formatted = body;
             if (body.contains("${")) {
-                formatted = SqlUtil.formatSql(body, args);
+                formatted = SqlUtil.formatSql(body, context);
             }
-            if (formatted.contains(namedParamPrefix + varName) || formatted.contains(namedParamPrefix + idxName)) {
+            if (formatted.contains(namedParamPrefix.toString())) {
                 StringBuilder sb = new StringBuilder();
                 Pattern p = new SqlGenerator(namedParamPrefix).getNamedParamPattern();
                 Matcher m = p.matcher(formatted);
@@ -766,14 +763,10 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     sb.append(formatted, lastMatchEnd, m.start());
                     lastMatchEnd = m.end();
                     String name = m.group(1);
-                    if (Objects.isNull(name)) {
-                        sb.append(m.group());
-                        continue;
-                    }
-                    if (name.equals(varName) || name.equals(idxName)) {
+                    if (Objects.nonNull(name) && context.containsKey(name)) {
                         sb.append(namedParamPrefix)
                                 .append(VAR_PREFIX)
-                                .append(forVarKey(name, forIndex, varIndex));
+                                .append(forVarGeneratedKey(name, forIndex, itemIndex));
                         continue;
                     }
                     // -- #for item of :data | kv
@@ -782,13 +775,17 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     // --------------------------
                     // name: item.value
                     // varName: item
-                    if (name.startsWith(varName + '.')) {
-                        String suffix = name.substring(varName.length());
-                        sb.append(namedParamPrefix)
-                                .append(VAR_PREFIX)
-                                .append(forVarKey(varName, forIndex, varIndex))
-                                .append(suffix);
-                        continue;
+                    int dotIdx = name.indexOf('.');
+                    if (dotIdx != -1) {
+                        String paramName = name.substring(0, dotIdx);
+                        if (context.containsKey(paramName)) {
+                            String suffix = name.substring(dotIdx);
+                            sb.append(namedParamPrefix)
+                                    .append(VAR_PREFIX)
+                                    .append(forVarGeneratedKey(paramName, forIndex, itemIndex))
+                                    .append(suffix);
+                            continue;
+                        }
                     }
                     sb.append(m.group());
                 }

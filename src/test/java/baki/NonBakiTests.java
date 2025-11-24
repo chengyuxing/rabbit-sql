@@ -59,6 +59,28 @@ public class NonBakiTests {
     }
 
     @Test
+    public void testDynamicSqlFor() {
+        XQLFileManager xqlFileManager = new XQLFileManager();
+        xqlFileManager.add("for", "pgsql/for_var.xql");
+        xqlFileManager.init();
+        Args<Object> args = Args.of(
+                "list", Arrays.asList("a", "b", "c"),
+                "users", Arrays.asList(
+                        Args.of("name", "jack",
+                                "addresses", Arrays.asList(Args.of("city", "kunming"), Args.of("city", "shanghai"))),
+                        Args.of("name", "lisa",
+                                "addresses", Arrays.asList(Args.of("city", "beijing"), Args.of("city", "hongkong"))),
+                        Args.of("name", "mike",
+                                "addresses", Arrays.asList(Args.of("city", "lijiang"))))
+        );
+        System.out.println("-----");
+        System.out.println(ObjectUtil.getDeepValue(args, "users.0.addresses.0.city"));
+        System.out.println("-----");
+        System.out.println(xqlFileManager.get("for.query", args));
+        System.out.println(args.containsKey(null));
+    }
+
+    @Test
     public void test448() {
         XQLFileManager xqlFileManager = new XQLFileManager("xql-file-manager-postgresql.yml");
         xqlFileManager.init();
@@ -291,7 +313,7 @@ public class NonBakiTests {
     public void test45() {
         String sql = "select * from test.user where id = :id and dt = ${!now} and o = ${!now}";
         SqlGenerator sqlGenerator = new SqlGenerator(':');
-        System.out.println(sqlGenerator.generateSql(sql, Args.of("id", null, "now", LocalDateTime.now()),Object::toString));
+        System.out.println(sqlGenerator.generateSql(sql, Args.of("id", null, "now", LocalDateTime.now()), Object::toString));
     }
 
     @Test

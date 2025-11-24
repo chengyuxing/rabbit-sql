@@ -8,14 +8,14 @@
 */
 
 /*[query]*/
-select * from users where id in (
+-- #check :users = blank throw 'param users must not be null!'
+select * from user where id in (
     -- #for user of :users delimiter ','
         -- #for address of :user.addresses delimiter ','
             -- #var city = :address.city | upper
-            -- #var cityL = :address.city | lower
-            :city, :cityL, :list, :address.city, :user.addresses.0.city
-            -- #if :cityL = beijing
-                'You choose Beijing'
+            :city, :another, :user.addresses.0.city
+            -- #if :city = KUNMING
+               ,'You choose KM'
             -- #fi
         -- #done
     -- #done

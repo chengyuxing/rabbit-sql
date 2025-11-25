@@ -59,7 +59,7 @@ public class NonBakiTests {
     }
 
     @Test
-    public void testDynamicSqlFor() {
+    public void testDynamicSqlFor() throws JsonProcessingException {
         XQLFileManager xqlFileManager = new XQLFileManager();
         xqlFileManager.add("for", "pgsql/for_var.xql");
         xqlFileManager.init();
@@ -74,10 +74,11 @@ public class NonBakiTests {
                                 "addresses", Arrays.asList(Args.of("city", "lijiang"))))
         );
         System.out.println("-----");
+        System.out.println(new ObjectMapper().writeValueAsString(args));
+        System.out.println("-----");
         System.out.println(ObjectUtil.getDeepValue(args, "users.0.addresses.0.city"));
         System.out.println("-----");
         System.out.println(xqlFileManager.get("for.query", args));
-        System.out.println(args.containsKey(null));
     }
 
     @Test

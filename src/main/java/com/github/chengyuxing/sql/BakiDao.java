@@ -146,6 +146,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 throw new UncheckedSqlException("Initialize metadata error.", e);
             }
         });
+        this.setXqlFileManager(new XQLFileManager(XQLFileManager.YML));
     }
 
     /**
@@ -496,22 +497,16 @@ public class BakiDao extends JdbcSupport implements Baki {
         }
         if (mySql.startsWith("&")) {
             log.debug("SQL: {}", mySql);
-            if (Objects.nonNull(xqlFileManager)) {
-                Pair<String, Map<String, Object>> result = xqlFileManager.get(mySql.substring(1), myArgs);
-                mySql = result.getItem1();
-                myArgs.putAll(result.getItem2());
-            } else {
-                throw new NullPointerException("Can not find property 'xqlFileManager'");
-            }
+            Pair<String, Map<String, Object>> result = xqlFileManager.get(mySql.substring(1), myArgs);
+            mySql = result.getItem1();
+            myArgs.putAll(result.getItem2());
         }
         if (Objects.nonNull(sqlParseChecker)) {
             mySql = sqlParseChecker.handle(mySql, myArgs);
         }
         if (mySql.contains("${")) {
             mySql = SqlUtil.formatSql(mySql, myArgs);
-            if (Objects.nonNull(xqlFileManager)) {
-                mySql = SqlUtil.formatSql(mySql, xqlFileManager.getConstants());
-            }
+            mySql = SqlUtil.formatSql(mySql, xqlFileManager.getConstants());
         }
         if (log.isDebugEnabled()) {
             log.debug("SQL: {}", SqlHighlighter.highlightIfAnsiCapable(mySql));

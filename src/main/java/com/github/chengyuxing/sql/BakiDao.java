@@ -146,7 +146,6 @@ public class BakiDao extends JdbcSupport implements Baki {
                 throw new UncheckedSqlException("Initialize metadata error.", e);
             }
         });
-        this.setXqlFileManager(new XQLFileManager(XQLFileManager.YML));
     }
 
     /**
@@ -506,7 +505,9 @@ public class BakiDao extends JdbcSupport implements Baki {
         }
         if (mySql.contains("${")) {
             mySql = SqlUtil.formatSql(mySql, myArgs);
-            mySql = SqlUtil.formatSql(mySql, xqlFileManager.getConstants());
+            if (Objects.nonNull(xqlFileManager)) {
+                mySql = SqlUtil.formatSql(mySql, xqlFileManager.getConstants());
+            }
         }
         if (log.isDebugEnabled()) {
             log.debug("SQL: {}", SqlHighlighter.highlightIfAnsiCapable(mySql));

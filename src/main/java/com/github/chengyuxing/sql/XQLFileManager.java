@@ -354,7 +354,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         for (Map.Entry<String, Sql> e : sqlResource.entrySet()) {
             String k = e.getKey();
             if (k.startsWith("${")) {
-                String template = e.getValue().getContent();
+                String template = e.getValue().getSource();
                 // fix template
                 if (template.trim().startsWith("--")) {
                     template = NEW_LINE + template;
@@ -374,12 +374,12 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         }
         for (Map.Entry<String, Sql> e : sqlResource.entrySet()) {
             Sql sql = e.getValue();
-            String sqlContent = sql.getContent();
+            String sqlContent = sql.getSource();
             if (sqlContent.contains("${")) {
                 sqlContent = SqlUtil.formatSql(sqlContent, templates);
                 sqlContent = SqlUtil.formatSql(sqlContent, constants);
                 // remove empty line.
-                sql.setContent(StringUtil.removeEmptyLine(sqlContent));
+                sql.setSource(StringUtil.removeEmptyLine(sqlContent));
             }
         }
     }
@@ -589,7 +589,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @throws IllegalArgumentException if sql reference name format error
      */
     public String get(@NotNull String name) {
-        return getSqlObject(name).getContent();
+        return getSqlObject(name).getSource();
     }
 
     /**

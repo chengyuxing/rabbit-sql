@@ -320,19 +320,19 @@ public class XQLFileManagerConfig {
      * Sql object.
      */
     public static final class Sql {
-        private String content;
+        private String source;
         private String description = "";
 
-        public Sql(@NotNull String content) {
-            this.content = content;
+        public Sql(@NotNull String source) {
+            this.source = source;
         }
 
-        void setContent(String content) {
-            this.content = content;
+        void setSource(@NotNull String source) {
+            this.source = source;
         }
 
-        public @NotNull String getContent() {
-            return content;
+        public @NotNull String getSource() {
+            return source;
         }
 
         public @NotNull String getDescription() {
@@ -350,12 +350,12 @@ public class XQLFileManagerConfig {
             if (!(o instanceof Sql)) return false;
 
             Sql sql = (Sql) o;
-            return getContent().equals(sql.getContent()) && getDescription().equals(sql.getDescription());
+            return getSource().equals(sql.getSource()) && getDescription().equals(sql.getDescription());
         }
 
         @Override
         public int hashCode() {
-            int result = getContent().hashCode();
+            int result = getSource().hashCode();
             result = 31 * result + getDescription().hashCode();
             return result;
         }

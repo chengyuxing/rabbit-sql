@@ -37,7 +37,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
@@ -376,7 +375,7 @@ public class NonBakiTests {
         config.init();
         config.foreach((k, r) -> {
             r.getEntry().forEach((n, sql) -> {
-                System.out.println(n + " -> " + sql.getContent());
+                System.out.println(n + " -> " + sql.getSource());
             });
         });
     }

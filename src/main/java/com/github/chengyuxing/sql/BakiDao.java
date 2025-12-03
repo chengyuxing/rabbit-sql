@@ -491,14 +491,14 @@ public class BakiDao extends JdbcSupport implements Baki {
             myArgs.putAll(args);
         }
         String mySql = sql.trim();
-        if (Objects.nonNull(sqlInterceptor)) {
-            sqlInterceptor.preHandle(mySql, myArgs, metaData);
-        }
         if (mySql.startsWith("&")) {
             log.debug("SQL: {}", mySql);
             Pair<String, Map<String, Object>> result = xqlFileManager.get(mySql.substring(1), myArgs);
             mySql = result.getItem1();
             myArgs.putAll(result.getItem2());
+        }
+        if (Objects.nonNull(sqlInterceptor)) {
+            sqlInterceptor.preHandle(sql.trim(), myArgs, metaData);
         }
         if (Objects.nonNull(sqlParseChecker)) {
             mySql = sqlParseChecker.handle(mySql, myArgs);

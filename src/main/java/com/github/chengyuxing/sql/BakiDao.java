@@ -66,10 +66,6 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     private StatementValueHandler statementValueHandler;
     /**
-     * Do something after parse dynamic sql.
-     */
-    private SqlParseChecker sqlParseChecker;
-    /**
      * XQL file manager.
      */
     private XQLFileManager xqlFileManager;
@@ -534,12 +530,8 @@ public class BakiDao extends JdbcSupport implements Baki {
                 }
             }
         }
-        // FIXME 总觉得sql拦截器和解析检查器可以合并一下，这里感觉有点重复啰嗦
         if (Objects.nonNull(sqlInterceptor)) {
-            sqlInterceptor.preHandle(sql.trim(), myArgs, metaData);
-        }
-        if (Objects.nonNull(sqlParseChecker)) {
-            mySql = sqlParseChecker.handle(mySql, myArgs);
+            mySql = sqlInterceptor.preHandle(sql.trim(), mySql, myArgs, metaData);
         }
         if (mySql.contains("${")) {
             mySql = SqlUtil.formatSql(mySql, myArgs);
@@ -686,10 +678,6 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     public Map<String, Object> getQueryCacheLocks() {
         return queryCacheLocks;
-    }
-
-    public void setSqlParseChecker(SqlParseChecker sqlParseChecker) {
-        this.sqlParseChecker = sqlParseChecker;
     }
 
     public ExecutionWatcher getExecutionWatcher() {

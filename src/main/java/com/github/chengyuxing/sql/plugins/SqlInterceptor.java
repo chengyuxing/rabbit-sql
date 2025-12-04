@@ -5,17 +5,16 @@ import org.jetbrains.annotations.NotNull;
 import java.sql.DatabaseMetaData;
 import java.util.Map;
 
-/**
- * Sql interceptor.
- */
 @FunctionalInterface
 public interface SqlInterceptor {
     /**
      * Pre-handle before SQL real executing, throw exception to reject SQL execution.
      *
-     * @param sql      sql
-     * @param args     sql parameter data
-     * @param metaData current database metadata
+     * @param rawSql    source sql: sql reference or sql content
+     * @param parsedSql the parsed sql content
+     * @param args      args
+     * @param metaData  current database metadata
+     * @return new sql
      */
-    void preHandle(@NotNull String sql, @NotNull Map<String, ?> args, @NotNull DatabaseMetaData metaData);
+    @NotNull String preHandle(@NotNull final String rawSql, @NotNull final String parsedSql, @NotNull Map<String, Object> args, @NotNull DatabaseMetaData metaData);
 }

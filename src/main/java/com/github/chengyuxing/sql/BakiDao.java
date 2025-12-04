@@ -40,7 +40,10 @@ import java.util.stream.Stream;
  * }</pre></blockquote>
  */
 public class BakiDao extends JdbcSupport implements Baki {
-    private final static Logger log = LoggerFactory.getLogger(BakiDao.class);
+    private static final Logger log = LoggerFactory.getLogger(BakiDao.class);
+    private static final String INTERNAL_PAGE_HELPER_ARG_KEY = "_$internalPageHelper";
+    private static final String SQL_REF_MODIFIER_COUNT = "count";
+    private static final String SQL_REF_MODIFIER_PAGE = "page";
     private final Map<SqlStatementType, SqlInvokeHandler> xqlMappingHandlers = new HashMap<>();
     private final Map<String, Object> queryCacheLocks = new ConcurrentHashMap<>();
     private final DataSource dataSource;
@@ -404,13 +407,18 @@ public class BakiDao extends JdbcSupport implements Baki {
             if (pageHelper == null) {
                 pageHelper = builtinPager();
             }
-            // build query
-            SqlGenerator.PreparedSqlMetaData result = prepareSql(recordQuery, args);
-            String sourceQuery = result.getSourceSql();
-            Map<String, Object> myArgs = result.getArgs();
+            boolean isSqlRef = recordQuery.startsWith("&");
             if (count == null) {
-                String cq = countQuery == null ? pageHelper.countSql(sourceQuery) : countQuery;
-                try (Stream<DataRow> s = executeQueryStream(cq, myArgs)) {
+                String finalCountQuery = countQuery;
+                if (finalCountQuery == null) {
+                    if (isSqlRef) {
+                        finalCountQuery = recordQuery + "^" + SQL_REF_MODIFIER_COUNT;
+                        args.put(INTERNAL_PAGE_HELPER_ARG_KEY, pageHelper);
+                    } else {
+                        finalCountQuery = pageHelper.countSql(recordQuery);
+                    }
+                }
+                try (Stream<DataRow> s = executeQueryStream(finalCountQuery, args)) {
                     count = s.findFirst()
                             .map(d -> d.getInt(0))
                             .orElse(0);
@@ -424,10 +432,20 @@ public class BakiDao extends JdbcSupport implements Baki {
             pageHelper.init(page, size, count);
 
             Args<Integer> pagedArgs = pageHelper.pagedArgs();
-            myArgs.putAll(rewriteArgsFunc == null ? pagedArgs : rewriteArgsFunc.apply(pagedArgs));
-            String executeQuery = disablePageSql ? sourceQuery : pageHelper.pagedSql(namedParamPrefix, sourceQuery);
+            args.putAll(rewriteArgsFunc == null ? pagedArgs : rewriteArgsFunc.apply(pagedArgs));
 
-            try (Stream<DataRow> s = executeQueryStream(executeQuery, myArgs)) {
+            String pageQuery;
+            if (disablePageSql) {
+                pageQuery = recordQuery;
+            } else {
+                if (isSqlRef) {
+                    pageQuery = recordQuery + "^" + SQL_REF_MODIFIER_PAGE;
+                    args.put(INTERNAL_PAGE_HELPER_ARG_KEY, pageHelper);
+                } else {
+                    pageQuery = pageHelper.pagedSql(namedParamPrefix, recordQuery);
+                }
+            }
+            try (Stream<DataRow> s = executeQueryStream(pageQuery, args)) {
                 List<T> list = s.peek(d -> d.remove(PageHelper.ROW_NUM_KEY))
                         .map(mapper)
                         .collect(Collectors.toList());
@@ -493,10 +511,30 @@ public class BakiDao extends JdbcSupport implements Baki {
         String mySql = sql.trim();
         if (mySql.startsWith("&")) {
             log.debug("SQL: {}", mySql);
-            Pair<String, Map<String, Object>> result = xqlFileManager.get(mySql.substring(1), myArgs);
+            String sqlRef = mySql.substring(1);
+            Pair<String, Map<String, Object>> result = xqlFileManager.get(sqlRef, myArgs);
             mySql = result.getItem1();
             myArgs.putAll(result.getItem2());
+
+            String modifier = XQLFileManager.extractModifier(sqlRef);
+            if (Objects.nonNull(modifier)) {
+                switch (modifier) {
+                    case SQL_REF_MODIFIER_PAGE:
+                    case SQL_REF_MODIFIER_COUNT:
+                        Object obj = myArgs.get(INTERNAL_PAGE_HELPER_ARG_KEY);
+                        if (obj instanceof PageHelper) {
+                            PageHelper pageHelper = (PageHelper) obj;
+                            if (modifier.equals(SQL_REF_MODIFIER_COUNT)) {
+                                mySql = pageHelper.countSql(mySql);
+                            } else {
+                                mySql = pageHelper.pagedSql(namedParamPrefix, mySql);
+                            }
+                        }
+                        break;
+                }
+            }
         }
+        // FIXME 总觉得sql拦截器和解析检查器可以合并一下，这里感觉有点重复啰嗦
         if (Objects.nonNull(sqlInterceptor)) {
             sqlInterceptor.preHandle(sql.trim(), myArgs, metaData);
         }

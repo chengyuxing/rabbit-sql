@@ -97,7 +97,7 @@ import static com.github.chengyuxing.common.utils.StringUtil.containsAnyIgnoreCa
  */
 public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(XQLFileManager.class);
-    public static final Pattern KEY_PATTERN = Pattern.compile("/\\*\\s*(\\[\\s*(?<sqlName>[^\\s\\[\\]{}]+)\\s*]|\\{\\s*(?<partName>[^\\s\\[\\]{}]+)\\s*})\\s*\\*/");
+    public static final Pattern KEY_PATTERN = Pattern.compile("/\\*\\s*(\\[\\s*(?<sqlName>[^\\s\\[\\]{^.}]+)\\s*]|\\{\\s*(?<partName>[^\\s\\[\\]{^.}]+)\\s*})\\s*\\*/");
     public static final String XQL_DESC_QUOTE = "@@@";
     public static final String YML = "xql-file-manager.yml";
 
@@ -466,18 +466,37 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * Decode sql reference to alias and sql name.
+     * Extract the modifier from sql reference.
      *
-     * @param sqlReference sql reference name ({@code <alias>.<sqlName>})
+     * @param sqlReference sql reference name ({@code <alias>.<sqlName>[^<modifier>]})
+     * @return modifier
+     */
+    public static @Nullable String extractModifier(@NotNull String sqlReference) {
+        int mIdx = sqlReference.lastIndexOf('^');
+        if (mIdx == -1) {
+            return null;
+        }
+        return sqlReference.substring(mIdx + 1);
+    }
+
+    /**
+     * Decode sql reference to alias and sql name, ^modifier is optional, it does nothing.
+     *
+     * @param sqlReference sql reference name ({@code <alias>.<sqlName>[^<modifier>]})
      * @return alias and sql name
      */
     public static @NotNull Pair<String, String> decodeSqlReference(@NotNull String sqlReference) {
-        int dotIdx = sqlReference.lastIndexOf(".");
+        String ref = sqlReference;
+        int mIdx = ref.lastIndexOf('^');
+        if (mIdx != -1) {
+            ref = sqlReference.substring(0, mIdx);
+        }
+        int dotIdx = ref.lastIndexOf(".");
         if (dotIdx < 1) {
             throw new IllegalArgumentException("Invalid sql reference name, please follow <alias>.<sqlName> format.");
         }
-        String alias = sqlReference.substring(0, dotIdx);
-        String name = sqlReference.substring(dotIdx + 1);
+        String alias = ref.substring(0, dotIdx);
+        String name = ref.substring(dotIdx + 1);
         return Pair.of(alias, name);
     }
 

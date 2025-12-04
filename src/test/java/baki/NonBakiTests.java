@@ -77,13 +77,20 @@ public class NonBakiTests {
         System.out.println("-----");
         System.out.println(ObjectUtil.getDeepValue(args, "users.0.addresses.0.city"));
         System.out.println("-----");
-        System.out.println(xqlFileManager.get("for.query", args));
+        System.out.println(xqlFileManager.get("for.query^count", args));
+        System.out.println(xqlFileManager.contains("for.query"));
+        System.out.println(xqlFileManager.getSqlObject("for.query^count"));
     }
 
     @Test
     public void test448() {
         XQLFileManager xqlFileManager = new XQLFileManager("xql-file-manager-postgresql.yml");
         xqlFileManager.init();
+    }
+
+    @Test
+    public void testInsn() {
+        System.out.println(null instanceof PageHelper);
     }
 
     @Test

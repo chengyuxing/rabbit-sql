@@ -121,11 +121,19 @@ public class NewBakiTests {
     }
 
     @Test
+    public void testPageQuery() {
+        PagedResource<DataRow> rows = baki.query("&new.queryOneGuest")
+                .args("page", 1, "size", 10)
+                .pageable()
+                .collect();
+        System.out.println(rows);
+    }
+
+    @Test
     public void doPaging() {
         PagedResource<DataRow> resource = baki.query("select * from test.guest where id > :id")
                 .args("id", 1999, "page", 1, "size", 10)
                 .pageable()
-                .count(500)
                 .collect();
         System.out.println(resource);
     }

@@ -30,7 +30,7 @@ _java 8+_
 <dependency>
   <groupId>com.github.chengyuxing</groupId>
   <artifactId>rabbit-sql</artifactId>
-  <version>10.0.5</version>
+  <version>10.0.6</version>
 </dependency>
 ```
 
@@ -651,7 +651,7 @@ Default implement of interface **Baki**, support some basic operation.
 Custom sql interceptor, default:
 
 ```java
-(sql, args, metaData) -> true
+(rawSql, parsedSql, args, metaData) -> String
 ```
 
 ##### statementValueHandler
@@ -667,12 +667,6 @@ Custom prepared sql statement parameter value handler, default:
 Default: `null`
 
 Global paging help provider that implements this class to override or extend if the built-in does not satisfy the current database.
-
-##### sqlParseChecker
-
-Default: `null`
-
-When the dynamic sql is parsed, secondary processing is performed before it is actually executed.
 
 ##### executionWatcher
 

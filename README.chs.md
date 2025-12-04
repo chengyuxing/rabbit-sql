@@ -30,7 +30,7 @@ _java 8+_
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>10.0.5</version>
+    <version>10.0.6</version>
 </dependency>
 ```
 
@@ -657,7 +657,7 @@ where id = 3
 sql 拦截器，默认值为：
 
 ```java
-(sql, args, metaData) -> true
+(raqSql, parsedSql, args, metaData) -> String
 ```
 
 ##### statementValueHandler
@@ -673,12 +673,6 @@ sql 拦截器，默认值为：
 默认值：`null`
 
 全局分页帮助提供程序，如果内置的无法满足当前数据库，则实现此类来进行覆盖或扩展。
-
-##### sqlParseChecker
-
-默认值：`null`
-
-当解析完成动态sql时，在真正执行之前，来进行二次处理。
 
 ##### executionWatcher
 

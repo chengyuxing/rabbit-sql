@@ -1,5 +1,12 @@
 # change note
 
+# 10.0.6
+
+- Removed SqlParseChecker and SqlInterceptor optimized.
+- New method XQLFileManager#extractModifier.
+- BakiDao page query optimized.
+- BakiDao#prepareSql optimized.
+
 # 10.0.5
 
 - Some optimized.

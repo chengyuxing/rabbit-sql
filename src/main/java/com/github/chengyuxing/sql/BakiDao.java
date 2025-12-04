@@ -41,7 +41,7 @@ import java.util.stream.Stream;
  */
 public class BakiDao extends JdbcSupport implements Baki {
     private static final Logger log = LoggerFactory.getLogger(BakiDao.class);
-    private static final String INTERNAL_PAGE_HELPER_ARG_KEY = "_$internalPageHelper";
+    private static final String INTERNAL_PAGE_HELPER_ARG_KEY = "_$pageHelper";
     private static final String SQL_REF_MODIFIER_COUNT = "count";
     private static final String SQL_REF_MODIFIER_PAGE = "page";
     private final Map<SqlStatementType, SqlInvokeHandler> xqlMappingHandlers = new HashMap<>();

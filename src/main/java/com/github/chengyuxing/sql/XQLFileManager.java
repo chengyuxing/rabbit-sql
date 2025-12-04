@@ -374,12 +374,12 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         }
         for (Map.Entry<String, Sql> e : sqlResource.entrySet()) {
             Sql sql = e.getValue();
-            String sqlContent = sql.getSource();
-            if (sqlContent.contains("${")) {
-                sqlContent = SqlUtil.formatSql(sqlContent, templates);
-                sqlContent = SqlUtil.formatSql(sqlContent, constants);
+            String source = sql.getSource();
+            if (source.contains("${")) {
+                source = SqlUtil.formatSql(source, templates);
+                source = SqlUtil.formatSql(source, constants);
                 // remove empty line.
-                sql.setSource(StringUtil.removeEmptyLine(sqlContent));
+                sql.setSource(StringUtil.removeEmptyLine(source));
             }
         }
     }

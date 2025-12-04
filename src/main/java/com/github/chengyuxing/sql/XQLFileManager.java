@@ -272,7 +272,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     sqlBuffer.append(line).append(NEW_LINE);
                     if (trimLine.endsWith(";")) {
                         String sql = sqlBuffer.toString().trim();
-                        sql = sql.substring(0, sql.length() - 1);
+                        sql = sql.substring(0, sql.length() - 1).trim();
                         String desc = descriptionBuffer.toString().trim();
                         entry.put(currentName, scanSql(alias, filename, currentName, sql, desc));
                         currentName = null;

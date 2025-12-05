@@ -38,7 +38,7 @@ public interface QueryCacheManager {
      * @param args      the sql args
      * @return cache or null
      */
-    Stream<DataRow> get(String uniqueKey, Map<String, ?> args);
+    Stream<DataRow> get(@NotNull String uniqueKey, Map<String, ?> args);
 
     /**
      * Put cache.

@@ -14,7 +14,7 @@ public interface SqlInterceptor {
      * @param parsedSql the parsed sql content
      * @param args      args
      * @param metaData  current database metadata
-     * @return new sql
+     * @return new parsed sql content
      */
     @NotNull String preHandle(@NotNull final String rawSql, @NotNull final String parsedSql, @NotNull Map<String, Object> args, @NotNull DatabaseMetaData metaData);
 }

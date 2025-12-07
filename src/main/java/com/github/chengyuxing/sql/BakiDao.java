@@ -25,7 +25,6 @@ import javax.sql.DataSource;
 import java.lang.reflect.Field;
 import java.sql.*;
 import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -44,8 +43,6 @@ public class BakiDao extends JdbcSupport implements Baki {
     private static final String INTERNAL_PAGE_HELPER_ARG_KEY = "_$pageHelper";
     private static final String SQL_REF_MODIFIER_COUNT = "count";
     private static final String SQL_REF_MODIFIER_PAGE = "page";
-    private final Map<SqlStatementType, SqlInvokeHandler> xqlMappingHandlers = new HashMap<>();
-    private final Map<String, Object> queryCacheLocks = new ConcurrentHashMap<>();
     private final DataSource dataSource;
     private DatabaseMetaData metaData;
     private String databaseId;
@@ -89,6 +86,10 @@ public class BakiDao extends JdbcSupport implements Baki {
      * Jdbc execute sql timeout({@link Statement#setQueryTimeout(int)}) handler.
      */
     private QueryTimeoutHandler queryTimeoutHandler;
+    /**
+     * Sql mapping interface invoke handler.
+     */
+    private SqlInvokeHandler sqlInvokeHandler;
     /**
      * Query cache manager.
      */
@@ -134,6 +135,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         };
         this.statementValueHandler = (ps, index, value, metaData) -> JdbcUtil.setStatementValue(ps, index, value);
         this.queryTimeoutHandler = (sql, args) -> 0;
+        this.sqlInvokeHandler = type -> null;
         this.entityFieldMapper = Field::getName;
         this.entityValueMapper = null;
         this.using(c -> {
@@ -177,26 +179,8 @@ public class BakiDao extends JdbcSupport implements Baki {
                     if (Objects.isNull(queryCacheManager) || !queryCacheManager.isAvailable(sql, args)) {
                         return super.executeQueryStream(sql, args);
                     }
-                    String uniqueKey = queryCacheManager.uniqueKey(sql, args);
-                    Stream<DataRow> cache = queryCacheManager.get(uniqueKey, args);
-                    if (Objects.nonNull(cache)) {
-                        log.debug("Hits cache({}, {}), returns data from cache.", sql, args);
-                        return cache;
-                    }
-                    Object lock = queryCacheLocks.computeIfAbsent(uniqueKey, k -> new Object());
-                    synchronized (lock) {
-                        cache = queryCacheManager.get(uniqueKey, args);
-                        if (Objects.nonNull(cache)) {
-                            log.debug("Hits cache({}, {}) after lock, returns data from cache.", sql, args);
-                            return cache;
-                        }
-                        List<DataRow> prepareCache = new ArrayList<>();
-                        Stream<DataRow> queryStream = super.executeQueryStream(sql, args)
-                                .peek(prepareCache::add)
-                                .onClose(() -> queryCacheManager.put(uniqueKey, prepareCache));
-                        log.debug("Put query result({}, {}) to cache.", sql, args);
-                        return queryStream;
-                    }
+                    log.debug("The query({}, {}) has been taken over by the cache.", sql, args);
+                    return queryCacheManager.get(sql, args, super::executeQueryStream);
                 });
     }
 
@@ -593,13 +577,25 @@ public class BakiDao extends JdbcSupport implements Baki {
         this.globalPageHelperProvider = globalPageHelperProvider;
     }
 
+    public PageHelperProvider getGlobalPageHelperProvider() {
+        return globalPageHelperProvider;
+    }
+
     public void setSqlInterceptor(SqlInterceptor sqlInterceptor) {
         this.sqlInterceptor = sqlInterceptor;
+    }
+
+    public SqlInterceptor getSqlInterceptor() {
+        return sqlInterceptor;
     }
 
     public void setStatementValueHandler(StatementValueHandler statementValueHandler) {
         if (Objects.nonNull(statementValueHandler))
             this.statementValueHandler = statementValueHandler;
+    }
+
+    public StatementValueHandler getStatementValueHandler() {
+        return statementValueHandler;
     }
 
     public void setXqlFileManager(XQLFileManager xqlFileManager) {
@@ -655,12 +651,18 @@ public class BakiDao extends JdbcSupport implements Baki {
         }
     }
 
-    public Map<SqlStatementType, SqlInvokeHandler> getXqlMappingHandlers() {
-        return xqlMappingHandlers;
+    public QueryTimeoutHandler getQueryTimeoutHandler() {
+        return queryTimeoutHandler;
     }
 
-    public void registerXqlMappingHandler(SqlStatementType type, SqlInvokeHandler handler) {
-        xqlMappingHandlers.put(type, handler);
+    public void setSqlInvokeHandler(SqlInvokeHandler sqlInvokeHandler) {
+        if (Objects.nonNull(sqlInvokeHandler)) {
+            this.sqlInvokeHandler = sqlInvokeHandler;
+        }
+    }
+
+    public SqlInvokeHandler getSqlInvokeHandler() {
+        return sqlInvokeHandler;
     }
 
     public QueryCacheManager getQueryCacheManager() {
@@ -669,15 +671,6 @@ public class BakiDao extends JdbcSupport implements Baki {
 
     public void setQueryCacheManager(QueryCacheManager queryCacheManager) {
         this.queryCacheManager = queryCacheManager;
-    }
-
-    /**
-     * Could be cleared if necessary.
-     *
-     * @return query cache locks object.
-     */
-    public Map<String, Object> getQueryCacheLocks() {
-        return queryCacheLocks;
     }
 
     public ExecutionWatcher getExecutionWatcher() {

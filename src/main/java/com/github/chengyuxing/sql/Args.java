@@ -5,7 +5,7 @@ import com.github.chengyuxing.common.utils.ObjectUtil;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.function.Function;
 
 /**
@@ -13,7 +13,7 @@ import java.util.function.Function;
  *
  * @param <V> value type
  */
-public final class Args<V> extends HashMap<String, V> implements MapExtends<Args<V>, V> {
+public final class Args<V> extends LinkedHashMap<String, V> implements MapExtends<Args<V>, V> {
     /**
      * Constructs a new empty Args.
      */

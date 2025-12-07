@@ -10,12 +10,14 @@ import com.github.chengyuxing.common.script.exception.CheckViolationException;
 import com.github.chengyuxing.sql.*;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.github.chengyuxing.sql.plugins.EntityFieldMapper;
+import com.github.chengyuxing.sql.plugins.QueryCacheManager;
 import com.github.chengyuxing.sql.plugins.QueryExecutor;
 import com.github.chengyuxing.sql.transaction.Tx;
 import com.github.chengyuxing.sql.types.StandardOutParamType;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.utils.JdbcUtil;
 import com.zaxxer.hikari.HikariDataSource;
+import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -25,6 +27,8 @@ import java.sql.CallableStatement;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.BiFunction;
+import java.util.stream.Stream;
 
 public class NewBakiTests {
     private static BakiDao bakiDao;
@@ -53,37 +57,18 @@ public class NewBakiTests {
         });
 //        bakiDao.setSqlWatcher(new SqlWatcher.SqlWatchLogger());
 
-//        bakiDao.setQueryCacheManager(new QueryCacheManager() {
-//            @Override
-//            public Stream<DataRow> get(String key) {
-//                try {
-//                    Path path = Paths.get("/Users/chengyuxing/Downloads/" + key + ".data");
-//                    if (!Files.exists(path)) {
-//                        return null;
-//                    }
-//                    List<DataRow> cache = json.readerForListOf(DataRow.class)
-//                            .readValue(Files.newInputStream(path));
-//                    return cache.stream();
-//                } catch (IOException e) {
-//                    throw new RuntimeException(e);
-//                }
-//            }
-//
-//            @Override
-//            public void put(String key, List<DataRow> value) {
-//                try {
-//                    byte[] cache = json.writeValueAsBytes(value);
-//                    Files.write(Paths.get("/Users/chengyuxing/Downloads/" + key + ".data"), cache);
-//                } catch (IOException e) {
-//                    throw new RuntimeException(e);
-//                }
-//            }
-//
-//            @Override
-//            public boolean isAvailable(String sql, Map<String, Object> args) {
-//                return true;
-//            }
-//        });
+        bakiDao.setQueryCacheManager(new QueryCacheManager() {
+
+            @Override
+            public @NotNull Stream<DataRow> get(@NotNull String sql, Map<String, ?> args, @NotNull RawQueryProvider provider) {
+                return provider.apply(sql, args);
+            }
+
+            @Override
+            public boolean isAvailable(@NotNull String sql, Map<String, ?> args) {
+                return false;
+            }
+        });
 
         baki = bakiDao;
 

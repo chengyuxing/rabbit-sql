@@ -1,6 +1,7 @@
 package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.common.TiFunction;
 import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.sql.annotation.*;
@@ -85,9 +86,9 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
 
         String sqlRef = "&" + XQLFileManager.encodeSqlReference(alias, sqlName);
 
-        if (baki.getXqlMappingHandlers().containsKey(sqlType)) {
-            SqlInvokeHandler handler = baki.getXqlMappingHandlers().get(sqlType);
-            return handler.handle(baki, sqlRef, myArgs, method, returnType, returnGenericType);
+        TiFunction<Baki, Method, Object[], Object> func = baki.getSqlInvokeHandler().func(sqlType);
+        if (func != null) {
+            return func.apply(baki, method, args);
         }
 
         switch (sqlType) {

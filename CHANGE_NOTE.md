@@ -1,5 +1,10 @@
 # change note
 
+# 10.0.7
+
+- `QueryCacheManager` optimized.
+- `SqlInvokeHandler` optimized.
+
 # 10.0.6
 
 - Removed SqlParseChecker and SqlInterceptor optimized.

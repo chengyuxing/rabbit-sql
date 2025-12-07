@@ -5,6 +5,9 @@ import org.jetbrains.annotations.NotNull;
 import java.sql.DatabaseMetaData;
 import java.util.Map;
 
+/**
+ * Sql interceptor.
+ */
 @FunctionalInterface
 public interface SqlInterceptor {
     /**

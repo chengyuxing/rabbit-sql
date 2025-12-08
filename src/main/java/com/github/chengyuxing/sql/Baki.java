@@ -2,6 +2,7 @@ package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.plugins.QueryExecutor;
+import com.github.chengyuxing.sql.plugins.SimpleDMLExecutor;
 import com.github.chengyuxing.sql.types.Param;
 import org.jetbrains.annotations.NotNull;
 
@@ -26,20 +27,20 @@ public interface Baki {
     /**
      * Execute insert.
      *
-     * @param tableName table name
-     * @param data      data
+     * @param sql  sql
+     * @param data data
      * @return affected row count
      */
-    int insert(@NotNull String tableName, @NotNull Map<String, Object> data);
+    int insert(@NotNull String sql, @NotNull Map<String, Object> data);
 
     /**
      * Execute batch insert.
      *
-     * @param tableName table name
-     * @param data      some data
+     * @param sql  sql
+     * @param data data
      * @return affected row count
      */
-    int insert(@NotNull String tableName, @NotNull Iterable<? extends Map<String, Object>> data);
+    int insert(@NotNull String sql, @NotNull Iterable<? extends Map<String, Object>> data);
 
     /**
      * Execute update.

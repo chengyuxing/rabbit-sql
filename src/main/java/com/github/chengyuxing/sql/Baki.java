@@ -25,6 +25,14 @@ public interface Baki {
     QueryExecutor query(@NotNull String sql);
 
     /**
+     * Simple DML executor base on single table.
+     *
+     * @param name table name
+     * @return Simple DML executor
+     */
+    SimpleDMLExecutor table(@NotNull String name);
+
+    /**
      * Execute insert.
      *
      * @param sql  sql

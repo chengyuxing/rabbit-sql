@@ -5,6 +5,7 @@ import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.sql.datasource.DataSourceUtil;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
+import com.github.chengyuxing.sql.exceptions.SqlRuntimeException;
 import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 import com.github.chengyuxing.sql.page.IPageable;
 import com.github.chengyuxing.sql.page.PageHelper;
@@ -289,16 +290,94 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public int insert(@NotNull String tableName, @NotNull Map<String, Object> data) {
-        String insert = sqlGenerator.generateNamedParamInsert(tableName, data.keySet());
-        return executeUpdate(insert, data);
+    public SimpleDMLExecutor table(@NotNull String name) {
+        if (Objects.nonNull(xqlFileManager)) {
+            name = SqlUtil.formatSql(name, xqlFileManager.getConstants());
+            SqlUtil.assertInvalidIdentifier(name);
+        }
+        @NotNull final String finalName = name;
+        return new SimpleDMLExecutor() {
+            @Override
+            public Conditional where(@NotNull String condition) {
+                return new Conditional() {
+                    String genUpdateStatement(Map<String, Object> args) {
+                        Set<String> whereArgs = sqlGenerator.generatePreparedSql(condition, args)
+                                .getArgNameIndexMapping()
+                                .keySet();
+                        Set<String> setsFields = new HashSet<>();
+                        for (Map.Entry<String, Object> arg : args.entrySet()) {
+                            if (!whereArgs.contains(arg.getKey())) {
+                                setsFields.add(arg.getKey());
+                            }
+                        }
+                        if (setsFields.isEmpty()) {
+                            throw new IllegalArgumentException("Set data is empty.");
+                        }
+                        return sqlGenerator.generateNamedParamUpdate(finalName, setsFields) + " where " + condition;
+                    }
+
+                    @Override
+                    public int update(@NotNull Map<String, Object> args) {
+                        return executeUpdate(genUpdateStatement(args), args);
+                    }
+
+                    @Override
+                    public int update(@NotNull Iterable<? extends Map<String, Object>> args) {
+                        Map<String, Object> first = args.iterator().next();
+                        return executeBatchUpdate(genUpdateStatement(first), args, batchSize);
+                    }
+
+                    @Override
+                    public int delete(@NotNull Map<String, Object> args) {
+                        return executeUpdate("delete from " + finalName + " where " + condition, args);
+                    }
+
+                    @Override
+                    public int delete(@NotNull Iterable<? extends Map<String, Object>> args) {
+                        return executeBatchUpdate("delete from " + finalName + " where " + condition, args, batchSize);
+                    }
+                };
+            }
+
+            @Override
+            public int insert(@NotNull Map<String, Object> data) {
+                String insert = sqlGenerator.generateNamedParamInsert(finalName, data.keySet());
+                return executeUpdate(insert, data);
+            }
+
+            @Override
+            public int insert(@NotNull Iterable<? extends Map<String, Object>> data) {
+                Map<String, Object> first = data.iterator().next();
+                String insert = sqlGenerator.generateNamedParamInsert(finalName, first.keySet());
+                return executeBatchUpdate(insert, data, batchSize);
+            }
+
+            @Override
+            public List<String> fields() {
+                return BakiDao.this.using(c -> {
+                    try {
+                        Statement s = c.createStatement();
+                        ResultSet rs = s.executeQuery("select * from " + finalName + " where 1 = 2");
+                        List<String> fields = Arrays.asList(JdbcUtil.createNames(rs, ""));
+                        JdbcUtil.closeResultSet(rs);
+                        JdbcUtil.closeStatement(s);
+                        return fields;
+                    } catch (SQLException e) {
+                        throw new SqlRuntimeException("Query '" + finalName + "' fields error", e);
+                    }
+                });
+            }
+        };
     }
 
     @Override
-    public int insert(@NotNull String tableName, @NotNull Iterable<? extends Map<String, Object>> data) {
-        Map<String, Object> first = data.iterator().next();
-        String insert = sqlGenerator.generateNamedParamInsert(tableName, first.keySet());
-        return executeBatchUpdate(insert, data, batchSize);
+    public int insert(@NotNull String sql, @NotNull Map<String, Object> data) {
+        return executeUpdate(sql, data);
+    }
+
+    @Override
+    public int insert(@NotNull String sql, @NotNull Iterable<? extends Map<String, Object>> data) {
+        return executeBatchUpdate(sql, data, batchSize);
     }
 
     @Override

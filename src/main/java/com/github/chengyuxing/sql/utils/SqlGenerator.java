@@ -172,6 +172,7 @@ public class SqlGenerator {
         StringJoiner f = new StringJoiner(", ");
         StringJoiner h = new StringJoiner(", ");
         for (String column : columns) {
+            SqlUtil.assertInvalidIdentifier(column);
             f.add(column);
             h.add(namedParamPrefix + column);
         }
@@ -188,6 +189,7 @@ public class SqlGenerator {
     public String generateNamedParamUpdate(String tableName, Collection<String> columns) {
         StringJoiner sb = new StringJoiner(",\n\t");
         for (String column : columns) {
+            SqlUtil.assertInvalidIdentifier(column);
             sb.add(column + " = " + namedParamPrefix + column);
         }
         return "update " + tableName + "\nset " + sb;

@@ -27,7 +27,6 @@ import java.sql.CallableStatement;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 public class NewBakiTests {
@@ -92,6 +91,22 @@ public class NewBakiTests {
             }
             return field.getName();
         }
+    }
+
+    @Test
+    public void testSimpleTable() {
+        baki.table("test.guest")
+                .where("id > :id")
+                .update(Args.of("name", "cyx", "address", "kunming"))
+//                .delete()
+        ;
+
+        baki.table("test.guest")
+                .where("id > :id")
+                .delete(Arrays.asList(
+                        Args.of("id", 1000, "address", "kunming"),
+                        Args.of("id", 2000, "address", "cyx"))
+                );
     }
 
     @Test

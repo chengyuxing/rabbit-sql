@@ -5,6 +5,7 @@ import com.github.chengyuxing.common.utils.ReflectUtil;
 
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.regex.Pattern;
 
 import static com.github.chengyuxing.common.utils.StringUtil.FMT;
 
@@ -12,6 +13,7 @@ import static com.github.chengyuxing.common.utils.StringUtil.FMT;
  * SQL util.
  */
 public class SqlUtil {
+    private static final Pattern IDENTIFIER_PATTERN = Pattern.compile("^[A-Za-z_][A-Za-z0-9_$]*(\\.[A-Za-z_][A-Za-z0-9_$]*)*$");
     private static BiFunction<Object, Boolean, String> formatter = SqlUtil::toSqlLiteral;
 
     /**
@@ -94,5 +96,15 @@ public class SqlUtil {
             }
         }
         return sb.toString();
+    }
+
+    public static boolean isIdentifier(String s) {
+        return s != null && IDENTIFIER_PATTERN.matcher(s).matches();
+    }
+
+    public static void assertInvalidIdentifier(String s) {
+        if (!isIdentifier(s)) {
+            throw new IllegalArgumentException("Invalid SQL identifier: " + s);
+        }
     }
 }

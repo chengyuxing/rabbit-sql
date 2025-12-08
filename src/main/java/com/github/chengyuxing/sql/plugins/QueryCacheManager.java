@@ -22,7 +22,7 @@ public interface QueryCacheManager {
      * @param sql      sql name or sql string
      * @param args     the sql args
      * @param provider the non-cached database query interface for supports the cache source.
-     * @return cache or null
+     * @return streaming result
      */
     @NotNull Stream<DataRow> get(@NotNull String sql, Map<String, ?> args, @NotNull RawQueryProvider provider);
 

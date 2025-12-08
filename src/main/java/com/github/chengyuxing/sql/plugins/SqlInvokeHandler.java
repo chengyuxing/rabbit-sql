@@ -11,7 +11,7 @@ import java.lang.reflect.Method;
 @FunctionalInterface
 public interface SqlInvokeHandler {
     /**
-     * Handle sql execution result
+     * Handle sql execution result.
      *
      * @param type sql type
      * @return sql invoke handler function object

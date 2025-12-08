@@ -180,7 +180,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                         return super.executeQueryStream(sql, args);
                     }
                     log.debug("The query({}, {}) has been taken over by the cache.", sql, args);
-                    return queryCacheManager.get(sql, args, super::executeQueryStream);
+                    return queryCacheManager.get(sql, args, () -> super.executeQueryStream(sql, args));
                 });
     }
 

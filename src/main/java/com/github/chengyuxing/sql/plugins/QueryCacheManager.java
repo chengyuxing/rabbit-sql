@@ -13,7 +13,7 @@ public interface QueryCacheManager {
 
     @FunctionalInterface
     interface RawQueryProvider {
-        @NotNull Stream<DataRow> apply(@NotNull String sql, Map<String, ?> args);
+        @NotNull Stream<DataRow> query();
     }
 
     /**

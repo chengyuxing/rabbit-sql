@@ -61,7 +61,7 @@ public class NewBakiTests {
 
             @Override
             public @NotNull Stream<DataRow> get(@NotNull String sql, Map<String, ?> args, @NotNull RawQueryProvider provider) {
-                return provider.apply(sql, args);
+                return provider.query();
             }
 
             @Override

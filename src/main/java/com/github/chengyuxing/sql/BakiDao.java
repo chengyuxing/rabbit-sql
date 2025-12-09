@@ -375,6 +375,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 return BakiDao.this.using(c -> {
                     try {
                         Statement s = c.createStatement();
+                        //noinspection SqlSourceToSinkFlow,SqlConstantExpression
                         ResultSet rs = s.executeQuery("select * from " + finalName + " where 1 = 2");
                         List<String> fields = Arrays.asList(JdbcUtil.createNames(rs, ""));
                         JdbcUtil.closeResultSet(rs);

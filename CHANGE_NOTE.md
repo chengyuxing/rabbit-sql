@@ -1,5 +1,10 @@
 # change note
 
+# 10.0.8
+
+- `Baki#insert` change 1st param as sql content.
+- New method `Baki#table` for simple dml.
+
 # 10.0.7
 
 - `QueryCacheManager` optimized.

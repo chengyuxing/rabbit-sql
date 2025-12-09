@@ -96,17 +96,38 @@ public class NewBakiTests {
     @Test
     public void testSimpleTable() {
         baki.table("test.guest")
-                .where("id > :id")
-                .update(Args.of("name", "cyx", "address", "kunming"))
+                .where("id = :id")
+                .update(
+                        Arrays.asList(
+                                Args.of("name", "cyx", "address", "oooo", "id", 17),
+                                Args.of("name", "cyx", "address", "oo", "id", 18),
+                                Args.of("name", "cyx", "address", "wer", "id", 19)
+                        )
+                )
 //                .delete()
         ;
 
         baki.table("test.guest")
                 .where("id > :id")
                 .delete(Arrays.asList(
-                        Args.of("id", 1000, "address", "kunming"),
-                        Args.of("id", 2000, "address", "cyx"))
-                );
+                        Args.of("id", 17),
+                        Args.of("id", 18),
+                        Args.of("id", 19)
+                ));
+
+        baki.table("test.guest")
+                .insert(Arrays.asList(
+                        Args.of("name", "cyx", "address", "kunming", "age", 90),
+                        Args.of("name", "cyx", "address", "kunming", "age", 78),
+                        Args.of("name", "cyx", "address", "kunming", "age", 94)
+                ));
+    }
+
+    @Test
+    public void test1() {
+        baki.query("select * from test.guest")
+                .stream()
+                .forEach(System.out::println);
     }
 
     @Test

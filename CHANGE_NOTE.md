@@ -1,5 +1,9 @@
 # change note
 
+# 10.0.9
+
+- Batch execute add support each entity mapping to Map function.
+
 # 10.0.8
 
 - `Baki#insert` change 1st param as sql content.

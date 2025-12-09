@@ -34,7 +34,7 @@ public abstract class QueryExecutor {
      * @return Query
      * @see com.github.chengyuxing.sql.Args Args&lt;Object&gt;
      */
-    public QueryExecutor args(Map<String, Object> args) {
+    public QueryExecutor args(Map<String, ?> args) {
         if (args != null) {
             this.args.putAll(args);
         }

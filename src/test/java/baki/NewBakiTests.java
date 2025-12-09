@@ -1,6 +1,7 @@
 package baki;
 
 import baki.entity.AnotherUser;
+import baki.entity.Guest;
 import baki.entity.User;
 import baki.op.ExecuteCostWatcher;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -114,13 +115,22 @@ public class NewBakiTests {
                         Args.of("id", 18),
                         Args.of("id", 19)
                 ));
+    }
 
-        baki.table("test.guest")
-                .insert(Arrays.asList(
-                        Args.of("name", "cyx", "address", "kunming", "age", 90),
-                        Args.of("name", "cyx", "address", "kunming", "age", 78),
-                        Args.of("name", "cyx", "address", "kunming", "age", 94)
-                ));
+    @Test
+    public void testSimpleBatch() {
+        List<Guest> guests = new ArrayList<>();
+        for (int i = 0; i < 10; i++) {
+            Guest guest = new Guest();
+            guest.setName("cyx" + i);
+            guest.setAddress("USA");
+            guests.add(guest);
+        }
+        baki.table("test.guest").insert(guests, g -> Args.ofEntity(g).removeIfAbsent());
+        int i = baki.table("test.guest")
+                .where("address = :address")
+                .delete(Args.of("address", "USA"));
+        System.out.println(i);
     }
 
     @Test
@@ -163,7 +173,7 @@ public class NewBakiTests {
 
     @Test
     public void testMoreRes() {
-        Object res = baki.update("update test.guest set name = 'ccc' where id = :id", Args.of("id", 17));
+        Object res = baki.execute("update test.guest set name = 'ccc' where id = :id", Args.of("id", 17));
         System.out.println(res);
     }
 

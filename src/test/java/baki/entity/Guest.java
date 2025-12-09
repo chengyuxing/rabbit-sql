@@ -7,19 +7,6 @@ public class Guest {
     private Integer age;
     private String address;
 
-    private Integer count;
-
-    @Override
-    public String toString() {
-        return "Guest{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", age=" + age +
-                ", address='" + address + '\'' +
-                ", count=" + count +
-                '}';
-    }
-
     public Integer getId() {
         return id;
     }
@@ -50,13 +37,5 @@ public class Guest {
 
     public void setAddress(String address) {
         this.address = address;
-    }
-
-    public Integer getCount() {
-        return count;
-    }
-
-    public void setCount(Integer count) {
-        this.count = count;
     }
 }

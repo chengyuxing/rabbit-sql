@@ -4,15 +4,37 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 /**
  * Simple sql builder executor.
  */
 public interface SimpleDMLExecutor {
+    /**
+     * Execute insert.
+     *
+     * @param data data
+     * @return affected row count
+     */
+    int insert(@NotNull Map<String, ?> data);
 
-    int insert(@NotNull Map<String, Object> data);
+    /**
+     * Execute batch insert.
+     *
+     * @param data data
+     * @return affected row count
+     */
+    int insert(@NotNull Iterable<? extends Map<String, ?>> data);
 
-    int insert(@NotNull Iterable<? extends Map<String, Object>> data);
+    /**
+     * Execute batch insert.
+     *
+     * @param data      data
+     * @param argMapper arg mapping to Map function
+     * @param <T>       arg type
+     * @return affected row count
+     */
+    <T> int insert(@NotNull Iterable<T> data, @NotNull Function<T, ? extends Map<String, ?>> argMapper);
 
     /**
      * Where conditional interface.
@@ -23,15 +45,18 @@ public interface SimpleDMLExecutor {
     Conditional where(@NotNull String condition);
 
     /**
-     * Query table fields.
+     * Execute query table fields.
      *
      * @return fields
      */
     List<String> fields();
 
+    /**
+     * The dml statement with where condition.
+     */
     interface Conditional {
         /**
-         * Update, generate update statement by args, e.g.
+         * Execute Update, generate update statement by args, e.g.
          * <blockquote>
          * <pre>
          *  args： {id:14, name:'cyx', address:'kunming'}
@@ -44,10 +69,10 @@ public interface SimpleDMLExecutor {
          * @param args all args which contains sets and conditional part
          * @return affected row count
          */
-        int update(@NotNull Map<String, Object> args);
+        int update(@NotNull Map<String, ?> args);
 
         /**
-         * Batch update, generate update statement by 1st row of args, e.g.
+         * Execute batch update, generate update statement by 1st row of args, e.g.
          * <blockquote>
          * <pre>
          *  args： {id:14, name:'cyx', address:'kunming'},{...}...
@@ -61,10 +86,43 @@ public interface SimpleDMLExecutor {
          * @param args all args which contains sets and conditional part
          * @return affected row count
          */
-        int update(@NotNull Iterable<? extends Map<String, Object>> args);
+        int update(@NotNull Iterable<? extends Map<String, ?>> args);
 
-        int delete(@NotNull Map<String, Object> args);
+        /**
+         * Execute batch update, generate update statement by 1st row of args
+         *
+         * @param args      all args which contains sets and conditional part
+         * @param argMapper arg mapping to Map function
+         * @param <T>       arg type
+         * @return affected row count
+         * @see #update(Iterable)
+         */
+        <T> int update(@NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper);
 
-        int delete(@NotNull Iterable<? extends Map<String, Object>> args);
+        /**
+         * Execute delete.
+         *
+         * @param args args
+         * @return affected row count
+         */
+        int delete(@NotNull Map<String, ?> args);
+
+        /**
+         * Execute batch delete.
+         *
+         * @param args args
+         * @return affected row count
+         */
+        int delete(@NotNull Iterable<? extends Map<String, ?>> args);
+
+        /**
+         * Execute batch delete.
+         *
+         * @param args      args
+         * @param argMapper arg mapping to Map function
+         * @param <T>       arg type
+         * @return affected row count
+         */
+        <T> int delete(@NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper);
     }
 }

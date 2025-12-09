@@ -47,7 +47,7 @@ public class SqlGenerator {
         private final String sourceSql;
         private final String prepareSql;
         private final Map<String, List<Integer>> argNameIndexMapping;
-        private final Map<String, Object> args;
+        private final Map<String, ?> args;
 
         /**
          * Construct a new GeneratedSqlMetaData instance.
@@ -57,7 +57,7 @@ public class SqlGenerator {
          * @param argNameIndexMapping prepared sql arg name index mapping
          * @param args                args
          */
-        public PreparedSqlMetaData(String sourceSql, String prepareSql, Map<String, List<Integer>> argNameIndexMapping, Map<String, Object> args) {
+        public PreparedSqlMetaData(String sourceSql, String prepareSql, Map<String, List<Integer>> argNameIndexMapping, Map<String, ?> args) {
             this.sourceSql = sourceSql;
             this.prepareSql = prepareSql;
             this.argNameIndexMapping = argNameIndexMapping;
@@ -76,7 +76,7 @@ public class SqlGenerator {
             return argNameIndexMapping;
         }
 
-        public Map<String, Object> getArgs() {
+        public Map<String, ?> getArgs() {
             return args;
         }
 
@@ -114,7 +114,7 @@ public class SqlGenerator {
      * @param args data of named parameter
      * @return GeneratedSqlMetaData
      */
-    public PreparedSqlMetaData generatePreparedSql(final String sql, Map<String, Object> args) {
+    public PreparedSqlMetaData generatePreparedSql(final String sql, Map<String, ?> args) {
         Map<String, List<Integer>> indexMap = new HashMap<>();
         Matcher matcher = namedParamPattern.matcher(sql);
         int index = 1;

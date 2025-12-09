@@ -17,6 +17,7 @@ import javax.sql.DataSource;
 import java.sql.*;
 import java.util.*;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
@@ -216,7 +217,7 @@ public abstract class JdbcSupport {
     /**
      * Batch executes not prepared sql ({@code ddl} or {@code dml}).
      *
-     * @param sqlList      more than 1 sql
+     * @param sqlList   more than 1 sql
      * @param batchSize batch size
      * @return affected row count
      * @throws UncheckedSqlException    execute sql error
@@ -255,15 +256,17 @@ public abstract class JdbcSupport {
     /**
      * Batch execute prepared non-query sql ({@code insert}, {@code update}, {@code delete}).
      *
-     * @param sql       named parameter sql
-     * @param args      args collection
-     * @param batchSize batch size
+     * @param sql        named parameter sql
+     * @param args       args collection
+     * @param eachMapper each object mapping to Map function
+     * @param batchSize  batch size
      * @return affected row count
      */
-    protected int executeBatchUpdate(@NotNull final String sql,
-                                  @NotNull Iterable<? extends Map<String, ?>> args,
-                                  @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
-        Map<String, ?> first = args.iterator().next();
+    protected <T> int executeBatchUpdate(@NotNull final String sql,
+                                         @NotNull Iterable<T> args,
+                                         @NotNull Function<T, ? extends Map<String, ?>> eachMapper,
+                                         @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
+        Map<String, ?> first = eachMapper.apply(args.iterator().next());
         SqlGenerator.PreparedSqlMetaData sqlMetaData = prepareSql(sql, first);
         final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
         final String preparedSql = sqlMetaData.getPrepareSql();
@@ -276,8 +279,8 @@ public abstract class JdbcSupport {
             ps.setQueryTimeout(queryTimeout(sql, first));
             final Stream.Builder<int[]> result = Stream.builder();
             int i = 1;
-            for (Map<String, ?> arg : args) {
-                setPreparedSqlArgs(ps, arg, argNames);
+            for (T arg : args) {
+                setPreparedSqlArgs(ps, eachMapper.apply(arg), argNames);
                 ps.addBatch();
                 if (i % batchSize == 0) {
                     result.add(ps.executeBatch());
@@ -291,12 +294,12 @@ public abstract class JdbcSupport {
         } catch (Exception e) {
             StringJoiner argSb = new StringJoiner(",\n");
             int i = 0;
-            for (Map<String, ?> arg : args) {
+            for (T arg : args) {
                 if (i++ >= 10) {
                     argSb.add("......");
                     break;
                 }
-                argSb.add(arg.toString());
+                argSb.add(eachMapper.apply(arg).toString());
             }
             throw new SqlRuntimeException("SQL: " + sql + "\nArgs: " + argSb, e);
         } finally {

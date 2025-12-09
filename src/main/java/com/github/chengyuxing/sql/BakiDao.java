@@ -192,9 +192,12 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public int executeBatchUpdate(@NotNull String sql, @NotNull Iterable<? extends Map<String, ?>> args, @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
+    public <T> int executeBatchUpdate(@NotNull String sql,
+                                      @NotNull Iterable<T> args,
+                                      @NotNull Function<T, ? extends Map<String, ?>> eachMapper,
+                                      @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
         return this.sqlAroundExecutor.call(new Execution(SqlStatementType.dml, sql, args),
-                i -> super.executeBatchUpdate(sql, args, batchSize));
+                i -> super.executeBatchUpdate(sql, args, eachMapper, batchSize));
     }
 
     @Override
@@ -300,12 +303,12 @@ public class BakiDao extends JdbcSupport implements Baki {
             @Override
             public Conditional where(@NotNull String condition) {
                 return new Conditional() {
-                    String genUpdateStatement(Map<String, Object> args) {
+                    String genUpdateStatement(Map<String, ?> args) {
                         Set<String> whereArgs = sqlGenerator.generatePreparedSql(condition, args)
                                 .getArgNameIndexMapping()
                                 .keySet();
                         Set<String> setsFields = new HashSet<>();
-                        for (Map.Entry<String, Object> arg : args.entrySet()) {
+                        for (Map.Entry<String, ?> arg : args.entrySet()) {
                             if (!whereArgs.contains(arg.getKey())) {
                                 setsFields.add(arg.getKey());
                             }
@@ -317,39 +320,54 @@ public class BakiDao extends JdbcSupport implements Baki {
                     }
 
                     @Override
-                    public int update(@NotNull Map<String, Object> args) {
+                    public int update(@NotNull Map<String, ?> args) {
                         return executeUpdate(genUpdateStatement(args), args);
                     }
 
                     @Override
-                    public int update(@NotNull Iterable<? extends Map<String, Object>> args) {
-                        Map<String, Object> first = args.iterator().next();
-                        return executeBatchUpdate(genUpdateStatement(first), args, batchSize);
+                    public int update(@NotNull Iterable<? extends Map<String, ?>> args) {
+                        return update(args, Function.identity());
                     }
 
                     @Override
-                    public int delete(@NotNull Map<String, Object> args) {
+                    public <T> int update(@NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper) {
+                        Map<String, ?> first = argMapper.apply(args.iterator().next());
+                        return executeBatchUpdate(genUpdateStatement(first), args, argMapper, batchSize);
+                    }
+
+                    @Override
+                    public int delete(@NotNull Map<String, ?> args) {
                         return executeUpdate("delete from " + finalName + " where " + condition, args);
                     }
 
                     @Override
-                    public int delete(@NotNull Iterable<? extends Map<String, Object>> args) {
-                        return executeBatchUpdate("delete from " + finalName + " where " + condition, args, batchSize);
+                    public int delete(@NotNull Iterable<? extends Map<String, ?>> args) {
+                        return delete(args, Function.identity());
+                    }
+
+                    @Override
+                    public <T> int delete(@NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper) {
+                        return executeBatchUpdate("delete from " + finalName + " where " + condition, args, argMapper, batchSize);
                     }
                 };
             }
 
             @Override
-            public int insert(@NotNull Map<String, Object> data) {
+            public int insert(@NotNull Map<String, ?> data) {
                 String insert = sqlGenerator.generateNamedParamInsert(finalName, data.keySet());
                 return executeUpdate(insert, data);
             }
 
             @Override
-            public int insert(@NotNull Iterable<? extends Map<String, Object>> data) {
-                Map<String, Object> first = data.iterator().next();
+            public int insert(@NotNull Iterable<? extends Map<String, ?>> data) {
+                return insert(data, Function.identity());
+            }
+
+            @Override
+            public <T> int insert(@NotNull Iterable<T> data, @NotNull Function<T, ? extends Map<String, ?>> argMapper) {
+                Map<String, ?> first = argMapper.apply(data.iterator().next());
                 String insert = sqlGenerator.generateNamedParamInsert(finalName, first.keySet());
-                return executeBatchUpdate(insert, data, batchSize);
+                return executeBatchUpdate(insert, data, argMapper, batchSize);
             }
 
             @Override
@@ -371,33 +389,48 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public int insert(@NotNull String sql, @NotNull Map<String, Object> data) {
+    public int insert(@NotNull String sql, @NotNull Map<String, ?> data) {
         return executeUpdate(sql, data);
     }
 
     @Override
-    public int insert(@NotNull String sql, @NotNull Iterable<? extends Map<String, Object>> data) {
-        return executeBatchUpdate(sql, data, batchSize);
+    public int insert(@NotNull String sql, @NotNull Iterable<? extends Map<String, ?>> data) {
+        return executeBatchUpdate(sql, data, Function.identity(), batchSize);
     }
 
     @Override
-    public int update(@NotNull String sql, Map<String, Object> args) {
+    public <T> int insert(@NotNull String sql, @NotNull Iterable<T> data, @NotNull Function<T, ? extends Map<String, ?>> argMapper) {
+        return executeBatchUpdate(sql, data, argMapper, batchSize);
+    }
+
+    @Override
+    public int update(@NotNull String sql, Map<String, ?> args) {
         return executeUpdate(sql, args);
     }
 
     @Override
-    public int update(@NotNull String sql, @NotNull Iterable<? extends Map<String, Object>> args) {
-        return executeBatchUpdate(sql, args, batchSize);
+    public int update(@NotNull String sql, @NotNull Iterable<? extends Map<String, ?>> args) {
+        return executeBatchUpdate(sql, args, Function.identity(), batchSize);
     }
 
     @Override
-    public int delete(@NotNull String sql, Map<String, Object> args) {
+    public <T> int update(@NotNull String sql, @NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper) {
+        return executeBatchUpdate(sql, args, argMapper, batchSize);
+    }
+
+    @Override
+    public int delete(@NotNull String sql, Map<String, ?> args) {
         return executeUpdate(sql, args);
     }
 
     @Override
-    public int delete(@NotNull String sql, @NotNull Iterable<? extends Map<String, Object>> args) {
-        return executeBatchUpdate(sql, args, batchSize);
+    public int delete(@NotNull String sql, @NotNull Iterable<? extends Map<String, ?>> args) {
+        return executeBatchUpdate(sql, args, Function.identity(), batchSize);
+    }
+
+    @Override
+    public <T> int delete(@NotNull String sql, @NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper) {
+        return executeBatchUpdate(sql, args, argMapper, batchSize);
     }
 
     @Override
@@ -406,13 +439,18 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public @NotNull DataRow execute(@NotNull String sql, Map<String, Object> args) {
+    public @NotNull DataRow execute(@NotNull String sql, Map<String, ?> args) {
         return executeAny(sql, args);
     }
 
     @Override
-    public int execute(@NotNull String sql, @NotNull Iterable<? extends Map<String, Object>> args) {
-        return executeBatchUpdate(sql, args, batchSize);
+    public int execute(@NotNull String sql, @NotNull Iterable<? extends Map<String, ?>> args) {
+        return executeBatchUpdate(sql, args, Function.identity(), batchSize);
+    }
+
+    @Override
+    public <T> int execute(@NotNull String sql, @NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper) {
+        return executeBatchUpdate(sql, args, argMapper, batchSize);
     }
 
     @Override

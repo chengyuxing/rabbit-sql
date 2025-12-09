@@ -25,21 +25,13 @@ public interface Baki {
     QueryExecutor query(@NotNull String sql);
 
     /**
-     * Simple DML executor base on single table.
-     *
-     * @param name table name
-     * @return Simple DML executor
-     */
-    SimpleDMLExecutor table(@NotNull String name);
-
-    /**
      * Execute insert.
      *
      * @param sql  sql
      * @param data data
      * @return affected row count
      */
-    int insert(@NotNull String sql, @NotNull Map<String, Object> data);
+    int insert(@NotNull String sql, @NotNull Map<String, ?> data);
 
     /**
      * Execute batch insert.
@@ -48,7 +40,18 @@ public interface Baki {
      * @param data data
      * @return affected row count
      */
-    int insert(@NotNull String sql, @NotNull Iterable<? extends Map<String, Object>> data);
+    int insert(@NotNull String sql, @NotNull Iterable<? extends Map<String, ?>> data);
+
+    /**
+     * Execute batch insert.
+     *
+     * @param sql       sql
+     * @param data      data
+     * @param argMapper arg mapping to Map function
+     * @param <T>       arg type
+     * @return affected row count
+     */
+    <T> int insert(@NotNull String sql, @NotNull Iterable<T> data, @NotNull Function<T, ? extends Map<String, ?>> argMapper);
 
     /**
      * Execute update.
@@ -57,7 +60,7 @@ public interface Baki {
      * @param args args
      * @return affected row count
      */
-    int update(@NotNull String sql, Map<String, Object> args);
+    int update(@NotNull String sql, Map<String, ?> args);
 
     /**
      * Execute batch update.
@@ -66,7 +69,18 @@ public interface Baki {
      * @param args args
      * @return affected row count
      */
-    int update(@NotNull String sql, @NotNull Iterable<? extends Map<String, Object>> args);
+    int update(@NotNull String sql, @NotNull Iterable<? extends Map<String, ?>> args);
+
+    /**
+     * Execute batch update.
+     *
+     * @param sql       sql
+     * @param args      args
+     * @param argMapper arg mapping to Map function
+     * @param <T>       arg type
+     * @return affected row count
+     */
+    <T> int update(@NotNull String sql, @NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper);
 
     /**
      * Execute delete.
@@ -75,7 +89,7 @@ public interface Baki {
      * @param args args
      * @return affected row count
      */
-    int delete(@NotNull String sql, Map<String, Object> args);
+    int delete(@NotNull String sql, Map<String, ?> args);
 
     /**
      * Execute batch delete.
@@ -84,12 +98,23 @@ public interface Baki {
      * @param args args
      * @return affected row count
      */
-    int delete(@NotNull String sql, @NotNull Iterable<? extends Map<String, Object>> args);
+    int delete(@NotNull String sql, @NotNull Iterable<? extends Map<String, ?>> args);
+
+    /**
+     * Execute batch delete.
+     *
+     * @param sql       sql
+     * @param args      args
+     * @param argMapper arg mapping to Map function
+     * @param <T>       arg type
+     * @return affected row count
+     */
+    <T> int delete(@NotNull String sql, @NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper);
 
     /**
      * Execute store procedure or function.
      *
-     * @param procedure procedure or function statement
+     * @param procedure procedure or function
      * @param params    in,out and in_out params
      * @return DataRow
      */
@@ -98,20 +123,31 @@ public interface Baki {
     /**
      * Execute sql (ddl, dml, query or plsql).
      *
-     * @param sql  sql statement
+     * @param sql  sql
      * @param args args
      * @return DataRow
      */
-    @NotNull DataRow execute(@NotNull String sql, Map<String, Object> args);
+    @NotNull DataRow execute(@NotNull String sql, Map<String, ?> args);
 
     /**
      * Execute batch prepared dml sql.
      *
-     * @param sql  sql statement
+     * @param sql  sql
      * @param args args
      * @return affected row count
      */
-    int execute(@NotNull String sql, @NotNull Iterable<? extends Map<String, Object>> args);
+    int execute(@NotNull String sql, @NotNull Iterable<? extends Map<String, ?>> args);
+
+    /**
+     * Execute batch prepared dml sql.
+     *
+     * @param sql       sql
+     * @param args      args
+     * @param argMapper arg mapping to Map function
+     * @param <T>       arg type
+     * @return affected row count
+     */
+    <T> int execute(@NotNull String sql, @NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper);
 
     /**
      * Batch execute non-prepared sql (dml, ddl).
@@ -120,6 +156,14 @@ public interface Baki {
      * @return affected row count
      */
     int execute(@NotNull Iterable<String> sqlList);
+
+    /**
+     * Simple DML executor base on single table.
+     *
+     * @param name table name
+     * @return Simple DML executor
+     */
+    SimpleDMLExecutor table(@NotNull String name);
 
     /**
      * Get an auto-closeable connection.

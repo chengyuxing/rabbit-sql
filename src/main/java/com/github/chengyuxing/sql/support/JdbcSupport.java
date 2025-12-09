@@ -260,6 +260,7 @@ public abstract class JdbcSupport {
      * @param args       args collection
      * @param eachMapper each object mapping to Map function
      * @param batchSize  batch size
+     * @param <T>        arg type
      * @return affected row count
      */
     protected <T> int executeBatchUpdate(@NotNull final String sql,

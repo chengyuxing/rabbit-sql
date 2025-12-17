@@ -9,7 +9,7 @@ import java.util.LinkedHashMap;
 import java.util.function.Function;
 
 /**
- * Simple sql args tool.
+ * Simple args tool.
  *
  * @param <V> value type
  */

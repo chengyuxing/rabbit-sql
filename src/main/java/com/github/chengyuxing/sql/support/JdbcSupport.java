@@ -168,7 +168,7 @@ public abstract class JdbcSupport {
      * @return Stream query result
      * @throws UncheckedSqlException sql execute error
      */
-    protected Stream<DataRow<Object>> executeQueryStream(@NotNull final String sql, Map<String, ?> args) {
+    protected Stream<DataRow> executeQueryStream(@NotNull final String sql, Map<String, ?> args) {
         SqlGenerator.PreparedSqlMetaData sqlMetaData = prepareSql(sql, args);
         final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
         final String preparedSql = sqlMetaData.getPrepareSql();

@@ -2,8 +2,19 @@ package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.AroundExecutor;
 import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.common.MethodReference;
 import com.github.chengyuxing.common.tuple.Pair;
+import com.github.chengyuxing.common.tuple.Triple;
+import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.sql.datasource.DataSourceUtil;
+import com.github.chengyuxing.sql.dsl.Delete;
+import com.github.chengyuxing.sql.dsl.Insert;
+import com.github.chengyuxing.sql.dsl.Query;
+import com.github.chengyuxing.sql.dsl.Update;
+import com.github.chengyuxing.sql.dsl.clause.OrderBy;
+import com.github.chengyuxing.sql.dsl.clause.Where;
+import com.github.chengyuxing.sql.dsl.clause.condition.Criteria;
+import com.github.chengyuxing.sql.dsl.types.OrderByType;
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
 import com.github.chengyuxing.sql.exceptions.SqlRuntimeException;
 import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
@@ -48,6 +59,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     private DatabaseMetaData metaData;
     private String databaseId;
     private SqlGenerator sqlGenerator;
+    private EntityManager entityManager;
     private AroundExecutor<Execution> sqlAroundExecutor;
 
     //---------optional properties------
@@ -99,14 +111,6 @@ public class BakiDao extends JdbcSupport implements Baki {
      * Execution watchers.
      */
     private ExecutionWatcher executionWatcher;
-    /**
-     * Default Map to Entity field mapper support.
-     */
-    private EntityFieldMapper entityFieldMapper;
-    /**
-     * Default Map to Entity value mapper support.
-     */
-    private EntityValueMapper entityValueMapper;
 
     /**
      * Constructs a new BakiDao with initial datasource.
@@ -123,6 +127,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     protected void init() {
         this.sqlGenerator = new SqlGenerator(namedParamPrefix);
+        this.entityManager = new EntityManager(namedParamPrefix);
         this.sqlAroundExecutor = new AroundExecutor<Execution>() {
             @Override
             protected void onStart(@NotNull Execution identifier) {
@@ -137,8 +142,6 @@ public class BakiDao extends JdbcSupport implements Baki {
         this.statementValueHandler = (ps, index, value, metaData) -> JdbcUtil.setStatementValue(ps, index, value);
         this.queryTimeoutHandler = (sql, args) -> 0;
         this.sqlInvokeHandler = type -> null;
-        this.entityFieldMapper = Field::getName;
-        this.entityValueMapper = null;
         this.using(c -> {
             try {
                 this.metaData = c.getMetaData();
@@ -237,8 +240,10 @@ public class BakiDao extends JdbcSupport implements Baki {
             @Override
             public <T> List<T> entities(Class<T> entityClass) {
                 try (Stream<DataRow> s = stream()) {
-                    return s.map(d -> d.toEntity(entityClass, entityFieldMapper::apply, entityValueMapper::apply))
-                            .collect(Collectors.toList());
+                    return s.map(d -> d.toEntity(entityClass,
+                            field -> getEntityMetaProvider().columnMeta(field).getName(),
+                            getEntityMetaProvider()::columnValue
+                    )).collect(Collectors.toList());
                 }
             }
 
@@ -278,9 +283,10 @@ public class BakiDao extends JdbcSupport implements Baki {
 
             @Override
             public <T> T findFirstEntity(Class<T> entityClass) {
-                return findFirst()
-                        .map(d -> d.toEntity(entityClass, entityFieldMapper::apply, entityValueMapper::apply))
-                        .orElse(null);
+                return findFirst().map(d -> d.toEntity(entityClass,
+                        field -> getEntityMetaProvider().columnMeta(field).getName(),
+                        getEntityMetaProvider()::columnValue
+                )).orElse(null);
             }
 
             @Override
@@ -298,7 +304,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             name = SqlUtil.formatSql(name, xqlFileManager.getConstants());
             SqlUtil.assertInvalidIdentifier(name);
         }
-        @NotNull final String finalName = name;
+        final String finalName = name;
         return new SimpleDMLExecutor() {
             @Override
             public Conditional where(@NotNull String condition) {
@@ -385,6 +391,427 @@ public class BakiDao extends JdbcSupport implements Baki {
                         throw new SqlRuntimeException("Query '" + finalName + "' fields error", e);
                     }
                 });
+            }
+        };
+    }
+
+    @Override
+    public <T> EntityExecutor<T> entity(@NotNull Class<T> clazz) {
+        return new EntityExecutor<T>() {
+            final EntityManager.EntityMeta entityMeta = entityManager.getEntityMeta(clazz);
+
+            String parseMethodRefColumn(MethodReference<T> methodRef) {
+                String fieldName = ReflectUtil.getFieldName(methodRef);
+                try {
+                    Field field = clazz.getDeclaredField(fieldName);
+                    return getEntityMetaProvider().columnMeta(field).getName();
+                } catch (NoSuchFieldException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            final class InternalWhere extends Where<T> {
+                InternalWhere() {
+                }
+
+                InternalWhere(Where<T> where) {
+                    super(where);
+                }
+
+                InternalWhere(List<Criteria> criteria) {
+                    this.criteria.addAll(criteria);
+                }
+
+                @Override
+                protected Where<T> newInstance() {
+                    return new InternalWhere();
+                }
+
+                @Override
+                protected char namedParamPrefix() {
+                    return namedParamPrefix;
+                }
+
+                @Override
+                protected @NotNull String getColumnName(@NotNull MethodReference<T> fieldReference) {
+                    return parseMethodRefColumn(fieldReference);
+                }
+
+                private List<Criteria> getCriteria() {
+                    return criteria;
+                }
+
+                private boolean isEmpty() {
+                    return criteria.isEmpty();
+                }
+
+                private Pair<String, Map<String, Object>> buildWhere() {
+                    return build();
+                }
+            }
+
+            final class InternalOrderBy extends OrderBy<T> {
+                InternalOrderBy() {
+                }
+
+                InternalOrderBy(OrderBy<T> orderBy) {
+                    super(orderBy);
+                }
+
+                InternalOrderBy(Set<Pair<String, OrderByType>> orders) {
+                    this.orders.addAll(orders);
+                }
+
+                @Override
+                protected @NotNull String getColumnName(@NotNull MethodReference<T> fieldReference) {
+                    return parseMethodRefColumn(fieldReference);
+                }
+
+                private Set<Pair<String, OrderByType>> getOrders() {
+                    return orders;
+                }
+
+                private String buildOrderBy() {
+                    return build();
+                }
+            }
+
+            @Override
+            public <SELF extends Query<T, SELF>> Query<T, SELF> query() {
+                return new Query<T, SELF>() {
+                    final List<Criteria> whereCriteria = new ArrayList<>();
+                    final Set<Pair<String, OrderByType>> orderByColumns = new LinkedHashSet<>();
+
+                    /**
+                     * Create query sql object.
+                     * @return [record query, count query, args]
+                     */
+                    Triple<String, String, Map<String, Object>> createQuery() {
+                        final InternalWhere where = new InternalWhere(whereCriteria);
+                        final InternalOrderBy orderBy = new InternalOrderBy(orderByColumns);
+                        final String comment = "-- Entity@" + clazz.getName() + "\n";
+                        // select a, b, c from table
+                        String recordSelect = comment + entityMeta.getSelect();
+                        // select count(*) from table
+                        String countSelect = comment + entityMeta.getCountSelect();
+                        // where
+                        Pair<String, Map<String, Object>> w = where.buildWhere();
+                        recordSelect += w.getItem1();
+                        countSelect += w.getItem1();
+                        // order by
+                        recordSelect += orderBy.buildOrderBy();
+
+                        return Triple.of(recordSelect, countSelect, w.getItem2());
+                    }
+
+                    @Override
+                    public SELF where(@NotNull Function<Where<T>, Where<T>> where) {
+                        InternalWhere gotten = new InternalWhere(where.apply(new InternalWhere()));
+                        whereCriteria.addAll(gotten.getCriteria());
+                        //noinspection unchecked
+                        return (SELF) this;
+                    }
+
+                    @Override
+                    public SELF orderBy(@NotNull Function<OrderBy<T>, OrderBy<T>> orderBy) {
+                        InternalOrderBy gotten = new InternalOrderBy(orderBy.apply(new InternalOrderBy()));
+                        orderByColumns.addAll(gotten.getOrders());
+                        //noinspection unchecked
+                        return (SELF) this;
+                    }
+
+                    @Override
+                    public Stream<T> stream() {
+                        Triple<String, String, Map<String, Object>> query = createQuery();
+                        return executeQueryStream(query.getItem1(), query.getItem3())
+                                .map(d -> d.toEntity(clazz,
+                                        f -> getEntityMetaProvider().columnMeta(f).getName(),
+                                        getEntityMetaProvider()::columnValue
+                                ));
+                    }
+
+                    @Override
+                    public @NotNull List<T> list() {
+                        try (Stream<T> s = stream()) {
+                            return s.collect(Collectors.toList());
+                        }
+                    }
+
+                    @Override
+                    public @NotNull <R> List<R> list(@NotNull Function<T, R> mapper) {
+                        try (Stream<T> s = stream()) {
+                            return s.map(mapper).collect(Collectors.toList());
+                        }
+                    }
+
+                    @Override
+                    public List<T> top(@Range(from = 1, to = Integer.MAX_VALUE) int n) {
+                        Triple<String, String, Map<String, Object>> query = createQuery();
+                        return new SimplePageable(query.getItem1(), 1, n)
+                                .count(n)
+                                .args(query.getItem3())
+                                .collect(d -> d.toEntity(clazz,
+                                        f -> getEntityMetaProvider().columnMeta(f).getName(),
+                                        getEntityMetaProvider()::columnValue
+                                ))
+                                .getData();
+                    }
+
+                    @Override
+                    public @NotNull Optional<T> findFirst() {
+                        List<T> top1 = this.top(1);
+                        if (top1.isEmpty()) {
+                            return Optional.empty();
+                        }
+                        return Optional.of(top1.get(0));
+                    }
+
+                    @Override
+                    public @NotNull PagedResource<T> pageable(@Range(from = 1, to = Integer.MAX_VALUE) int page, @Range(from = 1, to = Integer.MAX_VALUE) int size, @Nullable PageHelperProvider pageHelperProvider) {
+                        Triple<String, String, Map<String, Object>> query = createQuery();
+                        return new SimplePageable(query.getItem1(), page, size)
+                                .count(query.getItem2())
+                                .args(query.getItem3())
+                                .pageHelper(pageHelperProvider)
+                                .collect(d -> d.toEntity(clazz,
+                                        f -> getEntityMetaProvider().columnMeta(f).getName(),
+                                        getEntityMetaProvider()::columnValue
+                                ));
+                    }
+
+                    @Override
+                    public @NotNull PagedResource<T> pageable(@Range(from = 1, to = Integer.MAX_VALUE) int page, @Range(from = 1, to = Integer.MAX_VALUE) int size) {
+                        return pageable(page, size, null);
+                    }
+
+                    @Override
+                    public @Range(from = 0, to = Long.MAX_VALUE) long count() {
+                        Triple<String, String, Map<String, Object>> query = createQuery();
+                        try (Stream<DataRow> s = executeQueryStream(query.getItem2(), query.getItem3())) {
+                            return s.findFirst()
+                                    .map(d -> d.getLong(0))
+                                    .orElse(0L);
+                        }
+                    }
+                };
+            }
+
+            @Override
+            public Insert<T> insert() {
+                return new Insert<T>() {
+                    final Map<String, EntityManager.ColumnMeta> columnMetas = entityMeta.getColumns();
+                    final Map<String, EntityManager.ColumnMeta> insertColumns = entityMeta.getInsertColumns();
+                    boolean withNullValues = false;
+
+                    @Override
+                    public Insert<T> withNullValues() {
+                        withNullValues = true;
+                        return this;
+                    }
+
+                    @Override
+                    public int save(T entity) {
+                        DataRow row = DataRow.ofEntity(entity, field -> getEntityMetaProvider().columnMeta(field).getName());
+                        String insert;
+                        if (withNullValues) {
+                            insert = entityMeta.getInsert();
+                        } else {
+                            Map<String, EntityManager.ColumnMeta> columns = new HashMap<>(insertColumns);
+                            columns.entrySet().removeIf(e -> row.get(e.getKey()) == null);
+                            if (columns.isEmpty()) {
+                                insert = "insert into " + entityMeta.getTableName() + " default values";
+                            } else {
+                                insert = entityMeta.getInsert(columns);
+                            }
+                        }
+                        return executeUpdate(insert, row);
+                    }
+
+                    @Override
+                    public int save(Iterable<T> entities) {
+                        if (withNullValues) {
+                            return executeBatchUpdate(entityMeta.getInsert(),
+                                    entities,
+                                    e -> DataRow.ofEntity(e, field -> getEntityMetaProvider().columnMeta(field).getName()),
+                                    batchSize);
+                        }
+                        int n = 0;
+                        for (T entity : entities) {
+                            n += save(entity);
+                        }
+                        return n;
+                    }
+
+                    @Override
+                    public InsertSetter<T> set(MethodReference<T> column, Object value) {
+                        return new InsertSetter<T>() {
+                            final Map<String, Object> values = new HashMap<>();
+                            final Map<String, EntityManager.ColumnMeta> columns = new HashMap<>();
+
+                            void addColumn(MethodReference<T> column, Object value) {
+                                String columnName = parseMethodRefColumn(column);
+                                EntityManager.ColumnMeta columnMeta = columnMetas.get(columnName);
+                                if (columnMeta == null) {
+                                    throw new IllegalArgumentException("Cannot find column: " + columnName);
+                                }
+                                if (!columnMeta.isInsertable()) {
+                                    throw new IllegalArgumentException("Cannot insert non-insertable column: " + columnName);
+                                }
+                                values.put(columnName, value);
+                                columns.put(columnName, columnMeta);
+                            }
+
+                            @Override
+                            public InsertSetter<T> set(MethodReference<T> column, Object value) {
+                                addColumn(column, value);
+                                return this;
+                            }
+
+                            @Override
+                            public int save() {
+                                addColumn(column, value);
+                                String insert = entityMeta.getInsert(columns);
+                                return executeUpdate(insert, values);
+                            }
+                        };
+                    }
+                };
+            }
+
+            @Override
+            public Update<T> update() {
+                return new Update<T>() {
+                    final Map<String, EntityManager.ColumnMeta> columnMetas = entityMeta.getColumns();
+                    final Map<String, EntityManager.ColumnMeta> updateColumnMetas = entityMeta.getUpdateColumns();
+                    boolean withNullValues = false;
+
+                    @Override
+                    public Update<T> withNullValues() {
+                        withNullValues = true;
+                        return this;
+                    }
+
+                    @Override
+                    public int save(@NotNull T entity) {
+                        DataRow row = DataRow.ofEntity(entity, field -> getEntityMetaProvider().columnMeta(field).getName());
+                        if (row.get(entityMeta.getPrimaryKey()) == null) {
+                            throw new IllegalArgumentException("Cannot save entity with null primary key");
+                        }
+                        String update;
+                        if (withNullValues) {
+                            update = entityMeta.getUpdateById();
+                        } else {
+                            Map<String, EntityManager.ColumnMeta> columns = new HashMap<>(updateColumnMetas);
+                            columns.entrySet().removeIf(e -> row.get(e.getKey()) == null);
+                            if (columns.isEmpty()) {
+                                return 0;
+                            }
+                            update = entityMeta.getUpdateById(columns);
+                        }
+                        return executeUpdate(update, row);
+                    }
+
+                    @Override
+                    public int save(@NotNull Iterable<T> entities) {
+                        if (withNullValues) {
+                            return executeBatchUpdate(entityMeta.getUpdateById(),
+                                    entities,
+                                    e -> {
+                                        DataRow row = DataRow.ofEntity(e, field -> getEntityMetaProvider().columnMeta(field).getName());
+                                        if (row.get(entityMeta.getPrimaryKey()) == null) {
+                                            throw new IllegalArgumentException("Cannot save entity with null primary key");
+                                        }
+                                        return row;
+                                    },
+                                    batchSize);
+                        }
+                        int n = 0;
+                        for (T entity : entities) {
+                            n += save(entity);
+                        }
+                        return n;
+                    }
+
+                    @Override
+                    public UpdateSetter<T> where(Function<Where<T>, Where<T>> where) {
+                        return new UpdateSetter<T>() {
+                            final Map<String, Object> sets = new HashMap<>();
+                            final Map<String, EntityManager.ColumnMeta> columns = new HashMap<>();
+
+                            @Override
+                            public UpdateSetter<T> set(@NotNull MethodReference<T> column, Object value) {
+                                String columnName = parseMethodRefColumn(column);
+                                EntityManager.ColumnMeta columnMeta = columnMetas.get(columnName);
+                                if (columnMeta == null) {
+                                    throw new IllegalArgumentException("Cannot find column: " + columnName);
+                                }
+                                if (columnMeta.isPrimaryKey()) {
+                                    throw new IllegalArgumentException("Cannot update primary key column: " + columnName);
+                                }
+                                if (!columnMeta.isUpdatable()) {
+                                    throw new IllegalArgumentException("Cannot update non-updatable column: " + columnName);
+                                }
+                                sets.put(columnName, value);
+                                columns.put(columnName, columnMeta);
+                                return this;
+                            }
+
+                            @Override
+                            public int save() {
+                                if (sets.isEmpty()) {
+                                    return 0;
+                                }
+                                final InternalWhere gotten = new InternalWhere(where.apply(new InternalWhere()));
+                                if (gotten.isEmpty()) {
+                                    throw new IllegalArgumentException("Cannot save entity without where condition");
+                                }
+                                Pair<String, Map<String, Object>> w = gotten.buildWhere();
+                                Map<String, Object> data = new HashMap<>(sets);
+                                data.putAll(w.getItem2());
+                                String update = entityMeta.getUpdateBy(columns) + w.getItem1();
+                                return executeUpdate(update, data);
+                            }
+                        };
+                    }
+                };
+            }
+
+            @Override
+            public Delete<T> delete() {
+                return new Delete<T>() {
+                    @Override
+                    public int execute(@NotNull T entity) {
+                        DataRow row = DataRow.ofEntity(entity, field -> getEntityMetaProvider().columnMeta(field).getName());
+                        if (row.get(entityMeta.getPrimaryKey()) == null) {
+                            throw new IllegalArgumentException("Cannot delete entity with null primary key");
+                        }
+                        return executeUpdate(entityMeta.getDeleteById(), row);
+                    }
+
+                    @Override
+                    public int execute(@NotNull Iterable<T> entities) {
+                        return executeBatchUpdate(entityMeta.getDeleteById(), entities, e -> {
+                            DataRow row = DataRow.ofEntity(e, field -> getEntityMetaProvider().columnMeta(field).getName());
+                            if (row.get(entityMeta.getPrimaryKey()) == null) {
+                                throw new IllegalArgumentException("Cannot delete entity with null primary key");
+                            }
+                            return row;
+                        }, batchSize);
+                    }
+
+                    @Override
+                    public Conditional where(Function<Where<T>, Where<T>> where) {
+                        return () -> {
+                            final InternalWhere gotten = new InternalWhere(where.apply(new InternalWhere()));
+                            if (gotten.isEmpty()) {
+                                throw new IllegalArgumentException("Cannot delete entity without where condition");
+                            }
+                            Pair<String, Map<String, Object>> w = gotten.buildWhere();
+                            String delete = "delete from " + entityMeta.getTableName() + w.getItem1();
+                            return executeUpdate(delete, w.getItem2());
+                        };
+                    }
+                };
             }
         };
     }
@@ -691,6 +1118,10 @@ public class BakiDao extends JdbcSupport implements Baki {
         return sqlGenerator;
     }
 
+    public EntityManager getEntityManager() {
+        return entityManager;
+    }
+
     public void setGlobalPageHelperProvider(PageHelperProvider globalPageHelperProvider) {
         this.globalPageHelperProvider = globalPageHelperProvider;
     }
@@ -799,19 +1230,13 @@ public class BakiDao extends JdbcSupport implements Baki {
         this.executionWatcher = executionWatcher;
     }
 
-    public EntityFieldMapper getEntityFieldMapper() {
-        return entityFieldMapper;
+    public EntityManager.EntityMetaProvider getEntityMetaProvider() {
+        return entityManager.getEntityMetaProvider();
     }
 
-    public void setEntityFieldMapper(EntityFieldMapper entityFieldMapper) {
-        this.entityFieldMapper = entityFieldMapper;
-    }
-
-    public EntityValueMapper getEntityValueMapper() {
-        return entityValueMapper;
-    }
-
-    public void setEntityValueMapper(EntityValueMapper entityValueMapper) {
-        this.entityValueMapper = entityValueMapper;
+    public void setEntityMetaProvider(EntityManager.EntityMetaProvider entityMetaProvider) {
+        if (Objects.nonNull(entityMetaProvider)) {
+            this.entityManager.setEntityMetaProvider(entityMetaProvider);
+        }
     }
 }

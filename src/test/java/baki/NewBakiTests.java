@@ -3,14 +3,15 @@ package baki;
 import baki.entity.AnotherUser;
 import baki.entity.Guest;
 import baki.entity.User;
+import baki.entityExecutor.MyEntityMetaParser;
 import baki.op.ExecuteCostWatcher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.script.exception.CheckViolationException;
 import com.github.chengyuxing.sql.*;
+import com.github.chengyuxing.sql.dsl.types.StandardOperator;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
-import com.github.chengyuxing.sql.plugins.EntityFieldMapper;
 import com.github.chengyuxing.sql.plugins.QueryCacheManager;
 import com.github.chengyuxing.sql.plugins.QueryExecutor;
 import com.github.chengyuxing.sql.transaction.Tx;
@@ -22,12 +23,11 @@ import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import javax.persistence.Column;
-import java.lang.reflect.Field;
 import java.sql.CallableStatement;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 public class NewBakiTests {
@@ -79,19 +79,7 @@ public class NewBakiTests {
             return null;
         });
         bakiDao.setExecutionWatcher(new ExecuteCostWatcher());
-        bakiDao.setEntityFieldMapper(new MyEntityFieldMapper());
-    }
-
-    static class MyEntityFieldMapper implements EntityFieldMapper {
-
-        @Override
-        public String apply(Field field) {
-            if (field.isAnnotationPresent(Column.class)) {
-                Column column = field.getAnnotation(Column.class);
-                return column.name();
-            }
-            return field.getName();
-        }
+        bakiDao.setEntityMetaProvider(new MyEntityMetaParser());
     }
 
     @Test
@@ -122,8 +110,8 @@ public class NewBakiTests {
         List<Guest> guests = new ArrayList<>();
         for (int i = 0; i < 10; i++) {
             Guest guest = new Guest();
-            guest.setName("cyx" + i);
-            guest.setAddress("USA");
+            guest.setXm("cyx" + i);
+//            guest.setAddress("USA");
             guests.add(guest);
         }
         baki.table("test.guest").insert(guests, g -> Args.ofEntity(g).removeIfAbsent());
@@ -134,9 +122,60 @@ public class NewBakiTests {
     }
 
     @Test
+    public void testEntityQ() {
+        baki.entity(Guest.class)
+                .query()
+                .where(w -> w.gt(Guest::getId, 1))
+                .where(w -> w.startsWith(Guest::getXm, "c"))
+                .orderBy(o -> o.desc(Guest::getId))
+                .list()
+                .forEach(System.out::println);
+
+        baki.entity(Guest.class)
+                .query()
+                .findFirst()
+                .ifPresent(g -> {
+                    System.out.println(g);
+                    System.out.println(g.getAddress().get());
+                });
+    }
+
+    @Test
+    public void testInsert() {
+        baki.entity(Guest.class)
+                .insert()
+                .set(Guest::getXm, "cyxg")
+                .set(Guest::getAddress, "oooo")
+                .save();
+    }
+
+    @Test
+    public void testUpdate() {
+        int i = baki.entity(Guest.class)
+                .update()
+                .where(w -> w.eq(Guest::getXm, "c"))
+                .set(Guest::getXm, "mike")
+                .set(Guest::getAddress, "USA")
+                .save();
+        System.out.println(i);
+    }
+
+    @Test
+    public void testDelete() {
+        Guest guest = new Guest();
+        guest.setId(48);
+        guest.setXm("cyxg");
+        int i = baki.entity(Guest.class)
+                .delete()
+                .where(w -> w.eq(Guest::getId, 51))
+                .execute();
+        System.out.println(i);
+    }
+
+    @Test
     public void test1() {
         baki.query("select * from test.guest")
-                .stream()
+                .entities(Guest.class)
                 .forEach(System.out::println);
     }
 

@@ -1,6 +1,7 @@
 package baki;
 
 import baki.entity.Guest;
+import baki.entityExecutor.MyEntityMetaParser;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.Module;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,21 +13,16 @@ import com.github.chengyuxing.common.MostDateTime;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
-import com.github.chengyuxing.sql.Args;
-import com.github.chengyuxing.sql.PagedResource;
-import com.github.chengyuxing.sql.XQLFileManager;
-import com.github.chengyuxing.sql.XQLFileManagerConfig;
+import com.github.chengyuxing.sql.*;
 import com.github.chengyuxing.sql.annotation.XQLMapper;
 import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
-import com.github.chengyuxing.sql.plugins.EntityFieldMapper;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.utils.SqlHighlighter;
 import com.github.chengyuxing.sql.utils.SqlUtil;
+import entity.type.User;
 import org.junit.Test;
-import tests.User;
 
-import javax.persistence.Column;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
@@ -44,6 +40,20 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class NonBakiTests {
+
+    @Test
+    public void testEntityManager() {
+        EntityManager entityManager = new EntityManager(':');
+        entityManager.setEntityMetaProvider(new MyEntityMetaParser());
+        EntityManager.EntityMeta entityMeta = entityManager.getEntityMeta(User.class);
+        System.out.println(entityMeta);
+    }
+
+    @Test
+    public void testW() {
+
+    }
+
     @Test
     public void test1() {
         XQLFileManager xqlFileManager = new XQLFileManager();
@@ -186,26 +196,6 @@ public class NonBakiTests {
         System.out.println(StringUtil.FMT.format("select *, '${now}' as now from test.user where dt < ${!current}",
                 Args.of("now", LocalDateTime.now(),
                         "current", LocalDateTime.now())));
-    }
-
-    @Test
-    public void testMappingValue() {
-        EntityFieldMapper func = f -> {
-            if (f.isAnnotationPresent(Column.class)) {
-                return f.getAnnotation(Column.class).name();
-            }
-            return f.getName();
-        };
-
-        entity.type.User user = new entity.type.User();
-        user.setId(1);
-        user.setName("cyx");
-        Object map = ObjectUtil.entityToMap(user, func::apply, HashMap::new);
-        System.out.println(map);
-
-        DataRow row = DataRow.of("id", 2, "xm", "chengyuxing");
-        Object obj = ObjectUtil.mapToEntity(row, entity.type.User.class, func::apply, null);
-        System.out.println(obj);
     }
 
     @Test

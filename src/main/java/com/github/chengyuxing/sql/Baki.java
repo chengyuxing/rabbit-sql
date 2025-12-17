@@ -1,6 +1,7 @@
 package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.DataRow;
+import com.github.chengyuxing.sql.plugins.EntityExecutor;
 import com.github.chengyuxing.sql.plugins.QueryExecutor;
 import com.github.chengyuxing.sql.plugins.SimpleDMLExecutor;
 import com.github.chengyuxing.sql.types.Param;
@@ -164,6 +165,15 @@ public interface Baki {
      * @return Simple DML executor
      */
     SimpleDMLExecutor table(@NotNull String name);
+
+    /**
+     * Simple entity executor.
+     *
+     * @param clazz entity class
+     * @param <T>   entity type
+     * @return Entity executor
+     */
+    <T> EntityExecutor<T> entity(@NotNull Class<T> clazz);
 
     /**
      * Get an auto-closeable connection.

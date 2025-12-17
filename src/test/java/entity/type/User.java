@@ -1,20 +1,20 @@
 package entity.type;
 
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Id;
-import javax.persistence.Table;
+import javax.persistence.*;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Entity
-@Table
+@Table(schema = "test", name = "user")
 public class User {
     @Id
     private Integer id;
     @Column(name = "xm")
     private String name;
     private LocalDateTime now;
+    @Transient
+    private List<String> rules;
 
     @Override
     public String toString() {
@@ -47,5 +47,13 @@ public class User {
 
     public void setNow(LocalDateTime now) {
         this.now = now;
+    }
+
+    public List<String> getRules() {
+        return rules;
+    }
+
+    public void setRules(List<String> rules) {
+        this.rules = rules;
     }
 }

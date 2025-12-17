@@ -104,7 +104,7 @@ public class SqlUtil {
 
     public static void assertInvalidIdentifier(String s) {
         if (!isIdentifier(s)) {
-            throw new IllegalArgumentException("Invalid SQL identifier: " + s);
+            throw new IllegalArgumentException("Illegal SQL identifier: " + s);
         }
     }
 }

@@ -35,12 +35,8 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
 
     protected abstract @NotNull BakiDao baki();
 
-    protected EntityFieldMapper entityFieldMapper() {
-        return baki().getEntityFieldMapper();
-    }
-
-    protected EntityValueMapper entityValueMapper() {
-        return baki().getEntityValueMapper();
+    protected EntityManager.EntityMetaProvider entityMetaProvider() {
+        return baki().getEntityManager().getEntityMetaProvider();
     }
 
     @Override
@@ -282,7 +278,10 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
             if (genericType.isAssignableFrom(d.getClass())) {
                 return d;
             }
-            return d.toEntity(genericType, entityFieldMapper()::apply, entityValueMapper()::apply);
+            return d.toEntity(genericType,
+                    field -> entityMetaProvider().columnMeta(field).getName(),
+                    (field, value) -> entityMetaProvider().columnValue(field, value)
+            );
         };
     }
 
@@ -310,7 +309,9 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
                             continue;
                         }
                         if (!arg.getClass().getName().startsWith("java.")) {
-                            myArgs.add(ObjectUtil.entityToMap(arg, entityFieldMapper()::apply, HashMap::new));
+                            myArgs.add(ObjectUtil.entityToMap(arg,
+                                    field -> entityMetaProvider().columnMeta(field).getName(),
+                                    HashMap::new));
                             continue;
                         }
                         throw new IllegalArgumentException(method.getDeclaringClass() + "." + method.getName() + " unsupported arg type: " + arg.getClass().getName());
@@ -321,7 +322,9 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
                     return arg;
                 }
                 if (!ReflectUtil.isBasicType(arg)) {
-                    return ObjectUtil.entityToMap(arg, entityFieldMapper()::apply, HashMap::new);
+                    return ObjectUtil.entityToMap(arg,
+                            field -> entityMetaProvider().columnMeta(field).getName(),
+                            HashMap::new);
                 }
             }
         }

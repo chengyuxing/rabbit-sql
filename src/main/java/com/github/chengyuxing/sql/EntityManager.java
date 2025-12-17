@@ -1,7 +1,6 @@
 package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.utils.ObjectUtil;
-import com.github.chengyuxing.sql.dsl.types.StandardOperator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
 
@@ -73,14 +72,6 @@ public class EntityManager implements AutoCloseable {
         return classInformation.computeIfAbsent(clazz, c -> new EntityMeta(checkTableName(c), checkColumns(c)));
     }
 
-    public String getTableName(@NotNull Class<?> clazz) {
-        return getEntityMeta(clazz).getTableName();
-    }
-
-    public Map<String, ColumnMeta> getColumns(@NotNull Class<?> clazz) {
-        return getEntityMeta(clazz).getColumns();
-    }
-
     private String checkTableName(Class<?> clazz) {
         return entityMetaProvider.tableName(clazz);
     }
@@ -134,15 +125,17 @@ public class EntityManager implements AutoCloseable {
         public EntityMeta(String tableName, Map<String, ColumnMeta> columns) {
             this.tableName = tableName;
             this.columns = columns;
-            this.insertColumns = genInsertColumns();
-            this.updateColumns = genUpdateColumns();
-            this.primaryKey = checkPrimaryKey();
-            this.whereById = genWhereById();
-            this.select = genSelect();
-            this.countSelect = genCountSelect();
-            this.insert = genInsert(insertColumns);
-            this.updateById = genUpdateBy(updateColumns) + whereById;
-            this.deleteById = genDeleteById();
+            {
+                this.primaryKey = checkPrimaryKey();
+                this.insertColumns = collectInsertColumns();
+                this.updateColumns = collectUpdateColumns();
+                this.whereById = genWhereById();
+                this.select = genSelect();
+                this.countSelect = genCountSelect();
+                this.insert = genInsert(insertColumns);
+                this.updateById = genUpdateBy(updateColumns) + whereById;
+                this.deleteById = genDeleteBy() + whereById;
+            }
         }
 
         public String getPrimaryKey() {
@@ -165,16 +158,16 @@ public class EntityManager implements AutoCloseable {
             return tableName;
         }
 
-        public String getWhereById() {
-            return whereById;
-        }
-
         public String getSelect() {
             return select;
         }
 
         public String getCountSelect() {
             return countSelect;
+        }
+
+        public String getWhereById() {
+            return whereById;
         }
 
         public String getInsert() {
@@ -193,13 +186,12 @@ public class EntityManager implements AutoCloseable {
             return genUpdateBy(columns);
         }
 
-        public String getUpdateById(Map<String, ColumnMeta> columns) {
-            return genUpdateBy(columns) + whereById;
-        }
-
-
         public String getDeleteById() {
             return deleteById;
+        }
+
+        public String getDeleteBy() {
+            return genDeleteBy();
         }
 
         private String checkPrimaryKey() {
@@ -211,7 +203,7 @@ public class EntityManager implements AutoCloseable {
             throw new IllegalStateException("Primary Key not found");
         }
 
-        private Map<String, ColumnMeta> genUpdateColumns() {
+        private Map<String, ColumnMeta> collectUpdateColumns() {
             Map<String, ColumnMeta> updateColumns = new HashMap<>();
             for (Map.Entry<String, ColumnMeta> entry : columns.entrySet()) {
                 if (!entry.getValue().isPrimaryKey() && entry.getValue().isUpdatable()) {
@@ -221,7 +213,7 @@ public class EntityManager implements AutoCloseable {
             return updateColumns;
         }
 
-        private Map<String, ColumnMeta> genInsertColumns() {
+        private Map<String, ColumnMeta> collectInsertColumns() {
             Map<String, ColumnMeta> insertColumns = new HashMap<>();
             for (Map.Entry<String, ColumnMeta> entry : columns.entrySet()) {
                 if (entry.getValue().isInsertable()) {
@@ -232,7 +224,7 @@ public class EntityManager implements AutoCloseable {
         }
 
         private String genWhereById() {
-            return "\nwhere " + primaryKey + StandardOperator.EQ.padWithSpace() + namedParamPrefix + primaryKey;
+            return "\nwhere " + primaryKey + " = " + namedParamPrefix + primaryKey;
         }
 
         private String genSelect() {
@@ -260,14 +252,14 @@ public class EntityManager implements AutoCloseable {
             StringJoiner sets = new StringJoiner(",\n\t");
             for (Map.Entry<String, ColumnMeta> entry : columns.entrySet()) {
                 if (!entry.getValue().isPrimaryKey() && entry.getValue().isUpdatable()) {
-                    sets.add(entry.getKey() + StandardOperator.EQ.padWithSpace() + namedParamPrefix + entry.getKey());
+                    sets.add(entry.getKey() + " = " + namedParamPrefix + entry.getKey());
                 }
             }
             return "update " + tableName + "\nset " + sets;
         }
 
-        private String genDeleteById() {
-            return "delete from " + tableName + whereById;
+        private String genDeleteBy() {
+            return "delete from " + tableName;
         }
     }
 

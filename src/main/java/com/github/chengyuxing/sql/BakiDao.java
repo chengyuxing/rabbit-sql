@@ -611,20 +611,23 @@ public class BakiDao extends JdbcSupport implements Baki {
 
                     @Override
                     public int save(T entity) {
-                        DataRow row = DataRow.ofEntity(entity, field -> getEntityMetaProvider().columnMeta(field).getName());
+                        Args<Object> args = Args.ofEntity(entity, field -> getEntityMetaProvider().columnMeta(field).getName());
                         String insert;
                         if (withNullValues) {
+                            if (args.get(entityMeta.getPrimaryKey()) == null) {
+                                throw new IllegalArgumentException("Primary key must not be null");
+                            }
                             insert = entityMeta.getInsert();
                         } else {
                             Map<String, EntityManager.ColumnMeta> columns = new HashMap<>(insertColumns);
-                            columns.entrySet().removeIf(e -> row.get(e.getKey()) == null);
+                            columns.entrySet().removeIf(e -> args.get(e.getKey()) == null);
                             if (columns.isEmpty()) {
                                 insert = "insert into " + entityMeta.getTableName() + " default values";
                             } else {
                                 insert = entityMeta.getInsert(columns);
                             }
                         }
-                        return executeUpdate(insert, row);
+                        return executeUpdate(insert, args);
                     }
 
                     @Override
@@ -632,7 +635,13 @@ public class BakiDao extends JdbcSupport implements Baki {
                         if (withNullValues) {
                             return executeBatchUpdate(entityMeta.getInsert(),
                                     entities,
-                                    e -> DataRow.ofEntity(e, field -> getEntityMetaProvider().columnMeta(field).getName()),
+                                    e -> {
+                                        Args<Object> args = Args.ofEntity(e, field -> getEntityMetaProvider().columnMeta(field).getName());
+                                        if (args.get(entityMeta.getPrimaryKey()) == null) {
+                                            throw new IllegalArgumentException("Primary key must not be null");
+                                        }
+                                        return args;
+                                    },
                                     batchSize);
                         }
                         int n = 0;
@@ -669,6 +678,9 @@ public class BakiDao extends JdbcSupport implements Baki {
 
                             @Override
                             public int save() {
+                                if (values.get(entityMeta.getPrimaryKey()) == null) {
+                                    throw new IllegalArgumentException("Cannot insert null primary key: " + entityMeta.getPrimaryKey());
+                                }
                                 addColumn(column, value);
                                 String insert = entityMeta.getInsert(columns);
                                 return executeUpdate(insert, values);
@@ -693,22 +705,22 @@ public class BakiDao extends JdbcSupport implements Baki {
 
                     @Override
                     public int save(@NotNull T entity) {
-                        DataRow row = DataRow.ofEntity(entity, field -> getEntityMetaProvider().columnMeta(field).getName());
-                        if (row.get(entityMeta.getPrimaryKey()) == null) {
-                            throw new IllegalArgumentException("Cannot save entity with null primary key");
+                        Args<Object> args = Args.ofEntity(entity, field -> getEntityMetaProvider().columnMeta(field).getName());
+                        if (args.get(entityMeta.getPrimaryKey()) == null) {
+                            throw new IllegalArgumentException("Cannot update entity with null primary key");
                         }
                         String update;
                         if (withNullValues) {
                             update = entityMeta.getUpdateById();
                         } else {
                             Map<String, EntityManager.ColumnMeta> columns = new HashMap<>(updateColumnMetas);
-                            columns.entrySet().removeIf(e -> row.get(e.getKey()) == null);
+                            columns.entrySet().removeIf(e -> args.get(e.getKey()) == null);
                             if (columns.isEmpty()) {
                                 return 0;
                             }
-                            update = entityMeta.getUpdateById(columns);
+                            update = entityMeta.getUpdateBy(columns) + entityMeta.getWhereById();
                         }
-                        return executeUpdate(update, row);
+                        return executeUpdate(update, args);
                     }
 
                     @Override
@@ -717,11 +729,11 @@ public class BakiDao extends JdbcSupport implements Baki {
                             return executeBatchUpdate(entityMeta.getUpdateById(),
                                     entities,
                                     e -> {
-                                        DataRow row = DataRow.ofEntity(e, field -> getEntityMetaProvider().columnMeta(field).getName());
-                                        if (row.get(entityMeta.getPrimaryKey()) == null) {
-                                            throw new IllegalArgumentException("Cannot save entity with null primary key");
+                                        Args<Object> args = Args.ofEntity(e, field -> getEntityMetaProvider().columnMeta(field).getName());
+                                        if (args.get(entityMeta.getPrimaryKey()) == null) {
+                                            throw new IllegalArgumentException("Cannot update entity with null primary key");
                                         }
-                                        return row;
+                                        return args;
                                     },
                                     batchSize);
                         }
@@ -763,7 +775,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                                 }
                                 final InternalWhere gotten = new InternalWhere(where.apply(new InternalWhere()));
                                 if (gotten.isEmpty()) {
-                                    throw new IllegalArgumentException("Cannot save entity without where condition");
+                                    throw new IllegalArgumentException("Cannot update without where condition");
                                 }
                                 Pair<String, Map<String, Object>> w = gotten.buildWhere();
                                 Map<String, Object> data = new HashMap<>(sets);
@@ -781,21 +793,21 @@ public class BakiDao extends JdbcSupport implements Baki {
                 return new Delete<T>() {
                     @Override
                     public int execute(@NotNull T entity) {
-                        DataRow row = DataRow.ofEntity(entity, field -> getEntityMetaProvider().columnMeta(field).getName());
-                        if (row.get(entityMeta.getPrimaryKey()) == null) {
+                        Args<Object> args = Args.ofEntity(entity, field -> getEntityMetaProvider().columnMeta(field).getName());
+                        if (args.get(entityMeta.getPrimaryKey()) == null) {
                             throw new IllegalArgumentException("Cannot delete entity with null primary key");
                         }
-                        return executeUpdate(entityMeta.getDeleteById(), row);
+                        return executeUpdate(entityMeta.getDeleteById(), args);
                     }
 
                     @Override
                     public int execute(@NotNull Iterable<T> entities) {
                         return executeBatchUpdate(entityMeta.getDeleteById(), entities, e -> {
-                            DataRow row = DataRow.ofEntity(e, field -> getEntityMetaProvider().columnMeta(field).getName());
-                            if (row.get(entityMeta.getPrimaryKey()) == null) {
+                            Args<Object> args = Args.ofEntity(e, field -> getEntityMetaProvider().columnMeta(field).getName());
+                            if (args.get(entityMeta.getPrimaryKey()) == null) {
                                 throw new IllegalArgumentException("Cannot delete entity with null primary key");
                             }
-                            return row;
+                            return args;
                         }, batchSize);
                     }
 
@@ -804,10 +816,10 @@ public class BakiDao extends JdbcSupport implements Baki {
                         return () -> {
                             final InternalWhere gotten = new InternalWhere(where.apply(new InternalWhere()));
                             if (gotten.isEmpty()) {
-                                throw new IllegalArgumentException("Cannot delete entity without where condition");
+                                throw new IllegalArgumentException("Cannot delete without where condition");
                             }
                             Pair<String, Map<String, Object>> w = gotten.buildWhere();
-                            String delete = "delete from " + entityMeta.getTableName() + w.getItem1();
+                            String delete = entityMeta.getDeleteBy() + w.getItem1();
                             return executeUpdate(delete, w.getItem2());
                         };
                     }

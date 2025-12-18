@@ -237,6 +237,9 @@ public class EntityManager implements AutoCloseable {
         }
 
         private String genInsert(Map<String, ColumnMeta> columns) {
+            if (columns.isEmpty()) {
+                return "insert into " + tableName + " default values";
+            }
             StringJoiner f = new StringJoiner(", ");
             StringJoiner h = new StringJoiner(", ");
             for (Map.Entry<String, ColumnMeta> entry : columns.entrySet()) {

@@ -2,6 +2,7 @@ package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.Patterns;
 import com.github.chengyuxing.common.utils.ObjectUtil;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
 import java.util.function.Function;
@@ -168,7 +169,10 @@ public class SqlGenerator {
      * @param columns   table columns
      * @return named parameter insert statement
      */
-    public String generateNamedParamInsert(final String tableName, Collection<String> columns) {
+    public String generateNamedParamInsert(@NotNull final String tableName, @NotNull Collection<String> columns) {
+        if (columns.isEmpty()) {
+            return "insert into " + tableName + " default values";
+        }
         StringJoiner f = new StringJoiner(", ");
         StringJoiner h = new StringJoiner(", ");
         for (String column : columns) {
@@ -180,19 +184,29 @@ public class SqlGenerator {
     }
 
     /**
-     * Generate named parameter update statement.
+     * Generate named parameter update by statement.
      *
      * @param tableName table name
      * @param columns   table columns
-     * @return named parameter update sets statement
+     * @return update by statement
      */
-    public String generateNamedParamUpdate(String tableName, Collection<String> columns) {
+    public String generateNamedParamUpdateBy(String tableName, Collection<String> columns) {
         StringJoiner sb = new StringJoiner(",\n\t");
         for (String column : columns) {
             SqlUtil.assertInvalidIdentifier(column);
             sb.add(column + " = " + namedParamPrefix + column);
         }
-        return "update " + tableName + "\nset " + sb;
+        return "update " + tableName + "\nset " + sb + "\nwhere ";
+    }
+
+    /**
+     * Generate delete by statement.
+     *
+     * @param tableName table name
+     * @return delete by statement
+     */
+    public String generateDeleteBy(String tableName) {
+        return "delete from " + tableName + " where ";
     }
 
     public Pattern getNamedParamPattern() {

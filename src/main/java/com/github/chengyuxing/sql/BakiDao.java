@@ -311,7 +311,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             @Override
             public Conditional where(@NotNull String condition) {
                 return new Conditional() {
-                    String genUpdateStatement(Map<String, ?> args) {
+                    Set<String> collectUpdateSetColumns(Map<String, ?> args) {
                         Set<String> whereArgs = sqlGenerator.generatePreparedSql(condition, args)
                                 .getArgNameIndexMapping()
                                 .keySet();
@@ -321,15 +321,17 @@ public class BakiDao extends JdbcSupport implements Baki {
                                 setsFields.add(arg.getKey());
                             }
                         }
-                        if (setsFields.isEmpty()) {
-                            throw new IllegalArgumentException("Set data is empty.");
-                        }
-                        return sqlGenerator.generateNamedParamUpdate(finalName, setsFields) + " where " + condition;
+                        return setsFields;
                     }
 
                     @Override
                     public int update(@NotNull Map<String, ?> args) {
-                        return executeUpdate(genUpdateStatement(args), args);
+                        Set<String> columns = collectUpdateSetColumns(args);
+                        if (columns.isEmpty()) {
+                            return 0;
+                        }
+                        String update = sqlGenerator.generateNamedParamUpdateBy(finalName, columns) + condition;
+                        return executeUpdate(update, args);
                     }
 
                     @Override
@@ -341,7 +343,12 @@ public class BakiDao extends JdbcSupport implements Baki {
                     public <T> int update(@NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper) {
                         if (enableBatch) {
                             Map<String, ?> first = argMapper.apply(args.iterator().next());
-                            return executeBatchUpdate(genUpdateStatement(first), args, argMapper, batchSize);
+                            Set<String> columns = collectUpdateSetColumns(first);
+                            if (columns.isEmpty()) {
+                                return 0;
+                            }
+                            String update = sqlGenerator.generateNamedParamUpdateBy(finalName, columns) + condition;
+                            return executeBatchUpdate(update, args, argMapper, batchSize);
                         }
                         int n = 0;
                         for (T arg : args) {
@@ -352,7 +359,8 @@ public class BakiDao extends JdbcSupport implements Baki {
 
                     @Override
                     public int delete(@NotNull Map<String, ?> args) {
-                        return executeUpdate("delete from " + finalName + " where " + condition, args);
+                        String delete = sqlGenerator.generateDeleteBy(finalName) + condition;
+                        return executeUpdate(delete, args);
                     }
 
                     @Override
@@ -362,7 +370,8 @@ public class BakiDao extends JdbcSupport implements Baki {
 
                     @Override
                     public <T> int delete(@NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper) {
-                        return executeBatchUpdate("delete from " + finalName + " where " + condition, args, argMapper, batchSize);
+                        String delete = sqlGenerator.generateDeleteBy(finalName) + condition;
+                        return executeBatchUpdate(delete, args, argMapper, batchSize);
                     }
                 };
             }
@@ -643,11 +652,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                         } else {
                             Map<String, EntityManager.ColumnMeta> columns = new HashMap<>(insertColumns);
                             columns.entrySet().removeIf(e -> args.get(e.getKey()) == null);
-                            if (columns.isEmpty()) {
-                                insert = "insert into " + entityMeta.getTableName() + " default values";
-                            } else {
-                                insert = entityMeta.getInsert(columns);
-                            }
+                            insert = entityMeta.getInsert(columns);
                         }
                         return executeUpdate(insert, args);
                     }

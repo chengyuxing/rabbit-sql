@@ -306,6 +306,8 @@ public class BakiDao extends JdbcSupport implements Baki {
         }
         final String finalName = name;
         return new SimpleDMLExecutor() {
+            boolean enableBatch = false;
+
             @Override
             public Conditional where(@NotNull String condition) {
                 return new Conditional() {
@@ -337,8 +339,15 @@ public class BakiDao extends JdbcSupport implements Baki {
 
                     @Override
                     public <T> int update(@NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper) {
-                        Map<String, ?> first = argMapper.apply(args.iterator().next());
-                        return executeBatchUpdate(genUpdateStatement(first), args, argMapper, batchSize);
+                        if (enableBatch) {
+                            Map<String, ?> first = argMapper.apply(args.iterator().next());
+                            return executeBatchUpdate(genUpdateStatement(first), args, argMapper, batchSize);
+                        }
+                        int n = 0;
+                        for (T arg : args) {
+                            n += update(argMapper.apply(arg));
+                        }
+                        return n;
                     }
 
                     @Override
@@ -359,6 +368,12 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
 
             @Override
+            public SimpleDMLExecutor enableBatch() {
+                enableBatch = true;
+                return this;
+            }
+
+            @Override
             public int insert(@NotNull Map<String, ?> data) {
                 String insert = sqlGenerator.generateNamedParamInsert(finalName, data.keySet());
                 return executeUpdate(insert, data);
@@ -371,9 +386,16 @@ public class BakiDao extends JdbcSupport implements Baki {
 
             @Override
             public <T> int insert(@NotNull Iterable<T> data, @NotNull Function<T, ? extends Map<String, ?>> argMapper) {
-                Map<String, ?> first = argMapper.apply(data.iterator().next());
-                String insert = sqlGenerator.generateNamedParamInsert(finalName, first.keySet());
-                return executeBatchUpdate(insert, data, argMapper, batchSize);
+                if (enableBatch) {
+                    Map<String, ?> first = argMapper.apply(data.iterator().next());
+                    String insert = sqlGenerator.generateNamedParamInsert(finalName, first.keySet());
+                    return executeBatchUpdate(insert, data, argMapper, batchSize);
+                }
+                int n = 0;
+                for (T arg : data) {
+                    n += insert(argMapper.apply(arg));
+                }
+                return n;
             }
 
             @Override

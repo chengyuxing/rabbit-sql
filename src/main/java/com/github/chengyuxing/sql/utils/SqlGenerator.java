@@ -53,8 +53,8 @@ public class SqlGenerator {
          * Construct a new GeneratedSqlMetaData instance.
          *
          * @param sourceSql           named parameter sql
-         * @param prepareSql          prepared sql
-         * @param argNameIndexMapping prepared sql arg name index mapping
+         * @param prepareSql          prepared SQL
+         * @param argNameIndexMapping prepared SQL arg name index mapping
          * @param args                args
          */
         public PreparedSqlMetaData(String sourceSql, String prepareSql, Map<String, List<Integer>> argNameIndexMapping, Map<String, ?> args) {
@@ -100,7 +100,7 @@ public class SqlGenerator {
     }
 
     /**
-     * Generate prepared sql by named parameter sql, e.g.
+     * Generate prepared SQL by named parameter SQL, e.g.
      * <p>before: </p>
      * <blockquote>
      * <pre>select * from table where id = :id</pre>
@@ -136,12 +136,12 @@ public class SqlGenerator {
     }
 
     /**
-     * Generate normal sql by named parameter sql.
+     * Generate normal SQL by named parameter SQL.
      *
      * @param sql                 named parameter sql
      * @param args                data of named parameter
      * @param namedParamFormatter named param string literal formatter
-     * @return normal sql
+     * @return normal SQL
      */
     public String generateSql(final String sql, Map<String, ?> args, Function<Object, String> namedParamFormatter) {
         StringBuffer buffer = new StringBuffer();

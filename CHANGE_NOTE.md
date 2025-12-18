@@ -1,5 +1,10 @@
 # change note
 
+# 10.1.0
+
+- Add support simple entity executor: baki#entity().
+- Add support entity meta provider interface.
+
 # 10.0.9
 
 - Batch execute add support each entity mapping to Map function.

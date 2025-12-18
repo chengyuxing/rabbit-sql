@@ -9,6 +9,9 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Entity manager.
+ */
 public class EntityManager implements AutoCloseable {
     /**
      * Entity meta data parse provider.
@@ -115,7 +118,7 @@ public class EntityManager implements AutoCloseable {
         private final Map<String, ColumnMeta> insertColumns;
         private final Map<String, ColumnMeta> updateColumns;
         private final String primaryKey;
-        private final String whereById;
+        private final String idCondition;
         private final String select;
         private final String countSelect;
         private final String insert;
@@ -129,12 +132,12 @@ public class EntityManager implements AutoCloseable {
                 this.primaryKey = checkPrimaryKey();
                 this.insertColumns = collectInsertColumns();
                 this.updateColumns = collectUpdateColumns();
-                this.whereById = genWhereById();
+                this.idCondition = genIdCondition();
                 this.select = genSelect();
                 this.countSelect = genCountSelect();
                 this.insert = genInsert(insertColumns);
-                this.updateById = genUpdateBy(updateColumns) + whereById;
-                this.deleteById = genDeleteBy() + whereById;
+                this.updateById = genUpdateBy(updateColumns) + idCondition;
+                this.deleteById = genDeleteBy() + idCondition;
             }
         }
 
@@ -166,8 +169,8 @@ public class EntityManager implements AutoCloseable {
             return countSelect;
         }
 
-        public String getWhereById() {
-            return whereById;
+        public String getIdCondition() {
+            return idCondition;
         }
 
         public String getInsert() {
@@ -200,7 +203,7 @@ public class EntityManager implements AutoCloseable {
                     return entry.getKey();
                 }
             }
-            throw new IllegalStateException("Primary Key not found");
+            throw new IllegalStateException("Primary key not found");
         }
 
         private Map<String, ColumnMeta> collectUpdateColumns() {
@@ -223,8 +226,8 @@ public class EntityManager implements AutoCloseable {
             return insertColumns;
         }
 
-        private String genWhereById() {
-            return "\nwhere " + primaryKey + " = " + namedParamPrefix + primaryKey;
+        private String genIdCondition() {
+            return primaryKey + " = " + namedParamPrefix + primaryKey;
         }
 
         private String genSelect() {
@@ -258,11 +261,11 @@ public class EntityManager implements AutoCloseable {
                     sets.add(entry.getKey() + " = " + namedParamPrefix + entry.getKey());
                 }
             }
-            return "update " + tableName + "\nset " + sets;
+            return "update " + tableName + "\nset " + sets + "\nwhere ";
         }
 
         private String genDeleteBy() {
-            return "delete from " + tableName;
+            return "delete from " + tableName + " where ";
         }
     }
 

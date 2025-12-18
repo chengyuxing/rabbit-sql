@@ -7,7 +7,6 @@ import com.github.chengyuxing.sql.dsl.clause.condition.*;
 import com.github.chengyuxing.sql.dsl.types.Logic;
 import com.github.chengyuxing.sql.dsl.types.Operator;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Unmodifiable;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -350,12 +349,8 @@ public abstract class Where<T> {
      *
      * @return where clause, params, identity columns.
      */
-    protected @NotNull @Unmodifiable Pair<String, Map<String, Object>> build() {
-        Pair<String, Map<String, Object>> where = build(new AtomicInteger(0), criteria, Logic.AND, 0);
-        if (!where.getItem1().isEmpty()) {
-            return Pair.of("\nwhere " + where.getItem1(), Collections.unmodifiableMap(where.getItem2()));
-        }
-        return where;
+    protected @NotNull Pair<String, Map<String, Object>> build() {
+        return build(new AtomicInteger(0), criteria, Logic.AND, 0);
     }
 
     protected @NotNull Pair<String, Map<String, Object>> build(AtomicInteger uniqueIndex, List<Criteria> criteriaList, Logic logicOperator, int identLevel) {

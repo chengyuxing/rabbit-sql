@@ -60,7 +60,7 @@ public interface Query<T, SELF extends Query<T, SELF>> {
      *
      * @return stream
      */
-    Stream<T> stream();
+    @NotNull Stream<T> stream();
 
     /**
      * Collect result to list.
@@ -84,7 +84,7 @@ public interface Query<T, SELF extends Query<T, SELF>> {
      * @param n number
      * @return stream
      */
-    List<T> top(@Range(from = 1, to = Integer.MAX_VALUE) int n);
+    @NotNull List<T> top(@Range(from = 1, to = Integer.MAX_VALUE) int n);
 
     /**
      * Find first item.
@@ -102,8 +102,8 @@ public interface Query<T, SELF extends Query<T, SELF>> {
      * @return paged resource
      */
     @NotNull PagedResource<T> pageable(@Range(from = 1, to = Integer.MAX_VALUE) int page,
-                                              @Range(from = 1, to = Integer.MAX_VALUE) int size,
-                                              @Nullable PageHelperProvider pageHelperProvider);
+                                       @Range(from = 1, to = Integer.MAX_VALUE) int size,
+                                       @Nullable PageHelperProvider pageHelperProvider);
 
     /**
      * Collect result to paged resource.
@@ -113,7 +113,7 @@ public interface Query<T, SELF extends Query<T, SELF>> {
      * @return paged resource
      */
     @NotNull PagedResource<T> pageable(@Range(from = 1, to = Integer.MAX_VALUE) int page,
-                                              @Range(from = 1, to = Integer.MAX_VALUE) int size);
+                                       @Range(from = 1, to = Integer.MAX_VALUE) int size);
 
     /**
      * Get query result count.

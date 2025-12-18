@@ -520,19 +520,21 @@ public class BakiDao extends JdbcSupport implements Baki {
                     Triple<String, String, Map<String, Object>> createQuery() {
                         final InternalWhere where = new InternalWhere(whereCriteria);
                         final InternalOrderBy orderBy = new InternalOrderBy(orderByColumns);
-                        final String comment = "-- Entity@" + clazz.getName() + "\n";
                         // select a, b, c from table
-                        String recordSelect = comment + entityMeta.getSelect();
+                        String recordSelect = entityMeta.getSelect();
                         // select count(*) from table
-                        String countSelect = comment + entityMeta.getCountSelect();
+                        String countSelect = entityMeta.getCountSelect();
                         // where
-                        Pair<String, Map<String, Object>> w = where.buildWhere();
-                        recordSelect += w.getItem1();
-                        countSelect += w.getItem1();
+                        Map<String, Object> args = Collections.emptyMap();
+                        if (!where.isEmpty()) {
+                            Pair<String, Map<String, Object>> w = where.buildWhere();
+                            recordSelect += "\nwhere " + w.getItem1();
+                            countSelect += "\nwhere " + w.getItem1();
+                            args = w.getItem2();
+                        }
                         // order by
                         recordSelect += orderBy.buildOrderBy();
-
-                        return Triple.of(recordSelect, countSelect, w.getItem2());
+                        return Triple.of(recordSelect, countSelect, args);
                     }
 
                     @Override
@@ -552,7 +554,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                     }
 
                     @Override
-                    public Stream<T> stream() {
+                    public @NotNull Stream<T> stream() {
                         Triple<String, String, Map<String, Object>> query = createQuery();
                         return executeQueryStream(query.getItem1(), query.getItem3())
                                 .map(d -> d.toEntity(clazz,
@@ -576,7 +578,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                     }
 
                     @Override
-                    public List<T> top(@Range(from = 1, to = Integer.MAX_VALUE) int n) {
+                    public @NotNull List<T> top(@Range(from = 1, to = Integer.MAX_VALUE) int n) {
                         Triple<String, String, Map<String, Object>> query = createQuery();
                         return new SimplePageable(query.getItem1(), 1, n)
                                 .count(n)
@@ -705,7 +707,8 @@ public class BakiDao extends JdbcSupport implements Baki {
 
                             @Override
                             public int save() {
-                                if (values.get(entityMeta.getPrimaryKey()) == null) {
+                                String pk = entityMeta.getPrimaryKey();
+                                if (values.containsKey(pk) && values.get(pk) == null) {
                                     throw new IllegalArgumentException("Cannot insert null primary key: " + entityMeta.getPrimaryKey());
                                 }
                                 addColumn(column, value);
@@ -745,7 +748,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                             if (columns.isEmpty()) {
                                 return 0;
                             }
-                            update = entityMeta.getUpdateBy(columns) + entityMeta.getWhereById();
+                            update = entityMeta.getUpdateBy(columns) + entityMeta.getIdCondition();
                         }
                         return executeUpdate(update, args);
                     }

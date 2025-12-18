@@ -35,7 +35,7 @@ public interface Insert<T> {
     int save(T entity);
 
     /**
-     * Batch insert.
+     * Multiple insert.
      *
      * @param entities entities
      * @return affected row count

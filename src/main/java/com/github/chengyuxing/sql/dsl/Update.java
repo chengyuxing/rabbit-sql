@@ -39,7 +39,7 @@ public interface Update<T> {
     int save(@NotNull T entity);
 
     /**
-     * Batch update by primary key.
+     * Multiple update by primary key.
      *
      * @param entities entities
      * @return affected row count

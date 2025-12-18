@@ -114,10 +114,10 @@ public class NewBakiTests {
 //            guest.setAddress("USA");
             guests.add(guest);
         }
-        baki.table("test.guest").insert(guests, g -> Args.ofEntity(g).removeIfAbsent());
+        baki.table("test.guest").insert(guests, g -> DataRow.ofEntity(g).removeIfAbsent());
         int i = baki.table("test.guest")
                 .where("address = :address")
-                .delete(Args.of("address", "USA"));
+                .delete(DataRow.of("address", "USA"));
         System.out.println(i);
     }
 
@@ -130,14 +130,6 @@ public class NewBakiTests {
                 .orderBy(o -> o.desc(Guest::getId))
                 .list()
                 .forEach(System.out::println);
-
-        baki.entity(Guest.class)
-                .query()
-                .findFirst()
-                .ifPresent(g -> {
-                    System.out.println(g);
-                    System.out.println(g.getAddress().get());
-                });
     }
 
     @Test
@@ -145,8 +137,19 @@ public class NewBakiTests {
         baki.entity(Guest.class)
                 .insert()
                 .set(Guest::getXm, "cyxg")
-                .set(Guest::getAddress, "oooo")
+                .set(Guest::getAddress, "oo8oo")
                 .save();
+
+        Guest guest = new Guest();
+        guest.setXm("Hello world!");
+
+        baki.entity(Guest.class)
+                .insert()
+                .save(guest);
+
+        baki.entity(Guest.class)
+                .insert()
+                .save(Arrays.asList(new Guest(), guest, new Guest(), new Guest(), new Guest()));
     }
 
     @Test
@@ -167,7 +170,7 @@ public class NewBakiTests {
         guest.setXm("cyxg");
         int i = baki.entity(Guest.class)
                 .delete()
-                .where(w -> w.eq(Guest::getId, 51))
+                .where(w -> w.eq(Guest::getXm, null))
                 .execute();
         System.out.println(i);
     }

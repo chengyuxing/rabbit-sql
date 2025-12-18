@@ -1,7 +1,5 @@
 package baki.entity;
 
-import baki.entityExecutor.LazyReference;
-
 import javax.persistence.*;
 
 @Entity
@@ -12,8 +10,7 @@ public class Guest {
     @Column(name = "name")
     private String xm;
     private Integer age;
-    // FIXME 懒加载的情况下，要考虑下，如何为关联对象构建实体查询提供 字符串 where 条件，现在的方法引用好像做不到User::getId
-    private LazyReference<User> address;
+    private String address;
 
     public Integer getId() {
         return id;
@@ -31,20 +28,20 @@ public class Guest {
         this.xm = xm;
     }
 
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
     public Integer getAge() {
         return age;
     }
 
     public void setAge(Integer age) {
         this.age = age;
-    }
-
-    public LazyReference<User> getAddress() {
-        return address;
-    }
-
-    public void setAddress(LazyReference<User> address) {
-        this.address = address;
     }
 
     @Override

@@ -719,11 +719,11 @@ public class BakiDao extends JdbcSupport implements Baki {
 
                             @Override
                             public int save() {
+                                addColumn(column, value);
                                 String pk = entityMeta.getPrimaryKey();
                                 if (values.containsKey(pk) && values.get(pk) == null) {
                                     throw new IllegalArgumentException("Cannot insert null primary key: " + entityMeta.getPrimaryKey());
                                 }
-                                addColumn(column, value);
                                 String insert = entityMeta.getInsert(columns);
                                 return executeUpdate(insert, values);
                             }

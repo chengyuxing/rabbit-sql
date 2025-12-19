@@ -130,7 +130,6 @@ public class NewBakiTests {
                 .orderBy(o -> o.desc(Guest::getId))
                 .list()
                 .forEach(System.out::println);
-        Stream.of(new Guest(), new Guest()).forEach(System.out::println);
     }
 
     @Test

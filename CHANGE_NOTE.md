@@ -1,5 +1,9 @@
 # change note
 
+# 10.1.2
+
+- Entity insert optimized.
+
 # 10.1.1
 
 - New method of entity executor `query#select(...)`.

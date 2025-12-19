@@ -30,7 +30,7 @@ _java 8+_
 <dependency>
   <groupId>com.github.chengyuxing</groupId>
   <artifactId>rabbit-sql</artifactId>
-  <version>10.1.0</version>
+  <version>10.1.1</version>
 </dependency>
 ```
 
@@ -718,21 +718,13 @@ The query cache manager caches query results to improve performance, increase co
 
 Make a reasonable automatic cache expiration policy to prevent data from being updated in time.
 
-##### entityFieldMapper
+##### entityMetaProvider
 
 Default：the entity field name
 
-All operations involving the return of entities within the framework's internal interfaces will use this function to map and match the fields.
+All operations involving the return of entities within the framework's internal interfaces will use this function to map the fields and convert the values.
 
-e.g. `baki.query(...).findFirstEntity(class)`
-
-##### entityValueMapper
-
-Default: `null`
-
-All operations involving the return of entities within the framework's internal interfaces will use this function to map and convert the value types of fields.
-
-e.g. `baki.query(...).findFirstEntity(class)`
+e.g. `baki.entity(class)`
 
 ### XQLFileManager
 

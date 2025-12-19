@@ -30,7 +30,7 @@ _java 8+_
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>10.1.0</version>
+    <version>10.1.1</version>
 </dependency>
 ```
 
@@ -724,21 +724,13 @@ JDBC底层执行批量操作每次提交数据数量。
 
 合理制定缓存的自动过期策略，以免数据更新不及时。
 
-##### entityFieldMapper
-
-默认值：返回字段名称
-
-框架内部接口涉及到实体返回实体的操作都将使用此函数来对字段进行映射匹配。
-
-例如：`baki.query(...).findFirstEntity(class)`
-
-##### entityValueMapper
+##### entityMetaProvider
 
 默认值：`null`
 
-框架内部接口涉及到实体返回实体的操作都将使用此函数来对字段的值类型进行映射转换。
+框架内部接口涉及到实体返回实体的操作都将使用此函数来对字段进行映射匹配和值类型进行映射转换。
 
-例如：`baki.query(...).findFirstEntity(class)`
+例如：`baki.entity(class)`
 
 ### XQLFileManager
 

@@ -1,5 +1,9 @@
 # change note
 
+# 10.1.1
+
+- New method of entity executor `query#select(...)`.
+
 # 10.1.0
 
 - Add support simple entity executor: baki#entity().

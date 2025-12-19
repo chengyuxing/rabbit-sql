@@ -1,6 +1,5 @@
 package com.github.chengyuxing.sql;
 
-import com.github.chengyuxing.common.utils.ObjectUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
 
@@ -52,23 +51,6 @@ public class EntityManager implements AutoCloseable {
             throw new IllegalArgumentException("Prefix char cannot be empty.");
         }
         this.namedParamPrefix = namedParamPrefix;
-        this.entityMetaProvider = new EntityMetaProvider() {
-
-            @Override
-            public String tableName(Class<?> clazz) {
-                return clazz.getSimpleName().toLowerCase();
-            }
-
-            @Override
-            public ColumnMeta columnMeta(Field field) {
-                return new ColumnMeta(field.getName().toLowerCase());
-            }
-
-            @Override
-            public Object columnValue(Field field, Object value) {
-                return ObjectUtil.convertValue(field.getType(), value);
-            }
-        };
     }
 
     public <T> EntityMeta getEntityMeta(@NotNull Class<T> clazz) {
@@ -133,7 +115,7 @@ public class EntityManager implements AutoCloseable {
                 this.insertColumns = collectInsertColumns();
                 this.updateColumns = collectUpdateColumns();
                 this.idCondition = genIdCondition();
-                this.select = genSelect();
+                this.select = genSelect(Collections.emptySet());
                 this.countSelect = genCountSelect();
                 this.insert = genInsert(insertColumns);
                 this.updateById = genUpdateBy(updateColumns) + idCondition;
@@ -163,6 +145,10 @@ public class EntityManager implements AutoCloseable {
 
         public String getSelect() {
             return select;
+        }
+
+        public String getSelect(Set<String> includes) {
+            return genSelect(includes);
         }
 
         public String getCountSelect() {
@@ -230,23 +216,35 @@ public class EntityManager implements AutoCloseable {
             return primaryKey + " = " + namedParamPrefix + primaryKey;
         }
 
-        private String genSelect() {
+        private String genSelect(Set<String> selectedColumns) {
             String delimiter = columns.size() > 7 ? ",\n\t" : ", ";
-            return "select " + String.join(delimiter, columns.keySet()) + "\nfrom " + tableName;
+            String fields;
+            if (selectedColumns.isEmpty()) {
+                fields = String.join(delimiter, columns.keySet());
+            } else {
+                StringJoiner sb = new StringJoiner(delimiter);
+                for (String sc : selectedColumns) {
+                    if (columns.containsKey(sc)) {
+                        sb.add(sc);
+                    }
+                }
+                fields = sb.toString();
+            }
+            return "select " + fields + "\nfrom " + tableName;
         }
 
         private String genCountSelect() {
             return "select count(*)\nfrom " + tableName;
         }
 
-        private String genInsert(Map<String, ColumnMeta> columns) {
-            if (columns.isEmpty()) {
+        private String genInsert(Map<String, ColumnMeta> selectColumns) {
+            if (selectColumns.isEmpty()) {
                 return "insert into " + tableName + " default values";
             }
             StringJoiner f = new StringJoiner(", ");
             StringJoiner h = new StringJoiner(", ");
-            for (Map.Entry<String, ColumnMeta> entry : columns.entrySet()) {
-                if (entry.getValue().isInsertable()) {
+            for (Map.Entry<String, ColumnMeta> entry : selectColumns.entrySet()) {
+                if (columns.containsKey(entry.getKey()) && entry.getValue().isInsertable()) {
                     f.add(entry.getKey());
                     h.add(namedParamPrefix + entry.getKey());
                 }
@@ -254,10 +252,10 @@ public class EntityManager implements AutoCloseable {
             return "insert into " + tableName + "(" + f + ") values (" + h + ")";
         }
 
-        private String genUpdateBy(Map<String, ColumnMeta> columns) {
+        private String genUpdateBy(Map<String, ColumnMeta> selectColumns) {
             StringJoiner sets = new StringJoiner(",\n\t");
-            for (Map.Entry<String, ColumnMeta> entry : columns.entrySet()) {
-                if (!entry.getValue().isPrimaryKey() && entry.getValue().isUpdatable()) {
+            for (Map.Entry<String, ColumnMeta> entry : selectColumns.entrySet()) {
+                if (columns.containsKey(entry.getKey()) && !entry.getValue().isPrimaryKey() && entry.getValue().isUpdatable()) {
                     sets.add(entry.getKey() + " = " + namedParamPrefix + entry.getKey());
                 }
             }

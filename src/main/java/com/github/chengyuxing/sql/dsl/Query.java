@@ -1,5 +1,6 @@
 package com.github.chengyuxing.sql.dsl;
 
+import com.github.chengyuxing.common.MethodReference;
 import com.github.chengyuxing.sql.PagedResource;
 import com.github.chengyuxing.sql.dsl.clause.OrderBy;
 import com.github.chengyuxing.sql.dsl.clause.Where;
@@ -20,6 +21,16 @@ import java.util.stream.Stream;
  * @param <SELF> self-type
  */
 public interface Query<T, SELF extends Query<T, SELF>> {
+    /**
+     * Select columns into the result.
+     *
+     * @param column column
+     * @param more   more columns
+     * @return self
+     */
+    @SuppressWarnings({"unchecked", "varargs"})
+    SELF select(MethodReference<T> column, MethodReference<T>... more);
+
     /**
      * Where clause.
      * <p>Support flatten style and nested style to build the complex condition struct.</p>

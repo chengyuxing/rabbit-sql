@@ -512,6 +512,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 return new Query<T, SELF>() {
                     final List<Criteria> whereCriteria = new ArrayList<>();
                     final Set<Pair<String, OrderByType>> orderByColumns = new LinkedHashSet<>();
+                    final Set<String> selectColumns = new LinkedHashSet<>();
 
                     /**
                      * Create query sql object.
@@ -521,7 +522,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                         final InternalWhere where = new InternalWhere(whereCriteria);
                         final InternalOrderBy orderBy = new InternalOrderBy(orderByColumns);
                         // select a, b, c from table
-                        String recordSelect = entityMeta.getSelect();
+                        String recordSelect = selectColumns.isEmpty() ? entityMeta.getSelect() : entityMeta.getSelect(selectColumns);
                         // select count(*) from table
                         String countSelect = entityMeta.getCountSelect();
                         // where
@@ -535,6 +536,17 @@ public class BakiDao extends JdbcSupport implements Baki {
                         // order by
                         recordSelect += orderBy.buildOrderBy();
                         return Triple.of(recordSelect, countSelect, args);
+                    }
+
+                    @SafeVarargs
+                    @Override
+                    public final SELF select(MethodReference<T> column, MethodReference<T>... more) {
+                        selectColumns.add(parseMethodRefColumn(column));
+                        for (MethodReference<T> m : more) {
+                            selectColumns.add(parseMethodRefColumn(m));
+                        }
+                        //noinspection unchecked
+                        return (SELF) this;
                     }
 
                     @Override

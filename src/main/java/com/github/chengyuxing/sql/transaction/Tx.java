@@ -40,7 +40,6 @@ public final class Tx {
     /**
      * Commit transaction.
      *
-     * @throws TransactionException any exception
      * @see #begin(Definition)
      * @see #begin()
      */
@@ -55,7 +54,6 @@ public final class Tx {
     /**
      * Rollback transaction.
      *
-     * @throws TransactionException any exception
      * @see #begin(Definition)
      * @see #begin()
      */
@@ -72,7 +70,6 @@ public final class Tx {
      *
      * @param runnable   runnable
      * @param definition transaction definition
-     * @throws TransactionException any exception
      * @see #begin(Definition)
      * @see #commit()
      * @see #rollback()
@@ -82,9 +79,9 @@ public final class Tx {
             begin(definition);
             runnable.run();
             commit();
-        } catch (Exception e) {
+        } catch (Throwable e) {
             rollback();
-            throw new TransactionException("Transaction is rollback.", e);
+            throw e;
         }
     }
 
@@ -95,7 +92,6 @@ public final class Tx {
      * @param definition transaction definition
      * @param <T>        result type
      * @return result
-     * @throws TransactionException any exception
      * @see #begin(Definition)
      * @see #commit()
      * @see #rollback()
@@ -107,9 +103,9 @@ public final class Tx {
             result = supplier.get();
             commit();
             return result;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             rollback();
-            throw new TransactionException("Transaction is rollback.", e);
+            throw e;
         }
     }
 
@@ -117,7 +113,6 @@ public final class Tx {
      * Begin and auto commit/rollback transaction.
      *
      * @param runnable runnable
-     * @throws TransactionException any exception
      * @see #begin()
      * @see #commit()
      * @see #rollback()
@@ -132,7 +127,6 @@ public final class Tx {
      * @param supplier supplier
      * @param <T>      result type
      * @return result
-     * @throws TransactionException any exception
      * @see #begin()
      * @see #commit()
      * @see #rollback()

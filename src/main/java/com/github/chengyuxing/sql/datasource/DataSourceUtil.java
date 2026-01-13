@@ -1,7 +1,6 @@
 package com.github.chengyuxing.sql.datasource;
 
 import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
-import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -78,7 +77,7 @@ public abstract class DataSourceUtil {
         try {
             doReleaseConnection(connection, dataSource);
         } catch (SQLException e) {
-            throw new UncheckedSqlException("Couldn't close JDBC connection:{}", e);
+            throw new ConnectionStatusException("Couldn't close JDBC connection", e);
         }
     }
 

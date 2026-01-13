@@ -9,7 +9,7 @@ import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
-import com.github.chengyuxing.sql.exceptions.DuplicateException;
+import com.github.chengyuxing.sql.exceptions.IllegalXQLSegmentNameException;
 import com.github.chengyuxing.sql.exceptions.DynamicSqlParseException;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.utils.SqlHighlighter;
@@ -141,7 +141,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     public void add(@NotNull String alias, @NotNull String fileName) {
         if (files.containsKey(alias)) {
-            throw new DuplicateException("Duplicate alias: " + alias);
+            throw new IllegalArgumentException("Duplicate alias: " + alias);
         }
         files.put(alias, fileName);
     }
@@ -174,9 +174,9 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @param filename     file name
      * @param fileResource file resource
      * @return structured resource
-     * @throws IOException        if file not exists
-     * @throws DuplicateException if duplicate sql fragment name found in same sql file
-     * @throws URISyntaxException if file uri syntax error
+     * @throws IOException                    if file not exists
+     * @throws IllegalXQLSegmentNameException if duplicate sql fragment name found in same sql file
+     * @throws URISyntaxException             if file uri syntax error
      */
     public @NotNull Resource parseXql(@NotNull String alias, @NotNull String filename, @NotNull FileResource fileResource) throws IOException, URISyntaxException {
         Map<String, Sql> entry = new LinkedHashMap<>();
@@ -200,7 +200,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                         throw new IllegalStateException("The sql which before the name '" + ObjectUtil.coalesce(sqlName, partName) + "' does not seem to end with the ';' in " + filename);
                     }
                     if (entry.containsKey(name)) {
-                        throw new DuplicateException("Duplicate name: '" + ObjectUtil.coalesce(sqlName, partName) + "' in " + filename);
+                        throw new IllegalXQLSegmentNameException("Duplicate name: '" + ObjectUtil.coalesce(sqlName, partName) + "' in " + filename);
                     }
                     currentName = name;
                     continue;
@@ -448,9 +448,9 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     /**
      * Initialing XQL file manager.
      *
-     * @throws UncheckedIOException if file not exists or read error
-     * @throws RuntimeException     if sql uri syntax error or load pipes error
-     * @throws DuplicateException   if duplicate sql fragment name found in same sql file
+     * @throws UncheckedIOException           if file not exists or read error
+     * @throws RuntimeException               if sql uri syntax error or load pipes error
+     * @throws IllegalXQLSegmentNameException if duplicate sql fragment name found in same sql file
      */
     public void init() {
         lock.lock();

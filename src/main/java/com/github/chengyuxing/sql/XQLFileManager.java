@@ -350,10 +350,12 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @param sqlResource sql resource
      */
     protected void mergeSqlTemplate(Map<String, Sql> sqlResource) {
+        //noinspection ExtractMethodRecommender
         Map<String, String> templates = new HashMap<>();
         for (Map.Entry<String, Sql> e : sqlResource.entrySet()) {
             String k = e.getKey();
             if (k.startsWith("${")) {
+                //noinspection ExtractMethodRecommender
                 String template = e.getValue().getSource();
                 // fix template
                 if (template.trim().startsWith("--")) {

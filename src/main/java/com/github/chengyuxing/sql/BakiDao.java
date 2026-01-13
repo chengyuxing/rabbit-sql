@@ -15,9 +15,6 @@ import com.github.chengyuxing.sql.dsl.clause.OrderBy;
 import com.github.chengyuxing.sql.dsl.clause.Where;
 import com.github.chengyuxing.sql.dsl.clause.condition.Criteria;
 import com.github.chengyuxing.sql.dsl.types.OrderByType;
-import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
-import com.github.chengyuxing.sql.exceptions.SqlRuntimeException;
-import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 import com.github.chengyuxing.sql.page.IPageable;
 import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.impl.*;
@@ -216,7 +213,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public QueryExecutor query(@NotNull String sql) {
+    public @NotNull QueryExecutor query(@NotNull String sql) {
         return new QueryExecutor(sql) {
             @Override
             public Stream<DataRow> stream() {
@@ -299,7 +296,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public SimpleDMLExecutor table(@NotNull String name) {
+    public @NotNull SimpleDMLExecutor table(@NotNull String name) {
         if (Objects.nonNull(xqlFileManager)) {
             name = SqlUtil.formatSql(name, xqlFileManager.getConstants());
             SqlUtil.assertInvalidIdentifier(name);
@@ -410,16 +407,18 @@ public class BakiDao extends JdbcSupport implements Baki {
             @Override
             public List<String> fields() {
                 return BakiDao.this.using(c -> {
+                    //noinspection SqlConstantExpression
+                    String query = "select * from " + finalName + " where 1 = 2";
                     try {
                         Statement s = c.createStatement();
-                        //noinspection SqlSourceToSinkFlow,SqlConstantExpression
-                        ResultSet rs = s.executeQuery("select * from " + finalName + " where 1 = 2");
+                        //noinspection SqlSourceToSinkFlow
+                        ResultSet rs = s.executeQuery(query);
                         List<String> fields = Arrays.asList(JdbcUtil.createNames(rs, ""));
                         JdbcUtil.closeResultSet(rs);
                         JdbcUtil.closeStatement(s);
                         return fields;
                     } catch (SQLException e) {
-                        throw new SqlRuntimeException("Query '" + finalName + "' fields error", e);
+                        throw wrappedDataAccessException(query, e);
                     }
                 });
             }
@@ -1038,7 +1037,6 @@ public class BakiDao extends JdbcSupport implements Baki {
      *
      * @return PageHelper instance
      * @throws UnsupportedOperationException there is no default implementation of your database
-     * @throws ConnectionStatusException     connection status exception
      */
     protected PageHelper builtinPager() {
         if (Objects.nonNull(globalPageHelperProvider)) {
@@ -1089,7 +1087,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         }
         String mySql = sql.trim();
         if (mySql.startsWith("&")) {
-            log.debug("SQL: {}", mySql);
+            log.debug("SQL Name: {}", mySql);
             String sqlRef = mySql.substring(1);
             Pair<String, Map<String, Object>> result = xqlFileManager.get(sqlRef, myArgs);
             mySql = result.getItem1();
@@ -1147,7 +1145,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         try {
             return DataSourceUtil.getConnection(dataSource);
         } catch (SQLException e) {
-            throw new ConnectionStatusException("Fetch connection failed.", e);
+            throw new IllegalStateException("Fetch connection failed.", e);
         }
     }
 

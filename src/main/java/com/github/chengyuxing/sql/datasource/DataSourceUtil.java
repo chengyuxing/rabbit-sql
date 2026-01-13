@@ -1,6 +1,7 @@
 package com.github.chengyuxing.sql.datasource;
 
-import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.sql.DataSource;
 import java.sql.Connection;
@@ -12,6 +13,8 @@ import static com.github.chengyuxing.sql.datasource.AbstractTransactionSyncManag
  * Datasource util.
  */
 public abstract class DataSourceUtil {
+    private static final Logger log = LoggerFactory.getLogger(DataSourceUtil.class);
+
     /**
      * Get 1 connection.
      *
@@ -58,16 +61,6 @@ public abstract class DataSourceUtil {
     }
 
     /**
-     * Close connection.
-     *
-     * @param connection connection
-     * @throws SQLException if connection states error
-     */
-    private static void doCloseConnection(Connection connection) throws SQLException {
-        connection.close();
-    }
-
-    /**
      * Close connection or release connection reference.
      *
      * @param connection connection
@@ -77,7 +70,7 @@ public abstract class DataSourceUtil {
         try {
             doReleaseConnection(connection, dataSource);
         } catch (SQLException e) {
-            throw new ConnectionStatusException("Couldn't close JDBC connection", e);
+            log.debug("Couldn't close JDBC connection", e);
         }
     }
 
@@ -100,7 +93,7 @@ public abstract class DataSourceUtil {
                 return;
             }
         }
-        doCloseConnection(connection);
+        connection.close();
     }
 
     /**
@@ -138,13 +131,12 @@ public abstract class DataSourceUtil {
      *
      * @param dataSource datasource
      * @return new connection
-     * @throws SQLException              if connection states error
-     * @throws ConnectionStatusException if datasource state error
+     * @throws SQLException if connection states error
      */
     private static Connection fetchConnection(DataSource dataSource) throws SQLException {
         Connection connection = dataSource.getConnection();
         if (connection == null) {
-            throw new ConnectionStatusException("DataSource returned null from DataSource: " + dataSource);
+            throw new IllegalStateException("DataSource returned null from DataSource: " + dataSource);
         }
         return connection;
     }

@@ -1,9 +1,7 @@
 package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.DataRow;
-import com.github.chengyuxing.common.MostDateTime;
 import com.github.chengyuxing.common.io.FileResource;
-import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
@@ -82,8 +80,6 @@ public class JdbcUtil {
             ps.setTimestamp(index, Timestamp.from(((ZonedDateTime) value).toInstant()));
         } else if (value instanceof Instant) {
             ps.setTimestamp(index, Timestamp.from((Instant) value));
-        } else if (value instanceof MostDateTime) {
-            ps.setTimestamp(index, Timestamp.from(((MostDateTime) value).toInstant()));
         } else if (value instanceof UUID) {
             ps.setString(index, value.toString().replace("-", ""));
         } else if (value instanceof InputStream) {

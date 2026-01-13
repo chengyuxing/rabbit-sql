@@ -121,21 +121,18 @@ public abstract class JdbcSupport {
      * @throws SqlRuntimeException sql execute error
      */
     protected DataRow executeAny(@NotNull final String sql, Map<String, ?> args) {
-        SqlGenerator.PreparedSqlMetaData sqlMetaData = prepareSql(sql, args);
-        final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
-        final String preparedSql = sqlMetaData.getPrepareSql();
-        final Map<String, ?> myArgs = sqlMetaData.getArgs();
+        SqlGenerator.PreparedSqlMetaData smd = prepareSql(sql, args);
         Connection connection = null;
         PreparedStatement ps = null;
         try {
             connection = getConnection();
             //noinspection SqlSourceToSinkFlow
-            ps = connection.prepareStatement(preparedSql);
-            ps.setQueryTimeout(queryTimeout(sql, myArgs));
-            setPreparedSqlArgs(ps, myArgs, argNames);
+            ps = connection.prepareStatement(smd.getPrepareSql());
+            ps.setQueryTimeout(queryTimeout(sql, smd.getArgs()));
+            setPreparedSqlArgs(ps, smd.getArgs(), smd.getArgNameIndexMapping());
             ps.execute();
             JdbcUtil.printSqlConsole(ps);
-            return JdbcUtil.getResult(ps, preparedSql);
+            return JdbcUtil.getResult(ps, smd.getPrepareSql());
         } catch (Exception e) {
             throw new SqlRuntimeException("SQL: " + sql + "\nArgs: " + myArgs, e);
         } finally {
@@ -169,10 +166,7 @@ public abstract class JdbcSupport {
      * @throws UncheckedSqlException sql execute error
      */
     protected Stream<DataRow> executeQueryStream(@NotNull final String sql, Map<String, ?> args) {
-        SqlGenerator.PreparedSqlMetaData sqlMetaData = prepareSql(sql, args);
-        final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
-        final String preparedSql = sqlMetaData.getPrepareSql();
-        final Map<String, ?> myArgs = sqlMetaData.getArgs();
+        SqlGenerator.PreparedSqlMetaData smd = prepareSql(sql, args);
         UncheckedCloseable close = null;
         try {
             Connection connection = getConnection();
@@ -180,14 +174,14 @@ public abstract class JdbcSupport {
             // if transaction is active connection will not be close when read stream to the end in 'try-with-resource' block
             close = UncheckedCloseable.wrap(() -> releaseConnection(connection, getDataSource()));
             //noinspection SqlSourceToSinkFlow
-            PreparedStatement ps = connection.prepareStatement(preparedSql);
+            PreparedStatement ps = connection.prepareStatement(smd.getPrepareSql());
             close = close.nest(ps);
-            ps.setQueryTimeout(queryTimeout(sql, myArgs));
-            setPreparedSqlArgs(ps, myArgs, argNames);
+            ps.setQueryTimeout(queryTimeout(sql, smd.getArgs()));
+            setPreparedSqlArgs(ps, smd.getArgs(), smd.getArgNameIndexMapping());
             ResultSet resultSet = ps.executeQuery();
             close = close.nest(resultSet);
             return StreamSupport.stream(new Spliterators.AbstractSpliterator<DataRow>(Long.MAX_VALUE, Spliterator.ORDERED) {
-                final String[] names = JdbcUtil.createNames(resultSet, preparedSql);
+                final String[] names = JdbcUtil.createNames(resultSet, smd.getPrepareSql());
 
                 @Override
                 public boolean tryAdvance(Consumer<? super DataRow> action) {
@@ -268,20 +262,18 @@ public abstract class JdbcSupport {
                                          @NotNull Function<T, ? extends Map<String, ?>> eachMapper,
                                          @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
         Map<String, ?> first = eachMapper.apply(args.iterator().next());
-        SqlGenerator.PreparedSqlMetaData sqlMetaData = prepareSql(sql, first);
-        final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
-        final String preparedSql = sqlMetaData.getPrepareSql();
+        SqlGenerator.PreparedSqlMetaData smd = prepareSql(sql, first);
         Connection connection = null;
         PreparedStatement ps = null;
         try {
             connection = getConnection();
             //noinspection SqlSourceToSinkFlow
-            ps = connection.prepareStatement(preparedSql);
+            ps = connection.prepareStatement(smd.getPrepareSql());
             ps.setQueryTimeout(queryTimeout(sql, first));
             final Stream.Builder<int[]> result = Stream.builder();
             int i = 1;
             for (T arg : args) {
-                setPreparedSqlArgs(ps, eachMapper.apply(arg), argNames);
+                setPreparedSqlArgs(ps, eachMapper.apply(arg), smd.getArgNameIndexMapping());
                 ps.addBatch();
                 if (i % batchSize == 0) {
                     result.add(ps.executeBatch());
@@ -325,18 +317,15 @@ public abstract class JdbcSupport {
      * @return affect row count
      */
     protected int executeUpdate(@NotNull final String sql, Map<String, ?> args) {
-        SqlGenerator.PreparedSqlMetaData sqlMetaData = prepareSql(sql, args);
-        final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
-        final String preparedSql = sqlMetaData.getPrepareSql();
-        final Map<String, ?> myArgs = sqlMetaData.getArgs();
+        SqlGenerator.PreparedSqlMetaData smd = prepareSql(sql, args);
         Connection connection = null;
         PreparedStatement ps = null;
         try {
             connection = getConnection();
             //noinspection SqlSourceToSinkFlow
-            ps = connection.prepareStatement(preparedSql);
-            ps.setQueryTimeout(queryTimeout(sql, myArgs));
-            setPreparedSqlArgs(ps, myArgs, argNames);
+            ps = connection.prepareStatement(smd.getPrepareSql());
+            ps.setQueryTimeout(queryTimeout(sql, smd.getArgs()));
+            setPreparedSqlArgs(ps, smd.getArgs(), smd.getArgNameIndexMapping());
             return ps.executeUpdate();
         } catch (Exception e) {
             throw new SqlRuntimeException("SQL: " + sql + "\nArgs: " + myArgs, e);
@@ -369,22 +358,20 @@ public abstract class JdbcSupport {
      * @throws UncheckedSqlException execute procedure error
      */
     protected DataRow executeCallStatement(@NotNull final String procedure, Map<String, Param> args) {
-        SqlGenerator.PreparedSqlMetaData sqlMetaData = prepareSql(procedure, args);
-        final String sql = sqlMetaData.getPrepareSql();
-        final Map<String, List<Integer>> argNames = sqlMetaData.getArgNameIndexMapping();
+        SqlGenerator.PreparedSqlMetaData smd = prepareSql(procedure, args);
         Connection connection = null;
         CallableStatement cs = null;
         try {
             connection = getConnection();
             //noinspection SqlSourceToSinkFlow
-            cs = connection.prepareCall(sql);
+            cs = connection.prepareCall(smd.getPrepareSql());
             cs.setQueryTimeout(queryTimeout(procedure, args));
 
             List<String> outNames = new ArrayList<>();
             if (!args.isEmpty()) {
                 // adapt postgresql
                 // out and inout param first
-                for (Map.Entry<String, List<Integer>> e : argNames.entrySet()) {
+                for (Map.Entry<String, List<Integer>> e : smd.getArgNameIndexMapping().entrySet()) {
                     Param param = args.get(e.getKey());
                     if (param.getParamMode() == ParamMode.OUT || param.getParamMode() == ParamMode.IN_OUT) {
                         for (Integer i : e.getValue()) {
@@ -394,7 +381,7 @@ public abstract class JdbcSupport {
                     }
                 }
                 // in param next
-                for (Map.Entry<String, List<Integer>> e : argNames.entrySet()) {
+                for (Map.Entry<String, List<Integer>> e : smd.getArgNameIndexMapping().entrySet()) {
                     Param param = args.get(e.getKey());
                     if (param.getParamMode() == ParamMode.IN || param.getParamMode() == ParamMode.IN_OUT) {
                         for (Integer i : e.getValue()) {
@@ -409,12 +396,12 @@ public abstract class JdbcSupport {
             JdbcUtil.printSqlConsole(cs);
 
             if (outNames.isEmpty()) {
-                return JdbcUtil.getResult(cs, sql);
+                return JdbcUtil.getResult(cs, smd.getPrepareSql());
             }
 
             Object[] values = new Object[outNames.size()];
             int resultIndex = 0;
-            for (Map.Entry<String, List<Integer>> e : argNames.entrySet()) {
+            for (Map.Entry<String, List<Integer>> e : smd.getArgNameIndexMapping().entrySet()) {
                 if (outNames.contains(e.getKey())) {
                     for (Integer i : e.getValue()) {
                         Object result = cs.getObject(i);

@@ -92,13 +92,13 @@ public class JdbcUtil {
             try {
                 ps.setBinaryStream(index, Files.newInputStream((Path) value));
             } catch (IOException e) {
-                throw new SQLException("Set binary value failed.", e);
+                throw new IllegalArgumentException("Set binary value failed.", e);
             }
         } else if (value instanceof File) {
             try {
                 ps.setBinaryStream(index, new FileInputStream((File) value));
             } catch (FileNotFoundException e) {
-                throw new SQLException("Set binary value failed.", e);
+                throw new IllegalArgumentException("Set binary value failed.", e);
             }
         } else {
             ps.setObject(index, value);
@@ -145,7 +145,7 @@ public class JdbcUtil {
                     warning.forEach(r -> log.warn("[{}] [{}] {}", LocalDateTime.now(), state, r.getMessage()));
                 }
             } catch (SQLException e) {
-                log.error("get sql warning error.", e);
+                log.debug("get sql warning error.", e);
             }
         }
     }
@@ -153,11 +153,9 @@ public class JdbcUtil {
     public static void closeResultSet(@Nullable ResultSet resultSet) {
         if (Objects.nonNull(resultSet)) {
             try {
-                if (!resultSet.isClosed()) {
-                    resultSet.close();
-                }
+                resultSet.close();
             } catch (SQLException e) {
-                throw new UncheckedSqlException("Close result error.", e);
+                log.debug("Close result error.", e);
             }
         }
     }
@@ -165,11 +163,9 @@ public class JdbcUtil {
     public static void closeStatement(@Nullable Statement statement) {
         if (Objects.nonNull(statement)) {
             try {
-                if (!statement.isClosed()) {
-                    statement.close();
-                }
+                statement.close();
             } catch (SQLException e) {
-                throw new UncheckedSqlException("Close statement error.", e);
+                log.debug("Close statement error.", e);
             }
         }
     }

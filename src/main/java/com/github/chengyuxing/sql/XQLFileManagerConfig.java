@@ -3,7 +3,7 @@ package com.github.chengyuxing.sql;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.io.TypedProperties;
 import com.github.chengyuxing.common.script.pipe.IPipe;
-import com.github.chengyuxing.sql.exceptions.YamlDeserializeException;
+import com.github.chengyuxing.sql.exceptions.XQLParseException;
 import com.github.chengyuxing.sql.yaml.FeaturedConstructor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
@@ -76,7 +76,7 @@ public class XQLFileManagerConfig {
             }
             config.copyStateTo(this);
         } catch (Exception e) {
-            throw new YamlDeserializeException("Load yaml config error.", e);
+            throw new XQLParseException("Load yaml config '" + yamlLocation.getFileName() + "' failed.", e);
         }
     }
 

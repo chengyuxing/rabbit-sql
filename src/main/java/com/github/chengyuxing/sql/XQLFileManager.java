@@ -9,8 +9,7 @@ import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.utils.ObjectUtil;
 import com.github.chengyuxing.common.utils.ReflectUtil;
 import com.github.chengyuxing.common.utils.StringUtil;
-import com.github.chengyuxing.sql.exceptions.IllegalXQLSegmentNameException;
-import com.github.chengyuxing.sql.exceptions.DynamicSqlParseException;
+import com.github.chengyuxing.sql.exceptions.XQLParseException;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.utils.SqlHighlighter;
 import com.github.chengyuxing.sql.utils.SqlUtil;
@@ -175,7 +174,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @param fileResource file resource
      * @return structured resource
      * @throws IOException                    if file not exists
-     * @throws IllegalXQLSegmentNameException if duplicate sql fragment name found in same sql file
      * @throws URISyntaxException             if file uri syntax error
      */
     public @NotNull Resource parseXql(@NotNull String alias, @NotNull String filename, @NotNull FileResource fileResource) throws IOException, URISyntaxException {
@@ -197,10 +195,10 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     String partName = matcher.group("partName");
                     String name = sqlName != null ? sqlName : "${" + partName + "}";
                     if (sqlBuffer.length() != 0) {
-                        throw new IllegalStateException("The sql which before the name '" + ObjectUtil.coalesce(sqlName, partName) + "' does not seem to end with the ';' in " + filename);
+                        throw new XQLParseException("The sql which before the name '" + ObjectUtil.coalesce(sqlName, partName) + "' does not seem to end with the ';' in " + filename);
                     }
                     if (entry.containsKey(name)) {
-                        throw new IllegalXQLSegmentNameException("Duplicate name: '" + ObjectUtil.coalesce(sqlName, partName) + "' in " + filename);
+                        throw new XQLParseException("Duplicate name: '" + ObjectUtil.coalesce(sqlName, partName) + "' in " + filename);
                     }
                     currentName = name;
                     continue;
@@ -312,7 +310,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         try {
             newDynamicSqlParser(sql).verify();
         } catch (ScriptSyntaxException e) {
-            throw new DynamicSqlParseException("File: " + filename + " -> '" + sqlName + "' has script syntax error", e);
+            throw new XQLParseException("File: " + filename + " -> '" + sqlName + "' has script syntax error", e);
         }
         Sql sqlObj = new Sql(sql);
         sqlObj.setDescription(desc);
@@ -414,13 +412,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                         resource.setLastModified(parsed.getLastModified());
                     }
                 } else {
-                    throw new FileNotFoundException("Sql file '" + filename + "' of name '" + alias + "' not found!");
+                    throw new FileNotFoundException("XQL file '" + filename + "' of name '" + alias + "' not found!");
                 }
             }
-        } catch (IOException e) {
-            throw new UncheckedIOException("Load sql file error.", e);
-        } catch (URISyntaxException e) {
-            throw new RuntimeException("Sql file uri syntax error.", e);
+        } catch (Exception e) {
+            throw new XQLParseException("Load resources failed!", e);
         }
     }
 
@@ -439,7 +435,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             }
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
                  InvocationTargetException | NoSuchMethodException e) {
-            throw new RuntimeException("Init pipe error.", e);
+            throw new XQLParseException("Init pipe error.", e);
         }
         if (log.isDebugEnabled()) {
             if (!pipeInstances.isEmpty())
@@ -448,11 +444,13 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * Initialing XQL file manager.
-     *
-     * @throws UncheckedIOException           if file not exists or read error
-     * @throws RuntimeException               if sql uri syntax error or load pipes error
-     * @throws IllegalXQLSegmentNameException if duplicate sql fragment name found in same sql file
+     * Initializes the XQLFileManager by loading resources and pipes in a thread-safe manner.
+     * This method sets the loading state to true, loads all necessary resources and pipes,
+     * and then sets the initialized state to true. It ensures that the initialization process
+     * is atomic by using a lock.
+     * <p>
+     * The method should be called before any other operations on the XQLFileManager to ensure
+     * that all configurations and resources are properly set up.
      */
     public void init() {
         lock.lock();
@@ -468,10 +466,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * Extract the modifier from sql reference.
+     * Extracts the modifier from a given SQL reference string.
+     * The modifier is defined as the substring following the last occurrence of the caret (^) character, e.g. {@code user.queryAll^page}
      *
-     * @param sqlReference sql reference name ({@code <alias>.<sqlName>[^<modifier>]})
-     * @return modifier
+     * @param sqlReference the SQL reference string to extract the modifier from
+     * @return the extracted modifier, or null if no modifier is found
      */
     public static @Nullable String extractModifier(@NotNull String sqlReference) {
         int mIdx = sqlReference.lastIndexOf('^');
@@ -482,10 +481,13 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * Decode sql reference to alias and sql name, ^modifier is optional, it does nothing.
+     * Decodes a given SQL reference string into its alias and name components.
+     * The expected format of the SQL reference is {@code <alias>.<sqlName>} with an optional
+     * '{@code ^}' character to indicate additional information that should be ignored.
      *
-     * @param sqlReference sql reference name ({@code <alias>.<sqlName>[^<modifier>]})
-     * @return alias and sql name
+     * @param sqlReference the SQL reference string in the format {@code <alias>.<sqlName>} or {@code <alias>.<sqlName>^extra}
+     * @return a Pair where the first element is the alias and the second is the sqlName
+     * @throws IllegalArgumentException if the input does not follow the expected format
      */
     public static @NotNull Pair<String, String> decodeSqlReference(@NotNull String sqlReference) {
         String ref = sqlReference;
@@ -503,11 +505,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * Encode alias and sql name to sql reference name.
+     * Encodes a SQL reference by combining an alias and a name with a dot separator.
      *
-     * @param alias xql file alias
-     * @param name  sql name
-     * @return sql reference name
+     * @param alias the alias part of the SQL reference
+     * @param name  the name part of the SQL reference
+     * @return the encoded SQL reference as a string in the format "alias.name"
      */
     public static @NotNull String encodeSqlReference(@NotNull String alias, @NotNull String name) {
         return alias + "." + name;
@@ -602,23 +604,21 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * Get a sql fragment.
+     * Retrieves the source of the SQL object associated with the given name.
      *
-     * @param name sql reference name ({@code <alias>.<sqlName>})
-     * @return sql fragment
-     * @throws NoSuchElementException   if sql fragment name not exists
-     * @throws IllegalArgumentException if sql reference name format error
+     * @param name the name of the SQL object to retrieve, e.g. {@code <alias>.<sqlName>}
+     * @return the source code of the SQL object as a String
      */
     public String get(@NotNull String name) {
         return getSqlObject(name).getSource();
     }
 
     /**
-     * Get and calc a dynamic sql.
+     * Retrieves and parses a dynamic SQL statement based on the provided name and arguments.
      *
-     * @param name sql name ({@code <alias>.<sqlName>})
-     * @param args dynamic sql script expression args
-     * @return parsed sql and extra args calculated by expression if exists
+     * @param name the name of the SQL statement to retrieve, e.g. {@code <alias>.<sqlName>}
+     * @param args a map containing the arguments to be used in parsing the SQL statement
+     * @return a Pair where the first element is the parsed SQL statement as a String, and the second element is a Map containing any additional data or parameters
      * @see DynamicSqlParser
      */
     public Pair<String, Map<String, Object>> get(@NotNull String name, Map<String, ?> args) {
@@ -626,11 +626,12 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * Parse dynamic sql.
+     * Parses the provided SQL string, replacing dynamic elements with values from the given arguments.
+     * If the SQL contains any directives, it processes them and returns the modified SQL along with a map of variables defined or used in the process.
      *
-     * @param sql  dynamic sql
-     * @param args dynamic sql script expression args
-     * @return parsed sql and extra args calculated by directives if exists
+     * @param sql  The SQL statement to be parsed. It may contain dynamic elements or directives that need to be processed.
+     * @param args A map of argument names and their corresponding values to be used for replacing dynamic elements within the SQL. Can be null.
+     * @return A Pair where the first element is the parsed (potentially modified) SQL statement, and the second element is a map containing all variables defined or utilized during the parsing process.
      */
     public Pair<String, Map<String, Object>> parseDynamicSql(@NotNull String sql, @Nullable Map<String, ?> args) {
         if (!containsAnyIgnoreCase(sql, RabbitScriptLexer.DIRECTIVES)) {
@@ -644,6 +645,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
 
         DynamicSqlParser parser = newDynamicSqlParser(sql);
         String parsedSql = parser.parse(myArgs);
+        //noinspection ExtractMethodRecommender
         Map<String, Object> vars = new HashMap<>(parser.getDefinedVars());
         Map<String, Object> forGeneratedVars = parser.getForGeneratedVars();
         if (!forGeneratedVars.isEmpty()) {
@@ -651,7 +653,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             if (!vars.containsKey(DynamicSqlParser.FOR_VARS_KEY)) {
                 vars.put(DynamicSqlParser.FOR_VARS_KEY, forGeneratedVars);
             } else {
-                throw new IllegalArgumentException("#var cannot define the name " + DynamicSqlParser.FOR_VARS_KEY + " when #for directive exists.");
+                throw new IllegalStateException("#var cannot define the name " + DynamicSqlParser.FOR_VARS_KEY + " when #for directive exists.");
             }
         }
         return Pair.of(parsedSql, vars);

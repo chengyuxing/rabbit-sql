@@ -3,7 +3,6 @@ package tests;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.*;
-import com.github.chengyuxing.sql.exceptions.ConnectionStatusException;
 import com.github.chengyuxing.sql.types.OutParamType;
 import com.github.chengyuxing.sql.transaction.Tx;
 import com.github.chengyuxing.sql.types.StandardOutParamType;
@@ -469,7 +468,7 @@ public class MyTest {
                 }
                 return 1;
             });
-        } catch (ConnectionStatusException e) {
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }

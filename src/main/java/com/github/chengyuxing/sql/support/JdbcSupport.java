@@ -3,8 +3,7 @@ package com.github.chengyuxing.sql.support;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.UncheckedCloseable;
 import com.github.chengyuxing.common.utils.ObjectUtil;
-import com.github.chengyuxing.sql.exceptions.SqlRuntimeException;
-import com.github.chengyuxing.sql.exceptions.UncheckedSqlException;
+import com.github.chengyuxing.sql.exceptions.DataAccessException;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.types.ParamMode;
 import com.github.chengyuxing.sql.utils.JdbcUtil;
@@ -108,6 +107,22 @@ public abstract class JdbcSupport {
     }
 
     /**
+     * Wraps a given throwable into a {@link DataAccessException} with an optional SQL statement.
+     *
+     * @param sql       the SQL statement that caused the exception, may be null
+     * @param throwable the original exception to wrap
+     * @return a new {@link DataAccessException} that wraps the provided throwable and optionally includes the SQL statement
+     */
+    protected @NotNull RuntimeException wrappedDataAccessException(@Nullable String sql, @NotNull Throwable throwable) {
+        if (throwable instanceof DataAccessException) {
+            return (DataAccessException) throwable;
+        }
+        return sql == null
+                ? new DataAccessException("Data access failed.", throwable)
+                : new DataAccessException("Statement: " + sql, throwable);
+    }
+
+    /**
      * Execute query, ddl, dml or plsql statement.<br>
      * Execute result:<br>
      * <ul>
@@ -118,7 +133,7 @@ public abstract class JdbcSupport {
      * @param sql  named parameter sql
      * @param args args
      * @return Query: List{@code <DataRow>}, DML: affected row count, DDL: 0
-     * @throws SqlRuntimeException sql execute error
+     * @throws DataAccessException sql execute error
      */
     protected DataRow executeAny(@NotNull final String sql, Map<String, ?> args) {
         SqlGenerator.PreparedSqlMetaData smd = prepareSql(sql, args);
@@ -134,7 +149,7 @@ public abstract class JdbcSupport {
             JdbcUtil.printSqlConsole(ps);
             return JdbcUtil.getResult(ps, smd.getPrepareSql());
         } catch (Exception e) {
-            throw new SqlRuntimeException("SQL: " + sql + "\nArgs: " + myArgs, e);
+            throw wrappedDataAccessException(smd.getPrepareSql(), e);
         } finally {
             JdbcUtil.closeStatement(ps);
             releaseConnection(connection, getDataSource());
@@ -163,7 +178,7 @@ public abstract class JdbcSupport {
      * @param sql  named parameter sql, e.g. <code>select * from test.user where id = :id</code>
      * @param args args
      * @return Stream query result
-     * @throws UncheckedSqlException sql execute error
+     * @throws DataAccessException sql execute error
      */
     protected Stream<DataRow> executeQueryStream(@NotNull final String sql, Map<String, ?> args) {
         SqlGenerator.PreparedSqlMetaData smd = prepareSql(sql, args);
@@ -192,7 +207,7 @@ public abstract class JdbcSupport {
                         action.accept(JdbcUtil.createDataRow(names, resultSet));
                         return true;
                     } catch (SQLException ex) {
-                        throw new UncheckedSqlException("Reading result set of query error", ex);
+                        throw new IllegalStateException(smd.getPrepareSql(), ex);
                     }
                 }
             }, false).onClose(close);
@@ -204,7 +219,7 @@ public abstract class JdbcSupport {
                     ex.addSuppressed(e);
                 }
             }
-            throw new SqlRuntimeException("SQL: " + sql + "\nArgs: " + myArgs, ex);
+            throw wrappedDataAccessException(smd.getPrepareSql(), ex);
         }
     }
 
@@ -214,8 +229,7 @@ public abstract class JdbcSupport {
      * @param sqlList   more than 1 sql
      * @param batchSize batch size
      * @return affected row count
-     * @throws UncheckedSqlException    execute sql error
-     * @throws IllegalArgumentException if sql count less than 1
+     * @throws DataAccessException execute sql error
      */
     protected int executeBatch(@NotNull final Iterable<String> sqlList, @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
         Connection connection = null;
@@ -240,7 +254,7 @@ public abstract class JdbcSupport {
             s.clearBatch();
             return result.build().flatMapToInt(IntStream::of).sum();
         } catch (SQLException e) {
-            throw new SqlRuntimeException("SQLs: " + String.join(";\n"), e);
+            throw wrappedDataAccessException(String.join(";\n", sqlList), e);
         } finally {
             JdbcUtil.closeStatement(s);
             releaseConnection(connection, getDataSource());
@@ -256,6 +270,7 @@ public abstract class JdbcSupport {
      * @param batchSize  batch size
      * @param <T>        arg type
      * @return affected row count
+     * @throws DataAccessException execute procedure error
      */
     protected <T> int executeBatchUpdate(@NotNull final String sql,
                                          @NotNull Iterable<T> args,
@@ -285,16 +300,7 @@ public abstract class JdbcSupport {
             ps.clearBatch();
             return result.build().flatMapToInt(IntStream::of).sum();
         } catch (Exception e) {
-            StringJoiner argSb = new StringJoiner(",\n");
-            int i = 0;
-            for (T arg : args) {
-                if (i++ >= 10) {
-                    argSb.add("......");
-                    break;
-                }
-                argSb.add(eachMapper.apply(arg).toString());
-            }
-            throw new SqlRuntimeException("SQL: " + sql + "\nArgs: " + argSb, e);
+            throw wrappedDataAccessException(smd.getPrepareSql(), e);
         } finally {
             JdbcUtil.closeStatement(ps);
             releaseConnection(connection, getDataSource());
@@ -315,6 +321,7 @@ public abstract class JdbcSupport {
      * @param sql  named parameter sql
      * @param args args
      * @return affect row count
+     * @throws DataAccessException execute sql error
      */
     protected int executeUpdate(@NotNull final String sql, Map<String, ?> args) {
         SqlGenerator.PreparedSqlMetaData smd = prepareSql(sql, args);
@@ -328,7 +335,7 @@ public abstract class JdbcSupport {
             setPreparedSqlArgs(ps, smd.getArgs(), smd.getArgNameIndexMapping());
             return ps.executeUpdate();
         } catch (Exception e) {
-            throw new SqlRuntimeException("SQL: " + sql + "\nArgs: " + myArgs, e);
+            throw wrappedDataAccessException(smd.getPrepareSql(), e);
         } finally {
             JdbcUtil.closeStatement(ps);
             releaseConnection(connection, getDataSource());
@@ -355,7 +362,7 @@ public abstract class JdbcSupport {
      * @param procedure procedure
      * @param args      args
      * @return DataRow
-     * @throws UncheckedSqlException execute procedure error
+     * @throws DataAccessException execute procedure error
      */
     protected DataRow executeCallStatement(@NotNull final String procedure, Map<String, Param> args) {
         SqlGenerator.PreparedSqlMetaData smd = prepareSql(procedure, args);
@@ -420,7 +427,7 @@ public abstract class JdbcSupport {
             }
             return DataRow.of(outNames.toArray(new String[0]), values);
         } catch (SQLException e) {
-            throw new SqlRuntimeException("PROCEDURE: " + procedure + "\nArgs: " + args, e);
+            throw wrappedDataAccessException(smd.getPrepareSql(), e);
         } finally {
             JdbcUtil.closeStatement(cs);
             releaseConnection(connection, getDataSource());

@@ -145,7 +145,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 this.databaseId = this.metaData.getDatabaseProductName().toLowerCase();
                 return 0;
             } catch (SQLException e) {
-                throw new UncheckedSqlException("Initialize metadata error.", e);
+                throw new IllegalStateException("Initialize metadata error.", e);
             }
         });
     }
@@ -945,6 +945,8 @@ public class BakiDao extends JdbcSupport implements Baki {
         try {
             connection = getConnection();
             return func.apply(connection);
+        } catch (Exception e) {
+            throw wrappedDataAccessException(null, e);
         } finally {
             releaseConnection(connection, getDataSource());
         }

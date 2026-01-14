@@ -173,8 +173,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @param filename     file name
      * @param fileResource file resource
      * @return structured resource
-     * @throws IOException                    if file not exists
-     * @throws URISyntaxException             if file uri syntax error
+     * @throws IOException        if file not exists
+     * @throws URISyntaxException if file uri syntax error
      */
     public @NotNull Resource parseXql(@NotNull String alias, @NotNull String filename, @NotNull FileResource fileResource) throws IOException, URISyntaxException {
         Map<String, Sql> entry = new LinkedHashMap<>();
@@ -821,8 +821,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         /**
          * Trim line annotation for detect dynamic sql script expression.
          *
-         * @param line current line
-         * @return script expression or other line
+         * @param line the string line potentially containing a prefix
+         * @return the trimmed line with the prefix removed if it starts with "{@code --}"
          */
         @Override
         protected String trimExpressionLine(String line) {

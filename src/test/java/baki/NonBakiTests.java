@@ -11,8 +11,8 @@ import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.MostDateTime;
 import com.github.chengyuxing.common.io.FileResource;
-import com.github.chengyuxing.common.utils.ObjectUtil;
-import com.github.chengyuxing.common.utils.StringUtil;
+import com.github.chengyuxing.common.util.ValueUtils;
+import com.github.chengyuxing.common.util.StringUtils;
 import com.github.chengyuxing.sql.*;
 import com.github.chengyuxing.sql.annotation.XQLMapper;
 import com.github.chengyuxing.sql.page.PageHelper;
@@ -85,7 +85,7 @@ public class NonBakiTests {
         System.out.println("-----");
         System.out.println(new ObjectMapper().writeValueAsString(args));
         System.out.println("-----");
-        System.out.println(ObjectUtil.getDeepValue(args, "users.0.addresses.0.city"));
+        System.out.println(ValueUtils.getDeepValue(args, "users.0.addresses.0.city"));
         System.out.println("-----");
         System.out.println(xqlFileManager.get("for.query^count", args));
         System.out.println(xqlFileManager.contains("for.query"));
@@ -193,7 +193,7 @@ public class NonBakiTests {
 
     @Test
     public void testSqlFormat() {
-        System.out.println(StringUtil.FMT.format("select *, '${now}' as now from test.user where dt < ${!current}",
+        System.out.println(StringUtils.FMT.format("select *, '${now}' as now from test.user where dt < ${!current}",
                 Args.of("now", LocalDateTime.now(),
                         "current", LocalDateTime.now())));
     }

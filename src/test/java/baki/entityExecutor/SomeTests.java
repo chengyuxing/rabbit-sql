@@ -3,7 +3,7 @@ package baki.entityExecutor;
 import baki.entity.User;
 import baki.entityExecutor.annotation.Col;
 import baki.entityExecutor.annotation.Table;
-import com.github.chengyuxing.common.utils.StringUtil;
+import com.github.chengyuxing.common.util.StringUtils;
 import com.github.chengyuxing.sql.Args;
 import func.BeanUtil;
 import func.FieldFunc;
@@ -124,7 +124,7 @@ public class SomeTests {
                         String field = v.isEmpty() ? k : v;
                         sb.add(field + " = :" + field);
                     });
-                    String update = StringUtil.FMT.format(temp,
+                    String update = StringUtils.FMT.format(temp,
                             Args.of(
                                     "table", meta.getSchema() + '.' + meta.getTable(),
                                     "sets", sb,

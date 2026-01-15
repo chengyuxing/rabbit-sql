@@ -2,10 +2,9 @@ package sql;
 
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.io.FileResource;
-import com.github.chengyuxing.common.utils.StringUtil;
+import com.github.chengyuxing.common.util.StringUtils;
 import com.github.chengyuxing.sql.Keywords;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
-import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -23,7 +22,7 @@ public class TestStrTemplate {
 
     @Test
     public void testOld() throws Exception {
-        System.out.println(StringUtil.FMT.format(sql, args));
+        System.out.println(StringUtils.FMT.format(sql, args));
         System.out.println("---");
     }
 
@@ -34,8 +33,8 @@ public class TestStrTemplate {
 
     @Test
     public void test42() throws Exception {
-        System.out.println(StringUtil.equalsAnyIgnoreCase("DESC", Keywords.STANDARD));
-        System.out.println(StringUtil.equalsAnyIgnoreCase("abc", "1"));
+        System.out.println(StringUtils.equalsAnyIgnoreCase("DESC", Keywords.STANDARD));
+        System.out.println(StringUtils.equalsAnyIgnoreCase("abc", "1"));
     }
 
     @Test

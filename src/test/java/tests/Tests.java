@@ -2,7 +2,7 @@ package tests;
 
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.MostDateTime;
-import com.github.chengyuxing.common.utils.StringUtil;
+import com.github.chengyuxing.common.util.StringUtils;
 import com.github.chengyuxing.sql.page.impl.OraclePageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
@@ -14,7 +14,7 @@ public class Tests {
 
     @Test
     public void testHash() {
-        System.out.println(StringUtil.hash("", "MD5"));
+        System.out.println(StringUtils.hash("", "MD5"));
     }
 
     @Test

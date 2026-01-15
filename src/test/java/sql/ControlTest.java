@@ -1,10 +1,9 @@
 package sql;
 
 import com.github.chengyuxing.common.DataRow;
-import com.github.chengyuxing.common.utils.StringUtil;
+import com.github.chengyuxing.common.util.StringUtils;
 import com.github.chengyuxing.sql.XQLFileManager;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
-import com.github.chengyuxing.sql.utils.SqlUtil;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -82,10 +81,10 @@ public class ControlTest {
 //        }
 //        System.out.println(sqls.length);
         SqlGenerator sqlGenerator = new SqlGenerator(':');
-        System.out.println(StringUtil.FMT.format(sql, args));
+        System.out.println(StringUtils.FMT.format(sql, args));
 
         System.out.println("-----");
-        String first = StringUtil.FMT.format(sql, args);
+        String first = StringUtils.FMT.format(sql, args);
         System.out.println(first);
 //        String second = sqlGenerator.resolveSqlStrTemplateRec2(first, args);
 //        System.out.println(second);

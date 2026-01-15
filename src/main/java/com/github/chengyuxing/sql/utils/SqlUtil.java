@@ -1,13 +1,13 @@
 package com.github.chengyuxing.sql.utils;
 
-import com.github.chengyuxing.common.utils.ObjectUtil;
-import com.github.chengyuxing.common.utils.ReflectUtil;
+import com.github.chengyuxing.common.util.ValueUtils;
+import com.github.chengyuxing.common.util.ReflectUtils;
 
 import java.util.*;
 import java.util.function.BiFunction;
 import java.util.regex.Pattern;
 
-import static com.github.chengyuxing.common.utils.StringUtil.FMT;
+import static com.github.chengyuxing.common.util.StringUtils.FMT;
 
 /**
  * SQL util.
@@ -72,7 +72,7 @@ public class SqlUtil {
         if (value == null) {
             return "null";
         }
-        Object[] values = ObjectUtil.toArray(value);
+        Iterable<?> values = ValueUtils.asIterable(value);
         StringJoiner sb = new StringJoiner(", ");
         if (isSafeQuote) {
             for (Object v : values) {
@@ -80,7 +80,7 @@ public class SqlUtil {
                     sb.add("null");
                     continue;
                 }
-                if (ReflectUtil.isBasicType(v) && !(v instanceof String) && !(v instanceof Character)) {
+                if (ReflectUtils.isBasicType(v) && !(v instanceof String) && !(v instanceof Character)) {
                     sb.add(v.toString());
                     continue;
                 }

@@ -1,7 +1,7 @@
 package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.MapExtends;
-import com.github.chengyuxing.common.utils.ObjectUtil;
+import com.github.chengyuxing.common.util.ValueUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.lang.reflect.Field;
@@ -55,7 +55,7 @@ public final class Args<V> extends LinkedHashMap<String, V> implements MapExtend
      * @return Args instance
      */
     public static Args<Object> of(Object... input) {
-        return ObjectUtil.pairsToMap(i -> Args.of(), input);
+        return ValueUtils.pairsToMap(i -> Args.of(), input);
     }
 
     /**
@@ -66,7 +66,7 @@ public final class Args<V> extends LinkedHashMap<String, V> implements MapExtend
      * @return Args instance
      */
     public static <T> Args<Object> ofEntity(T entity) {
-        return ObjectUtil.entityToMap(entity, Args::new);
+        return ValueUtils.entityToMap(entity, Args::new);
     }
 
     /**
@@ -78,6 +78,6 @@ public final class Args<V> extends LinkedHashMap<String, V> implements MapExtend
      * @return Args instance
      */
     public static <T> Args<Object> ofEntity(T entity, @NotNull Function<Field, String> fieldMapper) {
-        return ObjectUtil.entityToMap(entity, fieldMapper, Args::new);
+        return ValueUtils.entityToMap(entity, fieldMapper, Args::new);
     }
 }

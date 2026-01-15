@@ -2,7 +2,7 @@ package com.github.chengyuxing.sql.dsl.clause;
 
 import com.github.chengyuxing.common.MethodReference;
 import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.common.utils.StringUtil;
+import com.github.chengyuxing.common.util.StringUtils;
 import com.github.chengyuxing.sql.dsl.clause.condition.*;
 import com.github.chengyuxing.sql.dsl.types.Logic;
 import com.github.chengyuxing.sql.dsl.types.Operator;
@@ -355,7 +355,7 @@ public abstract class Where<T> {
 
     protected @NotNull Pair<String, Map<String, Object>> build(AtomicInteger uniqueIndex, List<Criteria> criteriaList, Logic logicOperator, int identLevel) {
         StringBuilder sb = new StringBuilder();
-        String ident = StringUtil.repeat("    ", identLevel);
+        String ident = StringUtils.repeat("    ", identLevel);
         Map<String, Object> params = new HashMap<>();
         for (int i = 0, j = criteriaList.size(); i < j; i++) {
             Criteria criteria = criteriaList.get(i);

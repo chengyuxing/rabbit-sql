@@ -4,7 +4,7 @@ import com.github.chengyuxing.common.console.Color;
 import com.github.chengyuxing.common.console.Printer;
 import com.github.chengyuxing.common.Patterns;
 import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.common.utils.StringUtil;
+import com.github.chengyuxing.common.util.StringUtils;
 import com.github.chengyuxing.sql.Keywords;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -96,7 +96,7 @@ public final class SqlHighlighter {
         try {
             Pair<String, Map<String, String>> r = escapeSubstring(sql);
             String rSql = r.getItem1();
-            Pair<List<String>, List<String>> x = StringUtil.regexSplit(rSql, "(?<d>[\\s,\\[\\]():;{}]+)", "d");
+            Pair<List<String>, List<String>> x = StringUtils.regexSplit(rSql, "(?<d>[\\s,\\[\\]():;{}]+)", "d");
             List<String> words = x.getItem1();
             List<String> delimiters = x.getItem2();
             StringBuilder sb = new StringBuilder();
@@ -105,16 +105,16 @@ public final class SqlHighlighter {
                 String replacement = word;
                 if (!word.trim().isEmpty()) {
                     // functions highlight
-                    if (!StringUtil.equalsAnyIgnoreCase(word, Keywords.STANDARD) && detectFunction(word, i, j, delimiters)) {
+                    if (!StringUtils.equalsAnyIgnoreCase(word, Keywords.STANDARD) && detectFunction(word, i, j, delimiters)) {
                         replacement = replacer.apply(TAG.FUNCTION, word);
                         // named parameter
                     } else if (detectNamedParameter(word, i, delimiters)) {
                         replacement = replacer.apply(TAG.NAMED_PARAMETER, word);
                         // keywords highlight
-                    } else if (StringUtil.equalsAnyIgnoreCase(word, Keywords.STANDARD)) {
+                    } else if (StringUtils.equalsAnyIgnoreCase(word, Keywords.STANDARD)) {
                         replacement = replacer.apply(TAG.KEYWORD, word);
                         // number highlight
-                    } else if (StringUtil.isNumeric(word)) {
+                    } else if (StringUtils.isNumeric(word)) {
                         replacement = replacer.apply(TAG.NUMBER, word);
                         // PostgreSQL function body block highlight
                     } else if (word.equals("$$")) {

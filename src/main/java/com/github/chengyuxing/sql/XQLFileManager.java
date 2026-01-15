@@ -6,9 +6,9 @@ import com.github.chengyuxing.common.script.parser.RabbitScriptParser;
 import com.github.chengyuxing.common.script.exception.ScriptSyntaxException;
 import com.github.chengyuxing.common.script.pipe.IPipe;
 import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.common.utils.ObjectUtil;
-import com.github.chengyuxing.common.utils.ReflectUtil;
-import com.github.chengyuxing.common.utils.StringUtil;
+import com.github.chengyuxing.common.util.ValueUtils;
+import com.github.chengyuxing.common.util.ReflectUtils;
+import com.github.chengyuxing.common.util.StringUtils;
 import com.github.chengyuxing.sql.exceptions.XQLParseException;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.utils.SqlHighlighter;
@@ -32,8 +32,8 @@ import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static com.github.chengyuxing.common.utils.StringUtil.NEW_LINE;
-import static com.github.chengyuxing.common.utils.StringUtil.containsAnyIgnoreCase;
+import static com.github.chengyuxing.common.util.StringUtils.NEW_LINE;
+import static com.github.chengyuxing.common.util.StringUtils.containsAnyIgnoreCase;
 
 /**
  * <h2>Dynamic SQL File Manager</h2>
@@ -195,10 +195,10 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     String partName = matcher.group("partName");
                     String name = sqlName != null ? sqlName : "${" + partName + "}";
                     if (sqlBuffer.length() != 0) {
-                        throw new XQLParseException("The sql which before the name '" + ObjectUtil.coalesce(sqlName, partName) + "' does not seem to end with the ';' in " + filename);
+                        throw new XQLParseException("The sql which before the name '" + ValueUtils.coalesce(sqlName, partName) + "' does not seem to end with the ';' in " + filename);
                     }
                     if (entry.containsKey(name)) {
-                        throw new XQLParseException("Duplicate name: '" + ObjectUtil.coalesce(sqlName, partName) + "' in " + filename);
+                        throw new XQLParseException("Duplicate name: '" + ValueUtils.coalesce(sqlName, partName) + "' in " + filename);
                     }
                     currentName = name;
                     continue;
@@ -379,7 +379,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                 source = SqlUtil.formatSql(source, templates);
                 source = SqlUtil.formatSql(source, constants);
                 // remove empty line.
-                sql.setSource(StringUtil.removeEmptyLine(source));
+                sql.setSource(StringUtils.removeEmptyLine(source));
             }
         }
     }
@@ -431,7 +431,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         try {
             final ClassLoader classLoader = FileResource.getClassLoader();
             for (Map.Entry<String, String> entry : pipes.entrySet()) {
-                pipeInstances.put(entry.getKey(), (IPipe<?>) ReflectUtil.getInstance(classLoader.loadClass(entry.getValue())));
+                pipeInstances.put(entry.getKey(), (IPipe<?>) ReflectUtils.getInstance(classLoader.loadClass(entry.getValue())));
             }
         } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
                  InvocationTargetException | NoSuchMethodException e) {

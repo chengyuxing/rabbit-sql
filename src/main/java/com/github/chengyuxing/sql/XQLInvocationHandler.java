@@ -2,8 +2,8 @@ package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.TiFunction;
-import com.github.chengyuxing.common.utils.ObjectUtil;
-import com.github.chengyuxing.common.utils.ReflectUtil;
+import com.github.chengyuxing.common.util.ValueUtils;
+import com.github.chengyuxing.common.util.ReflectUtils;
 import com.github.chengyuxing.sql.annotation.*;
 import com.github.chengyuxing.sql.page.IPageable;
 import com.github.chengyuxing.sql.page.PageHelper;
@@ -233,7 +233,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
             }
             if (!pageHelpProviderCls.getName().equals(PageHelperProvider.class.getName())) {
                 try {
-                    pageable.pageHelper(ReflectUtil.getInstance(pageHelpProviderCls));
+                    pageable.pageHelper(ReflectUtils.getInstance(pageHelpProviderCls));
                 } catch (NoSuchMethodException | InstantiationException | IllegalAccessException |
                          InvocationTargetException e) {
                     throw new IllegalArgumentException(method.getDeclaringClass() + "#" + method.getName(), e);
@@ -309,7 +309,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
                             continue;
                         }
                         if (!arg.getClass().getName().startsWith("java.")) {
-                            myArgs.add(ObjectUtil.entityToMap(arg,
+                            myArgs.add(ValueUtils.entityToMap(arg,
                                     field -> entityMetaProvider().columnMeta(field).getName(),
                                     HashMap::new));
                             continue;
@@ -321,8 +321,8 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
                 if (arg instanceof Map) {
                     return arg;
                 }
-                if (!ReflectUtil.isBasicType(arg)) {
-                    return ObjectUtil.entityToMap(arg,
+                if (!ReflectUtils.isBasicType(arg)) {
+                    return ValueUtils.entityToMap(arg,
                             field -> entityMetaProvider().columnMeta(field).getName(),
                             HashMap::new);
                 }

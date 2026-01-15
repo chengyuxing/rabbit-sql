@@ -2,7 +2,7 @@ package com.github.chengyuxing.sql.support;
 
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.UncheckedCloseable;
-import com.github.chengyuxing.common.utils.ObjectUtil;
+import com.github.chengyuxing.common.util.ValueUtils;
 import com.github.chengyuxing.sql.exceptions.DataAccessException;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.types.ParamMode;
@@ -99,7 +99,7 @@ public abstract class JdbcSupport {
     protected void setPreparedSqlArgs(PreparedStatement ps, Map<String, ?> args, Map<String, List<Integer>> names) throws SQLException {
         for (Map.Entry<String, List<Integer>> e : names.entrySet()) {
             String name = e.getKey();
-            Object value = name.contains(".") ? ObjectUtil.getDeepValue(args, name) : args.get(name);
+            Object value = name.contains(".") ? ValueUtils.getDeepValue(args, name) : args.get(name);
             for (Integer i : e.getValue()) {
                 doHandleStatementValue(ps, i, value);
             }

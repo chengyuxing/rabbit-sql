@@ -1,7 +1,7 @@
 package com.github.chengyuxing.sql.dsl.clause.condition;
 
 import com.github.chengyuxing.common.tuple.Pair;
-import com.github.chengyuxing.common.utils.ObjectUtil;
+import com.github.chengyuxing.common.util.ValueUtils;
 import com.github.chengyuxing.sql.dsl.types.StandardOperator;
 
 import java.util.Collection;
@@ -21,11 +21,12 @@ public class InCondition<T> extends Condition<Collection<T>> {
     public Pair<String, Map<String, Object>> buildStatement(int index, char namedParamPrefix) {
         StringJoiner sb = new StringJoiner(", ", "(", ")");
         Map<String, Object> params = new HashMap<>();
-        Object[] values = ObjectUtil.toArray(value);
-        for (int i = 0; i < values.length; i++) {
+        int i = 0;
+        for (Object item : ValueUtils.asIterable(value)) {
             String key = valueKey + "_" + index + "_" + i;
             sb.add(namedParamPrefix + key);
-            params.put(key, values[i]);
+            params.put(key, item);
+            i++;
         }
         return Pair.of(column + operator.padWithSpace() + sb, params);
     }

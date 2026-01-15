@@ -5,7 +5,7 @@ import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.MethodReference;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.tuple.Triple;
-import com.github.chengyuxing.common.utils.ReflectUtil;
+import com.github.chengyuxing.common.util.ReflectUtils;
 import com.github.chengyuxing.sql.datasource.DataSourceUtil;
 import com.github.chengyuxing.sql.dsl.Delete;
 import com.github.chengyuxing.sql.dsl.Insert;
@@ -431,7 +431,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             final EntityManager.EntityMeta entityMeta = entityManager.getEntityMeta(clazz);
 
             String parseMethodRefColumn(MethodReference<T> methodRef) {
-                String fieldName = ReflectUtil.getFieldName(methodRef);
+                String fieldName = ReflectUtils.getFieldName(methodRef);
                 try {
                     Field field = clazz.getDeclaredField(fieldName);
                     return getEntityMetaProvider().columnMeta(field).getName();

@@ -1,7 +1,7 @@
 package com.github.chengyuxing.sql.utils;
 
 import com.github.chengyuxing.common.Patterns;
-import com.github.chengyuxing.common.utils.ObjectUtil;
+import com.github.chengyuxing.common.util.ValueUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -151,7 +151,7 @@ public class SqlGenerator {
             String name = matcher.group(1);
             String replacement;
             if (name != null) {
-                Object value = name.contains(".") ? ObjectUtil.getDeepValue(args, name) : args.get(name);
+                Object value = name.contains(".") ? ValueUtils.getDeepValue(args, name) : args.get(name);
                 replacement = namedParamFormatter.apply(value);
             } else {
                 replacement = matcher.group();

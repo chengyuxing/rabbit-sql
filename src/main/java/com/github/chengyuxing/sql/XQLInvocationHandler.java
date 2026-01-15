@@ -219,7 +219,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
             String[] startEnd = pageableConfig.disableDefaultPageSql();
             Class<? extends PageHelperProvider> pageHelpProviderCls = pageableConfig.pageHelper();
             if (startEnd.length > 0) {
-                if (Objects.isNull(count)) {
+                if (count == null) {
                     throw new IllegalStateException(method.getDeclaringClass() + "#" + method.getName() + " has no @" + CountQuery.class.getSimpleName() + ", property disableDefaultPageSql must work with @" + CountQuery.class.getSimpleName());
                 }
                 pageable.disableDefaultPageSql(count)

@@ -156,7 +156,7 @@ public class NewBakiTests {
     public void testUpdate() {
         int i = baki.entity(Guest.class)
                 .update()
-                .where(w -> w.eq(Guest::getXm, "c"))
+                .where(w -> w.eq(Guest::getXm, "cyxg"))
                 .set(Guest::getXm, "mike")
                 .set(Guest::getAddress, "USA")
                 .save();

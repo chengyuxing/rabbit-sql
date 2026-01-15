@@ -576,7 +576,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public boolean contains(@NotNull String name) {
         Pair<String, String> p = decodeSqlReference(name);
         Resource resource = files.getResources().get(p.getItem1());
-        if (Objects.isNull(resource)) {
+        if (resource == null) {
             return false;
         }
         return resource.getEntry().containsKey(p.getItem2());
@@ -593,11 +593,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public Sql getSqlObject(@NotNull String name) {
         Pair<String, String> p = decodeSqlReference(name);
         Resource resource = getResource(p.getItem1());
-        if (Objects.isNull(resource)) {
+        if (resource == null) {
             throw new NoSuchElementException(String.format("Resource with alias [%s] not found.", p.getItem1()));
         }
         Sql sql = resource.getEntry().get(p.getItem2());
-        if (Objects.isNull(sql)) {
+        if (sql == null) {
             throw new NoSuchElementException(String.format("No SQL named [%s] was found in [%s].", p.getItem2(), p.getItem1()));
         }
         return sql;
@@ -638,7 +638,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             return Pair.of(sql, Collections.emptyMap());
         }
         Map<String, Object> myArgs = new HashMap<>();
-        if (Objects.nonNull(args)) {
+        if (args != null) {
             myArgs.putAll(args);
         }
         myArgs.put("_databaseId", databaseId);
@@ -786,28 +786,30 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     sb.append(formatted, lastMatchEnd, m.start());
                     lastMatchEnd = m.end();
                     String name = m.group(1);
-                    if (Objects.nonNull(name) && context.containsKey(name)) {
-                        sb.append(namedParamPrefix)
-                                .append(VAR_PREFIX)
-                                .append(forVarGeneratedKey(name, forIndex, itemIndex));
-                        continue;
-                    }
-                    // -- #for item of :data | kv
-                    //  ${item.key} = :item.value
-                    //-- #done
-                    // --------------------------
-                    // name: item.value
-                    // varName: item
-                    int dotIdx = name.indexOf('.');
-                    if (dotIdx != -1) {
-                        String paramName = name.substring(0, dotIdx);
-                        if (context.containsKey(paramName)) {
-                            String suffix = name.substring(dotIdx);
+                    if (name != null) {
+                        if (context.containsKey(name)) {
                             sb.append(namedParamPrefix)
                                     .append(VAR_PREFIX)
-                                    .append(forVarGeneratedKey(paramName, forIndex, itemIndex))
-                                    .append(suffix);
+                                    .append(forVarGeneratedKey(name, forIndex, itemIndex));
                             continue;
+                        }
+                        // -- #for item of :data | kv
+                        //  ${item.key} = :item.value
+                        //-- #done
+                        // --------------------------
+                        // name: item.value
+                        // varName: item
+                        int dotIdx = name.indexOf('.');
+                        if (dotIdx != -1) {
+                            String paramName = name.substring(0, dotIdx);
+                            if (context.containsKey(paramName)) {
+                                String suffix = name.substring(dotIdx);
+                                sb.append(namedParamPrefix)
+                                        .append(VAR_PREFIX)
+                                        .append(forVarGeneratedKey(paramName, forIndex, itemIndex))
+                                        .append(suffix);
+                                continue;
+                            }
                         }
                     }
                     sb.append(m.group());

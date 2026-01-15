@@ -66,7 +66,7 @@ public abstract class Where<T> {
      * @return where builder
      */
     public <E> Where<T> eq(MethodReference<T> column, E value) {
-        if (Objects.nonNull(value)) {
+        if (value != null) {
             addCondition(column, EQ, value);
         } else {
             addCondition(column, IS_NULL, null);
@@ -83,7 +83,7 @@ public abstract class Where<T> {
      * @return where builder
      */
     public <E> Where<T> neq(MethodReference<T> column, E value) {
-        if (Objects.nonNull(value)) {
+        if (value != null) {
             addCondition(column, NEQ, value);
         } else {
             addCondition(column, IS_NOT_NULL, null);

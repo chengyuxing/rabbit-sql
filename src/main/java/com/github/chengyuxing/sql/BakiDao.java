@@ -177,7 +177,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     public Stream<DataRow> executeQueryStream(@NotNull String sql, Map<String, ?> args) {
         return this.sqlAroundExecutor.call(new Execution(SqlStatementType.query, sql, args),
                 i -> {
-                    if (Objects.isNull(queryCacheManager) || !queryCacheManager.isAvailable(sql, args)) {
+                    if (queryCacheManager == null || !queryCacheManager.isAvailable(sql, args)) {
                         return super.executeQueryStream(sql, args);
                     }
                     log.debug("The query({}, {}) has been taken over by the cache.", sql, args);
@@ -297,7 +297,7 @@ public class BakiDao extends JdbcSupport implements Baki {
 
     @Override
     public @NotNull SimpleDMLExecutor table(@NotNull String name) {
-        if (Objects.nonNull(xqlFileManager)) {
+        if (xqlFileManager != null) {
             name = SqlUtil.formatSql(name, xqlFileManager.getConstants());
             SqlUtil.assertInvalidIdentifier(name);
         }
@@ -1041,9 +1041,9 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @throws UnsupportedOperationException there is no default implementation of your database
      */
     protected PageHelper builtinPager() {
-        if (Objects.nonNull(globalPageHelperProvider)) {
+        if (globalPageHelperProvider != null) {
             PageHelper pageHelper = globalPageHelperProvider.customPageHelper(metaData, databaseId, namedParamPrefix);
-            if (Objects.nonNull(pageHelper)) {
+            if (pageHelper != null) {
                 return pageHelper;
             }
         }
@@ -1084,7 +1084,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     @Override
     protected SqlGenerator.PreparedSqlMetaData prepareSql(@NotNull String sql, Map<String, ?> args) {
         Map<String, Object> myArgs = new HashMap<>();
-        if (Objects.nonNull(args)) {
+        if (args != null) {
             myArgs.putAll(args);
         }
         String mySql = sql.trim();
@@ -1096,7 +1096,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             myArgs.putAll(result.getItem2());
 
             String modifier = XQLFileManager.extractModifier(sqlRef);
-            if (Objects.nonNull(modifier)) {
+            if (modifier != null) {
                 switch (modifier) {
                     case SQL_REF_MODIFIER_PAGE:
                     case SQL_REF_MODIFIER_COUNT:
@@ -1113,12 +1113,12 @@ public class BakiDao extends JdbcSupport implements Baki {
                 }
             }
         }
-        if (Objects.nonNull(sqlInterceptor)) {
+        if (sqlInterceptor != null) {
             mySql = sqlInterceptor.preHandle(sql.trim(), mySql, myArgs, metaData);
         }
         if (mySql.contains("${")) {
             mySql = SqlUtil.formatSql(mySql, myArgs);
-            if (Objects.nonNull(xqlFileManager)) {
+            if (xqlFileManager != null) {
                 mySql = SqlUtil.formatSql(mySql, xqlFileManager.getConstants());
             }
         }
@@ -1193,7 +1193,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     public void setStatementValueHandler(StatementValueHandler statementValueHandler) {
-        if (Objects.nonNull(statementValueHandler))
+        if (statementValueHandler != null)
             this.statementValueHandler = statementValueHandler;
     }
 
@@ -1202,7 +1202,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     public void setXqlFileManager(XQLFileManager xqlFileManager) {
-        if (Objects.nonNull(xqlFileManager)) {
+        if (xqlFileManager != null) {
             this.xqlFileManager = xqlFileManager;
             this.xqlFileManager.setDatabaseId(databaseId);
             if (!this.xqlFileManager.isInitialized()) {
@@ -1249,7 +1249,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     public void setQueryTimeoutHandler(QueryTimeoutHandler queryTimeoutHandler) {
-        if (Objects.nonNull(queryTimeoutHandler)) {
+        if (queryTimeoutHandler != null) {
             this.queryTimeoutHandler = queryTimeoutHandler;
         }
     }
@@ -1259,7 +1259,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     public void setSqlInvokeHandler(SqlInvokeHandler sqlInvokeHandler) {
-        if (Objects.nonNull(sqlInvokeHandler)) {
+        if (sqlInvokeHandler != null) {
             this.sqlInvokeHandler = sqlInvokeHandler;
         }
     }
@@ -1289,7 +1289,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     public void setEntityMetaProvider(EntityManager.EntityMetaProvider entityMetaProvider) {
-        if (Objects.nonNull(entityMetaProvider)) {
+        if (entityMetaProvider != null) {
             this.entityManager.setEntityMetaProvider(entityMetaProvider);
         }
     }

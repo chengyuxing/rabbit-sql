@@ -23,12 +23,12 @@ public class JdbcUtil {
     private static final Logger log = LoggerFactory.getLogger(JdbcUtil.class);
 
     public static Object getResultValue(@Nullable ResultSet resultSet, @Range(from = 1, to = Integer.MAX_VALUE) int index) throws SQLException {
-        if (Objects.isNull(resultSet)) {
+        if (resultSet == null) {
             return null;
         }
         Object obj = resultSet.getObject(index);
         String className = null;
-        if (Objects.nonNull(obj)) {
+        if (obj != null) {
             className = obj.getClass().getName();
         }
         if (obj instanceof Blob) {
@@ -62,7 +62,7 @@ public class JdbcUtil {
     }
 
     public static void setStatementValue(@NotNull PreparedStatement ps, @Range(from = 1, to = Integer.MAX_VALUE) int index, Object value) throws SQLException {
-        if (Objects.isNull(value)) {
+        if (value == null) {
             ps.setNull(index, Types.NULL);
         } else if (value instanceof java.util.Date) {
             ps.setTimestamp(index, Timestamp.from(((java.util.Date) value).toInstant()));
@@ -112,7 +112,7 @@ public class JdbcUtil {
      */
     public static DataRow getResult(@NotNull PreparedStatement statement, @NotNull final String sql) throws SQLException {
         ResultSet resultSet = statement.getResultSet();
-        if (Objects.nonNull(resultSet)) {
+        if (resultSet != null) {
             List<DataRow> result = JdbcUtil.createDataRows(resultSet, sql, -1);
             JdbcUtil.closeResultSet(resultSet);
             return DataRow.of("result", result, "type", "QUERY");
@@ -147,7 +147,7 @@ public class JdbcUtil {
     }
 
     public static void closeResultSet(@Nullable ResultSet resultSet) {
-        if (Objects.nonNull(resultSet)) {
+        if (resultSet != null) {
             try {
                 resultSet.close();
             } catch (SQLException e) {
@@ -157,7 +157,7 @@ public class JdbcUtil {
     }
 
     public static void closeStatement(@Nullable Statement statement) {
-        if (Objects.nonNull(statement)) {
+        if (statement != null) {
             try {
                 statement.close();
             } catch (SQLException e) {
@@ -217,7 +217,7 @@ public class JdbcUtil {
      * @throws SQLException ex
      */
     public static List<DataRow> createDataRows(@Nullable final ResultSet resultSet, @NotNull final String executedSql, @Range(from = -1, to = Long.MAX_VALUE) final long fetchSize) throws SQLException {
-        if (Objects.isNull(resultSet)) {
+        if (resultSet == null) {
             return Collections.emptyList();
         }
         List<DataRow> list = new ArrayList<>();

@@ -412,7 +412,7 @@ public abstract class JdbcSupport {
                 if (outNames.contains(e.getKey())) {
                     for (Integer i : e.getValue()) {
                         Object result = cs.getObject(i);
-                        if (Objects.isNull(result)) {
+                        if (result == null) {
                             values[resultIndex] = null;
                         } else if (result instanceof ResultSet) {
                             List<DataRow> rows = JdbcUtil.createDataRows((ResultSet) result, "", -1);

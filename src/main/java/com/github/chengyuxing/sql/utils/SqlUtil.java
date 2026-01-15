@@ -69,14 +69,14 @@ public class SqlUtil {
      * @return string literal value
      */
     public static String toSqlLiteral(Object value, boolean isSafeQuote) {
-        if (Objects.isNull(value)) {
+        if (value == null) {
             return "null";
         }
         Object[] values = ObjectUtil.toArray(value);
         StringJoiner sb = new StringJoiner(", ");
         if (isSafeQuote) {
             for (Object v : values) {
-                if (Objects.isNull(v)) {
+                if (v == null) {
                     sb.add("null");
                     continue;
                 }
@@ -88,7 +88,7 @@ public class SqlUtil {
             }
         } else {
             for (Object v : values) {
-                if (Objects.isNull(v)) {
+                if (v == null) {
                     sb.add("null");
                     continue;
                 }

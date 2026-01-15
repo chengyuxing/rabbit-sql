@@ -70,7 +70,7 @@ public class XQLFileManagerConfig {
         Yaml yaml = new Yaml(new FeaturedConstructor());
         try {
             XQLFileManagerConfig config = yaml.loadAs(yamlLocation.getInputStream(), XQLFileManagerConfig.class);
-            if (Objects.isNull(config)) {
+            if (config == null) {
                 log.warn("yaml loaded nothing, resource length is {}", yamlLocation.getInputStream().available());
                 return;
             }
@@ -131,7 +131,7 @@ public class XQLFileManagerConfig {
                 field.setAccessible(true);
                 try {
                     Object v = field.get(this);
-                    if (Objects.nonNull(v)) {
+                    if (v != null) {
                         field.set(other, v);
                     }
                 } catch (IllegalAccessException e) {
@@ -160,7 +160,7 @@ public class XQLFileManagerConfig {
      * @param files files map [alias, file name]
      */
     public void setFiles(FileMap files) {
-        if (Objects.nonNull(files)) {
+        if (files != null) {
             this.files = new FileMap(files);
         }
     }
@@ -193,7 +193,7 @@ public class XQLFileManagerConfig {
      * @param constants constants map
      */
     public void setConstants(Map<String, Object> constants) {
-        if (Objects.nonNull(constants)) {
+        if (constants != null) {
             this.constants = new HashMap<>(constants);
         }
     }
@@ -214,7 +214,7 @@ public class XQLFileManagerConfig {
      * @see IPipe
      */
     public void setPipes(Map<String, String> pipes) {
-        if (Objects.nonNull(pipes)) {
+        if (pipes != null) {
             this.pipes = new HashMap<>(pipes);
         }
     }
@@ -235,7 +235,7 @@ public class XQLFileManagerConfig {
      * @see StandardCharsets
      */
     public void setCharset(String charset) {
-        if (Objects.nonNull(charset)) {
+        if (charset != null) {
             this.charset = charset;
         }
     }
@@ -247,7 +247,7 @@ public class XQLFileManagerConfig {
      * @see StandardCharsets
      */
     public void setCharset(Charset charset) {
-        if (Objects.nonNull(charset)) {
+        if (charset != null) {
             this.charset = charset.name();
         }
     }
@@ -267,7 +267,7 @@ public class XQLFileManagerConfig {
      * @param namedParamPrefix named parameter prefix
      */
     public void setNamedParamPrefix(Character namedParamPrefix) {
-        if (Objects.nonNull(namedParamPrefix) && namedParamPrefix != ' ') {
+        if (namedParamPrefix != null && namedParamPrefix != ' ') {
             this.namedParamPrefix = namedParamPrefix;
         }
     }
@@ -340,7 +340,7 @@ public class XQLFileManagerConfig {
         }
 
         void setDescription(String description) {
-            if (Objects.nonNull(description))
+            if (description != null)
                 this.description = description;
         }
 
@@ -400,7 +400,7 @@ public class XQLFileManagerConfig {
         }
 
         void setEntry(Map<String, Sql> entry) {
-            if (Objects.nonNull(entry))
+            if (entry != null)
                 this.entry = entry;
         }
 

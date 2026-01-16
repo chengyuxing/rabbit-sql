@@ -1,5 +1,12 @@
 # change note
 
+# 10.1.3
+
+- Make Global sql execution exception wrap as DataAccessException.
+- XQL Mapper method args parsing optimized.
+- New const identifier for entity query id, it can be used for location the sql.
+- Some code and performance optimized.
+
 # 10.1.2
 
 - Entity insert optimized.

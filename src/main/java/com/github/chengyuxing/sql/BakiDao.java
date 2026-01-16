@@ -6,7 +6,7 @@ import com.github.chengyuxing.common.MethodReference;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.tuple.Triple;
 import com.github.chengyuxing.common.util.ReflectUtils;
-import com.github.chengyuxing.sql.datasource.DataSourceUtil;
+import com.github.chengyuxing.sql.datasource.DataSourceUtils;
 import com.github.chengyuxing.sql.dsl.Delete;
 import com.github.chengyuxing.sql.dsl.Insert;
 import com.github.chengyuxing.sql.dsl.Query;
@@ -49,7 +49,7 @@ import java.util.stream.Stream;
  */
 public class BakiDao extends JdbcSupport implements Baki {
     private static final Logger log = LoggerFactory.getLogger(BakiDao.class);
-    private static final String INTERNAL_PAGE_HELPER_ARG_KEY = "_$pageHelper";
+    private static final String INTERNAL_PAGE_HELPER_ARG_KEY = "_$rabbit.sql.pageHelper";
     private static final String SQL_REF_MODIFIER_COUNT = "count";
     private static final String SQL_REF_MODIFIER_PAGE = "page";
     private final DataSource dataSource;
@@ -1151,7 +1151,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     @Override
     protected @NotNull Connection getConnection() {
         try {
-            return DataSourceUtil.getConnection(dataSource);
+            return DataSourceUtils.getConnection(dataSource);
         } catch (SQLException e) {
             throw new IllegalStateException("Fetch connection failed.", e);
         }
@@ -1159,7 +1159,7 @@ public class BakiDao extends JdbcSupport implements Baki {
 
     @Override
     protected void releaseConnection(Connection connection, DataSource dataSource) {
-        DataSourceUtil.releaseConnection(connection, dataSource);
+        DataSourceUtils.releaseConnection(connection, dataSource);
     }
 
     @Override

@@ -2,7 +2,7 @@ package com.github.chengyuxing.sql.transaction;
 
 import com.github.chengyuxing.sql.datasource.AbstractTransactionSyncManager;
 import com.github.chengyuxing.sql.datasource.ConnectionHolder;
-import com.github.chengyuxing.sql.datasource.DataSourceUtil;
+import com.github.chengyuxing.sql.datasource.DataSourceUtils;
 import com.github.chengyuxing.sql.exceptions.TransactionException;
 
 import java.sql.SQLException;
@@ -137,7 +137,7 @@ public final class Tx {
 
     private static void releaseTransaction() {
         if (AbstractTransactionSyncManager.isSynchronizationActive()) {
-            AbstractTransactionSyncManager.getSynchronizations().forEach(DataSourceUtil.TransactionSynchronization::afterCompletion);
+            AbstractTransactionSyncManager.getSynchronizations().forEach(DataSourceUtils.TransactionSynchronization::afterCompletion);
         }
         AbstractTransactionSyncManager.clear();
     }

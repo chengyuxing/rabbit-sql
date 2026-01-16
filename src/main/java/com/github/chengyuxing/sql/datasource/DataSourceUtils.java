@@ -12,8 +12,8 @@ import static com.github.chengyuxing.sql.datasource.AbstractTransactionSyncManag
 /**
  * Datasource util.
  */
-public abstract class DataSourceUtil {
-    private static final Logger log = LoggerFactory.getLogger(DataSourceUtil.class);
+public abstract class DataSourceUtils {
+    private static final Logger log = LoggerFactory.getLogger(DataSourceUtils.class);
 
     /**
      * Get 1 connection.

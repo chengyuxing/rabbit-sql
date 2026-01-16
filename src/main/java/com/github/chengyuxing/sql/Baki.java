@@ -32,7 +32,7 @@ public interface Baki {
      * A constant string used as a key to identify or reference a specific ID within the context of database operations.
      * This key can be utilized in various scenarios such as logging, caching, or uniquely identifying a particular query execution.
      */
-    String IDENTIFIER = "_$identifier";
+    String IDENTIFIER = "_$rabbit.sql.identifier";
 
     /**
      * Creates a new query executor for the given SQL statement.

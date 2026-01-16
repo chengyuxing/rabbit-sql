@@ -12,9 +12,9 @@ import static com.github.chengyuxing.common.util.StringUtils.FMT;
 /**
  * SQL util.
  */
-public class SqlUtil {
+public class SqlUtils {
     private static final Pattern IDENTIFIER_PATTERN = Pattern.compile("^[A-Za-z_][A-Za-z0-9_$]*(\\.[A-Za-z_][A-Za-z0-9_$]*)*$");
-    private static BiFunction<Object, Boolean, String> formatter = SqlUtil::toSqlLiteral;
+    private static BiFunction<Object, Boolean, String> formatter = SqlUtils::toSqlLiteral;
 
     /**
      * Set and replace the global formatter
@@ -23,7 +23,7 @@ public class SqlUtil {
      * @see #toSqlLiteral(Object, boolean)
      */
     public static void setFormatter(BiFunction<Object, Boolean, String> formatter) {
-        SqlUtil.formatter = formatter;
+        SqlUtils.formatter = formatter;
     }
 
     /**

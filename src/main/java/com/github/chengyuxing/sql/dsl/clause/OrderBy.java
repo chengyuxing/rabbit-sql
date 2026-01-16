@@ -3,7 +3,7 @@ package com.github.chengyuxing.sql.dsl.clause;
 import com.github.chengyuxing.common.MethodReference;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.sql.dsl.types.OrderByType;
-import com.github.chengyuxing.sql.utils.SqlUtil;
+import com.github.chengyuxing.sql.utils.SqlUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;
@@ -33,7 +33,7 @@ public abstract class OrderBy<T> {
      * @return order by builder
      */
     public OrderBy<T> by(@NotNull String column, OrderByType order) {
-        SqlUtil.assertInvalidIdentifier(column);
+        SqlUtils.assertInvalidIdentifier(column);
         orders.add(Pair.of(column, order));
         return this;
     }

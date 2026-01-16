@@ -19,7 +19,7 @@ import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.utils.SqlHighlighter;
-import com.github.chengyuxing.sql.utils.SqlUtil;
+import com.github.chengyuxing.sql.utils.SqlUtils;
 import entity.type.User;
 import org.junit.Test;
 
@@ -299,7 +299,7 @@ public class NonBakiTests {
 
     @Test
     public void testSafeQuote() {
-        System.out.println(SqlUtil.toSqlLiteral(Arrays.asList("he'--s book!", 34, null, true, LocalDateTime.now()), true));
+        System.out.println(SqlUtils.toSqlLiteral(Arrays.asList("he'--s book!", 34, null, true, LocalDateTime.now()), true));
         System.out.println(DateTimeFormatter.ISO_LOCAL_DATE_TIME.format(LocalDateTime.now()));
         System.out.println(MostDateTime.of(new Date()));
         System.out.println(new Date());

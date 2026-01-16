@@ -19,8 +19,8 @@ import java.util.*;
 /**
  * JDBC util.
  */
-public class JdbcUtil {
-    private static final Logger log = LoggerFactory.getLogger(JdbcUtil.class);
+public class JdbcUtils {
+    private static final Logger log = LoggerFactory.getLogger(JdbcUtils.class);
 
     public static Object getResultValue(@Nullable ResultSet resultSet, @Range(from = 1, to = Integer.MAX_VALUE) int index) throws SQLException {
         if (resultSet == null) {
@@ -113,8 +113,8 @@ public class JdbcUtil {
     public static DataRow getResult(@NotNull PreparedStatement statement, @NotNull final String sql) throws SQLException {
         ResultSet resultSet = statement.getResultSet();
         if (resultSet != null) {
-            List<DataRow> result = JdbcUtil.createDataRows(resultSet, sql, -1);
-            JdbcUtil.closeResultSet(resultSet);
+            List<DataRow> result = createDataRows(resultSet, sql, -1);
+            closeResultSet(resultSet);
             return DataRow.of("result", result, "type", "QUERY");
         }
         int i = statement.getUpdateCount();

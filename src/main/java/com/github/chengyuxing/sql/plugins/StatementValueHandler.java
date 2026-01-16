@@ -1,5 +1,6 @@
 package com.github.chengyuxing.sql.plugins;
 
+import com.github.chengyuxing.sql.utils.JdbcUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;
@@ -26,7 +27,7 @@ public interface StatementValueHandler {
      * @param value    parameter value
      * @param metaData current database metadata
      * @throws SQLException if connection states error
-     * @see com.github.chengyuxing.sql.utils.JdbcUtil#setStatementValue(PreparedStatement, int, Object) JdbcUtil.setStatementValue(PreparedStatement, int, Object)
+     * @see JdbcUtils#setStatementValue(PreparedStatement, int, Object) JdbcUtil.setStatementValue(PreparedStatement, int, Object)
      */
     void handle(@NotNull PreparedStatement ps,
                 @Range(from = 1, to = Integer.MAX_VALUE) int index,

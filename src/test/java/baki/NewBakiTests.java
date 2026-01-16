@@ -10,14 +10,13 @@ import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.script.exception.CheckViolationException;
 import com.github.chengyuxing.sql.*;
-import com.github.chengyuxing.sql.dsl.types.StandardOperator;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.github.chengyuxing.sql.plugins.QueryCacheManager;
 import com.github.chengyuxing.sql.plugins.QueryExecutor;
 import com.github.chengyuxing.sql.transaction.Tx;
 import com.github.chengyuxing.sql.types.StandardOutParamType;
 import com.github.chengyuxing.sql.types.Param;
-import com.github.chengyuxing.sql.utils.JdbcUtil;
+import com.github.chengyuxing.sql.utils.JdbcUtils;
 import com.zaxxer.hikari.HikariDataSource;
 import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
@@ -27,7 +26,6 @@ import java.sql.CallableStatement;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.*;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 public class NewBakiTests {
@@ -53,7 +51,7 @@ public class NewBakiTests {
             if (ps instanceof CallableStatement) {
                 System.out.println("Procedure calling.");
             }
-            JdbcUtil.setStatementValue(ps, index, value);
+            JdbcUtils.setStatementValue(ps, index, value);
         });
 //        bakiDao.setSqlWatcher(new SqlWatcher.SqlWatchLogger());
 

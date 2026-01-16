@@ -6,7 +6,7 @@ import com.github.chengyuxing.common.util.ValueUtils;
 import com.github.chengyuxing.sql.exceptions.DataAccessException;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.types.ParamMode;
-import com.github.chengyuxing.sql.utils.JdbcUtil;
+import com.github.chengyuxing.sql.utils.JdbcUtils;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -146,12 +146,12 @@ public abstract class JdbcSupport {
             ps.setQueryTimeout(queryTimeout(sql, smd.getArgs()));
             setPreparedSqlArgs(ps, smd.getArgs(), smd.getArgNameIndexMapping());
             ps.execute();
-            JdbcUtil.printSqlConsole(ps);
-            return JdbcUtil.getResult(ps, smd.getPrepareSql());
+            JdbcUtils.printSqlConsole(ps);
+            return JdbcUtils.getResult(ps, smd.getPrepareSql());
         } catch (Exception e) {
             throw wrappedDataAccessException(smd.getPrepareSql(), e);
         } finally {
-            JdbcUtil.closeStatement(ps);
+            JdbcUtils.closeStatement(ps);
             releaseConnection(connection, getDataSource());
         }
     }
@@ -196,7 +196,7 @@ public abstract class JdbcSupport {
             ResultSet resultSet = ps.executeQuery();
             close = close.nest(resultSet);
             return StreamSupport.stream(new Spliterators.AbstractSpliterator<DataRow>(Long.MAX_VALUE, Spliterator.ORDERED) {
-                final String[] names = JdbcUtil.createNames(resultSet, smd.getPrepareSql());
+                final String[] names = JdbcUtils.createNames(resultSet, smd.getPrepareSql());
 
                 @Override
                 public boolean tryAdvance(Consumer<? super DataRow> action) {
@@ -204,7 +204,7 @@ public abstract class JdbcSupport {
                         if (!resultSet.next()) {
                             return false;
                         }
-                        action.accept(JdbcUtil.createDataRow(names, resultSet));
+                        action.accept(JdbcUtils.createDataRow(names, resultSet));
                         return true;
                     } catch (SQLException ex) {
                         throw new IllegalStateException(smd.getPrepareSql(), ex);
@@ -256,7 +256,7 @@ public abstract class JdbcSupport {
         } catch (SQLException e) {
             throw wrappedDataAccessException(String.join(";\n", sqlList), e);
         } finally {
-            JdbcUtil.closeStatement(s);
+            JdbcUtils.closeStatement(s);
             releaseConnection(connection, getDataSource());
         }
     }
@@ -302,7 +302,7 @@ public abstract class JdbcSupport {
         } catch (Exception e) {
             throw wrappedDataAccessException(smd.getPrepareSql(), e);
         } finally {
-            JdbcUtil.closeStatement(ps);
+            JdbcUtils.closeStatement(ps);
             releaseConnection(connection, getDataSource());
         }
     }
@@ -337,7 +337,7 @@ public abstract class JdbcSupport {
         } catch (Exception e) {
             throw wrappedDataAccessException(smd.getPrepareSql(), e);
         } finally {
-            JdbcUtil.closeStatement(ps);
+            JdbcUtils.closeStatement(ps);
             releaseConnection(connection, getDataSource());
         }
     }
@@ -400,10 +400,10 @@ public abstract class JdbcSupport {
 
             cs.execute();
 
-            JdbcUtil.printSqlConsole(cs);
+            JdbcUtils.printSqlConsole(cs);
 
             if (outNames.isEmpty()) {
-                return JdbcUtil.getResult(cs, smd.getPrepareSql());
+                return JdbcUtils.getResult(cs, smd.getPrepareSql());
             }
 
             Object[] values = new Object[outNames.size()];
@@ -415,8 +415,8 @@ public abstract class JdbcSupport {
                         if (result == null) {
                             values[resultIndex] = null;
                         } else if (result instanceof ResultSet) {
-                            List<DataRow> rows = JdbcUtil.createDataRows((ResultSet) result, "", -1);
-                            JdbcUtil.closeResultSet((ResultSet) result);
+                            List<DataRow> rows = JdbcUtils.createDataRows((ResultSet) result, "", -1);
+                            JdbcUtils.closeResultSet((ResultSet) result);
                             values[resultIndex] = rows;
                         } else {
                             values[resultIndex] = result;
@@ -429,7 +429,7 @@ public abstract class JdbcSupport {
         } catch (SQLException e) {
             throw wrappedDataAccessException(smd.getPrepareSql(), e);
         } finally {
-            JdbcUtil.closeStatement(cs);
+            JdbcUtils.closeStatement(cs);
             releaseConnection(connection, getDataSource());
         }
     }

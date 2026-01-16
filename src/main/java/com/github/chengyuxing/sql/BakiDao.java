@@ -136,7 +136,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 if (executionWatcher != null) executionWatcher.onStop(identifier, result, throwable);
             }
         };
-        this.statementValueHandler = (ps, index, value, metaData) -> JdbcUtil.setStatementValue(ps, index, value);
+        this.statementValueHandler = (ps, index, value, metaData) -> JdbcUtils.setStatementValue(ps, index, value);
         this.queryTimeoutHandler = (sql, args) -> 0;
         this.sqlInvokeHandler = type -> null;
         this.using(c -> {
@@ -159,7 +159,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @throws IllegalAccessException not interface or has no @XQLMapper
      */
     public <T> T proxyXQLMapper(@NotNull Class<T> mapperInterface) throws IllegalAccessException {
-        return XQLMapperUtil.getProxyInstance(mapperInterface, new XQLInvocationHandler() {
+        return XQLMapperUtils.getProxyInstance(mapperInterface, new XQLInvocationHandler() {
             @Override
             protected @NotNull BakiDao baki() {
                 return BakiDao.this;
@@ -298,8 +298,8 @@ public class BakiDao extends JdbcSupport implements Baki {
     @Override
     public @NotNull SimpleDMLExecutor table(@NotNull String name) {
         if (xqlFileManager != null) {
-            name = SqlUtil.formatSql(name, xqlFileManager.getConstants());
-            SqlUtil.assertInvalidIdentifier(name);
+            name = SqlUtils.formatSql(name, xqlFileManager.getConstants());
+            SqlUtils.assertInvalidIdentifier(name);
         }
         final String finalName = name;
         return new SimpleDMLExecutor() {
@@ -413,9 +413,9 @@ public class BakiDao extends JdbcSupport implements Baki {
                         Statement s = c.createStatement();
                         //noinspection SqlSourceToSinkFlow
                         ResultSet rs = s.executeQuery(query);
-                        List<String> fields = Arrays.asList(JdbcUtil.createNames(rs, ""));
-                        JdbcUtil.closeResultSet(rs);
-                        JdbcUtil.closeStatement(s);
+                        List<String> fields = Arrays.asList(JdbcUtils.createNames(rs, ""));
+                        JdbcUtils.closeResultSet(rs);
+                        JdbcUtils.closeStatement(s);
                         return fields;
                     } catch (SQLException e) {
                         throw wrappedDataAccessException(query, e);
@@ -1117,9 +1117,9 @@ public class BakiDao extends JdbcSupport implements Baki {
             mySql = sqlInterceptor.preHandle(sql.trim(), mySql, myArgs, metaData);
         }
         if (mySql.contains("${")) {
-            mySql = SqlUtil.formatSql(mySql, myArgs);
+            mySql = SqlUtils.formatSql(mySql, myArgs);
             if (xqlFileManager != null) {
-                mySql = SqlUtil.formatSql(mySql, xqlFileManager.getConstants());
+                mySql = SqlUtils.formatSql(mySql, xqlFileManager.getConstants());
             }
         }
         if (log.isDebugEnabled()) {

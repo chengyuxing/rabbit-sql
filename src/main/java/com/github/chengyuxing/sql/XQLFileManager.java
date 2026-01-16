@@ -12,7 +12,7 @@ import com.github.chengyuxing.common.util.StringUtils;
 import com.github.chengyuxing.sql.exceptions.XQLParseException;
 import com.github.chengyuxing.sql.utils.SqlGenerator;
 import com.github.chengyuxing.sql.utils.SqlHighlighter;
-import com.github.chengyuxing.sql.utils.SqlUtil;
+import com.github.chengyuxing.sql.utils.SqlUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
@@ -376,8 +376,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             Sql sql = e.getValue();
             String source = sql.getSource();
             if (source.contains("${")) {
-                source = SqlUtil.formatSql(source, templates);
-                source = SqlUtil.formatSql(source, constants);
+                source = SqlUtils.formatSql(source, templates);
+                source = SqlUtils.formatSql(source, constants);
                 // remove empty line.
                 sql.setSource(StringUtils.removeEmptyLine(source));
             }
@@ -775,7 +775,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         protected String forLoopBodyFormatter(int forIndex, int itemIndex, String body, Map<String, Object> context) {
             String formatted = body;
             if (body.contains("${")) {
-                formatted = SqlUtil.formatSql(body, context);
+                formatted = SqlUtils.formatSql(body, context);
             }
             if (formatted.contains(namedParamPrefix.toString())) {
                 StringBuilder sb = new StringBuilder();

@@ -122,7 +122,7 @@ public class NewBakiTests {
     @Test
     public void testEntityQ() {
         baki.entity(Guest.class)
-                .query()
+                .query("caching")
                 .where(w -> w.gt(Guest::getId, 1))
                 .where(w -> w.startsWith(Guest::getXm, "c"))
                 .orderBy(o -> o.desc(Guest::getId))

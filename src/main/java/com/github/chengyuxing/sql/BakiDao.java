@@ -508,6 +508,11 @@ public class BakiDao extends JdbcSupport implements Baki {
 
             @Override
             public <SELF extends Query<T, SELF>> Query<T, SELF> query() {
+                return query(null);
+            }
+
+            @Override
+            public <SELF extends Query<T, SELF>> Query<T, SELF> query(@Nullable Object queryId) {
                 return new Query<T, SELF>() {
                     final List<Criteria> whereCriteria = new ArrayList<>();
                     final Set<Pair<String, OrderByType>> orderByColumns = new LinkedHashSet<>();
@@ -517,7 +522,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                      * Create query sql object.
                      * @return [record query, count query, args]
                      */
-                    Triple<String, String, Map<String, Object>> createQuery() {
+                    @NotNull Triple<String, String, Map<String, Object>> createQuery() {
                         final InternalWhere where = new InternalWhere(whereCriteria);
                         final InternalOrderBy orderBy = new InternalOrderBy(orderByColumns);
                         // select a, b, c from table
@@ -525,12 +530,13 @@ public class BakiDao extends JdbcSupport implements Baki {
                         // select count(*) from table
                         String countSelect = entityMeta.getCountSelect();
                         // where
-                        Map<String, Object> args = Collections.emptyMap();
+                        Map<String, Object> args = new HashMap<>();
+                        args.put(IDENTIFIER, queryId);
                         if (!where.isEmpty()) {
                             Pair<String, Map<String, Object>> w = where.buildWhere();
                             recordSelect += "\nwhere " + w.getItem1();
                             countSelect += "\nwhere " + w.getItem1();
-                            args = w.getItem2();
+                            args.putAll(w.getItem2());
                         }
                         // order by
                         recordSelect += orderBy.buildOrderBy();

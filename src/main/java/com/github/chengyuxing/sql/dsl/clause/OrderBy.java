@@ -3,7 +3,7 @@ package com.github.chengyuxing.sql.dsl.clause;
 import com.github.chengyuxing.common.MethodReference;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.sql.dsl.types.OrderByType;
-import com.github.chengyuxing.sql.utils.SqlUtils;
+import com.github.chengyuxing.sql.util.SqlUtils;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.*;

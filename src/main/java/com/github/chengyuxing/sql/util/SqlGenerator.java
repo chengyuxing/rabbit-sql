@@ -1,4 +1,4 @@
-package com.github.chengyuxing.sql.utils;
+package com.github.chengyuxing.sql.util;
 
 import com.github.chengyuxing.common.Patterns;
 import com.github.chengyuxing.common.util.ValueUtils;

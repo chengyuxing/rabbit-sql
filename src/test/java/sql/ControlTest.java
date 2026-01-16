@@ -3,7 +3,7 @@ package sql;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.util.StringUtils;
 import com.github.chengyuxing.sql.XQLFileManager;
-import com.github.chengyuxing.sql.utils.SqlGenerator;
+import com.github.chengyuxing.sql.util.SqlGenerator;
 import org.junit.Test;
 
 import java.util.Arrays;

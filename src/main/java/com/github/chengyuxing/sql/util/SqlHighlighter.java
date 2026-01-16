@@ -1,4 +1,4 @@
-package com.github.chengyuxing.sql.utils;
+package com.github.chengyuxing.sql.util;
 
 import com.github.chengyuxing.common.console.Color;
 import com.github.chengyuxing.common.console.Printer;

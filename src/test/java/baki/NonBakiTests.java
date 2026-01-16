@@ -17,9 +17,9 @@ import com.github.chengyuxing.sql.*;
 import com.github.chengyuxing.sql.annotation.XQLMapper;
 import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
-import com.github.chengyuxing.sql.utils.SqlGenerator;
-import com.github.chengyuxing.sql.utils.SqlHighlighter;
-import com.github.chengyuxing.sql.utils.SqlUtils;
+import com.github.chengyuxing.sql.util.SqlGenerator;
+import com.github.chengyuxing.sql.util.SqlHighlighter;
+import com.github.chengyuxing.sql.util.SqlUtils;
 import entity.type.User;
 import org.junit.Test;
 

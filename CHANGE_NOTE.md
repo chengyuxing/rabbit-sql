@@ -1,5 +1,9 @@
 # change note
 
+# 10.1.4
+
+- Rename package utils to util.
+
 # 10.1.3
 
 - Make Global sql execution exception wrap as DataAccessException.

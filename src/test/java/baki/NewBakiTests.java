@@ -16,7 +16,7 @@ import com.github.chengyuxing.sql.plugins.QueryExecutor;
 import com.github.chengyuxing.sql.transaction.Tx;
 import com.github.chengyuxing.sql.types.StandardOutParamType;
 import com.github.chengyuxing.sql.types.Param;
-import com.github.chengyuxing.sql.utils.JdbcUtils;
+import com.github.chengyuxing.sql.util.JdbcUtils;
 import com.zaxxer.hikari.HikariDataSource;
 import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;

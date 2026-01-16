@@ -23,7 +23,7 @@ import com.github.chengyuxing.sql.support.*;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.annotation.SqlStatementType;
 import com.github.chengyuxing.sql.types.Execution;
-import com.github.chengyuxing.sql.utils.*;
+import com.github.chengyuxing.sql.util.*;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;

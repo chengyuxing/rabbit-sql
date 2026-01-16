@@ -1,6 +1,6 @@
 package com.github.chengyuxing.sql.plugins;
 
-import com.github.chengyuxing.sql.utils.JdbcUtils;
+import com.github.chengyuxing.sql.util.JdbcUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Range;

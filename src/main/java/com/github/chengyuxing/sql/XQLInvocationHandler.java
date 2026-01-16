@@ -2,6 +2,7 @@ package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.TiFunction;
+import com.github.chengyuxing.common.util.StringUtils;
 import com.github.chengyuxing.common.util.ValueUtils;
 import com.github.chengyuxing.common.util.ReflectUtils;
 import com.github.chengyuxing.sql.annotation.*;
@@ -12,7 +13,6 @@ import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.annotation.SqlStatementType;
 import org.jetbrains.annotations.NotNull;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.function.Function;
@@ -297,53 +297,91 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
         if (parameters.length == 0) {
             return Collections.emptyMap();
         }
-        if (parameters.length == 1) {
-            Annotation[] annotations = parameters[0].getAnnotations();
-            if (annotations.length == 0) {
-                Object arg = args[0];
-                if (arg instanceof Iterable) {
-                    List<Object> myArgs = new ArrayList<>();
-                    for (Object o : (Iterable<?>) arg) {
-                        if (o instanceof Map) {
-                            myArgs.add(o);
-                            continue;
-                        }
-                        if (!arg.getClass().getName().startsWith("java.")) {
-                            myArgs.add(ValueUtils.entityToMap(arg,
-                                    field -> entityMetaProvider().columnMeta(field).getName(),
-                                    HashMap::new));
-                            continue;
-                        }
-                        throw new IllegalArgumentException(method.getDeclaringClass() + "." + method.getName() + " unsupported arg type: " + arg.getClass().getName());
-                    }
-                    return myArgs;
-                }
-                if (arg instanceof Map) {
-                    return arg;
-                }
-                if (!ReflectUtils.isBasicType(arg)) {
-                    return ValueUtils.entityToMap(arg,
-                            field -> entityMetaProvider().columnMeta(field).getName(),
-                            HashMap::new);
-                }
-            }
+        if (parameters.length == 1 && isImplicitSingleArg(parameters[0])) {
+            return resolveSingleArg(method, args[0]);
         }
+        return resolveNamedArgs(method, parameters, args);
+    }
 
-        Map<String, Object> myArgs = new HashMap<>();
+    private Object resolveSingleArg(Method method, Object arg) {
+        if (arg == null) {
+            return null;
+        }
+        if (arg instanceof Map<?, ?>) {
+            return arg;
+        }
+        if (arg instanceof Iterable<?>) {
+            return resolveIterableArg(method, (Iterable<?>) arg);
+        }
+        if (isBindableObject(arg)) {
+            return entityToMap(arg);
+        }
+        throw unsupportedArg(method, arg);
+    }
+
+    private Object resolveNamedArgs(Method method, Parameter[] parameters, Object[] args) {
+        Map<String, Object> result = new HashMap<>();
         for (int i = 0; i < parameters.length; i++) {
-            Parameter parameter = parameters[i];
-            Annotation[] annotations = parameter.getDeclaredAnnotations();
-            if (annotations.length == 0) {
-                throw new IllegalArgumentException(method.getDeclaringClass() + "#" + method.getName() + "#" + parameter.getName() + " has no @" + Arg.class.getSimpleName());
+            Arg arg = parameters[i].getAnnotation(Arg.class);
+            if (arg == null) {
+                throw new IllegalArgumentException(method.getDeclaringClass()
+                        + "#" + method.getName()
+                        + "#" + parameters[i].getName()
+                        + " has no @" + Arg.class.getSimpleName());
             }
-            for (Annotation annotation : annotations) {
-                if (annotation instanceof Arg) {
-                    String argName = ((Arg) annotation).value();
-                    myArgs.put(argName, args[i]);
-                    break;
-                }
+            result.put(arg.value(), args[i]);
+        }
+        return result;
+    }
+
+    private Object resolveIterableArg(Method method, Iterable<?> iterable) {
+        List<Object> result = new ArrayList<>();
+        for (Object element : iterable) {
+            if (element instanceof Map<?, ?>) {
+                result.add(element);
+            } else if (isBindableObject(element)) {
+                result.add(entityToMap(element));
+            } else {
+                throw unsupportedArg(method, element);
             }
         }
-        return myArgs;
+        return result;
+    }
+
+    private Object entityToMap(Object entity) {
+        return ValueUtils.entityToMap(entity,
+                f -> entityMetaProvider().columnMeta(f).getName(),
+                HashMap::new
+        );
+    }
+
+    private boolean isBindableObject(@NotNull Object o) {
+        Class<?> type = o.getClass();
+        String name = type.getName();
+        if (StringUtils.startsWiths(name, "java.", "javax.", "jakarta.")) {
+            return false;
+        }
+        if (type.isInterface() || type.isEnum() || type.isArray() || type.isPrimitive()) {
+            return false;
+        }
+        if (type.isSynthetic() || StringUtils.startsWiths(name, "$$", "$Proxy")) {
+            return false;
+        }
+        for (Field field : type.getDeclaredFields()) {
+            if (!Modifier.isStatic(field.getModifiers())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isImplicitSingleArg(Parameter parameter) {
+        return parameter.getAnnotation(Arg.class) == null;
+    }
+
+    private IllegalArgumentException unsupportedArg(Method method, Object element) {
+        return new IllegalArgumentException(method.getDeclaringClass()
+                + "#" + method.getName()
+                + "#" + element.getClass().getSimpleName());
     }
 }

@@ -5,7 +5,7 @@ import com.github.chengyuxing.sql.annotation.XQLMapper;
 
 import java.lang.reflect.Proxy;
 
-public class XQLMapperUtil {
+public class XQLMapperUtils {
     @SuppressWarnings("unchecked")
     public static <T> T getProxyInstance(Class<T> clazz, XQLInvocationHandler xqlInvocationHandler) throws IllegalAccessException {
         if (!clazz.isInterface()) {

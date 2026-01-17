@@ -2,7 +2,7 @@
 
 # 10.2.0
 
-- package utils move to util.
+- Some optimized.
 
 # 10.1.4
 

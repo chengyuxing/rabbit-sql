@@ -103,7 +103,7 @@ public final class SqlHighlighter {
             for (int i = 0, j = words.size(); i < j; i++) {
                 String word = words.get(i);
                 String replacement = word;
-                if (!word.trim().isEmpty()) {
+                if (!StringUtils.isBlank(word)) {
                     // functions highlight
                     if (!StringUtils.equalsAnyIgnoreCase(word, Keywords.STANDARD) && detectFunction(word, i, j, delimiters)) {
                         replacement = replacer.apply(TAG.FUNCTION, word);
@@ -141,30 +141,67 @@ public final class SqlHighlighter {
             String[] sqlLines = colorfulSql.split("\n");
             for (int i = 0; i < sqlLines.length; i++) {
                 String line = sqlLines[i];
-                if (line.trim().startsWith("--")) {
-                    sqlLines[i] = replacer.apply(TAG.LINE_COMMENT, line);
-                } else if (line.contains("--")) {
-                    int idx = line.indexOf("--");
-                    sqlLines[i] = line.substring(0, idx) + replacer.apply(TAG.LINE_COMMENT, line.substring(idx));
+                int lineCmtIdx = findLineCommentIndex(line);
+                if (lineCmtIdx != -1) {
+                    String head = line.substring(0, lineCmtIdx);
+                    String tail = line.substring(lineCmtIdx);
+                    if ((StringUtils.countOccurrences(head, "'") & 1) == 0) {
+                        sqlLines[i] = head + replacer.apply(TAG.LINE_COMMENT, tail);
+                    }
                 }
             }
             colorfulSql = String.join("\n", sqlLines);
             // resolve block comment
-            StringBuilder parsedSql = new StringBuilder();
             Matcher matcher = BLOCK_COMMENT_PATTERN.matcher(colorfulSql);
-            int lastMatchEnd = 0;
+            StringBuffer blockCmtBuf = new StringBuffer();
             while (matcher.find()) {
-                String match = matcher.group();
-                parsedSql.append(colorfulSql, lastMatchEnd, matcher.start());
-                parsedSql.append(replacer.apply(TAG.BLOCK_COMMENT, match));
-                lastMatchEnd = matcher.end();
+                matcher.appendReplacement(
+                        blockCmtBuf,
+                        Matcher.quoteReplacement(replacer.apply(TAG.BLOCK_COMMENT, matcher.group()))
+                );
             }
-            parsedSql.append(colorfulSql.substring(lastMatchEnd));
-            return parsedSql.toString();
+            matcher.appendTail(blockCmtBuf);
+            return blockCmtBuf.toString();
         } catch (Exception e) {
             log.error("highlight sql error.", e);
             return sql;
         }
+    }
+
+    /**
+     * Finds the index of the start of a line comment (--) in the given line.
+     * It skips over any single or double-quoted strings, and only identifies
+     * '--' as a comment if it is not within a quoted string.
+     *
+     * @param line the line of text to search for a line comment
+     * @return the index of the start of the line comment, or -1 if no line comment is found
+     */
+    private static int findLineCommentIndex(String line) {
+        boolean inSingle = false;
+        boolean inDouble = false;
+
+        for (int i = 0; i < line.length() - 1; i++) {
+            char c = line.charAt(i);
+
+            if (c == '\'' && !inDouble) {
+                if (inSingle && i + 1 < line.length() && line.charAt(i + 1) == '\'') {
+                    i++; // skip escaped ''
+                } else {
+                    inSingle = !inSingle;
+                }
+                continue;
+            }
+
+            if (c == '"' && !inSingle) {
+                inDouble = !inDouble;
+                continue;
+            }
+
+            if (!inSingle && !inDouble && c == '-' && line.charAt(i + 1) == '-') {
+                return i;
+            }
+        }
+        return -1;
     }
 
     /**

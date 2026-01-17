@@ -83,7 +83,7 @@ public class NonBakiTests {
                                 "addresses", Arrays.asList(Args.of("city", "lijiang"))))
         );
         System.out.println("-----");
-        System.out.println(new ObjectMapper().writeValueAsString(args));
+//        System.out.println(new ObjectMapper().writeValueAsString(args));
         System.out.println("-----");
         System.out.println(ValueUtils.getDeepValue(args, "users.0.addresses.0.city"));
         System.out.println("-----");
@@ -132,8 +132,8 @@ public class NonBakiTests {
         // language=SQL
         String sql = "/*[ooooooooo]*/\n" +
                 "select count(*),\n" +
-                "       count(*) filter ( where grade > :g1 )               greate,\n" +
-                "       -- #if :databaseId != blank\n" +
+                "       count(*) filter ( where '--grade' > :g1 )               greate,--成绩\n" +
+                "            -- #if :databaseId != blank\n" +
                 "        test.string_agg (id, ', ') /*filter ( where grade < :g2 and grade > :g3)*/ good,\n" +
                 "       -- #fi\n" +
                 "       count(*) filter /*( where grade < 60 )               bad\n" +

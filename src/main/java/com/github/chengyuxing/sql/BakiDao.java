@@ -1093,7 +1093,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         if (args != null) {
             myArgs.putAll(args);
         }
-        String mySql = sql.trim();
+        String mySql = sql;
         if (mySql.startsWith("&")) {
             log.debug("SQL Name: {}", mySql);
             String sqlRef = mySql.substring(1);
@@ -1120,7 +1120,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
         }
         if (sqlInterceptor != null) {
-            mySql = sqlInterceptor.preHandle(sql.trim(), mySql, myArgs, metaData);
+            mySql = sqlInterceptor.preHandle(sql, mySql, myArgs, metaData);
         }
         if (mySql.contains("${")) {
             mySql = SqlUtils.formatSql(mySql, myArgs);

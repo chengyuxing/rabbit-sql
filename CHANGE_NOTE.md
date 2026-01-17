@@ -1,5 +1,9 @@
 # change note
 
+# 10.2.0
+
+- package utils move to util.
+
 # 10.1.4
 
 - Rename package utils to util.

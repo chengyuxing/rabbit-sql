@@ -211,13 +211,13 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                             if (description.endsWith("#")) {
                                 description = description.substring(0, description.length() - 1);
                             }
-                            if (!description.trim().isEmpty()) {
+                            if (!StringUtils.isBlank(description)) {
                                 descriptionBuffer.append(description).append(NEW_LINE);
                             }
                             continue;
                         }
                         String descriptionStart = trimLine.substring(3);
-                        if (!descriptionStart.trim().isEmpty()) {
+                        if (!StringUtils.isBlank(descriptionStart)) {
                             descriptionBuffer.append(descriptionStart).append(NEW_LINE);
                         }
                         String descLine;
@@ -227,7 +227,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                                 if (descriptionEnd.endsWith("#")) {
                                     descriptionEnd = descriptionEnd.substring(0, descriptionEnd.length() - 1);
                                 }
-                                if (!descriptionEnd.trim().isEmpty()) {
+                                if (!StringUtils.isBlank(descriptionEnd)) {
                                     descriptionBuffer.append(descriptionEnd).append(NEW_LINE);
                                 }
                                 break;
@@ -774,48 +774,48 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
          * @return formatted content
          */
         @Override
-        protected String forLoopBodyFormatter(int forIndex, int itemIndex, String body, Map<String, Object> context) {
+        protected String forLoopBodyFormatter(int forIndex, int itemIndex, @NotNull String body, @NotNull Map<String, Object> context) {
             String formatted = body;
             if (body.contains("${")) {
                 formatted = SqlUtils.formatSql(body, context);
             }
-            if (formatted.contains(namedParamPrefix.toString())) {
-                StringBuilder sb = new StringBuilder();
+            if (formatted.indexOf(namedParamPrefix) != -1) {
+                StringBuffer sb = new StringBuffer();
                 Matcher m = namedParamPattern.matcher(formatted);
-                int lastMatchEnd = 0;
                 while (m.find()) {
-                    sb.append(formatted, lastMatchEnd, m.start());
-                    lastMatchEnd = m.end();
                     String name = m.group(1);
+                    String replacement = null;
                     if (name != null) {
                         if (context.containsKey(name)) {
-                            sb.append(namedParamPrefix)
-                                    .append(VAR_PREFIX)
-                                    .append(forVarGeneratedKey(name, forIndex, itemIndex));
-                            continue;
-                        }
-                        // -- #for item of :data | kv
-                        //  ${item.key} = :item.value
-                        //-- #done
-                        // --------------------------
-                        // name: item.value
-                        // varName: item
-                        int dotIdx = name.indexOf('.');
-                        if (dotIdx != -1) {
-                            String paramName = name.substring(0, dotIdx);
-                            if (context.containsKey(paramName)) {
-                                String suffix = name.substring(dotIdx);
-                                sb.append(namedParamPrefix)
-                                        .append(VAR_PREFIX)
-                                        .append(forVarGeneratedKey(paramName, forIndex, itemIndex))
-                                        .append(suffix);
-                                continue;
+                            replacement = namedParamPrefix
+                                    + VAR_PREFIX
+                                    + forVarGeneratedKey(name, forIndex, itemIndex);
+                        } else {
+                            // -- #for item of :data | kv
+                            //  ${item.key} = :item.value
+                            //-- #done
+                            // --------------------------
+                            // name: item.value
+                            // varName: item
+                            int dotIdx = name.indexOf('.');
+                            if (dotIdx != -1) {
+                                String paramName = name.substring(0, dotIdx);
+                                if (context.containsKey(paramName)) {
+                                    replacement = namedParamPrefix
+                                            + VAR_PREFIX
+                                            + forVarGeneratedKey(paramName, forIndex, itemIndex)
+                                            + name.substring(dotIdx);
+                                }
                             }
                         }
                     }
-                    sb.append(m.group());
+                    if (replacement != null) {
+                        m.appendReplacement(sb, Matcher.quoteReplacement(replacement));
+                    } else {
+                        m.appendReplacement(sb, m.group());
+                    }
                 }
-                sb.append(formatted.substring(lastMatchEnd));
+                m.appendTail(sb);
                 formatted = sb.toString();
             }
             return formatted;

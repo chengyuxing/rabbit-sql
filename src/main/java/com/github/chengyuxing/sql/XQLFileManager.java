@@ -826,13 +826,13 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         }
 
         /**
-         * Trim line annotation for detect dynamic sql script expression.
+         * Normalizes the directive line by removing the leading '--' if present.
          *
-         * @param line the string line potentially containing a prefix
-         * @return the trimmed line with the prefix removed if it starts with "{@code --}"
+         * @param line the line to be normalized
+         * @return the normalized line with leading '--' removed, or the original line if no '--' is found
          */
         @Override
-        protected String trimExpressionLine(String line) {
+        protected String normalizeDirectiveLine(String line) {
             int idx = line.indexOf("--");
             if (idx != -1) {
                 return line.substring(idx + 2);

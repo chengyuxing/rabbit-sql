@@ -732,9 +732,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public class DynamicSqlParser extends RabbitScriptParser {
         public static final String FOR_VARS_KEY = "_for";
         public static final String VAR_PREFIX = FOR_VARS_KEY + '.';
+        private final Pattern namedParamPattern;
 
         public DynamicSqlParser(@NotNull String sql) {
             super(sql);
+            this.namedParamPattern = new SqlGenerator(namedParamPrefix).getNamedParamPattern();
         }
 
         @Override
@@ -779,15 +781,14 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             }
             if (formatted.contains(namedParamPrefix.toString())) {
                 StringBuilder sb = new StringBuilder();
-                Pattern p = new SqlGenerator(namedParamPrefix).getNamedParamPattern();
-                Matcher m = p.matcher(formatted);
+                Matcher m = namedParamPattern.matcher(formatted);
                 int lastMatchEnd = 0;
                 while (m.find()) {
                     sb.append(formatted, lastMatchEnd, m.start());
                     lastMatchEnd = m.end();
                     String name = m.group(1);
                     if (name != null) {
-                        if (context.containsKey(name)) {
+                        if (isForVar(name, context)) {
                             sb.append(namedParamPrefix)
                                     .append(VAR_PREFIX)
                                     .append(forVarGeneratedKey(name, forIndex, itemIndex));
@@ -802,7 +803,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                         int dotIdx = name.indexOf('.');
                         if (dotIdx != -1) {
                             String paramName = name.substring(0, dotIdx);
-                            if (context.containsKey(paramName)) {
+                            if (isForVar(paramName, context)) {
                                 String suffix = name.substring(dotIdx);
                                 sb.append(namedParamPrefix)
                                         .append(VAR_PREFIX)
@@ -820,6 +821,10 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             return formatted;
         }
 
+        private boolean isForVar(String name, Map<String, Object> context) {
+            return context.containsKey(name);
+        }
+
         /**
          * Trim line annotation for detect dynamic sql script expression.
          *
@@ -828,9 +833,9 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
          */
         @Override
         protected String trimExpressionLine(String line) {
-            String lt = line.trim();
-            if (lt.startsWith("--")) {
-                return lt.substring(2);
+            int idx = line.indexOf("--");
+            if (idx != -1) {
+                return line.substring(idx + 2);
             }
             return line;
         }

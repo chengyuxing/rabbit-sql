@@ -788,7 +788,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     lastMatchEnd = m.end();
                     String name = m.group(1);
                     if (name != null) {
-                        if (isForVar(name, context)) {
+                        if (context.containsKey(name)) {
                             sb.append(namedParamPrefix)
                                     .append(VAR_PREFIX)
                                     .append(forVarGeneratedKey(name, forIndex, itemIndex));
@@ -803,7 +803,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                         int dotIdx = name.indexOf('.');
                         if (dotIdx != -1) {
                             String paramName = name.substring(0, dotIdx);
-                            if (isForVar(paramName, context)) {
+                            if (context.containsKey(paramName)) {
                                 String suffix = name.substring(dotIdx);
                                 sb.append(namedParamPrefix)
                                         .append(VAR_PREFIX)
@@ -819,10 +819,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                 formatted = sb.toString();
             }
             return formatted;
-        }
-
-        private boolean isForVar(String name, Map<String, Object> context) {
-            return context.containsKey(name);
         }
 
         /**

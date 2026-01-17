@@ -1,5 +1,10 @@
 # change note
 
+# 10.2.1
+
+- SQL highlight optimized.
+- Dynamic sql `#for` loop body parse string format optimized.
+
 # 10.2.0
 
 - Some optimized.

@@ -222,8 +222,9 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                         }
                         String descLine;
                         while ((descLine = reader.readLine()) != null) {
-                            if (descLine.trim().endsWith("*/")) {
-                                String descriptionEnd = descLine.substring(0, descLine.lastIndexOf("*/"));
+                            int endBlockIdx = StringUtils.lastIndexOfNonWhitespace(descLine, "*/");
+                            if (endBlockIdx != -1) {
+                                String descriptionEnd = descLine.substring(0, endBlockIdx);
                                 if (descriptionEnd.endsWith("#")) {
                                     descriptionEnd = descriptionEnd.substring(0, descriptionEnd.length() - 1);
                                 }

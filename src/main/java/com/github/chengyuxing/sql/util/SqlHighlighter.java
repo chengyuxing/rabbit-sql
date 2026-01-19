@@ -145,9 +145,7 @@ public final class SqlHighlighter {
                 if (lineCmtIdx != -1) {
                     String head = line.substring(0, lineCmtIdx);
                     String tail = line.substring(lineCmtIdx);
-                    if ((StringUtils.countOccurrences(head, "'") & 1) == 0) {
-                        sqlLines[i] = head + replacer.apply(TAG.LINE_COMMENT, tail);
-                    }
+                    sqlLines[i] = head + replacer.apply(TAG.LINE_COMMENT, tail);
                 }
             }
             colorfulSql = String.join("\n", sqlLines);
@@ -217,7 +215,7 @@ public final class SqlHighlighter {
             return false;
         }
         if (i < j - 1) {
-            return delimiters.get(i).trim().startsWith("(");
+            return StringUtils.indexOfNonWhitespace(delimiters.get(i), "(") != -1;
         }
         return false;
     }

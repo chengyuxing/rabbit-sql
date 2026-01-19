@@ -94,8 +94,8 @@ public class XQLFileManagerConfig {
             Map<String, Object> localConstants = new HashMap<>();
             Map<String, String> localPipes = new HashMap<>();
             properties.forEach((k, s) -> {
-                String p = k.toString().trim();
-                String v = s.toString().trim();
+                String p = k.toString();
+                String v = s.toString();
                 if (!p.isEmpty() && !v.isEmpty()) {
                     if (p.startsWith("files.")) {
                         localFiles.put(p.substring(6), v);

@@ -1093,7 +1093,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         if (args != null) {
             myArgs.putAll(args);
         }
-        String mySql = sql;
+        String mySql = sql.trim();
         if (mySql.startsWith("&")) {
             log.debug("SQL Name: {}", mySql);
             String sqlRef = mySql.substring(1);

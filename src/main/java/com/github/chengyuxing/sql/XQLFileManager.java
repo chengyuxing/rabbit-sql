@@ -348,21 +348,19 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @param sqlResource sql resource
      */
     protected void mergeSqlTemplate(Map<String, Sql> sqlResource) {
-        //noinspection ExtractMethodRecommender
         Map<String, String> templates = new HashMap<>();
         for (Map.Entry<String, Sql> e : sqlResource.entrySet()) {
             String k = e.getKey();
             if (k.startsWith("${")) {
-                //noinspection ExtractMethodRecommender
                 String template = e.getValue().getSource();
                 // fix template
-                if (template.trim().startsWith("--")) {
+                if (SqlUtils.indexOfWholeLineComment(template) != -1) {
                     template = NEW_LINE + template;
                 }
                 int lastLN = template.lastIndexOf(NEW_LINE);
                 if (lastLN != -1) {
                     String lastLine = template.substring(lastLN);
-                    if (lastLine.trim().startsWith("--")) {
+                    if (SqlUtils.indexOfWholeLineComment(lastLine) != -1) {
                         template += NEW_LINE;
                     }
                 }
@@ -829,7 +827,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
          */
         @Override
         protected String normalizeDirectiveLine(String line) {
-            int idx = line.indexOf("--");
+            int idx = SqlUtils.indexOfWholeLineComment(line);
             if (idx != -1) {
                 return line.substring(idx + 2);
             }

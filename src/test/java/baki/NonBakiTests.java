@@ -179,6 +179,39 @@ public class NonBakiTests {
     }
 
     @Test
+    public void testPerf() {
+        String s = "    -- test";
+
+        // warm up
+        for (int i = 0; i < 1_000_000; i++) {
+            StringUtils.indexOfNonWhitespace(s, "--");
+            s.trim().indexOf("--");
+        }
+
+        long t1 = System.nanoTime();
+        for (int i = 0; i < 10_000_000; i++) {
+            StringUtils.indexOfNonWhitespace(s, "--");
+        }
+        long t2 = System.nanoTime();
+
+        long t3 = System.nanoTime();
+        for (int i = 0; i < 10_000_000; i++) {
+            s.trim().indexOf("--");
+        }
+        long t4 = System.nanoTime();
+
+        System.out.println("custom: " + (t2 - t1));
+        System.out.println("trim  : " + (t4 - t3));
+    }
+
+    @Test
+    public void testXx() {
+        String s = "select a,b,c ;   ";
+        System.out.println(StringUtils.lastIndexOfNonWhitespace(s, ";"));
+        System.out.println(s.substring(0, 13));
+    }
+
+    @Test
     public void test23() {
         SqlGenerator sqlGenerator = new SqlGenerator('*');
         System.out.println(sqlGenerator.getNamedParamPattern());

@@ -114,7 +114,7 @@ public final class SqlHighlighter {
                     } else if (StringUtils.equalsAnyIgnoreCase(word, Keywords.STANDARD)) {
                         replacement = replacer.apply(TAG.KEYWORD, word);
                         // number highlight
-                    } else if (StringUtils.isNumeric(word)) {
+                    } else if (StringUtils.isNumber(word)) {
                         replacement = replacer.apply(TAG.NUMBER, word);
                         // PostgreSQL function body block highlight
                     } else if (word.equals("$$")) {

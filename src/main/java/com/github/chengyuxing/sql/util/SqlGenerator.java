@@ -1,6 +1,5 @@
 package com.github.chengyuxing.sql.util;
 
-import com.github.chengyuxing.common.Patterns;
 import com.github.chengyuxing.common.util.ValueUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -36,7 +35,7 @@ public class SqlGenerator {
                                 "--.*?$|" +                 // Line comments
                                 "/\\*.*?\\*/|" +            // Block comments
                                 "::\\w+",                   // PostgreSQL type casts
-                        namedParamPrefix, Patterns.VAR_KEY_PATTERN),
+                        namedParamPrefix, ValueUtils.VAR_PATH_EXPRESSION_PATTERN.pattern()),
                 Pattern.DOTALL | Pattern.MULTILINE
         );
     }
@@ -151,7 +150,7 @@ public class SqlGenerator {
             String name = matcher.group(1);
             String replacement;
             if (name != null) {
-                Object value = name.contains(".") ? ValueUtils.getDeepValue(args, name) : args.get(name);
+                Object value = ValueUtils.getDeepValue(args, name);
                 replacement = namedParamFormatter.apply(value);
             } else {
                 replacement = matcher.group();

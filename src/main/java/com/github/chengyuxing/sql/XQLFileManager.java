@@ -2,7 +2,7 @@ package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.script.lexer.RabbitScriptLexer;
-import com.github.chengyuxing.common.script.parser.RabbitScriptParser;
+import com.github.chengyuxing.common.script.parser.RabbitScriptEngine;
 import com.github.chengyuxing.common.script.exception.ScriptSyntaxException;
 import com.github.chengyuxing.common.script.pipe.IPipe;
 import com.github.chengyuxing.common.tuple.Pair;
@@ -87,12 +87,12 @@ import static com.github.chengyuxing.common.util.StringUtils.containsAnyIgnoreCa
  * </pre>
  * </blockquote>
  * <p>
- * {@linkplain DynamicSqlParser Dynamic sql script} write in line comment where starts with {@code --},
+ * {@linkplain DynamicSqlEngine Dynamic sql script} write in line comment where starts with {@code --},
  * check example following class path file: {@code home.xql.template}.
  * <p>Supported Directives: {@link com.github.chengyuxing.common.script.Directives Directives}</p>
  * <p>Invoke method {@link #get(String, Map)} to enjoy the dynamic sql!</p>
  *
- * @see RabbitScriptParser
+ * @see RabbitScriptEngine
  */
 public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(XQLFileManager.class);
@@ -309,7 +309,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     protected @NotNull Sql scanSql(@NotNull String alias, @NotNull String filename, @NotNull String sqlName, @NotNull String sql, @NotNull String desc) {
         try {
-            newDynamicSqlParser(sql).verify();
+            newDynamicSqlEngine(sql).verify();
         } catch (ScriptSyntaxException e) {
             throw new XQLParseException("File: " + filename + " -> '" + sqlName + "' has script syntax error", e);
         }
@@ -618,7 +618,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @param name the name of the SQL statement to retrieve, e.g. {@code <alias>.<sqlName>}
      * @param args a map containing the arguments to be used in parsing the SQL statement
      * @return a Pair where the first element is the parsed SQL statement as a String, and the second element is a Map containing any additional data or parameters
-     * @see DynamicSqlParser
+     * @see DynamicSqlEngine
      */
     public Pair<String, Map<String, Object>> get(@NotNull String name, Map<String, ?> args) {
         return parseDynamicSql(get(name), args);
@@ -642,17 +642,17 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         }
         myArgs.put("_databaseId", databaseId);
 
-        DynamicSqlParser parser = newDynamicSqlParser(sql);
-        String parsedSql = parser.parse(myArgs);
+        DynamicSqlEngine engine = newDynamicSqlEngine(sql);
+        String parsedSql = engine.evaluate(myArgs);
         //noinspection ExtractMethodRecommender
-        Map<String, Object> vars = new HashMap<>(parser.getDefinedVars());
-        Map<String, Object> forGeneratedVars = parser.getForGeneratedVars();
+        Map<String, Object> vars = new HashMap<>(engine.getDefinedVars());
+        Map<String, Object> forGeneratedVars = engine.getForGeneratedVars();
         if (!forGeneratedVars.isEmpty()) {
             // #for expression temp variables stored in _for variable.
-            if (!vars.containsKey(DynamicSqlParser.FOR_VARS_KEY)) {
-                vars.put(DynamicSqlParser.FOR_VARS_KEY, forGeneratedVars);
+            if (!vars.containsKey(DynamicSqlEngine.FOR_VARS_KEY)) {
+                vars.put(DynamicSqlEngine.FOR_VARS_KEY, forGeneratedVars);
             } else {
-                throw new IllegalStateException("#var cannot define the name " + DynamicSqlParser.FOR_VARS_KEY + " when #for directive exists.");
+                throw new IllegalStateException("#var cannot define the name " + DynamicSqlEngine.FOR_VARS_KEY + " when #for directive exists.");
             }
         }
         return Pair.of(parsedSql, vars);
@@ -698,13 +698,13 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * Create a new dynamic sql parser.
+     * Create a new dynamic sql engine.
      *
      * @param sql sql
-     * @return dynamic sql parser
+     * @return dynamic sql engine
      */
-    public DynamicSqlParser newDynamicSqlParser(@NotNull String sql) {
-        return new DynamicSqlParser(sql);
+    public DynamicSqlEngine newDynamicSqlEngine(@NotNull String sql) {
+        return new DynamicSqlEngine(sql);
     }
 
     @Override
@@ -728,12 +728,12 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     /**
      * Dynamic sql parser.
      */
-    public class DynamicSqlParser extends RabbitScriptParser {
+    public class DynamicSqlEngine extends RabbitScriptEngine {
         public static final String FOR_VARS_KEY = "_for";
         public static final String VAR_PREFIX = FOR_VARS_KEY + '.';
         private final Pattern namedParamPattern;
 
-        public DynamicSqlParser(@NotNull String sql) {
+        public DynamicSqlEngine(@NotNull String sql) {
             super(sql);
             this.namedParamPattern = new SqlGenerator(namedParamPrefix).getNamedParamPattern();
         }
@@ -785,7 +785,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     String name = m.group(1);
                     String replacement = null;
                     if (name != null) {
-                        if (context.containsKey(name)) {
+                        int dotIdx = Math.min(name.indexOf('.'), name.indexOf('['));
+                        if (dotIdx == -1 && context.containsKey(name)) {
                             replacement = namedParamPrefix
                                     + VAR_PREFIX
                                     + forVarGeneratedKey(name, forIndex, itemIndex);
@@ -796,7 +797,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                             // --------------------------
                             // name: item.value
                             // varName: item
-                            int dotIdx = name.indexOf('.');
                             if (dotIdx != -1) {
                                 String paramName = name.substring(0, dotIdx);
                                 if (context.containsKey(paramName)) {

@@ -1,6 +1,5 @@
 package com.github.chengyuxing.sql.yaml;
 
-import com.github.chengyuxing.common.Patterns;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.constructor.AbstractConstruct;
 import org.yaml.snakeyaml.constructor.Constructor;
@@ -15,7 +14,7 @@ import java.util.stream.Collectors;
  * Yaml custom tag for string join constructor.
  */
 public class FeaturedConstructor extends Constructor {
-    private final static Pattern VAR_PATTERN = Pattern.compile("\\$\\{\\s*(" + Patterns.VAR_KEY_PATTERN + ")\\s*}");
+    private final static Pattern VAR_PATTERN = Pattern.compile("\\$\\{\\s*(\\w+)\\s*}");
 
     public FeaturedConstructor() {
         super(new LoaderOptions());

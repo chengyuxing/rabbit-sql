@@ -99,7 +99,7 @@ public abstract class JdbcSupport {
     protected void setPreparedSqlArgs(PreparedStatement ps, Map<String, ?> args, Map<String, List<Integer>> names) throws SQLException {
         for (Map.Entry<String, List<Integer>> e : names.entrySet()) {
             String name = e.getKey();
-            Object value = name.contains(".") ? ValueUtils.getDeepValue(args, name) : args.get(name);
+            Object value = ValueUtils.getDeepValue(args, name);
             for (Integer i : e.getValue()) {
                 doHandleStatementValue(ps, i, value);
             }

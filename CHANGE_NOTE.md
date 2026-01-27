@@ -82,7 +82,7 @@
 - Dynamic sql add supports: #guard...#throw, #check exp throw, #var ...
 - Dynamic sql verify logic optimized and fixed #else verify bug.
 - Dynamic sql pipe supports params.
-- Dynamic sql parser optimized.
+- Dynamic sql interpreter optimized.
 - QueryCacheManager#get add 2nd parameter query args.
 - Some optimized.
 
@@ -347,7 +347,7 @@
 
 ## 7.9.14
 
-- Dynamic sql parser optimized.
+- Dynamic sql interpreter optimized.
 - Dynamic sql parse supports `if-else-fi` block.
 - Some optimized.
 

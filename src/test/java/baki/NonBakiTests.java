@@ -41,6 +41,17 @@ import java.util.regex.Pattern;
 
 public class NonBakiTests {
 
+    static Args<Object> args = Args.of(
+            "list", Arrays.asList("a", "b", "c"),
+            "users", Arrays.asList(
+                    Args.of("name", "jack",
+                            "addresses", Arrays.asList(Args.of("city", "kunming"), Args.of("city", "shanghai"))),
+                    Args.of("name", "lisa",
+                            "addresses", Arrays.asList(Args.of("city", "beijing"), Args.of("city", "hongkong"))),
+                    Args.of("name", "mike",
+                            "addresses", Arrays.asList(Args.of("city", "lijiang"))))
+    );
+
     @Test
     public void testEntityManager() {
         EntityManager entityManager = new EntityManager(':');
@@ -72,24 +83,25 @@ public class NonBakiTests {
         XQLFileManager xqlFileManager = new XQLFileManager();
         xqlFileManager.add("for", "pgsql/for_var.xql");
         xqlFileManager.init();
-        Args<Object> args = Args.of(
-                "list", Arrays.asList("a", "b", "c"),
-                "users", Arrays.asList(
-                        Args.of("name", "jack",
-                                "addresses", Arrays.asList(Args.of("city", "kunming"), Args.of("city", "shanghai"))),
-                        Args.of("name", "lisa",
-                                "addresses", Arrays.asList(Args.of("city", "beijing"), Args.of("city", "hongkong"))),
-                        Args.of("name", "mike",
-                                "addresses", Arrays.asList(Args.of("city", "lijiang"))))
-        );
+
         System.out.println("-----");
 //        System.out.println(new ObjectMapper().writeValueAsString(args));
-        System.out.println("-----");
-        System.out.println(ValueUtils.getDeepValue(args, "users.0.addresses.0.city"));
-        System.out.println("-----");
+        System.out.println("00000");
+        System.out.println("00000");
         System.out.println(xqlFileManager.get("for.query^count", args));
         System.out.println(xqlFileManager.contains("for.query"));
         System.out.println(xqlFileManager.getSqlObject("for.query^count"));
+    }
+
+    @Test
+    public void testDeep1() {
+        System.out.println(ValueUtils.getDeepValue(args, "users[0].addresses[0].city"));
+        System.out.println(ValueUtils.getDeepValue(args, "users.0.addresses.0.city"));
+    }
+
+    @Test
+    public void testDeep2() {
+        System.out.println(ValueUtils.accessDeepValue(args, Arrays.asList("users", "0", "addresses", "0", "city")));
     }
 
     @Test
@@ -151,7 +163,7 @@ public class NonBakiTests {
             }
         }
 
-        String proc = "{call test.func1(:id)}";
+        String proc = "{call test.func1(:user.addresses[0].name)}";
 
         String b = SqlHighlighter.ansi(sql);
         System.out.println(System.console());
@@ -163,7 +175,7 @@ public class NonBakiTests {
         System.out.println(System.getenv("TERM"));
     }
 
-    static final String query = "select t.id || 'number' || 'age:age,name:cyx', '{\"name\":\"user\"}'::jsonb from test.user where id =:integer::integer and id >:idc or id < :idc and name=text :username";
+    static final String query = "select t.id || 'number' || 'age:age,name:cyx', '{\"name\":\"user\"}'::jsonb from test.user where id =:integer::integer and id >:idc or id < :idc and name=text :username.hobbies[0].name";
     static final String insert = "insert into test.user(idd,name,id,age,address) values (*id,*name::integer,*idd::float,integer *age,date *address)";
 
     @Test
@@ -176,6 +188,7 @@ public class NonBakiTests {
         ));
         System.out.println(pair1.getArgs());
         System.out.println(pair1.getPrepareSql());
+        System.out.println(pair1.getArgNameIndexMapping());
     }
 
     @Test

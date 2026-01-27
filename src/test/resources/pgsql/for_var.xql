@@ -13,8 +13,9 @@ select * from user where id in (
     -- #for user of :users delimiter ','
         -- #for address of :user.addresses delimiter ','
             -- #var city = :address.city | upper
-            :city, :another, :user.addresses.0.city
-            -- #if :city = KUNMING
+            -- #var addresses = :user.addresses
+            :city, :another, :addresses[0].city
+            -- #if :addresses[0].city |upper = KUNMING
                ,'You choose KM'
             -- #fi
         -- #done

@@ -183,7 +183,10 @@ public class NewBakiTests {
     @Test
     public void testNewDynamic() {
         try {
-            baki.query("&new.new-dynamic").args("age", 34)
+            baki.query("&new.new-dynamic").args(
+                            "age", 14,
+                            "user", DataRow.of("name", "cyx", "addresses", Arrays.asList("USA", "kunming"))
+                    )
                     .rows()
                     .forEach(System.out::println);
         } catch (CheckViolationException e) {

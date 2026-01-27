@@ -81,10 +81,11 @@ from test.guest
 -- #var id = 14
 -- #var users='a,xxx,c' | split(',')
 select * from test.guest where id = :id
-and name in (
+or name in (
     -- #for item of :users delimiter ', '
         :item
     -- #done
         )
+or address = :user.addresses[1]
 and age < :safeAge
 ;

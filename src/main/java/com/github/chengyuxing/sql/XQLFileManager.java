@@ -1,8 +1,9 @@
 package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.io.FileResource;
+import com.github.chengyuxing.common.script.lang.Directives;
 import com.github.chengyuxing.common.script.lexer.RabbitScriptLexer;
-import com.github.chengyuxing.common.script.parser.RabbitScriptEngine;
+import com.github.chengyuxing.common.script.RabbitScriptEngine;
 import com.github.chengyuxing.common.script.exception.ScriptSyntaxException;
 import com.github.chengyuxing.common.script.pipe.IPipe;
 import com.github.chengyuxing.common.tuple.Pair;
@@ -89,14 +90,14 @@ import static com.github.chengyuxing.common.util.StringUtils.containsAnyIgnoreCa
  * <p>
  * {@linkplain DynamicSqlEngine Dynamic sql script} write in line comment where starts with {@code --},
  * check example following class path file: {@code home.xql.template}.
- * <p>Supported Directives: {@link com.github.chengyuxing.common.script.Directives Directives}</p>
+ * <p>Supported Directives: {@link Directives Directives}</p>
  * <p>Invoke method {@link #get(String, Map)} to enjoy the dynamic sql!</p>
  *
  * @see RabbitScriptEngine
  */
 public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(XQLFileManager.class);
-    public static final Pattern KEY_PATTERN = Pattern.compile("/\\*\\s*(\\[\\s*(?<sqlName>[^\\s\\[\\]{^.}]+)\\s*]|\\{\\s*(?<partName>[^\\s\\[\\]{^.}]+)\\s*})\\s*\\*/");
+    public static final Pattern KEY_PATTERN = Pattern.compile("/\\*\\s*(\\[\\s*(?<sqlName>[\\w-]+)\\s*]|\\{\\s*(?<partName>[\\w-]+)\\s*})\\s*\\*/");
     public static final String XQL_DESC_QUOTE = "@@@";
     public static final String YML = "xql-file-manager.yml";
 

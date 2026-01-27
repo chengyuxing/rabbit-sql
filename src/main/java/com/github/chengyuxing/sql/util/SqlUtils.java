@@ -14,7 +14,7 @@ import static com.github.chengyuxing.common.util.StringUtils.FMT;
  * SQL util.
  */
 public class SqlUtils {
-    private static final Pattern IDENTIFIER_PATTERN = Pattern.compile("^[A-Za-z_][A-Za-z0-9_$]*(\\.[A-Za-z_][A-Za-z0-9_$]*)*$");
+    private static final Pattern IDENTIFIER_PATTERN = Pattern.compile("^[A-Za-z_][\\w$]*(\\.[A-Za-z_][\\w$]*)*$");
     private static BiFunction<Object, Boolean, String> formatter = SqlUtils::toSqlLiteral;
 
     /**

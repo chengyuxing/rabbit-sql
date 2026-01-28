@@ -8,6 +8,8 @@ import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.github.chengyuxing.common.util.StringUtils.FMT;
+
 /**
  * Sql generate tool.
  */
@@ -159,6 +161,40 @@ public class SqlGenerator {
         }
         matcher.appendTail(buffer);
         return buffer.toString();
+    }
+
+    /**
+     * Format SQL string template, e.g.
+     * <p>sql statement:</p>
+     * <blockquote>
+     * <pre>select ${ fields } from test.user
+     * where ${  cnd}
+     * and id in (${!idArr})
+     * or id = ${!idArr.1}</pre>
+     * </blockquote>
+     * <p>args:</p>
+     * <blockquote>
+     * <pre>
+     * {
+     *  fields: "id, name",
+     *  cnd: "name = 'cyx'",
+     *  idArr: ["a", "b", "c"]
+     * }</pre>
+     * </blockquote>
+     * <p>result:</p>
+     * <blockquote>
+     * <pre>select id, name from test.user
+     * where name = 'cyx'
+     * and id in ('a', 'b', 'c')
+     * or id = 'b'</pre>
+     * </blockquote>
+     *
+     * @param template sql string with template variable
+     * @param data     data
+     * @return formatted sql string
+     */
+    public String formatSqlTemplate(final String template, final Map<String, ?> data) {
+        return FMT.format(template, data, SqlUtils::toSqlLiteral);
     }
 
     /**

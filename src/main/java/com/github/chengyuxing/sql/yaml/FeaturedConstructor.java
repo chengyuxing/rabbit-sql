@@ -11,10 +11,10 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * Yaml custom tag for string join constructor.
+ * YAML custom tag for string join constructor.
  */
 public class FeaturedConstructor extends Constructor {
-    private final static Pattern VAR_PATTERN = Pattern.compile("\\$\\{\\s*(\\w+)\\s*}");
+    private final static Pattern VAR_PATTERN = Pattern.compile("\\$\\{\\s*([a-zA-Z_]\\w*(\\.[A-Za-z_]\\w+)?)\\s*}");
 
     public FeaturedConstructor() {
         super(new LoaderOptions());

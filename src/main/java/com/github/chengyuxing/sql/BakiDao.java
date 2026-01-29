@@ -49,7 +49,8 @@ import java.util.stream.Stream;
  */
 public class BakiDao extends JdbcSupport implements Baki {
     private static final Logger log = LoggerFactory.getLogger(BakiDao.class);
-    private static final String INTERNAL_PAGE_HELPER_ARG_KEY = "_$rabbit.sql.pageHelper";
+    public static final String ARG_DATABASE_ID_KEY = "_databaseId";
+    private static final String ARG_INTERNAL_PAGE_HELPER_KEY = "_$rabbit.sql.pageHelper";
     private static final String SQL_REF_MODIFIER_COUNT = "count";
     private static final String SQL_REF_MODIFIER_PAGE = "page";
     private final DataSource dataSource;
@@ -58,6 +59,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     private SqlGenerator sqlGenerator;
     private EntityManager entityManager;
     private AroundExecutor<Execution> sqlAroundExecutor;
+    private char namedParamPrefix = ':';
 
     //---------optional properties------
     /**
@@ -80,10 +82,6 @@ public class BakiDao extends JdbcSupport implements Baki {
      * Batch size for execute batch.
      */
     private int batchSize = 1000;
-    /**
-     * Named parameter prefix symbol.
-     */
-    private char namedParamPrefix = ':';
     /**
      * Page query page number argument key.
      */
@@ -298,7 +296,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     @Override
     public @NotNull SimpleDMLExecutor table(@NotNull String name) {
         if (xqlFileManager != null) {
-            name = SqlUtils.formatSql(name, xqlFileManager.getConstants());
+            name = SqlUtils.formatSqlTemplate(name, xqlFileManager.getConstants());
             SqlUtils.assertInvalidIdentifier(name);
         }
         final String finalName = name;
@@ -407,8 +405,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             @Override
             public List<String> fields() {
                 return BakiDao.this.using(c -> {
-                    //noinspection SqlConstantExpression
-                    String query = "select * from " + finalName + " where 1 = 2";
+                    String query = sqlGenerator.generateColumnsQueryStatement(finalName);
                     try {
                         Statement s = c.createStatement();
                         //noinspection SqlSourceToSinkFlow
@@ -999,7 +996,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 if (finalCountQuery == null) {
                     if (isSqlRef) {
                         finalCountQuery = recordQuery + "^" + SQL_REF_MODIFIER_COUNT;
-                        args.put(INTERNAL_PAGE_HELPER_ARG_KEY, pageHelper);
+                        args.put(ARG_INTERNAL_PAGE_HELPER_KEY, pageHelper);
                     } else {
                         finalCountQuery = pageHelper.countSql(recordQuery);
                     }
@@ -1026,7 +1023,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             } else {
                 if (isSqlRef) {
                     pageQuery = recordQuery + "^" + SQL_REF_MODIFIER_PAGE;
-                    args.put(INTERNAL_PAGE_HELPER_ARG_KEY, pageHelper);
+                    args.put(ARG_INTERNAL_PAGE_HELPER_KEY, pageHelper);
                 } else {
                     pageQuery = pageHelper.pagedSql(namedParamPrefix, recordQuery);
                 }
@@ -1097,7 +1094,11 @@ public class BakiDao extends JdbcSupport implements Baki {
         if (mySql.startsWith("&")) {
             log.debug("SQL Name: {}", mySql);
             String sqlRef = mySql.substring(1);
-            Pair<String, Map<String, Object>> result = xqlFileManager.get(sqlRef, myArgs);
+
+            Map<String, Object> scopedArgs = new HashMap<>(myArgs);
+            scopedArgs.put(ARG_DATABASE_ID_KEY, databaseId);
+            Pair<String, Map<String, Object>> result = xqlFileManager.get(sqlRef, scopedArgs);
+
             mySql = result.getItem1();
             myArgs.putAll(result.getItem2());
 
@@ -1106,7 +1107,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 switch (modifier) {
                     case SQL_REF_MODIFIER_PAGE:
                     case SQL_REF_MODIFIER_COUNT:
-                        Object obj = myArgs.get(INTERNAL_PAGE_HELPER_ARG_KEY);
+                        Object obj = myArgs.remove(ARG_INTERNAL_PAGE_HELPER_KEY);
                         if (obj instanceof PageHelper) {
                             PageHelper pageHelper = (PageHelper) obj;
                             if (modifier.equals(SQL_REF_MODIFIER_COUNT)) {
@@ -1123,9 +1124,9 @@ public class BakiDao extends JdbcSupport implements Baki {
             mySql = sqlInterceptor.preHandle(sql, mySql, myArgs, metaData);
         }
         if (mySql.contains("${")) {
-            mySql = SqlUtils.formatSql(mySql, myArgs);
+            mySql = SqlUtils.formatSqlTemplate(mySql, myArgs);
             if (xqlFileManager != null) {
-                mySql = SqlUtils.formatSql(mySql, xqlFileManager.getConstants());
+                mySql = SqlUtils.formatSqlTemplate(mySql, xqlFileManager.getConstants());
             }
         }
         if (log.isDebugEnabled()) {
@@ -1233,11 +1234,6 @@ public class BakiDao extends JdbcSupport implements Baki {
         return namedParamPrefix;
     }
 
-    public void setNamedParamPrefix(char namedParamPrefix) {
-        this.namedParamPrefix = namedParamPrefix;
-        this.sqlGenerator = new SqlGenerator(this.namedParamPrefix);
-    }
-
     public String getPageKey() {
         return pageKey;
     }
@@ -1291,11 +1287,12 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     public EntityManager.EntityMetaProvider getEntityMetaProvider() {
-        return entityManager.getEntityMetaProvider();
+        return entityMetaProvider;
     }
 
     public void setEntityMetaProvider(EntityManager.EntityMetaProvider entityMetaProvider) {
         if (entityMetaProvider != null) {
+            this.entityMetaProvider = entityMetaProvider;
             this.entityManager.setEntityMetaProvider(entityMetaProvider);
         }
     }

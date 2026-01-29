@@ -385,7 +385,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * Load all sql files and parse to structured resources.
+     * Load all SQL files and parse to structured resources.
      *
      * @throws UncheckedIOException if file not exists or read error
      * @throws RuntimeException     if uri syntax error
@@ -403,7 +403,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                         long oldLastModified = resource.getLastModified();
                         long lastModified = fr.getLastModified();
                         if (oldLastModified > 0 && oldLastModified == lastModified) {
-                            log.debug("skip load unmodified resource [{}] from [{}]", alias, filename);
+                            log.debug("Skip load unmodified resource [{}] from [{}]", alias, filename);
                             continue;
                         }
                         Resource parsed = parseXql(alias, filename, fr);
@@ -425,9 +425,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     protected void loadPipes() {
         if (pipes.isEmpty()) return;
-        if (pipes.keySet().equals(pipeInstances.keySet())) {
-            return;
-        }
         try {
             final ClassLoader classLoader = FileResource.getClassLoader();
             for (Map.Entry<String, String> entry : pipes.entrySet()) {
@@ -641,8 +638,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         if (args != null) {
             myArgs.putAll(args);
         }
-        myArgs.put("_databaseId", databaseId);
-
         DynamicSqlEngine engine = newDynamicSqlEngine(sql);
         String parsedSql = engine.evaluate(myArgs);
         //noinspection ExtractMethodRecommender
@@ -777,7 +772,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         protected String forLoopBodyFormatter(int forIndex, int itemIndex, @NotNull String body, @NotNull Map<String, Object> context) {
             String formatted = body;
             if (body.contains("${")) {
-                formatted = SqlUtils.formatSql(body, context);
+                formatted = SqlUtils.formatSqlTemplate(body, context);
             }
             if (formatted.indexOf(namedParamPrefix) != -1) {
                 StringBuffer sb = new StringBuffer();

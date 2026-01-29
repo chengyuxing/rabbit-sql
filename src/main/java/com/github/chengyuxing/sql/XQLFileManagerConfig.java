@@ -13,8 +13,6 @@ import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.lang.reflect.Field;
-import java.lang.reflect.Modifier;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -22,7 +20,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 /**
- * Dynamic SQL File Manager config.
+ * XQL File Manager config.
  */
 public class XQLFileManagerConfig {
     private static final Logger log = LoggerFactory.getLogger(XQLFileManagerConfig.class);
@@ -33,7 +31,6 @@ public class XQLFileManagerConfig {
     protected Map<String, String> pipes = new HashMap<>();
     protected String charset = "UTF-8";
     protected Character namedParamPrefix = ':';
-    protected String databaseId;
     // ----------------optional properties------------------
 
     /**
@@ -112,7 +109,6 @@ public class XQLFileManagerConfig {
             config.setPipes(localPipes);
             config.setCharset(properties.getProperty("charset"));
             config.setNamedParamPrefix(properties.getProperty("namedParamPrefix", ":").charAt(0));
-            config.setDatabaseId(properties.getProperty("databaseId"));
             config.copyStateTo(this);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -125,20 +121,11 @@ public class XQLFileManagerConfig {
      * @param other another XQLFileManagerConfig
      */
     public void copyStateTo(XQLFileManagerConfig other) {
-        Field[] fields = XQLFileManagerConfig.class.getDeclaredFields();
-        for (Field field : fields) {
-            if (!Modifier.isFinal(field.getModifiers())) {
-                field.setAccessible(true);
-                try {
-                    Object v = field.get(this);
-                    if (v != null) {
-                        field.set(other, v);
-                    }
-                } catch (IllegalAccessException e) {
-                    throw new RuntimeException("Failed to copy XQLFileManagerConfig state: " + e.getMessage(), e);
-                }
-            }
-        }
+        other.setConstants(this.constants);
+        other.setPipes(this.pipes);
+        other.setCharset(this.charset);
+        other.setNamedParamPrefix(this.namedParamPrefix);
+        other.setFiles(this.files);
     }
 
     public String getConfigLocation() {
@@ -272,24 +259,6 @@ public class XQLFileManagerConfig {
         }
     }
 
-    /**
-     * Get database name.
-     *
-     * @return database name
-     */
-    public String getDatabaseId() {
-        return databaseId;
-    }
-
-    /**
-     * Set database name.
-     *
-     * @param databaseId database name
-     */
-    public void setDatabaseId(String databaseId) {
-        this.databaseId = databaseId;
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -301,8 +270,7 @@ public class XQLFileManagerConfig {
         if (!getConstants().equals(config.getConstants())) return false;
         if (!getPipes().equals(config.getPipes())) return false;
         if (!getCharset().equals(config.getCharset())) return false;
-        if (!getNamedParamPrefix().equals(config.getNamedParamPrefix())) return false;
-        return getDatabaseId() != null ? getDatabaseId().equals(config.getDatabaseId()) : config.getDatabaseId() == null;
+        return getNamedParamPrefix().equals(config.getNamedParamPrefix());
     }
 
     @Override
@@ -312,7 +280,6 @@ public class XQLFileManagerConfig {
         result = 31 * result + getPipes().hashCode();
         result = 31 * result + getCharset().hashCode();
         result = 31 * result + getNamedParamPrefix().hashCode();
-        result = 31 * result + (getDatabaseId() != null ? getDatabaseId().hashCode() : 0);
         return result;
     }
 

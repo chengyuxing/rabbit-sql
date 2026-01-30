@@ -198,7 +198,7 @@ public class NewBakiTests {
     public void testPageQuery() {
         Map<String, XQLFileManagerConfig.Resource> res = bakiDao.getXqlFileManager().getResources();
         System.out.println(res);
-        PagedResource<DataRow> rows = baki.query("&new.queryOneGuest")
+        PagedResource<DataRow> rows = baki.query("  &new.queryOneGuest  ")
                 .args("page", 1, "size", 10)
                 .pageable()
                 .collect();

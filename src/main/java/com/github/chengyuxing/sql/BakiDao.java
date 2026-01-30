@@ -994,15 +994,16 @@ public class BakiDao extends JdbcSupport implements Baki {
             if (pageHelper == null) {
                 pageHelper = builtinPager();
             }
-            boolean isSqlRef = recordQuery.startsWith("&");
+            String myRecordQuery = recordQuery.trim();
+            boolean isSqlRef = myRecordQuery.startsWith("&");
             if (count == null) {
                 String finalCountQuery = countQuery;
                 if (finalCountQuery == null) {
                     if (isSqlRef) {
-                        finalCountQuery = recordQuery + "^" + SQL_REF_MODIFIER_COUNT;
+                        finalCountQuery = myRecordQuery + "^" + SQL_REF_MODIFIER_COUNT;
                         args.put(ARG_INTERNAL_PAGE_HELPER_KEY, pageHelper);
                     } else {
-                        finalCountQuery = pageHelper.countSql(recordQuery);
+                        finalCountQuery = pageHelper.countSql(myRecordQuery);
                     }
                 }
                 try (Stream<DataRow> s = executeQueryStream(finalCountQuery, args)) {
@@ -1023,13 +1024,13 @@ public class BakiDao extends JdbcSupport implements Baki {
 
             String pageQuery;
             if (disablePageSql) {
-                pageQuery = recordQuery;
+                pageQuery = myRecordQuery;
             } else {
                 if (isSqlRef) {
-                    pageQuery = recordQuery + "^" + SQL_REF_MODIFIER_PAGE;
+                    pageQuery = myRecordQuery + "^" + SQL_REF_MODIFIER_PAGE;
                     args.put(ARG_INTERNAL_PAGE_HELPER_KEY, pageHelper);
                 } else {
-                    pageQuery = pageHelper.pagedSql(namedParamPrefix, recordQuery);
+                    pageQuery = pageHelper.pagedSql(namedParamPrefix, myRecordQuery);
                 }
             }
             try (Stream<DataRow> s = executeQueryStream(pageQuery, args)) {

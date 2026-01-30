@@ -59,7 +59,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     private SqlGenerator sqlGenerator;
     private EntityManager entityManager;
     private AroundExecutor<Execution> sqlAroundExecutor;
-    private char namedParamPrefix = ':';
+    private char namedParamPrefix = XQLFileManager.DEFAULT_NAMED_PARAM_PREFIX;
 
     //---------optional properties------
     /**

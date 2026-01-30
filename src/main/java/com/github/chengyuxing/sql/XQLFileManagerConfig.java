@@ -21,13 +21,15 @@ import java.util.*;
  */
 public class XQLFileManagerConfig {
     private static final Logger log = LoggerFactory.getLogger(XQLFileManagerConfig.class);
+    public static final char DEFAULT_NAMED_PARAM_PREFIX = ':';
+
     private String configLocation;
     // ----------------optional properties------------------
     private Map<String, String> files = new LinkedHashMap<>();
     private Map<String, String> pipes = new HashMap<>();
     private Map<String, Object> constants = new HashMap<>();
     private String charset = "UTF-8";
-    private Character namedParamPrefix = ':';
+    private Character namedParamPrefix = DEFAULT_NAMED_PARAM_PREFIX;
     // ----------------optional properties------------------
 
     /**

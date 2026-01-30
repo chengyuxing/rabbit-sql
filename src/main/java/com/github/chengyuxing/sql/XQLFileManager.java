@@ -101,7 +101,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public static final String YML = "xql-file-manager.yml";
 
     private final ReentrantLock lock = new ReentrantLock();
-    private SqlGenerator sqlGenerator = new SqlGenerator(':');
+    private SqlGenerator sqlGenerator = new SqlGenerator(DEFAULT_NAMED_PARAM_PREFIX);
     private volatile Map<String, Resource> resources = Collections.emptyMap();
     private volatile Map<String, IPipe<?>> pipeInstances = Collections.emptyMap();
     private volatile boolean loading;

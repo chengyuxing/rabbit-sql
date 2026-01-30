@@ -68,7 +68,6 @@ public class NonBakiTests {
     @Test
     public void test1() {
         XQLFileManager xqlFileManager = new XQLFileManager();
-        xqlFileManager.setDatabaseId("oracle");
         xqlFileManager.add("pgsql/other.sql");
 //        xqlFileManager.add("http://localhost:8080/share/cyx.xql");
         xqlFileManager.init();

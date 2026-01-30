@@ -6,7 +6,6 @@ import com.github.chengyuxing.common.script.pipe.IPipe;
 import com.github.chengyuxing.sql.exceptions.XQLParseException;
 import com.github.chengyuxing.sql.yaml.FeaturedConstructor;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Unmodifiable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -16,8 +15,6 @@ import java.io.UncheckedIOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 
 /**
  * XQL File Manager config.
@@ -26,11 +23,11 @@ public class XQLFileManagerConfig {
     private static final Logger log = LoggerFactory.getLogger(XQLFileManagerConfig.class);
     private String configLocation;
     // ----------------optional properties------------------
-    protected FileMap files = new FileMap();
-    protected Map<String, Object> constants = new HashMap<>();
-    protected Map<String, String> pipes = new HashMap<>();
-    protected String charset = "UTF-8";
-    protected Character namedParamPrefix = ':';
+    private Map<String, String> files = new LinkedHashMap<>();
+    private Map<String, String> pipes = new HashMap<>();
+    private Map<String, Object> constants = new HashMap<>();
+    private String charset = "UTF-8";
+    private Character namedParamPrefix = ':';
     // ----------------optional properties------------------
 
     /**
@@ -87,7 +84,7 @@ public class XQLFileManagerConfig {
         try {
             XQLFileManagerConfig config = new XQLFileManagerConfig();
             properties.load(propertiesLocation.getInputStream());
-            FileMap localFiles = new FileMap();
+            Map<String, String> localFiles = new LinkedHashMap<>();
             Map<String, Object> localConstants = new HashMap<>();
             Map<String, String> localPipes = new HashMap<>();
             properties.forEach((k, s) -> {
@@ -137,7 +134,7 @@ public class XQLFileManagerConfig {
      *
      * @return file map [alias, file name]
      */
-    public FileMap getFiles() {
+    public Map<String, String> getFiles() {
         return files;
     }
 
@@ -146,9 +143,9 @@ public class XQLFileManagerConfig {
      *
      * @param files files map [alias, file name]
      */
-    public void setFiles(FileMap files) {
+    public void setFiles(Map<String, String> files) {
         if (files != null) {
-            this.files = new FileMap(files);
+            this.files = new LinkedHashMap<>(files);
         }
     }
 
@@ -249,7 +246,7 @@ public class XQLFileManagerConfig {
     }
 
     /**
-     * Set named parameter prefix. (for IDEA Rabbit-SQL plugin)
+     * Set named parameter prefix.
      *
      * @param namedParamPrefix named parameter prefix
      */
@@ -387,100 +384,6 @@ public class XQLFileManagerConfig {
             result = 31 * result + Objects.hashCode(getDescription());
             result = 31 * result + getEntry().hashCode();
             return result;
-        }
-    }
-
-    /**
-     * Sql file container.
-     */
-    public static final class FileMap extends LinkedHashMap<String, String> {
-        private final Map<String, Resource> resources = new LinkedHashMap<>();
-
-        public FileMap() {
-        }
-
-        public FileMap(@NotNull Map<String, String> files) {
-            putAll(files);
-        }
-
-        public Resource getResource(String key) {
-            return resources.get(key);
-        }
-
-        public @NotNull @Unmodifiable Map<String, Resource> getResources() {
-            return Collections.unmodifiableMap(resources);
-        }
-
-        @Override
-        public String put(String key, String value) {
-            resources.put(key, new Resource(value));
-            return super.put(key, value);
-        }
-
-        @Override
-        public void putAll(Map<? extends String, ? extends String> m) {
-            if (m == null || m.isEmpty()) return;
-            for (Map.Entry<? extends String, ? extends String> entry : m.entrySet()) {
-                resources.put(entry.getKey(), new Resource(entry.getValue()));
-            }
-            super.putAll(m);
-        }
-
-        @Override
-        public String remove(Object key) {
-            resources.remove(key);
-            return super.remove(key);
-        }
-
-        @Override
-        public void clear() {
-            resources.clear();
-            super.clear();
-        }
-
-        @Override
-        public String compute(String key, BiFunction<? super String, ? super String, ? extends String> remappingFunction) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public String computeIfAbsent(String key, Function<? super String, ? extends String> mappingFunction) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public String computeIfPresent(String key, BiFunction<? super String, ? super String, ? extends String> remappingFunction) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public String merge(String key, String value, BiFunction<? super String, ? super String, ? extends String> remappingFunction) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean replace(String key, String oldValue, String newValue) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public String replace(String key, String value) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void replaceAll(BiFunction<? super String, ? super String, ? extends String> function) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public boolean remove(Object key, Object value) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public String putIfAbsent(String key, String value) {
-            throw new UnsupportedOperationException();
         }
     }
 }

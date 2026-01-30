@@ -106,6 +106,10 @@ public class BakiDao extends JdbcSupport implements Baki {
      * Execution watchers.
      */
     private ExecutionWatcher executionWatcher;
+    /**
+     * Entity meta provider.
+     */
+    private EntityManager.EntityMetaProvider entityMetaProvider;
 
     /**
      * Constructs a new BakiDao with initial datasource.
@@ -1211,7 +1215,12 @@ public class BakiDao extends JdbcSupport implements Baki {
     public void setXqlFileManager(XQLFileManager xqlFileManager) {
         if (xqlFileManager != null) {
             this.xqlFileManager = xqlFileManager;
-            this.xqlFileManager.setDatabaseId(databaseId);
+            this.namedParamPrefix = xqlFileManager.getNamedParamPrefix();
+            this.sqlGenerator = new SqlGenerator(this.namedParamPrefix);
+            this.entityManager = new EntityManager(this.namedParamPrefix);
+            if (entityMetaProvider != null) {
+                this.entityManager.setEntityMetaProvider(entityMetaProvider);
+            }
             if (!this.xqlFileManager.isInitialized()) {
                 this.xqlFileManager.init();
             }

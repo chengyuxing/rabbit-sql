@@ -21,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.lang.reflect.InvocationTargetException;
@@ -102,9 +101,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public static final String YML = "xql-file-manager.yml";
 
     private final ReentrantLock lock = new ReentrantLock();
-    protected final Map<String, IPipe<?>> pipeInstances = new HashMap<>();
-    protected volatile boolean loading;
-    protected volatile boolean initialized;
+    private SqlGenerator sqlGenerator = new SqlGenerator(':');
+    private volatile Map<String, Resource> resources = Collections.emptyMap();
+    private volatile Map<String, IPipe<?>> pipeInstances = Collections.emptyMap();
+    private volatile boolean loading;
+    private volatile boolean initialized;
 
     /**
      * Constructs a new XQLFileManager.
@@ -134,20 +135,20 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * Add a sql file.
+     * Add a SQL file.
      *
      * @param alias    file alias
      * @param fileName file path name
      */
     public void add(@NotNull String alias, @NotNull String fileName) {
-        if (files.containsKey(alias)) {
+        if (getFiles().containsKey(alias)) {
             throw new IllegalArgumentException("Duplicate alias: " + alias);
         }
-        files.put(alias, fileName);
+        getFiles().put(alias, fileName);
     }
 
     /**
-     * Add a sql file with default alias(file name without extension).
+     * Add a SQL file with default alias(file name without extension).
      *
      * @param fileName file path name
      * @return file alias
@@ -164,7 +165,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @param alias file alias
      */
     public void remove(@NotNull String alias) {
-        files.remove(alias);
+        getFiles().remove(alias);
     }
 
     /**
@@ -180,7 +181,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public @NotNull Resource parseXql(@NotNull String alias, @NotNull String filename, @NotNull FileResource fileResource) throws IOException, URISyntaxException {
         Map<String, Sql> entry = new LinkedHashMap<>();
         StringJoiner xqlDesc = new StringJoiner(NEW_LINE);
-        try (BufferedReader reader = fileResource.getBufferedReader(Charset.forName(charset))) {
+        try (BufferedReader reader = fileResource.getBufferedReader(Charset.forName(getCharset()))) {
             String line;
             String currentName = null;
             boolean isMainStarted = false;
@@ -281,7 +282,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     }
                 }
             }
-            // if last part of sql is not ends with ';' symbol
+            // if last part of SQL is not ends with ';' symbol
             if (currentName != null) {
                 String lastSql = sqlBuffer.toString().trim();
                 String lastDesc = descriptionBuffer.toString().trim();
@@ -369,19 +370,29 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                 templates.put(k.substring(2, k.length() - 1), template);
             }
         }
-        if (templates.isEmpty() && constants.isEmpty()) {
+        if (templates.isEmpty() && getConstants().isEmpty()) {
             return;
         }
         for (Map.Entry<String, Sql> e : sqlResource.entrySet()) {
             Sql sql = e.getValue();
             String source = sql.getSource();
             if (source.contains("${")) {
-                source = SqlUtils.formatSql(source, templates);
-                source = SqlUtils.formatSql(source, constants);
+                source = SqlUtils.formatSqlTemplate(source, templates);
+                source = SqlUtils.formatSqlTemplate(source, getConstants());
                 // remove empty line.
                 sql.setSource(StringUtils.removeEmptyLine(source));
             }
         }
+    }
+
+    /**
+     * Read filename to FileResource object.
+     *
+     * @param filename filename
+     * @return FileResource
+     */
+    protected FileResource createFileResource(@NotNull String filename) {
+        return new FileResource(filename);
     }
 
     /**
@@ -390,54 +401,63 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @throws UncheckedIOException if file not exists or read error
      * @throws RuntimeException     if uri syntax error
      */
-    protected void loadResources() {
-        try {
-            for (Map.Entry<String, String> e : files.entrySet()) {
-                String alias = e.getKey();
-                String filename = e.getValue();
-                Resource resource = files.getResource(alias);
-                FileResource fr = new FileResource(filename);
-                if (fr.exists()) {
-                    String ext = fr.getFilenameExtension();
-                    if (ext != null && (ext.equals("sql") || ext.equals("xql"))) {
-                        long oldLastModified = resource.getLastModified();
-                        long lastModified = fr.getLastModified();
-                        if (oldLastModified > 0 && oldLastModified == lastModified) {
-                            log.debug("Skip load unmodified resource [{}] from [{}]", alias, filename);
-                            continue;
-                        }
-                        Resource parsed = parseXql(alias, filename, fr);
-                        resource.setEntry(parsed.getEntry());
-                        resource.setDescription(parsed.getDescription());
-                        resource.setLastModified(parsed.getLastModified());
+    protected Map<String, Resource> buildResources() {
+        Map<String, Resource> newResources = new LinkedHashMap<>();
+        Map<String, Resource> oldResources = this.resources;
+        for (Map.Entry<String, String> e : getFiles().entrySet()) {
+            String alias = e.getKey();
+            String filename = e.getValue();
+
+            FileResource fr = createFileResource(filename);
+            if (!fr.exists()) {
+                throw new XQLParseException("XQL file '" + filename + "' of name '" + alias + "' not found!");
+            }
+            String ext = fr.getFilenameExtension();
+            if (ext != null && (ext.equals("sql") || ext.equals("xql"))) {
+                try {
+                    Resource old = oldResources.get(alias);
+                    if (old != null
+                            && old.getFilename().equals(filename)
+                            && old.getLastModified() == fr.getLastModified()) {
+                        newResources.put(alias, old);
+                        log.debug("Skip load unmodified resource [{}] from [{}]", alias, filename);
+                    } else {
+                        newResources.put(alias, parseXql(alias, filename, fr));
                     }
-                } else {
-                    throw new FileNotFoundException("XQL file '" + filename + "' of name '" + alias + "' not found!");
+                } catch (URISyntaxException | IOException ex) {
+                    throw new XQLParseException("Load resources failed!", ex);
                 }
             }
-        } catch (Exception e) {
-            throw new XQLParseException("Load resources failed!", e);
         }
+        return newResources;
     }
 
     /**
-     * Load custom pipes.
+     * Load pipe to create instances.
      */
-    protected void loadPipes() {
-        if (pipes.isEmpty()) return;
-        try {
-            final ClassLoader classLoader = FileResource.getClassLoader();
-            for (Map.Entry<String, String> entry : pipes.entrySet()) {
-                pipeInstances.put(entry.getKey(), (IPipe<?>) ReflectUtils.getInstance(classLoader.loadClass(entry.getValue())));
+    protected Map<String, IPipe<?>> buildPipeInstances() {
+        final ClassLoader classLoader = FileResource.getClassLoader();
+        Map<String, IPipe<?>> newPipeInstances = new HashMap<>();
+        Map<String, IPipe<?>> oldPipeInstances = this.pipeInstances;
+        for (Map.Entry<String, String> e : getPipes().entrySet()) {
+            try {
+                IPipe<?> old = oldPipeInstances.get(e.getKey());
+                if (old != null) {
+                    newPipeInstances.put(e.getKey(), old);
+                } else {
+                    IPipe<?> newPipe = (IPipe<?>) ReflectUtils.getInstance(classLoader.loadClass(e.getValue()));
+                    newPipeInstances.put(e.getKey(), newPipe);
+                }
+            } catch (NoSuchMethodException | InvocationTargetException | InstantiationException |
+                     IllegalAccessException | ClassNotFoundException ex) {
+                throw new XQLParseException("Create pipe instance failed.", ex);
             }
-        } catch (ClassNotFoundException | InstantiationException | IllegalAccessException |
-                 InvocationTargetException | NoSuchMethodException e) {
-            throw new XQLParseException("Init pipe error.", e);
         }
         if (log.isDebugEnabled()) {
             if (!pipeInstances.isEmpty())
                 log.debug("loaded pipes {}", pipeInstances);
         }
+        return newPipeInstances;
     }
 
     /**
@@ -453,8 +473,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         lock.lock();
         try {
             loading = true;
-            loadResources();
-            loadPipes();
+            resources = Collections.unmodifiableMap(buildResources());
+            pipeInstances = Collections.unmodifiableMap(buildPipeInstances());
         } finally {
             loading = false;
             initialized = true;
@@ -513,18 +533,18 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * Foreach all sql resource.
+     * Foreach all SQL resource.
      *
      * @param consumer (alias, resource) -&gt; void
      */
     public void foreach(BiConsumer<String, Resource> consumer) {
-        files.getResources().forEach(consumer);
+        resources.forEach(consumer);
     }
 
     /**
-     * Get all sql fragment name.
+     * Get all SQL fragment name.
      *
-     * @return sql fragment names set
+     * @return SQL fragment names set
      */
     public @NotNull Set<String> names() {
         Set<String> names = new HashSet<>();
@@ -533,13 +553,13 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * Get sql fragment count.
+     * Get SQL fragment count.
      *
      * @return sql fragment count
      */
     public int size() {
         int i = 0;
-        for (Resource resource : files.getResources().values()) {
+        for (Resource resource : resources.values()) {
             i += resource.getEntry().size();
         }
         return i;
@@ -552,16 +572,25 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @return sql resource
      */
     public @Nullable Resource getResource(@NotNull String alias) {
-        return files.getResource(alias);
+        return resources.get(alias);
     }
 
     /**
-     * Get all sql resources.
+     * Get all SQL resources.
      *
      * @return unmodifiable sql resources
      */
     public @NotNull @Unmodifiable Map<String, Resource> getResources() {
-        return files.getResources();
+        return resources;
+    }
+
+    /**
+     * Get all pipe instances.
+     *
+     * @return unmodifiable pipe instances
+     */
+    public @NotNull @Unmodifiable Map<String, IPipe<?>> getPipeInstances() {
+        return pipeInstances;
     }
 
     /**
@@ -572,7 +601,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     public boolean contains(@NotNull String name) {
         Pair<String, String> p = decodeSqlReference(name);
-        Resource resource = files.getResources().get(p.getItem1());
+        Resource resource = resources.get(p.getItem1());
         if (resource == null) {
             return false;
         }
@@ -661,7 +690,15 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @return constant value
      */
     public Object getConstant(String key) {
-        return constants.get(key);
+        return getConstants().get(key);
+    }
+
+    @Override
+    public void setNamedParamPrefix(Character namedParamPrefix) {
+        super.setNamedParamPrefix(namedParamPrefix);
+        if (namedParamPrefix != null && namedParamPrefix != ' ') {
+            sqlGenerator = new SqlGenerator(namedParamPrefix);
+        }
     }
 
     /**
@@ -683,14 +720,12 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * Cleanup XQL file manager.
+     * Release runtime cache.
      */
     @Override
     public void close() {
-        files.clear();
-        pipes.clear();
-        pipeInstances.clear();
-        constants.clear();
+        resources = Collections.emptyMap();
+        pipeInstances = Collections.emptyMap();
     }
 
     /**
@@ -727,11 +762,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public class DynamicSqlEngine extends RabbitScriptEngine {
         public static final String FOR_VARS_KEY = "_for";
         public static final String VAR_PREFIX = FOR_VARS_KEY + '.';
-        private final Pattern namedParamPattern;
+        private final char namedParamPrefix = getNamedParamPrefix();
+        private final Pattern namedParamPattern = sqlGenerator.getNamedParamPattern();
 
         public DynamicSqlEngine(@NotNull String sql) {
             super(sql);
-            this.namedParamPattern = new SqlGenerator(namedParamPrefix).getNamedParamPattern();
         }
 
         @Override

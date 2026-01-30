@@ -30,7 +30,7 @@ _java 8+_
 <dependency>
   <groupId>com.github.chengyuxing</groupId>
   <artifactId>rabbit-sql</artifactId>
-  <version>10.2.1</version>
+  <version>10.2.2</version>
 </dependency>
 ```
 
@@ -514,38 +514,6 @@ or id in (
 {"ids": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}
 ```
 
-example above will be generate sql and variables:
-
-```sql
-select * from test.user where id = 1
- or id in (
-    :_for.id_0_7, 
-    :_for.id_0_8, 
-    :_for.id_0_9, 
-    :_for.id_0_10, 
-    :_for.id_0_11
-)
-```
-
-```json
-{
-  "_for": {
-    "id_0_0": 1,
-    "id_0_2": 3,
-    "id_0_1": 2,
-    "id_0_10": 11,
-    "id_0_11": 12,
-    "id_0_4": 5,
-    "id_0_3": 4,
-    "id_0_6": 7,
-    "id_0_5": 6,
-    "id_0_8": 9,
-    "id_0_7": 8,
-    "id_0_9": 10
-  }
-}
-```
-
 For a few special places to explain:
 
 - If for loop result is not empty, `open` means `or id in(` will prepend to result, `close` means `)` will append to result;
@@ -574,37 +542,6 @@ where id = :id;
 }
 ```
 
-example above will generate sql and variables:
-
-```sql
-update test.user
-set
-  address = :_for.set_0_0.value,
-  name = :_for.set_0_1.value,
-  age = :_for.set_0_2.value
-where id = :id
-```
-
-```json
-{
-  "id": 10,
-  "_for": {
-    "set_0_2": {
-      "key": "age",
-      "value": 30
-    },
-    "set_0_1": {
-      "key": "name",
-      "value": "abc"
-    },
-    "set_0_0": {
-      "key": "address",
-      "value": "kunming"
-    }
-  }
-}
-```
-
 Explain:
 
 - `:sets` is a map, it convert to `List<KeyValue>` by pipe `kv`, so it can be work with for expression;
@@ -624,7 +561,7 @@ where id = 3
 ;
 ```
 
-- Built-In variable `_databaseId` is current database name.
+- Built-In variable `_databaseId` is current database name at runtime.
 
 ## Appendix
 
@@ -635,12 +572,6 @@ A little important details you need to know.
 Default implement of interface **Baki**, support some basic operation.
 
 - If [XQLFileManager](#XQLFileManager) configured ,  you can manage sql in file and support [dynamic sql](#Dynamic-SQL);
-
-- Default named parameter start with `:` , it can be customized by specific property `namedParamPrefix`, e.g.
-
-  ```sql
-  where id = ?id
-  ```
 
 - if [pageable query](#paging) not support your database, implement custom page helper provider to property `globalPageHelperProvider` get support.
 
@@ -685,12 +616,6 @@ XQL file manager, support unified management of SQL, according to the SQL name t
 Default: 1000
 
 The JDBC low-level batch operation executes the number of data submitted each time.
-
-##### namedParamPrefix
-
-默认值：`:`
-
-Prepared SQL named parameter prefix, used to mark the prepared parameter placeholder, and finally compiled to `?` .
 
 ##### pageKey
 
@@ -792,9 +717,7 @@ order by id;
   
   charset: UTF-8
   named-param-prefix: ':'
-  database-id:
   ```
-  
 
 #### Options
 
@@ -816,12 +739,11 @@ Encoding used to parse XQL files, default: `UTF-8`。
 
 ##### namedParamPrefix
 
-It mainly works with plug-in parsing to perform named parameter dynamic SQL.
+- Named parameter start with `:` , it can be customized by specific property `namedParamPrefix`, e.g.
 
-##### databaseId
-
-The main effect is that the plug-in parses parameters when executing dynamic SQL.
-
+```sql
+where id = ?id
+```
 
 [badge:maven]:https://img.shields.io/maven-central/v/com.github.chengyuxing/rabbit-sql
 [badge:license]: https://img.shields.io/github/license/chengyuxing/rabbit-sql

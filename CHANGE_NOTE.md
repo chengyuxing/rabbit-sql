@@ -1,5 +1,16 @@
 # change note
 
+# 10.2.2
+
+- `StringUtils#isNumber` optimized.
+- Add support index syntax `[]` for key path expression.
+- `XQLFileManager` load resources optimized.
+- `NamedParamPrefix` move to `XQLFileManager` as global config property.
+- `Comparators` optimized.
+- `StringUtils#isNonNegativeInteger` optimized.
+- `ValueUtils#getDeepValue` optimized.
+- Lexer optimized.
+
 # 10.2.1
 
 - SQL highlight optimized.

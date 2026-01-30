@@ -398,6 +398,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     /**
      * Load all SQL files and parse to structured resources.
      *
+     * @return structured resources
      * @throws UncheckedIOException if file not exists or read error
      * @throws RuntimeException     if uri syntax error
      */
@@ -434,6 +435,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
 
     /**
      * Load pipe to create instances.
+     *
+     * @return pipe instances
      */
     protected Map<String, IPipe<?>> buildPipeInstances() {
         final ClassLoader classLoader = FileResource.getClassLoader();

@@ -742,20 +742,19 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
+    public final boolean equals(Object o) {
         if (!(o instanceof XQLFileManager)) return false;
         if (!super.equals(o)) return false;
 
         XQLFileManager that = (XQLFileManager) o;
-
-        return getResources().equals(that.getResources());
+        return getResources().equals(that.getResources()) && getPipeInstances().equals(that.getPipeInstances());
     }
 
     @Override
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + getResources().hashCode();
+        result = 31 * result + getPipeInstances().hashCode();
         return result;
     }
 

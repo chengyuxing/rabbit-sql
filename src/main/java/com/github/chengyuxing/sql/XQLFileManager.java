@@ -819,8 +819,19 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     String name = m.group(1);
                     String replacement = null;
                     if (name != null) {
-                        int dotIdx = Math.min(name.indexOf('.'), name.indexOf('['));
-                        if (dotIdx == -1 && context.containsKey(name)) {
+                        int idx = -1;
+                        for (int i = 0; i < name.length(); i++) {
+                            if (name.charAt(i) == '.') {
+                                idx = i;
+                                break;
+                            }
+                            if (name.charAt(i) == '[') {
+                                idx = i;
+                                break;
+                            }
+                        }
+
+                        if (idx == -1 && context.containsKey(name)) {
                             replacement = namedParamPrefix
                                     + VAR_PREFIX
                                     + forVarGeneratedKey(name, forIndex, itemIndex);
@@ -831,13 +842,13 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                             // --------------------------
                             // name: item.value
                             // varName: item
-                            if (dotIdx != -1) {
-                                String paramName = name.substring(0, dotIdx);
+                            if (idx != -1) {
+                                String paramName = name.substring(0, idx);
                                 if (context.containsKey(paramName)) {
                                     replacement = namedParamPrefix
                                             + VAR_PREFIX
                                             + forVarGeneratedKey(paramName, forIndex, itemIndex)
-                                            + name.substring(dotIdx);
+                                            + name.substring(idx);
                                 }
                             }
                         }

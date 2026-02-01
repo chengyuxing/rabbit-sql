@@ -3,6 +3,7 @@
 # 10.2.3
 
 - Fixed `#for` loop body named param parse bug.
+- Dynamic SQL script lexer string literal parse optimized.
 
 # 10.2.2
 

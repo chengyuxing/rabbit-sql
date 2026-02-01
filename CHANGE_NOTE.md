@@ -1,5 +1,9 @@
 # change note
 
+# 10.2.3
+
+- Fixed `#for` loop body named param parse bug.
+
 # 10.2.2
 
 - `StringUtils#isNumber` optimized.

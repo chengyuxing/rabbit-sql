@@ -63,19 +63,24 @@ import static com.github.chengyuxing.common.util.StringUtils.containsAnyIgnoreCa
  * A comment marker {@code --} can be used at the end of a sentence line to prevent premature truncation, e.g.</p>
  * <blockquote>
  * <pre>
- * /&#42;[sqlName1]&#42;/
- * select * from test.region where
+ * /&#42;[queryList]&#42;/
+ * select * from guest where
+ *  -- //TEMPLATE-BEGIN:myInLineCnd
  *  -- #if :id != blank
  *     id = :id
  *  -- #fi
+ *  -- //TEMPLATE-END
  * ${order}
  * ;
  *
- * /&#42;[sqlNameN]&#42;/
- * select * from test.user;
+ * /&#42;[queryCount]&#42;/
+ * select count(*) from guest where ${myInLineCnd};
  *
  * /&#42;{order}&#42;/
  * order by id desc;
+ *
+ * /&#42;[sqlNameN]&#42;/
+ * select * from test.user;
  *
  * /&#42;#This is a description comment mark.#&#42;/
  * /&#42;[plsql]&#42;/
@@ -90,13 +95,15 @@ import static com.github.chengyuxing.common.util.StringUtils.containsAnyIgnoreCa
  * {@linkplain DynamicSqlEngine Dynamic sql script} write in line comment where starts with {@code --},
  * check example following class path file: {@code home.xql.template}.
  * <p>Supported Directives: {@link Directives Directives}</p>
- * <p>Invoke method {@link #get(String, Map)} to enjoy the dynamic sql!</p>
+ * <p>Invoke method {@link #get(String, Map)} to enjoy the dynamic SQL!</p>
  *
  * @see RabbitScriptEngine
  */
 public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseable {
     private static final Logger log = LoggerFactory.getLogger(XQLFileManager.class);
-    public static final Pattern KEY_PATTERN = Pattern.compile("/\\*\\s*(\\[\\s*(?<sqlName>[\\w-]+)\\s*]|\\{\\s*(?<partName>[\\w-]+)\\s*})\\s*\\*/");
+    public static final Pattern KEY_PATTERN = Pattern.compile("/\\*\\s*(\\[\\s*(?<sqlName>[a-zA-Z_][\\w-]*)\\s*]|\\{\\s*(?<partName>[a-zA-Z_]\\w*)\\s*})\\s*\\*/");
+    public static final Pattern INLINE_TEMPLATE_BEGIN_PATTERN = Pattern.compile("(?i)\\s*--\\s*//\\s*TEMPLATE-BEGIN\\s*:\\s*(?<key>[a-zA-Z_]\\w*)\\s*");
+    public static final Pattern INLINE_TEMPLATE_END_PATTERN = Pattern.compile("(?i)\\s*--\\s*//\\s*TEMPLATE-END\\s*");
     public static final String XQL_DESC_QUOTE = "@@@";
     public static final String YML = "xql-file-manager.yml";
 
@@ -180,13 +187,13 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     public @NotNull Resource parseXql(@NotNull String alias, @NotNull String filename, @NotNull FileResource fileResource) throws IOException, URISyntaxException {
         Map<String, Sql> entry = new LinkedHashMap<>();
-        StringJoiner xqlDesc = new StringJoiner(NEW_LINE);
+        StringJoiner xqlFileDescriptionBuffer = new StringJoiner(NEW_LINE);
         try (BufferedReader reader = fileResource.getBufferedReader(Charset.forName(getCharset()))) {
             String line;
             String currentName = null;
             boolean isMainStarted = false;
-            StringBuilder sqlBuffer = new StringBuilder();
-            StringBuilder descriptionBuffer = new StringBuilder();
+            StringBuilder sqlBodyBuffer = new StringBuilder();
+            StringBuilder sqlDescriptionBuffer = new StringBuilder();
             while ((line = reader.readLine()) != null) {
                 String trimLine = line.trim();
                 if (trimLine.isEmpty()) continue;
@@ -196,11 +203,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     String sqlName = matcher.group("sqlName");
                     String partName = matcher.group("partName");
                     String name = sqlName != null ? sqlName : "${" + partName + "}";
-                    if (sqlBuffer.length() != 0) {
+                    if (sqlBodyBuffer.length() != 0) {
                         throw new XQLParseException("The sql which before the name '" + ValueUtils.coalesce(sqlName, partName) + "' does not seem to end with the ';' in " + filename);
                     }
                     if (entry.containsKey(name)) {
-                        throw new XQLParseException("Duplicate name: '" + ValueUtils.coalesce(sqlName, partName) + "' in " + filename);
+                        throw new XQLParseException("Duplicate name '" + ValueUtils.coalesce(sqlName, partName) + "' in " + filename);
                     }
                     currentName = name;
                     continue;
@@ -214,13 +221,13 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                                 description = description.substring(0, description.length() - 1);
                             }
                             if (!StringUtils.isBlank(description)) {
-                                descriptionBuffer.append(description).append(NEW_LINE);
+                                sqlDescriptionBuffer.append(description).append(NEW_LINE);
                             }
                             continue;
                         }
                         String descriptionStart = trimLine.substring(3);
                         if (!StringUtils.isBlank(descriptionStart)) {
-                            descriptionBuffer.append(descriptionStart).append(NEW_LINE);
+                            sqlDescriptionBuffer.append(descriptionStart).append(NEW_LINE);
                         }
                         String descLine;
                         while ((descLine = reader.readLine()) != null) {
@@ -231,11 +238,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                                     descriptionEnd = descriptionEnd.substring(0, descriptionEnd.length() - 1);
                                 }
                                 if (!StringUtils.isBlank(descriptionEnd)) {
-                                    descriptionBuffer.append(descriptionEnd).append(NEW_LINE);
+                                    sqlDescriptionBuffer.append(descriptionEnd).append(NEW_LINE);
                                 }
                                 break;
                             }
-                            descriptionBuffer.append(descLine).append(NEW_LINE);
+                            sqlDescriptionBuffer.append(descLine).append(NEW_LINE);
                         }
                         continue;
                     }
@@ -263,30 +270,35 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                                     if (tb.endsWith("*/")) {
                                         break descBlock;
                                     }
-                                    xqlDesc.add(tb);
+                                    xqlFileDescriptionBuffer.add(tb);
                                 }
                             }
                         }
                     }
                 }
                 if (currentName != null) {
-                    sqlBuffer.append(line).append(NEW_LINE);
+                    sqlBodyBuffer.append(line).append(NEW_LINE);
                     if (trimLine.endsWith(";")) {
-                        String sql = sqlBuffer.toString().trim();
+                        String sql = sqlBodyBuffer.toString().trim();
                         sql = sql.substring(0, sql.length() - 1).trim();
-                        String desc = descriptionBuffer.toString().trim();
+                        String desc = sqlDescriptionBuffer.toString().trim();
+
                         entry.put(currentName, scanSql(alias, filename, currentName, sql, desc));
+                        appendInlineTemplate(alias, filename, entry, currentName, sql);
+
                         currentName = null;
-                        sqlBuffer.setLength(0);
-                        descriptionBuffer.setLength(0);
+                        sqlBodyBuffer.setLength(0);
+                        sqlDescriptionBuffer.setLength(0);
                     }
                 }
             }
             // if last part of SQL is not ends with ';' symbol
             if (currentName != null) {
-                String lastSql = sqlBuffer.toString().trim();
-                String lastDesc = descriptionBuffer.toString().trim();
+                String lastSql = sqlBodyBuffer.toString().trim();
+                String lastDesc = sqlDescriptionBuffer.toString().trim();
+
                 entry.put(currentName, scanSql(alias, filename, currentName, lastSql, lastDesc));
+                appendInlineTemplate(alias, filename, entry, currentName, lastSql);
             }
         }
         if (!entry.isEmpty()) {
@@ -295,7 +307,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         Resource resource = new Resource(filename);
         resource.setEntry(Collections.unmodifiableMap(entry));
         resource.setLastModified(fileResource.getLastModified());
-        resource.setDescription(xqlDesc.toString().trim());
+        resource.setDescription(xqlFileDescriptionBuffer.toString().trim());
         return resource;
     }
 
@@ -303,7 +315,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * Scan sql object.
      *
      * @param alias    alias
-     * @param filename sql file name
+     * @param filename SQL file name
      * @param sqlName  sql fragment name
      * @param sql      sql content
      * @param desc     sql description
@@ -319,6 +331,60 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         sqlObj.setDescription(desc);
         log.debug("scan(;) {} to get sql [{}.{}]: {}", filename, alias, sqlName, SqlHighlighter.highlightIfAnsiCapable(sql));
         return sqlObj;
+    }
+
+    /**
+     * Add the extracted inline template to entry.
+     *
+     * @param alias       alias
+     * @param filename    SQL file name
+     * @param entry       sql container
+     * @param currentName sql name
+     * @param sql         sql content
+     */
+    protected void appendInlineTemplate(@NotNull String alias, @NotNull String filename, Map<String, Sql> entry, String currentName, String sql) {
+        extractInlineTemplate(sql, (key, template) -> {
+            String name = "${" + key + "}";
+            if (entry.containsKey(name)) {
+                throw new XQLParseException("The template name '" + key + "' in SQL '" + currentName + "' has already been defined before.");
+            }
+            entry.put(name, scanSql(alias, filename, name, template, "Inline template extracted by '" + currentName + "'"));
+        });
+    }
+
+    /**
+     * Extract the inline template.
+     *
+     * @param sql      sql
+     * @param consumer consumer the extracted template
+     */
+    protected void extractInlineTemplate(String sql, BiConsumer<String, String> consumer) {
+        String[] lines = sql.split("\n");
+        int i = 0;
+        while (i < lines.length) {
+            if (INLINE_TEMPLATE_END_PATTERN.matcher(lines[i]).matches()) {
+                throw new XQLParseException("Inline template missing '//TEMPLATE-BEGIN:xxx' before the end at: " + i);
+            }
+            Matcher m = INLINE_TEMPLATE_BEGIN_PATTERN.matcher(lines[i]);
+            if (m.matches()) {
+                i++;
+                StringJoiner sb = new StringJoiner("\n");
+                while (!INLINE_TEMPLATE_END_PATTERN.matcher(lines[i]).matches()) {
+                    if (INLINE_TEMPLATE_BEGIN_PATTERN.matcher(lines[i]).matches()) {
+                        throw new XQLParseException("Inline template missing '//TEMPLATE-END' at: " + i);
+                    }
+                    if (i >= lines.length - 1) {
+                        throw new XQLParseException("Inline template missing '//TEMPLATE-END' at the end");
+                    }
+                    sb.add(lines[i]);
+                    i++;
+                }
+                i++;
+                consumer.accept(m.group("key"), sb.toString());
+            } else {
+                i++;
+            }
+        }
     }
 
     /**

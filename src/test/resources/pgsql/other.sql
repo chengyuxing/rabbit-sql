@@ -23,8 +23,6 @@ ddddddd*/
 /*[bbbbbbbbbbb]*/
 select * from test.files;
 
-a.id, a.name, a.date;
-
 /*[ooooooooo]*/
 select count(*),
        count(*) filter ( where grade > 90 )               greate,

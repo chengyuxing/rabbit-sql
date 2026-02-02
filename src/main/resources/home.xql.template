@@ -8,14 +8,19 @@
 */
 
 /*#some description...#*/
-/*[query]*/
-/*#more
-  description...
-  #*/
-select * from table t ${part1};
+/*[queryList]*/
+/*#more description...#*/
+select * from table t
+where
+-- //TEMPLATE-BEGIN:myInLineCnd
+    -- #if :id != blank
+       id = :id
+    -- #fi
+-- //TEMPLATE-END
+${order};
 
-/*{part1}*/
-where id = :id ${order};
+/*[queryCount]*/
+select count(*) from table where ${myInLineCnd};
 
 /*{order}*/
 order by id;
@@ -29,7 +34,7 @@ select * from table where id = :id and name in (
     -- #for user of :users delimiter ', '
         -- #if user == 'xxx'
         'guest'
-        --else
+        -- #else
         :item
         -- #fi
     -- #done

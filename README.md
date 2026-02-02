@@ -670,7 +670,7 @@ Every managed sql file must follows **"k-v"** structure, and each sql object mus
 /*[query]*/
 /*#some more 
   description...#*/
-select * from test."user" t ${part1};
+select * from guest t ${part1};
 
 /*part 1*/
 /*{part1}*/
@@ -680,6 +680,18 @@ ${order};
 /*{order}*/
 order by id;
 
+/*[queryList]*/
+select * from guest where
+-- //TEMPLATE-BEGIN:myInLineCnd
+  -- #if :id != blank
+  id = :id
+  -- #fi
+-- //TEMPLATE-END
+;
+
+/*[queryCount]*/
+select count(*) from guest where ${myInLineCnd};
+
 ...
 ```
 
@@ -687,10 +699,18 @@ order by id;
 
 - Sql object name formatter is `/*[name]*/`, sql object supports nest sql fragment by using `${fragment name}` holder; 
 
-- Sql fragment name formatter is `/*{name}*/` , sql fragment supports nest sql fragment by using `${fragment name}` holder to reuse, as above example `my.sql`:
+- Template fragment name formatter is `/*{name}*/` , sql fragment supports nest sql fragment by using `${fragment name}` holder to reuse, as above example `query` in `my.sql`:
 
   ```sql
-  select * from test."user" t where id = :id order by id;
+  select * from guest t where id = :id order by id;
+  ```
+
+- Inline template defined in a SQL object, other SQL object can be used by the name `myCnd` ：
+  ```sql
+  -- //TEMPLATE-BEGIN:myCnd
+  and id = :id
+  ...
+  -- //TEMPLATE-END
   ```
 
 #### Constructor

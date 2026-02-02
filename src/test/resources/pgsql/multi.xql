@@ -13,7 +13,8 @@ select 1,
 
 /*#sjd#*/
 /*[c]*/
-select test.user where id = 10;
+select test.user
+where id = 10;
 
 /*[queryUserById]*/
 /*#根据id查询用户#*/

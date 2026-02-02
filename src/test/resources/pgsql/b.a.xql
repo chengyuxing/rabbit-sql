@@ -17,7 +17,7 @@ ftp://ftpuser:skynet123456@221.3.220.93:6021
 /*aaaaaaaadd
   ddddddd*/
 /*[queryUsers]*/
-    /*ccccccccccc*/
+/*ccccccccccc*/
 /*#
   Tip：
   1. cnd条件是动态拼接的；
@@ -27,10 +27,7 @@ ftp://ftpuser:skynet123456@221.3.220.93:6021
 select *
 from test.user
 -- inner join test.tb on 1 = 1
-where
-
-    ${cnd}
-
+where ${cnd}
 order by id desc
 ;
 

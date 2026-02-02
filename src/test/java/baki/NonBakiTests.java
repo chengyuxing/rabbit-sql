@@ -15,6 +15,7 @@ import com.github.chengyuxing.common.util.ValueUtils;
 import com.github.chengyuxing.common.util.StringUtils;
 import com.github.chengyuxing.sql.*;
 import com.github.chengyuxing.sql.annotation.XQLMapper;
+import com.github.chengyuxing.sql.exceptions.XQLParseException;
 import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.github.chengyuxing.sql.util.SqlGenerator;
@@ -26,16 +27,19 @@ import org.junit.Test;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -107,6 +111,7 @@ public class NonBakiTests {
     public void test448() {
         XQLFileManager xqlFileManager = new XQLFileManager("xql-file-manager-postgresql.yml");
         xqlFileManager.init();
+        System.out.println(xqlFileManager);
     }
 
     @Test
@@ -490,6 +495,48 @@ public class NonBakiTests {
             Annotation a = Guest.class.getDeclaredAnnotation((Class<? extends Annotation>) clazz);
             Method m = clazz.getDeclaredMethod("schema");
             System.out.println(m.invoke(a));
+        }
+    }
+
+    @Test
+    public void testRefBlock() {
+        FileResource fr = new FileResource("pgsql/ref.sql");
+        String sql = fr.readString(StandardCharsets.UTF_8);
+        String[] sqlParts = sql.split("\n");
+        doParseRef(sqlParts, (name, content) -> {
+            System.out.println("---");
+            System.out.println(name);
+            System.out.println(content);
+            System.out.println("---");
+        });
+    }
+
+    public void doParseRef(String[] sqlParts, BiConsumer<String, String> consumer) {
+        int i = 0;
+        while (i < sqlParts.length) {
+            if (XQLFileManager.INLINE_TEMPLATE_END_PATTERN.matcher(sqlParts[i]).matches()) {
+                throw new XQLParseException("Inline template missing '-- REF-BEGIN:xxx' before the end at: " + i);
+            }
+            Matcher m = XQLFileManager.INLINE_TEMPLATE_BEGIN_PATTERN.matcher(sqlParts[i]);
+            if (m.matches()) {
+                i++;
+                StringJoiner sb = new StringJoiner("\n");
+                while (!XQLFileManager.INLINE_TEMPLATE_END_PATTERN.matcher(sqlParts[i]).matches()) {
+                    if (XQLFileManager.INLINE_TEMPLATE_BEGIN_PATTERN.matcher(sqlParts[i]).matches()) {
+                        String name = m.group("part");
+                        throw new XQLParseException("Inline template duplicate '-- REF-BEGIN:" + name + "' at: " + i);
+                    }
+                    if (i >= sqlParts.length - 1) {
+                        throw new XQLParseException("Inline template missing '-- REF-END' at: " + i);
+                    }
+                    sb.add(sqlParts[i]);
+                    i++;
+                }
+                i++;
+                consumer.accept(m.group("part"), sb.toString());
+            } else {
+                i++;
+            }
         }
     }
 }

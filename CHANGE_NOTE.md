@@ -1,5 +1,9 @@
 # change note
 
+# 10.2.4
+
+- `XQLFileManager` add support inline template in a SQL object.
+
 # 10.2.3
 
 - Fixed `#for` loop body named param parse bug.

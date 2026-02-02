@@ -9,6 +9,7 @@
 
 files:
   dynamic: http://127.0.0.1:8080/share/cyx.xql?token=${env.PUBLISH_TOKEN}
+  temp-example: pgsql/ref.sql
 #  foo: !path [ *db, a.xql ]
 #  bar: b.xql
 

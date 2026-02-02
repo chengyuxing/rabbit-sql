@@ -674,7 +674,7 @@ SQL文件管理器，对普通sql文件的标准进行了**扩展**，不破坏�
 /*[query]*/
 /*#some more 
   description...#*/
-select * from test."user" t ${part1};
+select * from guest t ${part1};
 
 /*第一部分*/
 /*{part1}*/
@@ -684,16 +684,36 @@ ${order};
 /*{order}*/
 order by id;
 
+/*[queryList]*/
+select * from guest where
+-- //TEMPLATE-BEGIN:myInLineCnd
+  -- #if :id != blank
+  id = :id
+  -- #fi
+-- //TEMPLATE-END
+;
+
+/*[queryCount]*/
+select count(*) from guest where ${myInLineCnd};
+
 ...
 ```
 - Sql描述格式为 `/*#some description...#*/`;
 
 - 对象名格式为 `/*[name]*/` ，sql文件中可以嵌套sql片段，使用 `${片段名}` 指定;
 
-- 片段名格式为 `/*{name}*/` ，sql片段中可以嵌套sql片段，支持片段复用，使用 `${片段名}` 指定，如上例子在解析完成后名为 `query` 的sql变为：
+- 模版片段名格式为 `/*{name}*/` ，sql片段中可以嵌套sql片段，支持片段复用，使用 `${片段名}` 指定，如上例子在解析完成后名为 `query` 的sql变为：
 
   ```sql
-  select * from test."user" t where id = :id order by id;
+  select * from guest t where id = :id order by id;
+  ```
+
+- 内联模版片段，定义在一个完整的 SQL 对象内，其他 SQL 对象可根据定义的名字（`myCnd`）进行引用，格式为：
+  ```sql
+  -- //TEMPLATE-BEGIN:myCnd
+  and id = :id
+  ...
+  -- //TEMPLATE-END
   ```
 
 #### 构造函数

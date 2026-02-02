@@ -44,7 +44,8 @@ where r.user_id = t.sfzh) roles
 from zhag_ptyw_user t
     left join zhag.zhag_ptyw_user_rzdwxx zpur
 on t.mjbh = zpur.mjbh and zpur.ifmr = '1'
-where
+where 1 = 1
+-- REF-BEGIN:queryPasswordCnd
 -- #if :token != blank
   and t.sfzh = :token
 -- #fi
@@ -54,6 +55,7 @@ where
 -- #if :password != blank
   and t.yhmm = :password
 -- #fi
+-- REF-END
 ;
 
 /*[plsql]*/

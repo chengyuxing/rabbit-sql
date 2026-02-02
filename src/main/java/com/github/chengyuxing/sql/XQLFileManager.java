@@ -49,7 +49,7 @@ import static com.github.chengyuxing.common.util.StringUtils.containsAnyIgnoreCa
  * <blockquote><pre>
  * files:
  *   home: {@code https://server/home.xql?token=${env.TOKEN}}
- *   foo: xlqs/a.xql
+ *   foo: xqls/a.xql
  *   bar: !path [xqls, b.xql]
  * </pre></blockquote>
  *
@@ -793,6 +793,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     @Override
     public void close() {
+        initialized = false;
         resources = Collections.emptyMap();
         pipeInstances = Collections.emptyMap();
     }

@@ -37,7 +37,7 @@ import static com.github.chengyuxing.common.util.StringUtils.containsAnyIgnoreCa
 
 /**
  * <h2>Dynamic SQL File Manager</h2>
- * <p>Use standard sql block comment ({@code /**}{@code /}), line comment ({@code --}),
+ * <p>Use standard SQL block comment ({@code /**}{@code /}), line comment ({@code --}),
  * named parameter ({@code :name}) and string template variable ({@code ${template}}) to
  * extends SQL file standard syntax with special content format, brings more features to
  * SQL file and follow the strict SQL file syntax.</p>

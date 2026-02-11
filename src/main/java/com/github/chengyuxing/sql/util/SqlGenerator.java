@@ -1,5 +1,6 @@
 package com.github.chengyuxing.sql.util;
 
+import com.github.chengyuxing.common.script.parser.KeyExpressionParser;
 import com.github.chengyuxing.common.util.ValueUtils;
 import org.jetbrains.annotations.NotNull;
 
@@ -35,7 +36,7 @@ public class SqlGenerator {
                                 "--.*?$|" +                 // Line comments
                                 "/\\*.*?\\*/|" +            // Block comments
                                 "::\\w+",                   // PostgreSQL type casts
-                        namedParamPrefix, ValueUtils.VAR_PATH_EXPRESSION_PATTERN.pattern()),
+                        namedParamPrefix, KeyExpressionParser.EXPRESSION_PATTERN.pattern()),
                 Pattern.DOTALL | Pattern.MULTILINE
         );
     }

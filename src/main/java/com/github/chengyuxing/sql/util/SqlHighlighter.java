@@ -2,9 +2,9 @@ package com.github.chengyuxing.sql.util;
 
 import com.github.chengyuxing.common.console.Color;
 import com.github.chengyuxing.common.console.Printer;
+import com.github.chengyuxing.common.script.parser.KeyExpressionParser;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.util.StringUtils;
-import com.github.chengyuxing.common.util.ValueUtils;
 import com.github.chengyuxing.sql.Keywords;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -221,7 +221,7 @@ public final class SqlHighlighter {
     }
 
     private static boolean detectNamedParameter(String word, int i, List<String> delimiters) {
-        if (!ValueUtils.VAR_PATH_EXPRESSION_PATTERN.matcher(word).matches()) {
+        if (!KeyExpressionParser.EXPRESSION_PATTERN.matcher(word).matches()) {
             return false;
         }
         int idx = i > 0 ? i - 1 : i;

@@ -860,7 +860,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             if (scope.isEmpty()) return Pair.of(text, Collections.emptyMap());
             String formatted = text;
             if (text.contains("${")) {
-                formatted = SqlUtils.formatSqlTemplate(text, scope);
+                Map<String, Object> scopeArgs = new HashMap<>(scope.size());
+                for (Map.Entry<String, VarMeta> entry : scope.entrySet()) {
+                    scopeArgs.put(entry.getKey(), entry.getValue().getValue());
+                }
+                formatted = SqlUtils.formatSqlTemplate(text, scopeArgs);
             }
             Map<String, Object> usedVars = new HashMap<>();
             if (formatted.indexOf(namedParamPrefix) != -1) {

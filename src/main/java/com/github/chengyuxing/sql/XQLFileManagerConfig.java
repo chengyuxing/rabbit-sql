@@ -5,7 +5,6 @@ import com.github.chengyuxing.common.io.TypedProperties;
 import com.github.chengyuxing.common.script.pipe.IPipe;
 import com.github.chengyuxing.sql.exceptions.XQLParseException;
 import com.github.chengyuxing.sql.yaml.FeaturedConstructor;
-import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
@@ -280,112 +279,5 @@ public class XQLFileManagerConfig {
         result = 31 * result + getCharset().hashCode();
         result = 31 * result + getNamedParamPrefix().hashCode();
         return result;
-    }
-
-    /**
-     * Sql object.
-     */
-    public static final class Sql {
-        private String source;
-        private String description = "";
-
-        public Sql(@NotNull String source) {
-            this.source = source;
-        }
-
-        void setSource(@NotNull String source) {
-            this.source = source;
-        }
-
-        public @NotNull String getSource() {
-            return source;
-        }
-
-        public @NotNull String getDescription() {
-            return description;
-        }
-
-        void setDescription(String description) {
-            if (description != null)
-                this.description = description;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof Sql)) return false;
-
-            Sql sql = (Sql) o;
-            return getSource().equals(sql.getSource()) && getDescription().equals(sql.getDescription());
-        }
-
-        @Override
-        public int hashCode() {
-            int result = getSource().hashCode();
-            result = 31 * result + getDescription().hashCode();
-            return result;
-        }
-    }
-
-    /**
-     * Sql file resource.
-     */
-    public static final class Resource {
-        private final String filename;
-        private long lastModified = -1;
-        private String description = "";
-        private Map<String, Sql> entry;
-
-        public Resource(@NotNull String filename) {
-            this.filename = filename;
-            this.entry = Collections.emptyMap();
-        }
-
-        public String getFilename() {
-            return filename;
-        }
-
-        public long getLastModified() {
-            return lastModified;
-        }
-
-        void setLastModified(long lastModified) {
-            this.lastModified = lastModified;
-        }
-
-        public @NotNull String getDescription() {
-            return description;
-        }
-
-        void setDescription(String description) {
-            this.description = description;
-        }
-
-        public @NotNull Map<String, Sql> getEntry() {
-            return entry;
-        }
-
-        void setEntry(Map<String, Sql> entry) {
-            if (entry != null)
-                this.entry = entry;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof Resource)) return false;
-
-            Resource resource = (Resource) o;
-            return getLastModified() == resource.getLastModified() && Objects.equals(getFilename(), resource.getFilename()) && Objects.equals(getDescription(), resource.getDescription()) && getEntry().equals(resource.getEntry());
-        }
-
-        @Override
-        public int hashCode() {
-            int result = Objects.hashCode(getFilename());
-            result = 31 * result + Long.hashCode(getLastModified());
-            result = 31 * result + Objects.hashCode(getDescription());
-            result = 31 * result + getEntry().hashCode();
-            return result;
-        }
     }
 }

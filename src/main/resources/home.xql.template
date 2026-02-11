@@ -31,11 +31,14 @@ order by id;
 -- #var safeAge = :age
 -- #var users='a,xxx,c' | split(',')
 select * from table where id = :id and name in (
-    -- #for user of :users delimiter ', '
+    -- #for user of :users; last as isLast
         -- #if user == 'xxx'
         'guest'
         -- #else
         :item
+        -- #fi
+        -- #if !:isLast
+        ,
         -- #fi
     -- #done
     )

@@ -1,0 +1,23 @@
+#check :users = blank throw 'param users must not be null!'
+#var defaultAddresses = 'Japin,USB,KingDown' | split(',')
+select * from test.guest where
+#guard :id != blank
+    id = :id
+#throw 'ID is required!'
+    or address in (
+#for user of :users; last as is1Last
+        #for address of :user.addresses; last as is2Last
+        #var city = :address.city | upper
+        :city, :another, :user.addresses.0.city
+        #if :city = KUNMING
+        ,'You choose ${city}!'
+        #fi
+        #if !:is2Last
+        ,
+        #fi
+        #done
+        #if !:is1Last
+        ,
+        #fi
+#done
+        ) or address = :defaultAddresses[1]

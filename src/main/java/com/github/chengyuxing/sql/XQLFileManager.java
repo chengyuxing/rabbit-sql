@@ -1,9 +1,13 @@
 package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.io.FileResource;
-import com.github.chengyuxing.common.script.lang.Directives;
-import com.github.chengyuxing.common.script.lexer.RabbitScriptLexer;
 import com.github.chengyuxing.common.script.RabbitScriptEngine;
+import com.github.chengyuxing.common.script.ast.ScriptAst;
+import com.github.chengyuxing.common.script.ast.ScriptEngine;
+import com.github.chengyuxing.common.script.ast.impl.EvalContext;
+import com.github.chengyuxing.common.script.ast.impl.EvalResult;
+import com.github.chengyuxing.common.script.ast.impl.VarMeta;
+import com.github.chengyuxing.common.script.lang.Directives;
 import com.github.chengyuxing.common.script.exception.ScriptSyntaxException;
 import com.github.chengyuxing.common.script.pipe.IPipe;
 import com.github.chengyuxing.common.tuple.Pair;
@@ -33,7 +37,6 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static com.github.chengyuxing.common.util.StringUtils.NEW_LINE;
-import static com.github.chengyuxing.common.util.StringUtils.containsAnyIgnoreCase;
 
 /**
  * <h2>Dynamic SQL File Manager</h2>
@@ -92,7 +95,7 @@ import static com.github.chengyuxing.common.util.StringUtils.containsAnyIgnoreCa
  * </pre>
  * </blockquote>
  * <p>
- * {@linkplain DynamicSqlEngine Dynamic sql script} write in line comment where starts with {@code --},
+ * {@linkplain RabbitScriptEngine Dynamic sql script} write in line comment where starts with {@code --},
  * check example following class path file: {@code home.xql.template}.
  * <p>Supported Directives: {@link Directives Directives}</p>
  * <p>Invoke method {@link #get(String, Map)} to enjoy the dynamic SQL!</p>
@@ -106,6 +109,16 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public static final Pattern INLINE_TEMPLATE_END_PATTERN = Pattern.compile("(?i)\\s*--\\s*//\\s*TEMPLATE-END\\s*");
     public static final String XQL_DESC_QUOTE = "@@@";
     public static final String YML = "xql-file-manager.yml";
+    /**
+     * Notice: function for normalizes the directive line by removing the leading '--' if present.
+     */
+    private final ScriptEngine scriptEngine = new RabbitScriptEngine(line -> {
+        int idx = SqlUtils.indexOfWholeLineComment(line);
+        if (idx != -1) {
+            return line.substring(idx + 2);
+        }
+        return line;
+    });
 
     private final ReentrantLock lock = new ReentrantLock();
     private SqlGenerator sqlGenerator = new SqlGenerator(DEFAULT_NAMED_PARAM_PREFIX);
@@ -323,14 +336,13 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     protected @NotNull Sql scanSql(@NotNull String alias, @NotNull String filename, @NotNull String sqlName, @NotNull String sql, @NotNull String desc) {
         try {
-            newDynamicSqlEngine(sql).verify();
+            Sql sqlObj = new Sql(sql);
+            sqlObj.setDescription(desc);
+            log.debug("scan(;) {} to compile sql [{}.{}]: {}", filename, alias, sqlName, SqlHighlighter.highlightIfAnsiCapable(sql));
+            return sqlObj;
         } catch (ScriptSyntaxException e) {
             throw new XQLParseException("File: " + filename + " -> '" + sqlName + "' has script syntax error", e);
         }
-        Sql sqlObj = new Sql(sql);
-        sqlObj.setDescription(desc);
-        log.debug("scan(;) {} to get sql [{}.{}]: {}", filename, alias, sqlName, SqlHighlighter.highlightIfAnsiCapable(sql));
-        return sqlObj;
     }
 
     /**
@@ -447,6 +459,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                 source = SqlUtils.formatSqlTemplate(source, getConstants());
                 // remove empty line.
                 sql.setSource(StringUtils.removeEmptyLine(source));
+                log.debug("recompiling the sql '{}'", e.getKey());
             }
         }
     }
@@ -714,42 +727,18 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @param name the name of the SQL statement to retrieve, e.g. {@code <alias>.<sqlName>}
      * @param args a map containing the arguments to be used in parsing the SQL statement
      * @return a Pair where the first element is the parsed SQL statement as a String, and the second element is a Map containing any additional data or parameters
-     * @see DynamicSqlEngine
      */
-    public Pair<String, Map<String, Object>> get(@NotNull String name, Map<String, ?> args) {
-        return parseDynamicSql(get(name), args);
-    }
-
-    /**
-     * Parses the provided SQL string, replacing dynamic elements with values from the given arguments.
-     * If the SQL contains any directives, it processes them and returns the modified SQL along with a map of variables defined or used in the process.
-     *
-     * @param sql  The SQL statement to be parsed. It may contain dynamic elements or directives that need to be processed.
-     * @param args A map of argument names and their corresponding values to be used for replacing dynamic elements within the SQL. Can be null.
-     * @return A Pair where the first element is the parsed (potentially modified) SQL statement, and the second element is a map containing all variables defined or utilized during the parsing process.
-     */
-    public Pair<String, Map<String, Object>> parseDynamicSql(@NotNull String sql, @Nullable Map<String, ?> args) {
-        if (!containsAnyIgnoreCase(sql, RabbitScriptLexer.DIRECTIVES)) {
-            return Pair.of(sql, Collections.emptyMap());
+    public Pair<String, Map<String, Object>> get(@NotNull String name, Map<String, Object> args) {
+        Sql sql = getSqlObject(name);
+        ScriptAst ast = sql.getAst();
+        if (ast.isDynamic()) {
+            EvalContext context = new DynamicSqlEvalContext(args);
+            EvalResult result = scriptEngine.execute(ast, context);
+            Map<String, Object> vars = new HashMap<>(1);
+            vars.put(DynamicSqlEvalContext.GENERATED_VAR_KEY, result.getUsedVars());
+            return Pair.of(result.getContent(), vars);
         }
-        Map<String, Object> myArgs = new HashMap<>();
-        if (args != null) {
-            myArgs.putAll(args);
-        }
-        DynamicSqlEngine engine = newDynamicSqlEngine(sql);
-        String parsedSql = engine.evaluate(myArgs);
-        //noinspection ExtractMethodRecommender
-        Map<String, Object> vars = new HashMap<>(engine.getDefinedVars());
-        Map<String, Object> forGeneratedVars = engine.getForGeneratedVars();
-        if (!forGeneratedVars.isEmpty()) {
-            // #for expression temp variables stored in _for variable.
-            if (!vars.containsKey(DynamicSqlEngine.FOR_VARS_KEY)) {
-                vars.put(DynamicSqlEngine.FOR_VARS_KEY, forGeneratedVars);
-            } else {
-                throw new IllegalStateException("#var cannot define the name " + DynamicSqlEngine.FOR_VARS_KEY + " when #for directive exists.");
-            }
-        }
-        return Pair.of(parsedSql, vars);
+        return Pair.of(sql.getSource(), Collections.emptyMap());
     }
 
     /**
@@ -798,16 +787,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         pipeInstances = Collections.emptyMap();
     }
 
-    /**
-     * Create a new dynamic sql engine.
-     *
-     * @param sql sql
-     * @return dynamic sql engine
-     */
-    public DynamicSqlEngine newDynamicSqlEngine(@NotNull String sql) {
-        return new DynamicSqlEngine(sql);
-    }
-
     @Override
     public final boolean equals(Object o) {
         if (!(o instanceof XQLFileManager)) return false;
@@ -825,59 +804,65 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         return result;
     }
 
-    /**
-     * Dynamic sql parser.
-     */
-    public class DynamicSqlEngine extends RabbitScriptEngine {
-        public static final String FOR_VARS_KEY = "_for";
-        public static final String VAR_PREFIX = FOR_VARS_KEY + '.';
+    public class DynamicSqlEvalContext extends EvalContext {
+        public static final String GENERATED_VAR_KEY = "_var";
+        public static final String GENERATED_VAR_PREFIX = GENERATED_VAR_KEY + ".";
         private final char namedParamPrefix = getNamedParamPrefix();
         private final Pattern namedParamPattern = sqlGenerator.getNamedParamPattern();
 
-        public DynamicSqlEngine(@NotNull String sql) {
-            super(sql);
+        public DynamicSqlEvalContext(@NotNull Map<String, Object> args) {
+            super(args);
         }
 
         @Override
-        protected Map<String, IPipe<?>> getPipes() {
+        protected @NotNull Map<String, IPipe<?>> getPipes() {
             return pipeInstances;
         }
 
+        private String genVarName(VarMeta varMeta) {
+            return varMeta.getName() + "_" + varMeta.getId();
+        }
+
         /**
-         * Cleanup annotation in for loop and create indexed arg for special format named arg, e.g.
-         * <p>Mock data {@code users} and {@code forIndex: 0}:</p>
+         * Format the plain text and collect the variables which used in  formatting, e.g.
          * <blockquote>
          * <pre>["CYX", "jack", "Mike"]</pre>
          * </blockquote>
          * <p>for loop:</p>
          * <blockquote>
          * <pre>
-         * -- #for user,idx of :users delimiter ', '
+         * -- #for user of :users; last as isLast
          *    :user
+         *    -- #if !:isLast
+         *    ,
+         *    -- #fi
          * -- #done
          * </pre>
          * </blockquote>
          * <p>result:</p>
          * <blockquote>
          * <pre>
-         * :_for.user_0_0,
-         * :_for.user_0_1,
-         * :_for.user_0_2,
+         * :_var.user_0
+         * ,
+         * :_var.user_1
+         * ,
+         * :_var.user_2
          * </pre>
          * </blockquote>
          *
-         * @param forIndex  each for loop auto index
-         * @param itemIndex for var auto index
-         * @param body      content in for loop
-         * @param context   each for loop args which created by for expression
+         * @param text   the plain text
+         * @param inputs input arguments
+         * @param scope  current scope variables
          * @return formatted content
          */
         @Override
-        protected String forLoopBodyFormatter(int forIndex, int itemIndex, @NotNull String body, @NotNull Map<String, Object> context) {
-            String formatted = body;
-            if (body.contains("${")) {
-                formatted = SqlUtils.formatSqlTemplate(body, context);
+        protected Pair<String, Map<String, Object>> formatScopePlainText(String text, Map<String, Object> inputs, Map<String, VarMeta> scope) {
+            if (scope.isEmpty()) return Pair.of(text, Collections.emptyMap());
+            String formatted = text;
+            if (text.contains("${")) {
+                formatted = SqlUtils.formatSqlTemplate(text, scope);
             }
+            Map<String, Object> usedVars = new HashMap<>();
             if (formatted.indexOf(namedParamPrefix) != -1) {
                 StringBuffer sb = new StringBuffer();
                 Matcher m = namedParamPattern.matcher(formatted);
@@ -897,10 +882,13 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                             }
                         }
 
-                        if (idx == -1 && context.containsKey(name)) {
+                        if (idx == -1 && scope.containsKey(name)) {
+                            VarMeta varMeta = scope.get(name);
+                            String varName = genVarName(varMeta);
                             replacement = namedParamPrefix
-                                    + VAR_PREFIX
-                                    + forVarGeneratedKey(name, forIndex, itemIndex);
+                                    + GENERATED_VAR_PREFIX
+                                    + varName;
+                            usedVars.put(varName, varMeta.getValue());
                         } else {
                             // -- #for item of :data | kv
                             //  ${item.key} = :item.value
@@ -910,11 +898,14 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                             // varName: item
                             if (idx != -1) {
                                 String paramName = name.substring(0, idx);
-                                if (context.containsKey(paramName)) {
+                                if (scope.containsKey(paramName)) {
+                                    VarMeta varMeta = scope.get(paramName);
+                                    String varName = genVarName(varMeta);
                                     replacement = namedParamPrefix
-                                            + VAR_PREFIX
-                                            + forVarGeneratedKey(paramName, forIndex, itemIndex)
+                                            + GENERATED_VAR_PREFIX
+                                            + varName
                                             + name.substring(idx);
+                                    usedVars.put(varName, varMeta.getValue());
                                 }
                             }
                         }
@@ -928,22 +919,125 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                 m.appendTail(sb);
                 formatted = sb.toString();
             }
-            return formatted;
+            return Pair.of(formatted, usedVars);
+        }
+    }
+
+    /**
+     * Sql object.
+     */
+    public class Sql {
+        private String source;
+        private ScriptAst ast;
+        private String description = "";
+
+        public Sql(@NotNull String source) {
+            this.source = source;
+            this.buildAst(source);
         }
 
-        /**
-         * Normalizes the directive line by removing the leading '--' if present.
-         *
-         * @param line the line to be normalized
-         * @return the normalized line with leading '--' removed, or the original line if no '--' is found
-         */
+        public @NotNull String getSource() {
+            return source;
+        }
+
+        public @NotNull ScriptAst getAst() {
+            return ast;
+        }
+
+        public @NotNull String getDescription() {
+            return description;
+        }
+
+        private void setSource(@NotNull String source) {
+            this.source = source;
+            this.buildAst(source);
+        }
+
+        private void setDescription(String description) {
+            if (description != null)
+                this.description = description;
+        }
+
+        private void buildAst(String source) {
+            this.ast = scriptEngine.compile(source);
+        }
+
         @Override
-        protected String normalizeDirectiveLine(String line) {
-            int idx = SqlUtils.indexOfWholeLineComment(line);
-            if (idx != -1) {
-                return line.substring(idx + 2);
-            }
-            return line;
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof Sql)) return false;
+
+            Sql sql = (Sql) o;
+            return getSource().equals(sql.getSource()) && getDescription().equals(sql.getDescription());
+        }
+
+        @Override
+        public int hashCode() {
+            int result = getSource().hashCode();
+            result = 31 * result + getDescription().hashCode();
+            return result;
+        }
+    }
+
+    /**
+     * Sql file resource.
+     */
+    public static final class Resource {
+        private final String filename;
+        private long lastModified = -1;
+        private String description = "";
+        private Map<String, Sql> entry;
+
+        public Resource(@NotNull String filename) {
+            this.filename = filename;
+            this.entry = Collections.emptyMap();
+        }
+
+        public String getFilename() {
+            return filename;
+        }
+
+        public long getLastModified() {
+            return lastModified;
+        }
+
+        public @NotNull String getDescription() {
+            return description;
+        }
+
+        public @NotNull Map<String, Sql> getEntry() {
+            return entry;
+        }
+
+        private void setLastModified(long lastModified) {
+            this.lastModified = lastModified;
+        }
+
+        private void setDescription(String description) {
+            this.description = description;
+        }
+
+        private void setEntry(Map<String, Sql> entry) {
+            if (entry != null)
+                this.entry = entry;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (!(o instanceof Resource)) return false;
+
+            Resource resource = (Resource) o;
+            return getLastModified() == resource.getLastModified() && Objects.equals(getFilename(), resource.getFilename()) && Objects.equals(getDescription(), resource.getDescription()) && getEntry().equals(resource.getEntry());
+        }
+
+        @Override
+        public int hashCode() {
+            int result = Objects.hashCode(getFilename());
+            result = 31 * result + Long.hashCode(getLastModified());
+            result = 31 * result + Objects.hashCode(getDescription());
+            result = 31 * result + getEntry().hashCode();
+            return result;
         }
     }
 }

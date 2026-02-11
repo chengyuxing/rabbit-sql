@@ -1,14 +1,3 @@
-/*[query]*/
-select *
-from test.user
-where id = 1
--- #for id, idx of :ids delimiter ', ' open ' or id in (' close ')'
-      -- #if :id | isOdd == true
-    :id, :idx
--- #fi
--- #done
-;
-
 /*[queryTemp]*/
 select *
 from ${db}.${tableName} limit 4
@@ -17,19 +6,25 @@ from ${db}.${tableName} limit 4
 /*[insert]*/
 insert into test.guest (name, age, address)
 values (
-           -- #for item of :users delimiter ', '
-           -- #if :item <> blank
-           :item
-           -- #fi
-           -- #done
-       )
+   -- #for item of :users; first as isFirst
+   -- #if :isFirst
+   :item
+   -- #else
+   ,:item
+   -- #fi
+   -- #done
+)
 ;
 
 /*[update]*/
 update test.user
 set
--- #for item of :sets | kv delimiter ', '
+-- #for item of :sets | kv; first as isFirst
+-- #if :isFirst
 ${item.key} = :item.value
+-- #else
+,${item.key} = :item.value
+-- #fi
 -- #done
 where id = :id;
 
@@ -82,8 +77,12 @@ from test.guest
 -- #var users='a,xxx,c' | split(',')
 select * from test.guest where id = :id
 or name in (
-    -- #for item of :users delimiter ', '
-        :item
+    -- #for item of :users; first as isFirst
+        -- #if :isFirst
+            :item
+        -- #else
+           ,:item
+        -- #fi
     -- #done
         )
 or address = :user.addresses[1]

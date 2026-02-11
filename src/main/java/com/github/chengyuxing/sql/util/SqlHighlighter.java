@@ -2,7 +2,7 @@ package com.github.chengyuxing.sql.util;
 
 import com.github.chengyuxing.common.console.Color;
 import com.github.chengyuxing.common.console.Printer;
-import com.github.chengyuxing.common.script.parser.KeyExpressionParser;
+import com.github.chengyuxing.common.script.ast.impl.KeyExpressionParser;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.util.StringUtils;
 import com.github.chengyuxing.sql.Keywords;

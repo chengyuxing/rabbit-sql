@@ -2,7 +2,13 @@
 
 # 10.2.4
 
-- `XQLFileManager` add support inline template in a SQL object.
+- `XQLFileManager` add support inline template: `-- //TEMPLATE-BEGIN:myInLineCnd` in a SQL object.
+- Dynamic SQL `#for` directive syntax changed to
+  `#for item of :list [| pipe1 | pipeN | ... ] [;index as i] [;last as isLast] ...`
+- Dynamic SQL bool condition add support unary syntax: `:isHuman && !:alien`
+- Script Lexer optimized.
+- Dynamic SQL Script engine optimized.
+- Key expression parse optimized.
 
 # 10.2.3
 

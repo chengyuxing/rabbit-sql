@@ -30,7 +30,7 @@ _java 8+_
 <dependency>
   <groupId>com.github.chengyuxing</groupId>
   <artifactId>rabbit-sql</artifactId>
-  <version>10.2.3</version>
+  <version>10.2.4</version>
 </dependency>
 ```
 
@@ -229,18 +229,11 @@ baki.call("{:res = call test.sum(:a, :b)}",
 
 ### Entity-Mapping
 
-To achieve the purest execution of SQL in this framework, the entity mapping logic will no longer be hard-coded internally to reach the maximum compatibility with various frameworks. The core of entity mapping is the `DataRow` class, which provides the methods` toEntity` and `ofEntity`. If there are special entity mapping requirements, Custom parsing can be achieved by configuring the attribute `BakiDao#entityFieldMapper`. For example, if the standard entity of JPA has the annotation @Column, then a simple mapping implementation is as follows:
+To achieve the purest execution of SQL in this framework, the entity mapping logic will no longer be hard-coded internally to reach the maximum compatibility with various frameworks. The core of entity mapping is the `DataRow` class, which provides the methods` toEntity` and `ofEntity`. If there are special entity mapping requirements, Custom parsing can be achieved by configuring the attribute `BakiDao#entityMetaProvider`. 
 
 ```java
-class MyEntityFieldMapper implements EntityFieldMapper {
-    @Override
-    public String apply(Field field) {
-        if (field.isAnnotationPresent(Column.class)) {
-            Column column = field.getAnnotation(Column.class);
-            return column.name();
-        }
-        return field.getName();
-    }
+public class JpaEntityMetaParser implements EntityManager.EntityMetaProvider {
+  ...
 }
 ```
 
@@ -326,10 +319,13 @@ Variable definition statements: Variable values can be constants or passed param
 -- #var list = 'cyx,jack,mike' | split(',')
 -- #var newId = :id
 select * from table where id = :newId and name in (
--- #for item of :list
-  :item
+-- #for item of :list; last as isLast
+                                                   :item
+  -- #if !:isLast
+  ,
+  -- #fi
 -- #done
-)
+  )
 ```
 
 #### if-else-fi
@@ -394,25 +390,27 @@ The choose flow control statement is similar in effect to the switch statement. 
 The for loop statement, similar to programming languages, traverses a collection and accumulates the contents within the loop body.
 
 ```sql
--- #for item,idx of :list delimiter ',' open '' close ''
-	...
+-- #for item of :list; index as i; last as isLast
+...
 -- #done
 ```
 
 **For expression** syntax:
 
-Keywords: `of` `delimiter` `open` `close`
+Keywords: `of` `as`
 
 ```sql
-item[,index] of :list [|pipe1|pipeN|... ] [delimiter ','] [open ''] [close '']
+item of :list [| pipe1 | pipeN | ... ] [;index as i] [;last as isLast] ...
 ```
 
 - `[...]` means optional;
-- `item` is current value, `index` is current index;
+- `item` is current value;
 - `:list` is iterator, it can be following some [pipes](#Pipe) to do something special;
-- `delimiter` is a separator for concat each item,  `,` is default;
-- `open` is a prefix which will pe prepend to result if result is not empty;
-- `close` is a suffix which will be append to result if result is not empty.
+- `index` Index of the current item
+- `first` Whether the current item is the first item
+- `last` Whether the current item is the last item
+- `odd` Whether the current item index is even
+- `even` Whether the current item index is odd
 
 ### Expression-script
 
@@ -421,8 +419,12 @@ Data's key is starts with `:`.
  A simple expression syntax following: 
 
 ```sql
-!(:id >= 0 || :name | length <= 3) && :age > 21
+!(:id >= 0 || :name | length <= 3) && :age > 21 && !:isAlien
 ```
+
+Above example: `!:isAlien` equivalent to `:isAlien == false`
+
+Unary expressions can be used to determine whether the value is: `blank` ，`true` ，`false`
 
 #### Supported operator
 
@@ -487,23 +489,15 @@ Here is about dynamic generate **named parameter sql**,  **named parameter** wil
 ```sql
 /*[query]*/
 select * from test.user where id = 1
--- #for id of :ids delimiter ', ' open ' or id in (' close ')'
+-- #if :ids
+or id in (
+    -- #for id of :ids; last as isLast
     -- #if :id >= 8
     :id
     -- #fi
--- #done
-```
-
-To maintain sql syntax integrity, highlighting syntax errors does not occur in ides with syntax checking, and the following equivalent writing is recommended:
-
-```sql
-select * from test.user where id = 1
--- #if :ids != blank
-or id in (
-    -- #for id of :ids delimiter ', '
-        -- #if :id >= 8
-        :id
-        -- #fi
+    -- #if !:isLast
+    ,
+    -- #fi
     -- #done
     )
 -- #fi
@@ -514,10 +508,7 @@ or id in (
 {"ids": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}
 ```
 
-For a few special places to explain:
-
-- If for loop result is not empty, `open` means `or id in(` will prepend to result, `close` means `)` will append to result;
-- Variable starts with `:` in sql means it's a named parameter which will prepare compile;
+> Variable starts with `:` in sql means it's a named parameter which will prepare compile;
 
 **for** work with `update` statement sets part:
 
@@ -525,8 +516,11 @@ For a few special places to explain:
 /*[update]*/
 update test.user
 set
--- #for set of :sets | kv delimiter ', '
+-- #for set of :sets | kv; last as isLast
     ${set.key} = :set.value
+    -- #if !:isLast
+    ,
+    -- #fi
 -- #done
 where id = :id;
 ```

@@ -30,7 +30,7 @@ _java 8+_
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>10.2.3</version>
+    <version>10.2.4</version>
 </dependency>
 ```
 
@@ -233,20 +233,11 @@ baki.call("{:res = call test.sum(:a, :b)}",
 
 本框架为了做到最纯粹的执行 SQL ，内部将不再硬编码实体映射逻辑，以到达与各种框架做到最大的兼容性。
 
-实体映射核心为 `DataRow` 类，其提供了方法 `toEntity` 和 `ofEntity` ，如果有特殊实体映射需求，通过配置属性 `BakiDao#entityFieldMapper` 来实现自定义解析。
-
-例如 JPA 的标准实体有注解 `@Column` ，那么简单的映射实现如下：
+实体映射核心为 `DataRow` 类，其提供了方法 `toEntity` 和 `ofEntity` ，如果有特殊实体映射需求，通过配置属性 `BakiDao#entityMetaProvider` 来实现自定义解析。
 
 ```java
-class MyEntityFieldMapper implements EntityFieldMapper {
-    @Override
-    public String apply(Field field) {
-        if (field.isAnnotationPresent(Column.class)) {
-            Column column = field.getAnnotation(Column.class);
-            return column.name();
-        }
-        return field.getName();
-    }
+public class JpaEntityMetaParser implements EntityManager.EntityMetaProvider {
+  ...
 }
 ```
 
@@ -332,8 +323,11 @@ select name, age from ... where id in ('I''m Ok!', 'book', 'warning') or id = ?;
 -- #var list = 'cyx,jack,mike' | split(',')
 -- #var newId = :id
 select * from table where id = :newId and name in (
--- #for item of :list
+-- #for item of :list; last as isLast
   :item
+  -- #if !:isLast
+  ,
+  -- #fi
 -- #done
 )
 ```
@@ -400,25 +394,27 @@ choose 流程控制语句，效果类似于 switch 语句，按顺序匹配每�
 for 循环语句，效果和程序语言一样，对一个集合进行遍历，将循环体内的内容进行累加。
 
 ```sql
--- #for item,idx of :list delimiter ',' open '' close ''
+-- #for item of :list; index as i; last as isLast
 	...
 -- #done
 ```
 
 **for表达式**语法说明：
 
-关键字：`of` `delimiter` `open` `close`
+关键字：`of` `as`
 
 ```sql
-item[,index] of :list [|pipe1|pipeN|... ] [delimiter ','] [open ''] [close '']
+item of :list [| pipe1 | pipeN | ... ] [;index as i] [;last as isLast] ...
 ```
 
 - `[...]` 表示可选配置项；
-- `item` 表示当前值，`index` 表示当前序号；
+- `item` 表示当前值；
 - `:list` 表示当前迭代的对象，后面可以追加[管道](#管道)进行一些特殊处理；
-- `delimiter` 表示循环的每项连接符，默认为 `,` ；
-- `open` 表示当前循环最终结果的前缀，如果结果不为空，则被添加到前面；
-- `close` 表示当前循环最终结果后缀，如果结果不为空，则被添加到后面；
+- `index` 当前项目的索引；
+- `first` 当前项目是否为第一个；
+- `last` 当前项目是否为最后一个；
+- `odd` 当前项目的索引是否为奇数；
+- `even` 当前项目的索引是否为偶数；
 
 ### 表达式脚本
 
@@ -427,8 +423,12 @@ item[,index] of :list [|pipe1|pipeN|... ] [delimiter ','] [open ''] [close '']
  一个简单的表达式语法如下：
 
 ```sql
-!(:id >= 0 || :name | length <= 3) && :age > 21
+!(:id >= 0 || :name | length <= 3) && :age > 21 && !:isAlien
 ```
+
+如上例子：`!:isAlien` 等同于 `:isAlien == false`
+
+单目表达式可于判断值是否为：`blank` ，`true` ，`false`
 
 #### 支持的运算符
 
@@ -493,22 +493,14 @@ C --pipeN--> D[...]
 ```sql
 /*[query]*/
 select * from test.user where id = 1
--- #for id of :ids delimiter ', ' open ' or id in (' close ')'
-    -- #if :id >= 8
-    :id
-    -- #fi
--- #done
-```
-
-为保持sql语法完整性，在具有语法检查的IDE中不出现高亮语法错误，推荐下面等效的写法：
-
-```sql
-select * from test.user where id = 1
--- #if :ids != blank
+-- #if :ids
 or id in (
-    -- #for id of :ids delimiter ', '
+    -- #for id of :ids; last as isLast
         -- #if :id >= 8
         :id
+        -- #fi
+        -- #if !:isLast
+        ,
         -- #fi
     -- #done
     )
@@ -520,10 +512,7 @@ or id in (
 {"ids": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]}
 ```
 
-针对几个特别的地方进行说明：
-
-- 当有满足项时，`open` 会在前面加上 `or id in(` , `close` 会在后面加上 `)` , 反之则不会加；
-- 在sql中以 `:` 开头的变量名，意味着这是一个将会进行预编译的命名参数；
+> 在sql中以 `:` 开头的变量名，意味着这是一个将会进行预编译的命名参数；
 
 **for**也可以用来构建`update`语句：
 
@@ -531,8 +520,11 @@ or id in (
 /*[update]*/
 update test.user
 set
--- #for set of :sets | kv delimiter ', '
+-- #for set of :sets | kv; last as isLast
     ${set.key} = :set.value
+    -- #if !:isLast
+    ,
+    -- #fi
 -- #done
 where id = :id;
 ```

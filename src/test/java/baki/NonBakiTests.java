@@ -65,8 +65,10 @@ public class NonBakiTests {
     }
 
     @Test
-    public void testW() {
-
+    public void testW() throws JsonProcessingException {
+        ObjectMapper objectMapper = new ObjectMapper();
+        String json = objectMapper.writeValueAsString(args);
+        System.out.println(json);
     }
 
     @Test

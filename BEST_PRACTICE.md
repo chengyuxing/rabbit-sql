@@ -33,7 +33,7 @@ _java 8+_
 </dependency>
 ```
 
-Use [Spring Boot Starter][rabbit-sql-sbt-md] provided by **rabbit-sql**, simplify configuration and quickly integrate projects. Configure the database through `application.yml` or `application.properties` .
+Use [Spring Boot Starter][rabbit-sql-sbt-md] provided by **rabbit-sql**, simplify configuration by single datasource autoconfigure and quickly integrate projects. Configure the database through `application.yml` or `application.properties` .
 
 **Example**:
 
@@ -95,6 +95,44 @@ SELECT * FROM users WHERE id = :id;
 
 > SQL statement use [named parameter][param] `:id` , it will be compiled as `?` for effectively avoid the risk of SQL injection.
 
+#### Object key expression
+
+By default: to get `users` the first value by `:users.0` ,however, in SQL ides with syntax checking, it is considered a syntax error. It is recommended to change the writing style to standard array index values to avoid syntax errors.
+
+`{"users": [{"name": "cyx"}, {"name": "abc"}, ...]}`
+
+```sql
+SELECT * FROM users WHERE name = :users[0].name;
+```
+
+#### Inline template
+
+The XQL file manager supports defining SQL inline TEMPLATE fragments ` -- // template-begin :<name> `. If the conditions of one SQL must be exactly the same as those of another SQL, such as the conditions of a paginated query, an inline template is used to create and reduce complexity. At the same time, it can effectively avoid the syntax errors of incomplete SQL detected by the SQL IDE syntax check caused by individual template fragments, which may affect the overall formatting:
+
+```sql
+/*[queryUserList]*/
+select * from users where
+-- //TEMPLATE-BEGIN:cnd
+id = :id
+-- //TEMPLATE-END
+;
+
+/*[queryUserCount]*/
+select count(*) from users where ${cnd};
+```
+
+#### PLSQL statement block
+
+In the XQL file manager, each SQL object is based on the ending `;` The symbol is used for parsing and structuring, but some DDL statements and PLSQL may contain multiple SQL segments, each of which has `;` At the end of the sign, to ensure the correctness of the parsing, it is done by using `;` Adding a line comment at the end `--` is a reasonable and legal way to avoid it:
+
+```sql
+/*[myProc]*/
+begin;
+  select 1; -- some description
+  select 2; -- 
+end;
+```
+
 #### Dynamic SQL
 
 - [Dynamic SQL][dynamic-sql] can implement conditional and loop queries through tags such as `#if` and `#for` to ensure code flexibility.
@@ -114,6 +152,22 @@ select * from users where
 -- #else
   id = :id
 -- #fi
+```
+
+#### For directive
+
+When constructing clauses similar to `in`, the timing of `,` concatenation is determined through the context `first` attribute to avoid SQL syntax errors. Although it does not ultimately affect the correctness of the parsing, before parsing, in an IDE with SQL syntax checking, syntax errors will be reminded, which affects formatting and aesthetics. Therefore, it is strongly recommended to use the following writing style:
+
+```sql
+select * from users where id in (
+-- #for item of :list; first as isFirst
+   -- #if :isFirst
+   :item,
+   -- #else
+   :item
+   -- #fi
+-- #done
+)
 ```
 
 #### SQL with Mapping Interface
@@ -232,7 +286,7 @@ If operations such as secondary processing and conversion are required for query
 Batch submission is recommended for operations such as batch insert and update to reduce the number of network interactions and improve database performance.
 
 ```java
-baki.insert('<tableName>', <Collection>);
+baki.insert("&<sql名>", <Collection>);
 ```
 
 ```java

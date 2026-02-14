@@ -970,7 +970,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             return ast;
         }
 
-        public @Unmodifiable Map<String, Object> getMetadata() {
+        public @NotNull @Unmodifiable Map<String, String> getMetadata() {
             return Collections.unmodifiableMap(metadata);
         }
 

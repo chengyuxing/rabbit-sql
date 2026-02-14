@@ -1135,7 +1135,8 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
         }
         if (log.isDebugEnabled()) {
-            log.debug("SQL: {}", SqlHighlighter.highlightIfAnsiCapable(mySql));
+            String nl = mySql.contains("\n") ? "\n" : "";
+            log.debug("SQL: {}{}", nl, SqlHighlighter.highlightIfAnsiCapable(mySql));
             StringJoiner sj = new StringJoiner(", ", "{", "}");
             myArgs.forEach((k, v) -> {
                 if (v == null) {

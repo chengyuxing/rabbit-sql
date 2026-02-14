@@ -107,6 +107,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public static final Pattern KEY_PATTERN = Pattern.compile("/\\*\\s*(\\[\\s*(?<sqlName>[a-zA-Z_][\\w-]*)\\s*]|\\{\\s*(?<partName>[a-zA-Z_]\\w*)\\s*})\\s*\\*/");
     public static final Pattern INLINE_TEMPLATE_BEGIN_PATTERN = Pattern.compile("(?i)\\s*--\\s*//\\s*TEMPLATE-BEGIN\\s*:\\s*(?<key>[a-zA-Z_]\\w*)\\s*");
     public static final Pattern INLINE_TEMPLATE_END_PATTERN = Pattern.compile("(?i)\\s*--\\s*//\\s*TEMPLATE-END\\s*");
+    public static final Pattern META_DATA_PATTERN = Pattern.compile("\\s*--\\s*@(?<name>[a-zA-Z]\\w+)\\s+(?<value>.+)\\s*");
     public static final String XQL_DESC_QUOTE = "@@@";
     public static final String YML = "xql-file-manager.yml";
     /**
@@ -119,7 +120,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         }
         return line;
     });
-
     private final ReentrantLock lock = new ReentrantLock();
     private SqlGenerator sqlGenerator = new SqlGenerator(DEFAULT_NAMED_PARAM_PREFIX);
     private volatile Map<String, Resource> resources = Collections.emptyMap();
@@ -337,12 +337,33 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     protected @NotNull Sql scanSql(@NotNull String alias, @NotNull String filename, @NotNull String sqlName, @NotNull String sql, @NotNull String desc) {
         try {
             Sql sqlObj = new Sql(sql);
+            sqlObj.setMetadata(parseMetadata(sql));
             sqlObj.setDescription(desc);
             log.debug("scan(;) {} to compile sql [{}.{}]: {}", filename, alias, sqlName, SqlHighlighter.highlightIfAnsiCapable(sql));
             return sqlObj;
         } catch (ScriptSyntaxException e) {
             throw new XQLParseException("File: " + filename + " -> '" + sqlName + "' has script syntax error", e);
         }
+    }
+
+    /**
+     * Parse the SQL defined metadata: <code>-- @name value</code> .
+     *
+     * @param sql SQL
+     * @return metadata
+     */
+    protected Map<String, String> parseMetadata(String sql) {
+        Map<String, String> metadata = new HashMap<>();
+        String[] lines = sql.split("\n");
+        for (String line : lines) {
+            Matcher m = META_DATA_PATTERN.matcher(line);
+            if (m.find()) {
+                metadata.put(m.group("name"), m.group("value"));
+            } else {
+                break;
+            }
+        }
+        return metadata;
     }
 
     /**
@@ -933,11 +954,12 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public class Sql {
         private String source;
         private ScriptAst ast;
+        private Map<String, String> metadata;
         private String description = "";
 
         public Sql(@NotNull String source) {
             this.source = source;
-            this.buildAst(source);
+            this.buildAst();
         }
 
         public @NotNull String getSource() {
@@ -948,13 +970,23 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             return ast;
         }
 
+        public @Unmodifiable Map<String, Object> getMetadata() {
+            return Collections.unmodifiableMap(metadata);
+        }
+
         public @NotNull String getDescription() {
             return description;
         }
 
         private void setSource(@NotNull String source) {
             this.source = source;
-            this.buildAst(source);
+            this.buildAst();
+        }
+
+        void setMetadata(Map<String, String> metadata) {
+            if (metadata != null) {
+                this.metadata = metadata;
+            }
         }
 
         private void setDescription(String description) {
@@ -962,7 +994,10 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                 this.description = description;
         }
 
-        private void buildAst(String source) {
+        /**
+         * Compile the source SQL to ast tree.
+         */
+        private void buildAst() {
             this.ast = scriptEngine.compile(source);
         }
 

@@ -71,6 +71,9 @@ from test.guest
 ;
 
 /*[new-dynamic]*/
+-- @cache true
+-- @expire 30s
+-- @rules admin guest
 -- #check :age > 30 throw '年龄不能大于30岁'
 -- #var safeAge = :age
 -- #var id = 14

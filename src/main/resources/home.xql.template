@@ -20,6 +20,8 @@ where
 ${order};
 
 /*[queryCount]*/
+-- @cache 30m
+-- @rules admin,guest
 select count(*) from table where ${myInLineCnd};
 
 /*{order}*/

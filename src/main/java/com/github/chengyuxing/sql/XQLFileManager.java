@@ -83,6 +83,8 @@ import static com.github.chengyuxing.common.util.StringUtils.NEW_LINE;
  * order by id desc;
  *
  * /&#42;[sqlNameN]&#42;/
+ * -- @cache true
+ * -- @expire 30m
  * select * from test.user;
  *
  * /&#42;#This is a description comment mark.#&#42;/
@@ -983,7 +985,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             this.buildAst();
         }
 
-        void setMetadata(Map<String, String> metadata) {
+        private void setMetadata(Map<String, String> metadata) {
             if (metadata != null) {
                 this.metadata = metadata;
             }

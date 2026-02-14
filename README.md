@@ -30,7 +30,7 @@ _java 8+_
 <dependency>
   <groupId>com.github.chengyuxing</groupId>
   <artifactId>rabbit-sql</artifactId>
-  <version>10.2.4</version>
+  <version>10.2.5</version>
 </dependency>
 ```
 
@@ -706,6 +706,18 @@ select count(*) from guest where ${myInLineCnd};
   ...
   -- //TEMPLATE-END
   ```
+  
+- Define metadata. Each SQL starts from the first line and supports defining metadata. All metadata definitions must be concatenated. The syntax is: `-- @name value` ,  as follows:
+
+  ```sql
+  /*[myQuery]*/
+  -- @cache true
+  -- @expire 30s
+  -- @rules admin,guest
+  select * from users;
+  ```
+
+  
 
 #### Constructor
 

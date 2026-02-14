@@ -1,5 +1,9 @@
 # change note
 
+# 10.2.5
+
+- XQLFileManager add support define sql metadata `-- @name value`
+
 # 10.2.4
 
 - `XQLFileManager` add support inline template: `-- //TEMPLATE-BEGIN:myInLineCnd` in a SQL object.

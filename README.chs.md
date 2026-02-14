@@ -30,7 +30,7 @@ _java 8+_
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>10.2.4</version>
+    <version>10.2.5</version>
 </dependency>
 ```
 
@@ -707,6 +707,18 @@ select count(*) from guest where ${myInLineCnd};
   ...
   -- //TEMPLATE-END
   ```
+  
+- 定义元数据，每条SQL从第一行开始，支持定义元数据，所有元数据定义必须连在一起，语法为：`-- @name value` ，如下：
+  
+  ```sql
+  /*[myQuery]*/
+  -- @cache true
+  -- @expire 30s
+  -- @rules admin,guest
+  select * from users;
+  ```
+  
+  
 
 #### 构造函数
 

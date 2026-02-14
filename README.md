@@ -711,13 +711,14 @@ select count(*) from guest where ${myInLineCnd};
 
   ```sql
   /*[myQuery]*/
-  -- @cache true
-  -- @expire 30s
+  -- @cache 30m
   -- @rules admin,guest
   select * from users;
   ```
-
   
+  > Metadata does not participate in the parsing of dynamic SQL or the execution process. Defining metadata is mainly used to describe this SQL and provide custom requirement support for other components.
+  >
+  > For instance, `QueryCacheManager` acquires the current SQL metadata by injecting `XQLFileManager` , and then obtains the caching policy and expiration time from the metadata.
 
 #### Constructor
 

@@ -712,13 +712,14 @@ select count(*) from guest where ${myInLineCnd};
   
   ```sql
   /*[myQuery]*/
-  -- @cache true
-  -- @expire 30s
+  -- @cache 30m
   -- @rules admin,guest
   select * from users;
   ```
   
-  
+  > 元数据不参与动态 SQL 的解析，也不参与执行过程，定义元数据主要用描述这条 SQL，并为其他组件提供自定义需求支持。
+  >
+  > 例如 `QueryCacheManager` 通过注入 `XQLFileManaher` 获取当前 SQL 元数据，从元数据中获取缓存策略和过期时间。
 
 #### 构造函数
 

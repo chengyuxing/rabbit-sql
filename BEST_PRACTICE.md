@@ -160,8 +160,8 @@ When constructing clauses similar to `in`, the timing of `,` concatenation is de
 
 ```sql
 select * from users where id in (
--- #for item of :list; first as isFirst
-   -- #if :isFirst
+-- #for item of :list; last as isLast
+   -- #if !:isLast
    :item,
    -- #else
    :item

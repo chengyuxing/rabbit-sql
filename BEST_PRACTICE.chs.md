@@ -157,12 +157,12 @@ select * from users where
 
 #### For 循环指令
 
-在构建类似  `in` 子句的情况下，通过上下文 `first` 属性来判断 `,` 拼接的时机规避 SQL 语法错误，虽然最终并不影响解析后的正确性，但在解析之前，在具有 SQL 语法检查的 IDE 中会提醒语法错误，影响格式化和美观，所以，强烈建议使用如下写法：
+在构建类似  `in` 子句的情况下，通过上下文 `last` 属性来判断 `,` 拼接的时机规避 SQL 语法错误，虽然最终并不影响解析后的正确性，但在解析之前，在具有 SQL 语法检查的 IDE 中会提醒语法错误，影响格式化和美观，所以，强烈建议使用如下写法：
 
 ```sql
 select * from users where id in (
--- #for item of :list; first as isFirst
-   -- #if :isFirst
+-- #for item of :list; last as isLast
+   -- #if !:isLast
    :item,
    -- #else
    :item

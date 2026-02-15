@@ -647,130 +647,307 @@ e.g. `baki.entity(class)`
 
 ### XQLFileManager
 
-SQL file manager extends standard sql comment implement more features, for support [dynamic sql](#Dynamic-SQL) and expression scripts logic judgment without breaking standard sql structure, also it's more powerful SQL file resolver.
+XQL File Manager is a SQL resource management and parsing component provided by rabbit-sql, which is used to provide programmability for SQL files while maintaining the **native SQL semantics unchanged**.
 
-you can get sql syntax highlight, intelligent suggestions and error check when using sql develop tools cause support sql file with extension `.sql`, dba developer     work with java developer together so easy.
+The XQL file manager is a parsing component that performs **non-intrusive extensions on top of standard SQL files**.
 
-Supported file extension with `.sql` or `.xql`, you can write any standard sql comment in file, format reference `template.xql`.
+It enhances the following capabilities for ordinary SQL through the agreed format of comment syntax:
 
-:bulb: Recommend use `.xql` file to get [plugin](#IDEA-plugin-support) supports.
+- [Dynamic sql](#Dynamic-SQL) script
+- SQL Fragment Reuse (Template)
+- SQL metadata definition
+- Unified management of multiple files
 
-Every managed sql file must follows **"k-v"** structure, and each sql object must be marked with a semicolon `;` Ending, e.g.
+Goals：
 
-`my.sql`
+**Enable SQL files to have structured, reusable and extensible engineering capabilities.**
 
-```sql
-/*#some description...#*/
-/*[query]*/
-/*#some more 
-  description...#*/
-select * from guest t ${part1};
+All extensions are implemented based on comments, so:
 
-/*part 1*/
-/*{part1}*/
-where id = :id
-${order};
+✅ It does not violate standard SQL
 
-/*{order}*/
-order by id;
+✅ Mainstream SQL ides can still perform normal syntax highlighting, completion, and validation
 
-/*[queryList]*/
-select * from guest where
--- //TEMPLATE-BEGIN:myInLineCnd
-  -- #if :id != blank
-  id = :id
-  -- #fi
--- //TEMPLATE-END
-;
+✅ It can be used as an enhanced SQL parser
 
-/*[queryCount]*/
-select count(*) from guest where ${myInLineCnd};
+#### Overall architecture model
 
-...
+```
+XQL File
+   ↓
+XQLFileManager(Scanning stage)
+   ├── SQL Object
+   ├── Templates
+   ├── Metadata
+   ↓
+Runtime Invocation
+   ↓
+Dynamic SQL Engine
+   ↓
+Final SQL
 ```
 
-- Sql object description formatter is `/*#some description...#*/`;
+#### Core configuration
 
-- Sql object name formatter is `/*[name]*/`, sql object supports nest sql fragment by using `${fragment name}` holder; 
+The core configuration file supports two formats: **YAML** and **properties**. It is recommended to use: `xql-file-manager.yml` 
 
-- Template fragment name formatter is `/*{name}*/` , sql fragment supports nest sql fragment by using `${fragment name}` holder to reuse, as above example `query` in `my.sql`:
+The configuration file supports the following enhanced capabilities:
 
-  ```sql
-  select * from guest t where id = :id order by id;
-  ```
+- `!path` ：Use `/` to concatenate the array as a path string
+- `!join` ：Concatenate the array directly into a string
+- `${env.xxx}` ：Read the system environment variables
 
-- Inline template defined in a SQL object, other SQL object can be used by the name `myCnd` ：
-  ```sql
-  -- //TEMPLATE-BEGIN:myCnd
-  and id = :id
-  ...
-  -- //TEMPLATE-END
-  ```
-  
-- Define metadata. Each SQL starts from the first line and supports defining metadata. All metadata definitions must be concatenated. The syntax is: `-- @name value` ,  as follows:
+```yaml
+constants:
+  base: &basePath pgsql
 
-  ```sql
-  /*[myQuery]*/
-  -- @cache 30m
-  -- @rules admin,guest
-  select * from users;
-  ```
-  
-  > Metadata does not participate in the parsing of dynamic SQL or the execution process. Defining metadata is mainly used to describe this SQL and provide custom requirement support for other components.
-  >
-  > For instance, `QueryCacheManager` acquires the current SQL metadata by injecting `XQLFileManager` , and then obtains the caching policy and expiration time from the metadata.
+files:
+   foo: !path [ *basePath, foo.xql ]
+   bar: bar.xql
+   remote: http://127.0.0.1:8080/share/cyx.xql?token=${env.TOKEN}
 
-#### Constructor
+pipes:
+#  upper: org.example.Upper
 
-- **new XQLFileManager()**
+charset: UTF-8
+named-param-prefix: ':'
+```
 
-  Default options:
+##### **constants**
 
-  `xql-file-manager.yml`
-  
-  `!path` tag use for merge list to path string.
-  
-  ```yaml
-  constants:
-  #  base: &basePath pgsql
-  
-  files:
-  # use !path tag merge list to "pgsql/other.xql"
-  #  dt: !path [ *basePath, other.xql ]
-  #  other: another.xql
-  
-  pipes:
-  #  upper: org.example.Upper
-  
-  charset: UTF-8
-  named-param-prefix: ':'
-  ```
+Feature:
 
-#### Options
+- Supports YAML Anchor reference
+- It can be used in SQL through the `${}` template placeholder
 
-##### files
+##### **files**
 
-Sql file mapping dictionary, key is alias, value is sql file name, you can get sql statement  by `alias.your_sql_name` when sql file added, as above example: `my.sql`;
+Register the SQL file that needs to be parsed.
 
-##### pipes
+Supports file types:
 
-Custom [pipe](#Pipe) dictionary, **key** is pipe name, **value** is pipe class, for dynamic sql expression's value, get more [dynamic sql expression](#Expression-script)'s features by implement custom pipe;
+- `.sql`
+- `.xql` (Recommended, IDE [plugin](#IDEA-plugin-support) provides enhanced support)
 
-##### constants
+Supports protocol:
 
-String template constant pool. If there is a template placeholder for `${name}` in the SQL, look it up from the constant pool and replace it if found.
+- classpath(default)
+- file://
+- ftp://
+- http(s)://
 
-##### charset
+##### **pipes**
 
-Encoding used to parse XQL files, default: `UTF-8`。
+Register the custom [pipe](Pipe) operator used in [dynamic sql](Dynamic-SQL).
+
+The value must be the **fully qualified class name** of the implementation class.
+
+##### **charset**
+
+Specify the XQL file parsing encoding, defaults: `UTF-8` .
 
 ##### namedParamPrefix
 
-- Named parameter start with `:` , it can be customized by specific property `namedParamPrefix`, e.g.
+```yaml
+named-param-prefix: ':'
+```
+
+Used to define the prefix of global precompiled named parameters.
+
+#### XQL file specification
+
+##### file description
+
+An explanatory comment block can be defined at the top of the file.
+
+When the comment contains the `@@@` area, its content will be used as file description information:
 
 ```sql
-where id = ?id
+/*
+* Created by IntelliJ IDEA.
+* User: 
+* Date: 
+* Time: 
+@@@
+Some description here.
+@@@
+* Typing "xql" keyword to get suggestions,
+* e.g: "xql:new" will be create a sql fragment.
+*/
 ```
+
+##### file body
+
+An XQL file consists of **multiple SQL** objects.
+
+The passage between SQL objects `;` Separation, this is the core boundary of the parsing stage.
+
+###### **SQL object lifecycle**
+
+Each SQL object has two completely independent phases:
+
+From the perspective of the lifecycle, each SQL object has two completely independent lifecycles:
+
+1. File scanning stage
+   - Parse metadata
+   - Extract template
+   - Merge inline templates
+   - Build an SQL structure model
+2. SQL invocation stage
+   - Execute [dynamic sql](#Dynamic-SQL) script
+   - Generate the final executable SQL
+
+###### **SQL object structure**
+
+```sql
+/*[queryGuests]*/
+/*#查询访客#*/
+-- @cache 30m
+-- @rules admin,guest
+-- #check :age > 30 throw '年龄不能大于30岁'
+-- #var id = 14
+-- #var users = 'a,xxx,c' | split(',')
+select * from test.guest where
+-- //TEMPLATE-BEGIN:myCnd
+id = :id 
+and name in (
+    -- #for item of :users; last as isLast
+        -- #if !:isLast  
+        :item,
+        -- #else
+        :item
+        -- #fi
+    -- #done
+    )
+-- //TEMPLATE-END
+;
+```
+
+An SQL object consists of the following parts:
+
+| **部分**    | **说明**                             |
+| ----------- | ------------------------------------ |
+| Name        | `/*[name]*/`                         |
+| Description | `/*#desc#*/` (optional)              |
+| Metadata    | `-- @key value`                      |
+| Body        | SQL + Dynamic SQL Script + Templates |
+
+###### Template snippet
+
+The template is used for SQL reuse and is referenced through `${}` .
+
+Two types:
+
+- Single template
+- Inline template
+
+##### Single template
+
+Definition:
+
+```sql
+/*{where}*/
+where id = :id ${order};
+```
+
+Use:
+
+```sql
+select * from users ${where};
+```
+
+> Templates can recursively reference other templates.
+
+##### Inline template
+
+Used to define reusable fragments within a **single SQL object.**
+
+Feature:
+
+- Do not participate in [dynamic sql](#Dynamic-SQL) parsing
+- Avoid false positives of IDE SQL validation
+- Does not pollute the global template space
+
+Define:
+
+```sql
+-- //TEMPLATE-BEGIN:myCnd
+...
+-- //TEMPLATE-END
+```
+
+Example:
+
+```sql
+/*[queryList]*/
+select * from guest where
+-- //TEMPLATE-BEGIN:myInLineCnd
+-- #if :id != blank
+id = :id
+-- #fi
+-- //TEMPLATE-END
+;
+```
+
+Use:
+
+```sql
+/*[queryCount]*/
+select count(*) from guest where ${myInLineCnd};
+```
+
+##### Metadata
+
+Metadata is used to provide additional descriptive information for SQL.
+
+Define:
+
+```sql
+-- @name value
+```
+
+Example:
+
+```sql
+/*[queryUsers]*/
+-- @cache 30m
+-- @rules admin,guest
+select * from users;
+```
+
+Feature:
+
+- Do not participate in [dynamic sql](#Dynamic-SQL) parsing
+- It does not affect the execution result
+- It can be read by interceptors, cache components, etc
+
+For example:
+
+> QueryCacheManager can determine the caching strategy based on metadata.
+
+##### Multi-statement block
+
+When SQL contains PLSQL/DDL, multiple may occur `;` .
+
+Parsing ambiguity can be avoided by adding line comments:
+
+```sql
+/*[myPlsql]*/
+begin; --
+  select 1; -- 一些描述
+  select 2; --
+end;
+```
+
+##### Dynamic SQL
+
+Dynamic SQL is implemented by embedding scripts in line comments `--` .
+
+The parsing process is completely decoupled from SQL itself.
+
+For detailed instructions, please refer to:
+
+👉 [Dynamic sql](#Dynamic-SQL) document
 
 [badge:maven]:https://img.shields.io/maven-central/v/com.github.chengyuxing/rabbit-sql
 [badge:license]: https://img.shields.io/github/license/chengyuxing/rabbit-sql

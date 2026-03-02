@@ -13,14 +13,16 @@ import java.util.function.Function;
  */
 public interface Update<T> {
     /**
-     * Enabling updates allows setting null values,
-     * by default update statement set part will be excluded null values.
+     * Enabling updates allows setting null values
+     * and invoke JDBC {@link java.sql.Statement#executeBatch() executeBatchUpdate} otherwise update each item with for loop.
+     * <p>
+     * By default, update statement set part will be excluded null values.
      * <p>Example: {@code {id: 1, name: 'cyx', address: null}}</p>
-     * Enable:
+     * Enable (do execute batch update):
      * <blockquote><pre>
      *     update user set name = :name, address = :address where id = :id
      * </pre></blockquote>
-     * Disable (default):
+     * Disable (default, do foreach):
      * <blockquote><pre>
      *     update user set name = :name where id = :id
      * </pre></blockquote>

@@ -2,6 +2,8 @@ package com.github.chengyuxing.sql.dsl;
 
 import com.github.chengyuxing.common.MethodReference;
 
+import java.sql.PreparedStatement;
+
 /**
  * DSL insert operator.
  *
@@ -9,14 +11,16 @@ import com.github.chengyuxing.common.MethodReference;
  */
 public interface Insert<T> {
     /**
-     * Enabling insert's values allows setting null values,
-     * by default insert statement set part will be excluded null values.
+     * Enabling insert's values allows setting null values
+     * and invoke JDBC {@link java.sql.Statement#executeBatch() executeBatchUpdate} otherwise insert each item with for loop.
+     * <p>
+     * By default, insert statement set part will be excluded null values.
      * <p>Example: {@code {id: null, name: 'cyx', address: 'kunming'}}</p>
-     * Enable:
+     * Enable (do execute batch update):
      * <blockquote><pre>
      *     insert into user (id, name, address) values (:id, :name, :address)
      * </pre></blockquote>
-     * Disable (default):
+     * Disable (default, do foreach):
      * <blockquote><pre>
      *     insert into user (name, address) values (:name, :address)
      * </pre></blockquote>

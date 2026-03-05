@@ -34,8 +34,8 @@ public interface Query<T, SELF extends Query<T, SELF>> {
     /**
      * Where clause.
      * <p>Support flatten style and nested style to build the complex condition struct.</p>
-     * <p>By default, all condition concat with {@code and}, excepted {@link Where#and(Function)}
-     * and {@link Where#or(Function)} .</p>
+     * <p>By default, all condition concat with {@code and}, excepted {@link Where#and(Function, boolean...)}
+     * and {@link Where#or(Function, boolean...)} .</p>
      * SQL:
      * <blockquote><pre>
      * where id &gt; 5 and id &lt; 10 or id in (17, 18, 19)

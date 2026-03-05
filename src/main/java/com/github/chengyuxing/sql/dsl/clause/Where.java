@@ -46,14 +46,15 @@ public abstract class Where<T> {
      * @param column   column
      * @param operator {@link com.github.chengyuxing.sql.dsl.types.StandardOperator StandardOperator} or other trusted operator
      * @param value    value
+     * @param tests    tests for add condition or not
      * @param <E>      value type
      * @return where builder
      */
-    public <E> Where<T> of(MethodReference<T> column, @NotNull Operator operator, E value) {
+    public <E> Where<T> of(MethodReference<T> column, @NotNull Operator operator, E value, boolean... tests) {
         if (operator == Logic.AND || operator == Logic.OR) {
             throw new IllegalArgumentException("logic operator '" + operator.getValue() + "' invalid at this time");
         }
-        addCondition(column, operator, value);
+        addCondition(column, operator, value, tests);
         return this;
     }
 
@@ -62,14 +63,15 @@ public abstract class Where<T> {
      *
      * @param column column
      * @param value  value
+     * @param tests  tests for add condition or not
      * @param <E>    value type
      * @return where builder
      */
-    public <E> Where<T> eq(MethodReference<T> column, E value) {
+    public <E> Where<T> eq(MethodReference<T> column, E value, boolean... tests) {
         if (value != null) {
-            addCondition(column, EQ, value);
+            addCondition(column, EQ, value, tests);
         } else {
-            addCondition(column, IS_NULL, null);
+            addCondition(column, IS_NULL, null, tests);
         }
         return this;
     }
@@ -79,14 +81,15 @@ public abstract class Where<T> {
      *
      * @param column column
      * @param value  value
+     * @param tests  tests for add condition or not
      * @param <E>    value type
      * @return where builder
      */
-    public <E> Where<T> neq(MethodReference<T> column, E value) {
+    public <E> Where<T> neq(MethodReference<T> column, E value, boolean... tests) {
         if (value != null) {
-            addCondition(column, NEQ, value);
+            addCondition(column, NEQ, value, tests);
         } else {
-            addCondition(column, IS_NOT_NULL, null);
+            addCondition(column, IS_NOT_NULL, null, tests);
         }
         return this;
     }
@@ -96,11 +99,12 @@ public abstract class Where<T> {
      *
      * @param column column
      * @param value  value
+     * @param tests  tests for add condition or not
      * @param <E>    value type
      * @return where builder
      */
-    public <E> Where<T> gt(MethodReference<T> column, E value) {
-        addCondition(column, GT, value);
+    public <E> Where<T> gt(MethodReference<T> column, E value, boolean... tests) {
+        addCondition(column, GT, value, tests);
         return this;
     }
 
@@ -109,11 +113,12 @@ public abstract class Where<T> {
      *
      * @param column column
      * @param value  value
+     * @param tests  tests for add condition or not
      * @param <E>    value type
      * @return where builder
      */
-    public <E> Where<T> lt(MethodReference<T> column, E value) {
-        addCondition(column, LT, value);
+    public <E> Where<T> lt(MethodReference<T> column, E value, boolean... tests) {
+        addCondition(column, LT, value, tests);
         return this;
     }
 
@@ -122,11 +127,12 @@ public abstract class Where<T> {
      *
      * @param column column
      * @param value  value
+     * @param tests  tests for add condition or not
      * @param <E>    value type
      * @return where builder
      */
-    public <E> Where<T> gte(MethodReference<T> column, E value) {
-        addCondition(column, GTE, value);
+    public <E> Where<T> gte(MethodReference<T> column, E value, boolean... tests) {
+        addCondition(column, GTE, value, tests);
         return this;
     }
 
@@ -135,11 +141,12 @@ public abstract class Where<T> {
      *
      * @param column column
      * @param value  value
+     * @param tests  tests for add condition or not
      * @param <E>    value type
      * @return where builder
      */
-    public <E> Where<T> lte(MethodReference<T> column, E value) {
-        addCondition(column, LTE, value);
+    public <E> Where<T> lte(MethodReference<T> column, E value, boolean... tests) {
+        addCondition(column, LTE, value, tests);
         return this;
     }
 
@@ -147,13 +154,16 @@ public abstract class Where<T> {
      * {@code in (...)}
      *
      * @param column column
-     * @param values {@link Collection} or Array.
+     * @param values {@link Collection} or Array
+     * @param tests  tests for add condition or not
      * @param <E>    value item type
      * @param <V>    value type
      * @return where builder
      */
-    public <E, V extends Collection<E>> Where<T> in(MethodReference<T> column, V values) {
-        criteria.add(new InCondition<>(getColumnName(column), IN, values));
+    public <E, V extends Collection<E>> Where<T> in(MethodReference<T> column, V values, boolean... tests) {
+        if (isAllPassed(tests)) {
+            criteria.add(new InCondition<>(getColumnName(column), IN, values));
+        }
         return this;
     }
 
@@ -161,13 +171,16 @@ public abstract class Where<T> {
      * {@code not in (...)}
      *
      * @param column column
-     * @param values {@link Collection} or Array.
+     * @param values {@link Collection} or Array
+     * @param tests  tests for add condition or not
      * @param <E>    value item type
      * @param <V>    value type
      * @return where builder
      */
-    public <E, V extends Collection<E>> Where<T> notIn(MethodReference<T> column, V values) {
-        criteria.add(new InCondition<>(getColumnName(column), NOT_IN, values));
+    public <E, V extends Collection<E>> Where<T> notIn(MethodReference<T> column, V values, boolean... tests) {
+        if (isAllPassed(tests)) {
+            criteria.add(new InCondition<>(getColumnName(column), NOT_IN, values));
+        }
         return this;
     }
 
@@ -175,13 +188,16 @@ public abstract class Where<T> {
      * {@code between} a {@code and} b
      *
      * @param column column
-     * @param a      value 1.
-     * @param b      value 2.
+     * @param a      value 1
+     * @param b      value 2
+     * @param tests  tests for add condition or not
      * @param <E>    value type
      * @return where builder
      */
-    public <E> Where<T> between(MethodReference<T> column, E a, E b) {
-        criteria.add(new BetweenCondition<>(getColumnName(column), BETWEEN, Pair.of(a, b)));
+    public <E> Where<T> between(MethodReference<T> column, E a, E b, boolean... tests) {
+        if (isAllPassed(tests)) {
+            criteria.add(new BetweenCondition<>(getColumnName(column), BETWEEN, Pair.of(a, b)));
+        }
         return this;
     }
 
@@ -189,13 +205,16 @@ public abstract class Where<T> {
      * {@code not between} a {@code and} b
      *
      * @param column column
-     * @param a      value 1.
-     * @param b      value 2.
+     * @param a      value 1
+     * @param b      value 2
+     * @param tests  tests for add condition or not
      * @param <E>    value type
      * @return where builder
      */
-    public <E> Where<T> notBetween(MethodReference<T> column, E a, E b) {
-        criteria.add(new BetweenCondition<>(getColumnName(column), NOT_BETWEEN, Pair.of(a, b)));
+    public <E> Where<T> notBetween(MethodReference<T> column, E a, E b, boolean... tests) {
+        if (isAllPassed(tests)) {
+            criteria.add(new BetweenCondition<>(getColumnName(column), NOT_BETWEEN, Pair.of(a, b)));
+        }
         return this;
     }
 
@@ -204,10 +223,11 @@ public abstract class Where<T> {
      *
      * @param column column
      * @param value  value
+     * @param tests  tests for add condition or not
      * @return where builder
      */
-    public Where<T> like(MethodReference<T> column, String value) {
-        addCondition(column, LIKE, "%" + value + "%");
+    public Where<T> like(MethodReference<T> column, String value, boolean... tests) {
+        addCondition(column, LIKE, "%" + value + "%", tests);
         return this;
     }
 
@@ -216,10 +236,11 @@ public abstract class Where<T> {
      *
      * @param column column
      * @param value  value
+     * @param tests  tests for add condition or not
      * @return where builder
      */
-    public Where<T> notLike(MethodReference<T> column, String value) {
-        addCondition(column, NOT_LIKE, "%" + value + "%");
+    public Where<T> notLike(MethodReference<T> column, String value, boolean... tests) {
+        addCondition(column, NOT_LIKE, "%" + value + "%", tests);
         return this;
     }
 
@@ -228,10 +249,11 @@ public abstract class Where<T> {
      *
      * @param column column
      * @param value  value
+     * @param tests  tests for add condition or not
      * @return where builder
      */
-    public Where<T> startsWith(MethodReference<T> column, String value) {
-        addCondition(column, LIKE, value + "%");
+    public Where<T> startsWith(MethodReference<T> column, String value, boolean... tests) {
+        addCondition(column, LIKE, value + "%", tests);
         return this;
     }
 
@@ -240,10 +262,11 @@ public abstract class Where<T> {
      *
      * @param column column
      * @param value  value
+     * @param tests  tests for add condition or not
      * @return where builder
      */
-    public Where<T> notStartsWith(MethodReference<T> column, String value) {
-        addCondition(column, NOT_LIKE, value + "%");
+    public Where<T> notStartsWith(MethodReference<T> column, String value, boolean... tests) {
+        addCondition(column, NOT_LIKE, value + "%", tests);
         return this;
     }
 
@@ -252,10 +275,11 @@ public abstract class Where<T> {
      *
      * @param column column
      * @param value  value
+     * @param tests  tests for add condition or not
      * @return where builder
      */
-    public Where<T> endsWith(MethodReference<T> column, String value) {
-        addCondition(column, LIKE, "%" + value);
+    public Where<T> endsWith(MethodReference<T> column, String value, boolean... tests) {
+        addCondition(column, LIKE, "%" + value, tests);
         return this;
     }
 
@@ -264,10 +288,11 @@ public abstract class Where<T> {
      *
      * @param column column
      * @param value  value
+     * @param tests  tests for add condition or not
      * @return where builder
      */
-    public Where<T> notEndsWith(MethodReference<T> column, String value) {
-        addCondition(column, NOT_LIKE, "%" + value);
+    public Where<T> notEndsWith(MethodReference<T> column, String value, boolean... tests) {
+        addCondition(column, NOT_LIKE, "%" + value, tests);
         return this;
     }
 
@@ -275,10 +300,11 @@ public abstract class Where<T> {
      * {@code is null}
      *
      * @param column column
+     * @param tests  tests for add condition or not
      * @return where builder
      */
-    public Where<T> isNull(MethodReference<T> column) {
-        addCondition(column, IS_NULL, null);
+    public Where<T> isNull(MethodReference<T> column, boolean... tests) {
+        addCondition(column, IS_NULL, null, tests);
         return this;
     }
 
@@ -286,15 +312,17 @@ public abstract class Where<T> {
      * {@code is not null}
      *
      * @param column column
+     * @param tests  tests for add condition or not
      * @return where builder
      */
-    public Where<T> isNotNull(MethodReference<T> column) {
-        addCondition(column, IS_NOT_NULL, null);
+    public Where<T> isNotNull(MethodReference<T> column, boolean... tests) {
+        addCondition(column, IS_NOT_NULL, null, tests);
         return this;
     }
 
     /**
-     * And group, all condition will be concat with {@code or}, {@code and (...or...or...or...)}<br>
+     * And group, all condition will be concat with {@code or}, {@code and (...or...or...or...)}
+     * <p>
      * E.g. the complex nest condition:
      * <blockquote><pre>
      * ((name = 'cyx' and age = 30) or (name = 'jack' and age = 60))
@@ -309,17 +337,21 @@ public abstract class Where<T> {
      * </pre></blockquote>
      *
      * @param orGroup and group
+     * @param tests   tests for add condition or not
      * @return where builder
-     * @see #or(Function)
+     * @see #or(Function, boolean...)
      */
-    public Where<T> and(Function<Where<T>, Where<T>> orGroup) {
-        List<Criteria> criteriaList = orGroup.apply(newInstance()).criteria;
-        criteria.add(new AndGroup(criteriaList));
+    public Where<T> and(Function<Where<T>, Where<T>> orGroup, boolean... tests) {
+        if (isAllPassed(tests)) {
+            List<Criteria> criteriaList = orGroup.apply(newInstance()).criteria;
+            criteria.add(new AndGroup(criteriaList));
+        }
         return this;
     }
 
     /**
-     * Or group, all condition will be concat with {@code and}, {@code or (...and...ang...and...)}<br>
+     * Or group, all condition will be concat with {@code and}, {@code or (...and...ang...and...)}.
+     * <p>
      * E.g. simple nest condition:
      * <blockquote><pre>
      * {@code (age &lt; 15 or age &gt; 60) and name = 'cyx'}
@@ -331,17 +363,30 @@ public abstract class Where<T> {
      * </pre></blockquote>
      *
      * @param andGroup or group
+     * @param tests    tests for add condition or not
      * @return where builder
-     * @see #and(Function)
+     * @see #and(Function, boolean...)
      */
-    public Where<T> or(Function<Where<T>, Where<T>> andGroup) {
-        List<Criteria> criteriaList = andGroup.apply(newInstance()).criteria;
-        criteria.add(new OrGroup(criteriaList));
+    public Where<T> or(Function<Where<T>, Where<T>> andGroup, boolean... tests) {
+        if (isAllPassed(tests)) {
+            List<Criteria> criteriaList = andGroup.apply(newInstance()).criteria;
+            criteria.add(new OrGroup(criteriaList));
+        }
         return this;
     }
 
-    private void addCondition(MethodReference<T> column, Operator operator, Object value) {
-        criteria.add(new Condition<>(getColumnName(column), operator, value));
+    private void addCondition(MethodReference<T> column, Operator operator, Object value, boolean... tests) {
+        if (isAllPassed(tests))
+            criteria.add(new Condition<>(getColumnName(column), operator, value));
+    }
+
+    private boolean isAllPassed(boolean... tests) {
+        for (boolean test : tests) {
+            if (!test) {
+                return false;
+            }
+        }
+        return true;
     }
 
     /**

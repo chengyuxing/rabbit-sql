@@ -308,19 +308,26 @@ public class BakiDao extends JdbcSupport implements Baki {
             boolean enableBatch = false;
 
             @Override
-            public Conditional where(@NotNull String condition) {
+            public Conditional by(@NotNull String column, String... moreColumns) {
+                List<String> conditionalColumns = new ArrayList<>(Arrays.asList(moreColumns));
+                conditionalColumns.add(0, column);
+
+                StringJoiner sb = new StringJoiner(" and ");
+                for (String cc : conditionalColumns) {
+                    SqlUtils.assertInvalidIdentifier(cc);
+                    sb.add(cc + " = " + namedParamPrefix + cc);
+                }
+                String condition = sb.toString();
+
                 return new Conditional() {
                     Set<String> collectUpdateSetColumns(Map<String, ?> args) {
-                        Set<String> whereArgs = sqlGenerator.generatePreparedSql(condition, args)
-                                .getArgNameIndexMapping()
-                                .keySet();
-                        Set<String> setsFields = new HashSet<>();
+                        Set<String> setsColumns = new HashSet<>();
                         for (Map.Entry<String, ?> arg : args.entrySet()) {
-                            if (!whereArgs.contains(arg.getKey())) {
-                                setsFields.add(arg.getKey());
+                            if (!conditionalColumns.contains(arg.getKey())) {
+                                setsColumns.add(arg.getKey());
                             }
                         }
-                        return setsFields;
+                        return setsColumns;
                     }
 
                     @Override

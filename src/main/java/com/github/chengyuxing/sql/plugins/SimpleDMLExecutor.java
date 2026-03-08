@@ -53,12 +53,18 @@ public interface SimpleDMLExecutor {
     <T> int insert(@NotNull Iterable<T> data, @NotNull Function<T, ? extends Map<String, ?>> argMapper);
 
     /**
-     * Where conditional interface.
+     * Specify the columns for generate where equation condition.
+     * <p>
+     * Columns:
+     * <blockquote><pre>"id", "name"</pre></blockquote>
+     * Condition:
+     * <blockquote><pre>id = :id and name = :name</pre></blockquote>
      *
-     * @param condition condition e.g. id = :id
+     * @param column      column
+     * @param moreColumns more columns concat by {@code and}
      * @return Conditional object
      */
-    Conditional where(@NotNull String condition);
+    Conditional by(@NotNull String column, String... moreColumns);
 
     /**
      * Execute query table fields.

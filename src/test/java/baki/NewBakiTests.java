@@ -83,7 +83,7 @@ public class NewBakiTests {
     @Test
     public void testSimpleTable() {
         baki.table("test.guest")
-                .where("id = :id")
+                .by("id", "name")
                 .update(
                         Arrays.asList(
                                 Args.of("name", "cyx", "address", "oooo", "id", 17),
@@ -95,7 +95,7 @@ public class NewBakiTests {
         ;
 
         baki.table("test.guest")
-                .where("id > :id")
+                .by("id")
                 .delete(Arrays.asList(
                         Args.of("id", 17),
                         Args.of("id", 18),
@@ -114,8 +114,8 @@ public class NewBakiTests {
         }
         baki.table("test.guest").insert(guests, g -> DataRow.ofEntity(g).removeIfAbsent());
         int i = baki.table("test.guest")
-                .where("address = :address")
-                .delete(DataRow.of("address", "USA"));
+                .by("address")
+                .delete(Args.of("address", "USA"));
         System.out.println(i);
     }
 

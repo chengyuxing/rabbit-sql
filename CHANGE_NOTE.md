@@ -1,5 +1,10 @@
 # change note
 
+# 10.2.6
+
+- Entity `Where` condition add support tests for dynamic
+- `Baki#table` method `where` change to `by` for accept columns
+
 # 10.2.5
 
 - XQLFileManager add support define sql metadata `-- @name value`

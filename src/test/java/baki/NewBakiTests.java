@@ -83,7 +83,7 @@ public class NewBakiTests {
     @Test
     public void testSimpleTable() {
         baki.table("test.guest")
-                .by("id", "name")
+                .by("id" , "name")
                 .update(
                         Arrays.asList(
                                 Args.of("name", "cyx", "address", "oooo", "id", 17),

@@ -1,5 +1,9 @@
 # change note
 
+# 10.2.7
+
+- New method `Query#forEach` of entity query
+
 # 10.2.6
 
 - Entity `Where` condition add support tests for dynamic

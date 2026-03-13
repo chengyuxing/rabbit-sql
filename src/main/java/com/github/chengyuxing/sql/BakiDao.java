@@ -34,6 +34,7 @@ import javax.sql.DataSource;
 import java.lang.reflect.Field;
 import java.sql.*;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -649,6 +650,13 @@ public class BakiDao extends JdbcSupport implements Baki {
                             return s.findFirst()
                                     .map(d -> d.getLong(0))
                                     .orElse(0L);
+                        }
+                    }
+
+                    @Override
+                    public void forEach(@NotNull Consumer<? super T> consumer) {
+                        try (Stream<T> s = stream()) {
+                            s.forEach(consumer);
                         }
                     }
                 };

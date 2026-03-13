@@ -11,6 +11,7 @@ import org.jetbrains.annotations.Range;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -133,4 +134,11 @@ public interface Query<T, SELF extends Query<T, SELF>> {
      */
     @Range(from = 0, to = Long.MAX_VALUE)
     long count();
+
+    /**
+     * Foreach query result.
+     *
+     * @param consumer consumer
+     */
+    void forEach(@NotNull Consumer<? super T> consumer);
 }

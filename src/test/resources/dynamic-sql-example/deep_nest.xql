@@ -76,11 +76,6 @@ from test.region t
        --#if :ff <> blank
             and t.ff = :ff
             and t.ff2 = :ff
-       --#else
-            and t.ff3 = :ff and id in
-            -- #for item  of :list  delimiter ',' open '(' close ')'
-                :item
-            -- #done
        --#fi
     --#break
     --#when :g <> blank

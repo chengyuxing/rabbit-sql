@@ -13,11 +13,6 @@ import java.util.*;
 public class Tests {
 
     @Test
-    public void testHash() {
-        System.out.println(StringUtils.hash("", "MD5"));
-    }
-
-    @Test
     public void page() throws Exception {
         PGPageHelper pgPageHelper = new PGPageHelper();
         pgPageHelper.init(3, 10, 0);
@@ -54,11 +49,6 @@ public class Tests {
                 .add("time", "11:23:44"));
         System.out.println(sql.getPrepareSql());
         System.out.println(sql.getArgs());
-    }
-
-    @Test
-    public void testRep() {
-        System.out.println("abc;;;;;".replaceAll(";$", ""));
     }
 
     @Test

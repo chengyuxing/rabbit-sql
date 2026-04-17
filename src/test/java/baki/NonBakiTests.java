@@ -10,12 +10,10 @@ import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.MostDateTime;
-import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.util.ValueUtils;
 import com.github.chengyuxing.common.util.StringUtils;
 import com.github.chengyuxing.sql.*;
 import com.github.chengyuxing.sql.annotation.XQLMapper;
-import com.github.chengyuxing.sql.exceptions.XQLParseException;
 import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.github.chengyuxing.sql.util.SqlGenerator;
@@ -27,21 +25,17 @@ import org.junit.Test;
 import java.beans.IntrospectionException;
 import java.beans.Introspector;
 import java.beans.PropertyDescriptor;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.function.BiConsumer;
 import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class NonBakiTests {
 
@@ -74,7 +68,7 @@ public class NonBakiTests {
     @Test
     public void test1() {
         XQLFileManager xqlFileManager = new XQLFileManager();
-        xqlFileManager.add("pgsql/other.sql");
+        xqlFileManager.add("dynamic-sql-example/builtin_database_id.xql");
 //        xqlFileManager.add("http://localhost:8080/share/cyx.xql");
         xqlFileManager.init();
         System.out.println("---");
@@ -86,7 +80,7 @@ public class NonBakiTests {
     @Test
     public void testDynamicSqlFor() throws JsonProcessingException {
         XQLFileManager xqlFileManager = new XQLFileManager();
-        xqlFileManager.add("for", "pgsql/for_var.xql");
+        xqlFileManager.add("for", "dynamic-sql-example/complex_for1.xql");
         xqlFileManager.init();
 
         System.out.println("-----");
@@ -343,7 +337,7 @@ public class NonBakiTests {
     @Test
     public void test44() {
         XQLFileManager xqlFileManager = new XQLFileManager();
-        xqlFileManager.add("pgsql/b.a.xql");
+        xqlFileManager.add("dynamic-sql-example/template_merge1.xql");
         xqlFileManager.init();
         String sql = xqlFileManager.get("b.a.queryUsers");
         System.out.println(sql);
@@ -368,45 +362,16 @@ public class NonBakiTests {
     @Test
     public void test46() {
         XQLFileManager xqlFileManager = new XQLFileManager();
-        xqlFileManager.add("sys", "pgsql/system.xql");
-        xqlFileManager.add("xstj", "pgsql/xstjfx.xql");
-        xqlFileManager.add("dynamic", "pgsql/dynamic.sql");
-        xqlFileManager.add("nest", "pgsql/nest.sql");
+        xqlFileManager.add("sys", "dynamic-sql-example/content_free_format.xql");
+        xqlFileManager.add("xstj", "dynamic-sql-example/big_example.xql");
+        xqlFileManager.add("dynamic", "dynamic-sql-example/template_merge2.xql");
+        xqlFileManager.add("nest", "dynamic-sql-example/template_merge3.xql");
         xqlFileManager.init();
 
         Map<String, XQLFileManager.Resource> resourceMap = xqlFileManager.getResources();
         System.out.println(resourceMap);
 //        Pair<String, Map<String, Object>> pair = xqlFileManager.get("sys.queryUserByPassword", Args.of("username", "abc"));
 //        System.out.println(SqlUtil.repairSyntaxError(pair.getItem1()));
-    }
-
-    @Test
-    public void testYml() {
-        XQLFileManagerConfig config = new XQLFileManagerConfig();
-        config.loadYaml(new FileResource("xql-file-manager.old.yml"));
-        System.out.println(config);
-    }
-
-    @Test
-    public void testR() {
-        String a = "id = :id.item and id <> :id3uij and id > :id::id";
-        Pattern p = new SqlGenerator(':').getNamedParamPattern();
-        System.out.println(p.pattern());
-        StringBuilder sb = new StringBuilder();
-        Matcher m = p.matcher(a);
-        int lastMatchEnd = 0;
-        while (m.find()) {
-            String name = m.group(1);
-            sb.append(a, lastMatchEnd, m.start());
-            if (name != null && name.equals("id")) {
-                sb.append("_for.").append(name).append("_0_1");
-            } else {
-                sb.append(m.group());
-            }
-            lastMatchEnd = m.end();
-        }
-        sb.append(a.substring(lastMatchEnd));
-        System.out.println(sb);
     }
 
     @Test
@@ -436,33 +401,6 @@ public class NonBakiTests {
     }
 
     @Test
-    public void testEn() {
-//        new Where<>()
-//                .eq("unique_id", 901, Objects::nonNull)
-//                .lt("age", 21)
-//                .startsWith("name", "cyx")
-//                .in("id", 1, 2, 3, 4, 5, 6)
-//                .between("date", LocalDateTime.now(), LocalDateTime.now().plusDays(1))
-//                .peek((sql, args) -> {
-//                    System.out.println(sql);
-//                    System.out.println(args);
-//                })
-////                .and(new Where<>().eq("name", "cyx").lt("age", 21))
-////                .peek(sql -> System.out.println(sql))
-//                .or(new Where<>().eq("name", "cyx").lt("age", 21).and(new Where<>().eq("address", "kunming").eq("email", "cyx")))
-////                .peek(sql -> System.out.println(sql))
-//                .or(new Where<>())
-////                .or(Where.of().eq("id", 1).eq("id", 2).lt("age", 2))
-////                .or(Where.of().eq("id", 89))
-//                .peek((sql, params) -> {
-//                    System.out.println(sql);
-//                    System.out.println(params);
-//                })
-//        ;
-
-    }
-
-    @Test
     public void testBean() throws IntrospectionException {
         PropertyDescriptor[] descriptors = Introspector.getBeanInfo(User.class).getPropertyDescriptors();
         for (PropertyDescriptor descriptor : descriptors) {
@@ -488,48 +426,6 @@ public class NonBakiTests {
             Annotation a = Guest.class.getDeclaredAnnotation((Class<? extends Annotation>) clazz);
             Method m = clazz.getDeclaredMethod("schema");
             System.out.println(m.invoke(a));
-        }
-    }
-
-    @Test
-    public void testRefBlock() {
-        FileResource fr = new FileResource("pgsql/ref.sql");
-        String sql = fr.readString(StandardCharsets.UTF_8);
-        String[] sqlParts = sql.split("\n");
-        doParseRef(sqlParts, (name, content) -> {
-            System.out.println("---");
-            System.out.println(name);
-            System.out.println(content);
-            System.out.println("---");
-        });
-    }
-
-    public void doParseRef(String[] sqlParts, BiConsumer<String, String> consumer) {
-        int i = 0;
-        while (i < sqlParts.length) {
-            if (XQLFileManager.INLINE_TEMPLATE_END_PATTERN.matcher(sqlParts[i]).matches()) {
-                throw new XQLParseException("Inline template missing '-- REF-BEGIN:xxx' before the end at: " + i);
-            }
-            Matcher m = XQLFileManager.INLINE_TEMPLATE_BEGIN_PATTERN.matcher(sqlParts[i]);
-            if (m.matches()) {
-                i++;
-                StringJoiner sb = new StringJoiner("\n");
-                while (!XQLFileManager.INLINE_TEMPLATE_END_PATTERN.matcher(sqlParts[i]).matches()) {
-                    if (XQLFileManager.INLINE_TEMPLATE_BEGIN_PATTERN.matcher(sqlParts[i]).matches()) {
-                        String name = m.group("part");
-                        throw new XQLParseException("Inline template duplicate '-- REF-BEGIN:" + name + "' at: " + i);
-                    }
-                    if (i >= sqlParts.length - 1) {
-                        throw new XQLParseException("Inline template missing '-- REF-END' at: " + i);
-                    }
-                    sb.add(sqlParts[i]);
-                    i++;
-                }
-                i++;
-                consumer.accept(m.group("part"), sb.toString());
-            } else {
-                i++;
-            }
         }
     }
 }

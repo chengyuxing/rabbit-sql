@@ -1,6 +1,5 @@
 package tests;
 
-import baki.pipes.IsOdd;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.io.FileResource;
 import com.github.chengyuxing.common.tuple.Pair;
@@ -34,7 +33,7 @@ public class XQLFileManagerTests {
     @Test
     public void test4() throws IOException, URISyntaxException {
         XQLFileManager xqlFileManager = new XQLFileManager();
-        xqlFileManager.add("a", "pgsql/deep_nest.sql");
+        xqlFileManager.add("a", "dynamic-sql-example/deep_nest.xql");
         xqlFileManager.init();
 
         System.out.println("-----");
@@ -64,22 +63,9 @@ public class XQLFileManagerTests {
     }
 
     @Test
-    public void test12() {
-        Map<String, Object> map = new HashMap<>();
-        map.put("a", "b");
-        map.put("b", "a");
-        map.put("name", "cyx");
-        map.put("cyx", "name");
-        map.put("bbc", "name");
-
-        map.remove(map.remove("bbc"));
-        System.out.println(map);
-    }
-
-    @Test
     public void test78() {
         XQLFileManager xqlFileManager = new XQLFileManager();
-        xqlFileManager.add("new", "pgsql/new_for.sql");
+        xqlFileManager.add("new", "dynamic-sql-example/for_in_update.xql");
 //        xqlFileManager.setPipeInstances(Args.of("isOdd", new IsOdd()));
         xqlFileManager.init();
 

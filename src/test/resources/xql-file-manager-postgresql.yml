@@ -9,18 +9,12 @@
 
 files:
   dynamic: http://127.0.0.1:8080/share/cyx.xql?token=${env.PUBLISH_TOKEN}
-  temp-example: pgsql/ref.sql
+  temp-example: dynamic-sql-example/ref.sql
 #  foo: !path [ *db, a.xql ]
 #  bar: b.xql
-
-#delimiter: ;
 
 #charset: UTF-8
 
 #pipes:
 
-# The following properties work for plugin action (Execute Dynamic sql).
-
 #named-param-prefix: ':'
-
-#database-id:

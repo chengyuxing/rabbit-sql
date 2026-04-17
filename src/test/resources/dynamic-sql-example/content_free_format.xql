@@ -45,7 +45,7 @@ from zhag_ptyw_user t
     left join zhag.zhag_ptyw_user_rzdwxx zpur
 on t.mjbh = zpur.mjbh and zpur.ifmr = '1'
 where 1 = 1
--- REF-BEGIN:queryPasswordCnd
+-- TEMPLATE-BEGIN:queryPasswordCnd
 -- #if :token != blank
   and t.sfzh = :token
 -- #fi
@@ -55,9 +55,10 @@ where 1 = 1
 -- #if :password != blank
   and t.yhmm = :password
 -- #fi
--- REF-END
+-- TEMPLATE-END
 ;
 
+/*#语句后面追加--避免解析被截断造成bug#*/
 /*[plsql]*/
 do
 $$

@@ -16,12 +16,6 @@ import java.util.regex.Pattern;
 public class ControlTest {
 
     @Test
-    public void numberTest() throws Exception {
-        double b = Double.valueOf("1584939393939");
-        System.out.println(b);
-    }
-
-    @Test
     public void testxsz() throws Exception {
         String sql = "insert into user (x, xm ,xb) values (:xx,:x, :xm, :xb)";
         System.out.println(sql.length());
@@ -47,10 +41,6 @@ public class ControlTest {
 //        System.out.println(StringUtil.replaceIgnoreCaseFirst(sql,":X","@"));
 
 //        System.out.println(StringUtil.replaceIgnoreCase(sql, "?x", "?"));
-    }
-
-    @Test
-    public void asd() throws Exception {
     }
 
     @Test
@@ -122,7 +112,7 @@ public class ControlTest {
     @Test
     public void dynamicTest() throws Exception {
         XQLFileManager sqlFileManager = new XQLFileManager();
-        sqlFileManager.add("dynamic", "pgsql/dynamic.sql");
+        sqlFileManager.add("dynamic", "dynamic-sql-example/template_merge2.xql");
         sqlFileManager.init();
         sqlFileManager.foreach((name, sql) -> {
             System.out.println(name + "-->" + sql);

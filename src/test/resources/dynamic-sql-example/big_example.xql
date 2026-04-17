@@ -7,7 +7,6 @@
  e.g: "xql:new" will be create a sql fragment.
 */
 /*[qzcstj-jc]*/
-/*#强制措施拘传统计#*/
 select *
 from (
 -- #if :dwjb = 40
@@ -147,7 +146,6 @@ order by px, dwdm
 ;
 
 /*[qzcstj-jcdetails]*/
-/*#强制措施拘传统计详情数据#*/
 select *
 from g2bajd.zfba_xs_jczxx t
          join (select *
@@ -198,7 +196,6 @@ where t.lrsj between to_date(:kssj, 'yyyy-mm-dd hh24:mi:ss') and to_date(:jssj, 
 order by t.lrsj desc;
 
 /*[qzcstj-xj]*/
-/*#强制措施刑拘统计数据#*/
 select *
 from (
 -- #if :dwjb = 40
@@ -444,7 +441,6 @@ order by px, dwdm
 ;
 
 /*[qzcstj-xjdetail]*/
-/*#强制措施刑拘统计详情数据#*/
 select t.*
 from g2bajd.zfba_xs_jlzxx t
          join (select *
@@ -529,7 +525,6 @@ where t.lrsj between to_date(:kssj, 'yyyy-mm-dd hh24:mi:ss') and to_date(:jssj, 
 order by t.lrsj desc;
 
 /*[qzcstj-jj]*/
-/*#强制措施监视居住统计数据#*/
 select *
 from (
 -- #if :dwjb = 40
@@ -787,7 +782,6 @@ order by px, dwdm
 ;
 
 /*[qzcstj-jjdetail]*/
-/*#强制措施监视居住统计详情数据#*/
 select t.*
 from (select t1.JSJZJDSBH as bh,
              t1.JSJZJDSWH as wh,
@@ -895,7 +889,6 @@ order by lrsj desc
 ;
 
 /*[qzcstj-qb]*/
-/*#强制措施取保候审统计#*/
 select *
 from (
 -- #if :dwjb = 40
@@ -1179,7 +1172,6 @@ select gx.sjjgdm,
 order by px, dwdm
 ;
 /*[qzcstj-qbdetail]*/
-/*#强制措施取保候审统计详情#*/
 select t.*
 from (select t1.QBHSJDSBH as bh,
              t1.ajbh,
@@ -1293,7 +1285,6 @@ order by lrsj desc
 ;
 
 /*[qzcstj-db]*/
-/*#强制措施逮捕统计数据#*/
 select *
 from (
 -- #if :dwjb = 40
@@ -1562,7 +1553,6 @@ order by px, dwdm
 ;
 
 /*[qzcstj-dbdetail]*/
-/*#强制措施逮捕统计详情数据#*/
 select t.*
 from g2bajd.zfba_xs_dbzxx t
          join (select *
@@ -1659,7 +1649,6 @@ where t.lrsj between to_date(:kssj, 'yyyy-mm-dd hh24:mi:ss') and to_date(:jssj, 
 order by t.lrsj desc;
 
 /*[zccstj]*/
-/*#侦查措施统计数据#*/
 select *
 from (
 -- #if :dwjb = 40
@@ -1753,7 +1742,6 @@ from (
 order by px, dwdm;
 
 /*[zccstj-detail]*/
-/*#侦查措施统计详情数据#*/
 select *
 from zhag.v_zhag_xsajzccs t
          join (select *
@@ -1771,7 +1759,6 @@ where t.lrsj between to_date(:kssj, 'yyyy-mm-dd hh24:mi:ss') and to_date(:jssj, 
 order by t.lrsj desc;
 
 /*[xsflwstj]*/
-/*#刑事案件法律文书统计数据#*/
 select t.wslx, t.wsmc, count(1) as sl
 from g2bajd.zfba_gt_flws t
          join (select *
@@ -1794,7 +1781,6 @@ group by t.wslx, t.wsmc
 order by wslx;
 
 /*[sshjtj-sla]*/
-/*#刑事案件诉讼环节受立案统计#*/
 select *
 from (select gx.sjjgdm,
              gx.sjjgmc,
@@ -2014,7 +2000,6 @@ order by px, dwdm
 ;
 
 /*[sshjtj-sladetxail]*/
-/*#刑事案件诉讼环节受立案统计详情数据#*/
 select *
 from (select spbh as cqbh, ajbh, ajywh, spclsj as lrsj, spdwdm as lrdwdm, spdwmc as lrdwmc, spjg, '1' as lx
       from g2bajd.zfba_gt_ajslsp
@@ -2111,7 +2096,6 @@ where 1=1
 order by t.lrsj desc;
 
 /*[sshjtj-zc]*/
-/*#侦查环节节点数据统计#*/
 with a as (select gx.sjjgdm,
                   gx.sjjgmc,
                   t.lrdwdm                                                                          as dwdm,
@@ -2272,7 +2256,6 @@ from (select nvl(a.sjjgdm, b.sjjgdm) as sjjgdm,
 order by px, dwdm
 ;
 /*[sshjtj-zcdetailaj]*/
-/*#呈请提请批准逮捕报告书数据#*/
 select *
 from g2bajd.ZFBA_GT_CQBGS t
          join (select *
@@ -2306,7 +2289,6 @@ where t.jlbz = '1'
 order by lrsj desc;
 
 /*[sshjtj-zcxtdetailaj]*/
-/*#发起提捕协同流程案件数据#*/
 select t.rwmc,
        t.ajbh,
        t.ajywh,
@@ -2357,7 +2339,6 @@ group by t.rwmc, t.ajbh, t.ajywh, t.fqdwdm, t.fqdwmc, t.xtdwmc, t.lrsj
 order by t.lrsj;
 
 /*[sshjtj-zcxtdetailry]*/
-/*#发起提捕协同流程人员数据#*/
 select r.ryxm,
        r.zjhm,
        r.jdyymc,
@@ -2415,7 +2396,6 @@ group by r.ryxm, r.zjhm, r.jdyymc, r.jdyydm, t.ajbh, t.ajywh, t.lrsj
 order by t.lrsj;
 
 /*[sshjtj-yssc]*/
-/*#移送审查起诉节点数据统计#*/
 with a as (select gx.sjjgdm,
                   gx.sjjgmc,
                   t.lrdwdm                                                       as dwdm,
@@ -2547,7 +2527,6 @@ from (select nvl(a.sjjgdm, b.sjjgdm) as sjjgdm,
 order by px, dwdm
 ;
 /*[sshjtj-ysscdetail]*/
-/*#呈请移送审查起诉报告书数据#*/
 select t.*
 from g2bajd.ZFBA_XS_QSYJSXX t
          join (select *
@@ -2581,7 +2560,6 @@ order by t.lrsj desc
 ;
 
 /*[sshjtj-xtysscdetail]*/
-/*#发起提捕协同流程次数#*/
 select t.rwmc,
        t.ajbh,
        t.ajywh,
@@ -2635,7 +2613,6 @@ order by t.lrsj desc
 ;
 
 /*[sshjtj-xtysscdetailaj]*/
-/*#发起提捕协同流程案件数#*/
 select t.ajbh,
        t.ajywh,
        aj.ajmc,
@@ -2664,7 +2641,6 @@ order by t.lrsj desc
 ;
 
 /*[sjtj-xyrtjxx]*/
-/*#犯罪嫌疑人年龄维度分析统计#*/
 with a as (select gx.sjjgdm,
                   gx.sjjgmc,
                   r.lrdwdm                                                   as dwdm,
@@ -2855,7 +2831,6 @@ order by px, dwdm
 ;
 
 /*[sjtj-xyrtjdetail]*/
-/*#犯罪嫌疑人年龄维度分析统计详情数据#*/
 select *
 from g2bajd.zfba_gt_wffzxyr r
          join (select *
@@ -2910,7 +2885,6 @@ order by r.lrsj desc
 ;
 
 /*[sjtj-gfajtjxx]*/
-/*#高发刑事案件分析统计#*/
 select a.ajlb,
        a.ajlbmc,
        a.sl,
@@ -2965,7 +2939,6 @@ where rn <= 10
 order by rn;
 
 /*[sjtj-gfajtjdetail]*/
-/*#高发刑事案件分析统计详情数据#*/
 select *
 from g2bajd.zfba_gt_ajjbxx t
          join (select *
@@ -2983,7 +2956,6 @@ where jlbz = '1'
 order by lrsj desc;
 
 /*[sjtj-ajzttjxx]*/
-/*#刑事案件办理状态统计#*/
 with a as (select gx.sjjgdm,
                   gx.sjjgmc,
                   t.zbdwdm                                       as dwdm,
@@ -3055,7 +3027,6 @@ order by px, dwdm
 ;
 
 /*[sjtj-ajzttjdetail]*/
-/*#刑事案件办理状态统计详情数据#*/
 select *
 from g2bajd.zfba_gt_ajjbxx t
          join (select *
@@ -3076,7 +3047,6 @@ where t.jlbz = '1'
 order by t.lrsj desc;
 
 /*[zdgx-tj]*/
-/*#指定管辖案件情况统计#*/
 with a as (select gx.sjjgdm,
                   gx.sjjgmc,
                   t.zbdwdm                                                       as dwdm,
@@ -3132,7 +3102,6 @@ from (select *
 order by px, dwdm
 ;
 /*[zdgx-detail]*/
-/*#指定管辖案件情况统计详情数据#*/
 select *
 from g2bajd.ZFBA_ZDGX_AJJBXX t
          join (select *
@@ -3160,7 +3129,6 @@ where t.jlbz = '1'
 order by t.lrsj desc;
 
 /*[lacajd-tj]*/
-/*#立案监督、撤案监督统计#*/
 with a as (select gx.sjjgdm,
                   gx.sjjgmc,
                   d.xtdwdm                                      as dwdm,
@@ -3269,7 +3237,6 @@ from (select nvl(a.sjjgdm, b.sjjgdm) as sjjgdm,
 order by px, dwdm;
 
 /*[lacajd-detail]*/
-/*#立案监督、撤案监督统计详情数据#*/
 select d.*, x.cldx
 from g2bajd.ZFBA_ZFGX_HKXX x
          left join g2bajd.ZFBA_ZFGX_DBBCCL d on x.ywbh = d.jlbh
@@ -3299,7 +3266,6 @@ order by x.rksj desc
 ;
 
 /*[lfxj-tj]*/
-/*#两法衔接案件数据统计#*/
 with a as (select gx.sjjgdm,
                   gx.sjjgmc,
                   t.fqdwdm                                      as dwdm,
@@ -3408,7 +3374,6 @@ from (select nvl(a.sjjgdm, b.sjjgdm) as sjjgdm,
 order by px, dwdm;
 
 /*[lfxjys-detail]*/
-/*#两法衔接案件数据统计(移送)详情数据#*/
 select t.*
 from g2bajd.zfba_zfgx_xtxx t
          left join g2bajd.ZFBA_ZFGX_DBBCCL d on t.rwid = d.sjrwid
@@ -3438,7 +3403,6 @@ order by t.lrsj desc
 ;
 
 /*[lfxjjs-detail]*/
-/*#两法衔接案件数据统计(接收)详情数据#*/
 select d.*, x.cldx
 from g2bajd.ZFBA_ZFGX_HKXX x
          left join g2bajd.ZFBA_ZFGX_DBBCCL d on x.ywbh = d.jlbh

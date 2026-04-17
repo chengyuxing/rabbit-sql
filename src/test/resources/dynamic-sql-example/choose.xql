@@ -2,18 +2,18 @@
 /*[query]*/
 select ${field}
 from ${db}."user" t --用户表
-    ${x.part1};
+    ${x_part1};
 
 /*[query2]*/
 select current_timestamp;
 
 /*插入语句。*/
-/*  [   great.insert  ]  */
+/*  [   great_insert  ]  */
 insert into test."user" (id, name, password)
 values (:id, :name, :password);
 
 /*第一部分*/
-/*{x.part1}  */
+/*{x_part1}  */
 where id = :id
 ${order};
 

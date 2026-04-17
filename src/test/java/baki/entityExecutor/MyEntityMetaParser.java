@@ -30,7 +30,9 @@ public class MyEntityMetaParser implements EntityManager.EntityMetaProvider {
         EntityManager.ColumnMeta columnMeta = new EntityManager.ColumnMeta(field.getName());
         if (field.isAnnotationPresent(Column.class)) {
             Column column = field.getAnnotation(Column.class);
-            columnMeta.setName(column.name());
+            if (!column.name().isEmpty()) {
+                columnMeta.setName(column.name());
+            }
             columnMeta.setInsertable(column.insertable());
             columnMeta.setUpdatable(column.updatable());
         }

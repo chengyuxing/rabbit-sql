@@ -30,15 +30,4 @@ public class TestStrTemplate {
     public void testO() throws Exception {
         boolean res = Object[].class.isAssignableFrom(Integer[].class);
     }
-
-    @Test
-    public void test42() throws Exception {
-        System.out.println(StringUtils.equalsAnyIgnoreCase("DESC", Keywords.STANDARD));
-        System.out.println(StringUtils.equalsAnyIgnoreCase("abc", "1"));
-    }
-
-    @Test
-    public void test43() throws ClassNotFoundException {
-        FileResource.getClassLoader().loadClass("com.github.chengyuxing.sql.XQLFileManager");
-    }
 }

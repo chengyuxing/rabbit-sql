@@ -2,7 +2,6 @@ package baki;
 
 import baki.entity.AnotherUser;
 import baki.entity.Guest;
-import baki.entity.User;
 import baki.entityExecutor.MyEntityMetaParser;
 import baki.op.ExecuteCostWatcher;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -40,7 +39,7 @@ public class NewBakiTests {
         dataSource.setUsername("chengyuxing");
 
         XQLFileManager xqlFileManager = new XQLFileManager();
-        xqlFileManager.add("new", "pgsql/new_for.sql");
+        xqlFileManager.add("new", "dynamic-sql-example/for_in_update.xql");
         xqlFileManager.setPipes(Args.of("isOdd", "baki.pipes.IsOdd"));
         xqlFileManager.setConstants(Args.of("db", "test"));
 
@@ -264,8 +263,6 @@ public class NewBakiTests {
         System.out.println("-----");
         executor.stream().forEach(System.out::println);
         System.out.println("-----");
-        User user = executor.findFirstEntity(User.class);
-        System.out.println(user);
     }
 
     @Test
@@ -459,13 +456,6 @@ public class NewBakiTests {
                                 .add("b", Param.IN(9956)))
                 .getOptional("res")
                 .ifPresent(System.out::println);
-    }
-
-    @Test
-    public void testQ() throws SQLException {
-//        baki.query("select id as \"ID\",name as \"NAME\",age,address from test.user limit 5").zip()
-//                .forEach((k, v) -> System.out.println(k + " -> " + v));
-
     }
 
     @Test

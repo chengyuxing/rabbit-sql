@@ -16,20 +16,20 @@ import org.jetbrains.annotations.NotNull;
 import java.lang.reflect.*;
 import java.util.*;
 import java.util.function.Function;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public abstract class XQLInvocationHandler implements InvocationHandler {
+    public static final Pattern QUERY_PATTERN = Pattern.compile("^(?:select|query|find|get|fetch|search|list)[^a-z]\\w*");
     // language=Regexp
-    public static final String QUERY_PATTERN = "^(?:select|query|find|get|fetch|search|list)[^a-z]\\w*";
+    public static final Pattern INSERT_PATTERN = Pattern.compile("^(?:insert|save|add|append|create)[^a-z]\\w*");
     // language=Regexp
-    public static final String INSERT_PATTERN = "^(?:insert|save|add|append|create)[^a-z]\\w*";
+    public static final Pattern UPDATE_PATTERN = Pattern.compile("^(?:update|modify|change)[^a-z]\\w*");
     // language=Regexp
-    public static final String UPDATE_PATTERN = "^(?:update|modify|change)[^a-z]\\w*";
+    public static final Pattern DELETE_PATTERN = Pattern.compile("^(?:delete|remove)[^a-z]\\w*");
     // language=Regexp
-    public static final String DELETE_PATTERN = "^(?:delete|remove)[^a-z]\\w*";
-    // language=Regexp
-    public static final String CALL_PATTERN = "^(?:call|proc|func)[^a-z]\\w*";
+    public static final Pattern CALL_PATTERN = Pattern.compile("^(?:call|proc|func)[^a-z]\\w*");
 
     private final ClassLoader classLoader = this.getClass().getClassLoader();
 
@@ -108,19 +108,19 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
     }
 
     protected SqlStatementType detectSQLTypeByMethodPrefix(String method) {
-        if (method.matches(QUERY_PATTERN)) {
+        if (QUERY_PATTERN.matcher(method).matches()) {
             return SqlStatementType.query;
         }
-        if (method.matches(INSERT_PATTERN)) {
+        if (INSERT_PATTERN.matcher(method).matches()) {
             return SqlStatementType.insert;
         }
-        if (method.matches(UPDATE_PATTERN)) {
+        if (UPDATE_PATTERN.matcher(method).matches()) {
             return SqlStatementType.update;
         }
-        if (method.matches(DELETE_PATTERN)) {
+        if (DELETE_PATTERN.matcher(method).matches()) {
             return SqlStatementType.delete;
         }
-        if (method.matches(CALL_PATTERN)) {
+        if (CALL_PATTERN.matcher(method).matches()) {
             return SqlStatementType.procedure;
         }
         return SqlStatementType.unset;

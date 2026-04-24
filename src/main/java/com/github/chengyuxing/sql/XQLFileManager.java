@@ -373,9 +373,9 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      *
      * @param alias       alias
      * @param filename    SQL file name
-     * @param entry       sql container
-     * @param currentName sql name
-     * @param sql         sql content
+     * @param entry       SQL container
+     * @param currentName SQL name
+     * @param sql         SQL content
      */
     protected void appendInlineTemplate(@NotNull String alias, @NotNull String filename, Map<String, Sql> entry, String currentName, String sql) {
         extractInlineTemplate(sql, (key, template) -> {
@@ -449,7 +449,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      *     </pre>
      * </blockquote>
      *
-     * @param sqlResource sql resource
+     * @param sqlResource SQL resource
      */
     protected void mergeSqlTemplate(Map<String, Sql> sqlResource) {
         Map<String, String> templates = new HashMap<>();
@@ -660,7 +660,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     /**
      * Get SQL fragment count.
      *
-     * @return sql fragment count
+     * @return SQL fragment count
      */
     public int size() {
         int i = 0;
@@ -673,8 +673,8 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     /**
      * Get sql resource.
      *
-     * @param alias sql file alias
-     * @return sql resource
+     * @param alias SQL file alias
+     * @return SQL resource
      */
     public @Nullable Resource getResource(@NotNull String alias) {
         return resources.get(alias);
@@ -701,7 +701,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     /**
      * Check resources contains sql fragment or not.
      *
-     * @param name sql reference name ({@code <alias>.<sqlName>})
+     * @param name SQL reference name ({@code <alias>.<sqlName>})
      * @return true if exists or false
      */
     public boolean contains(@NotNull String name) {
@@ -714,12 +714,12 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
-     * Get a sql object.
+     * Get a SQL object.
      *
-     * @param name sql reference name ({@code <alias>.<sqlName>})
-     * @return sql object
-     * @throws NoSuchElementException   if sql fragment name not exists
-     * @throws IllegalArgumentException if sql reference name format error
+     * @param name SQL reference name ({@code <alias>.<sqlName>})
+     * @return SQL object
+     * @throws NoSuchElementException   if SQL fragment name not exists
+     * @throws IllegalArgumentException if SQL reference name format error
      */
     public Sql getSqlObject(@NotNull String name) {
         Pair<String, String> p = decodeSqlReference(name);

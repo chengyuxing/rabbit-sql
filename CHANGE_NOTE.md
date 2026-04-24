@@ -1,5 +1,9 @@
 # change note
 
+# 10.2.8
+
+- `XQLInvocationHandler` optimized.
+
 # 10.2.7
 
 - New method `Query#forEach` of entity query
@@ -11,7 +15,7 @@
 
 # 10.2.5
 
-- XQLFileManager add support define sql metadata `-- @name value`
+- `XQLFileManager` add support define sql metadata `-- @name value`
 
 # 10.2.4
 

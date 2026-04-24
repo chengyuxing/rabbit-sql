@@ -21,7 +21,7 @@ public abstract class QueryExecutor {
     /**
      * Constructs a new Query with 1 sql.
      *
-     * @param sql named parameter sql or sql name
+     * @param sql named parameter SQL or SQL name
      */
     public QueryExecutor(@NotNull String sql) {
         this.sql = sql;

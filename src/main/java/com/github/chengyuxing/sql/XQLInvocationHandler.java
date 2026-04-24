@@ -20,15 +20,14 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+/**
+ * XQL mapping to interface method invocation handler.
+ */
 public abstract class XQLInvocationHandler implements InvocationHandler {
     public static final Pattern QUERY_PATTERN = Pattern.compile("^(?:select|query|find|get|fetch|search|list)[^a-z]\\w*");
-    // language=Regexp
     public static final Pattern INSERT_PATTERN = Pattern.compile("^(?:insert|save|add|append|create)[^a-z]\\w*");
-    // language=Regexp
     public static final Pattern UPDATE_PATTERN = Pattern.compile("^(?:update|modify|change)[^a-z]\\w*");
-    // language=Regexp
     public static final Pattern DELETE_PATTERN = Pattern.compile("^(?:delete|remove)[^a-z]\\w*");
-    // language=Regexp
     public static final Pattern CALL_PATTERN = Pattern.compile("^(?:call|proc|func)[^a-z]\\w*");
 
     private final ClassLoader classLoader = this.getClass().getClassLoader();
@@ -62,7 +61,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
         String alias = clazz.getDeclaredAnnotation(XQLMapper.class).value();
         String sqlName = method.getName();
 
-        SqlStatementType sqlType = detectSQLTypeByMethodPrefix(sqlName);
+        SqlStatementType sqlType = null;
 
         if (method.isAnnotationPresent(XQL.class)) {
             XQL xql = method.getDeclaredAnnotation(XQL.class);
@@ -70,6 +69,10 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
                 sqlName = xql.value();
             }
             sqlType = xql.type();
+        }
+
+        if (sqlType == null) {
+            sqlType = detectSQLTypeByMethodPrefix(sqlName);
         }
 
         XQLFileManager.Resource xqlResource = baki.getXqlFileManager().getResource(alias);
@@ -200,7 +203,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
         if (returnType == PagedResource.class) {
             return configurePageable(alias, qe, method).collect(dataRowMapping(genericType));
         }
-        if (!returnType.getName().startsWith("java.")) {
+        if (isBindableObject(returnType)) {
             return qe.findFirstEntity(returnType);
         }
         return null;
@@ -252,11 +255,11 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
      */
     protected Class<?> getReturnGenericType(Method method) throws ClassNotFoundException {
         Class<?> genericType = null;
-        java.lang.reflect.Type genericReturnType = method.getGenericReturnType();
+        Type genericReturnType = method.getGenericReturnType();
         if (genericReturnType instanceof ParameterizedType) {
-            java.lang.reflect.Type[] actualTypeArguments = ((ParameterizedType) genericReturnType).getActualTypeArguments();
+            Type[] actualTypeArguments = ((ParameterizedType) genericReturnType).getActualTypeArguments();
             if (actualTypeArguments.length == 1) {
-                java.lang.reflect.Type actualTypeArgument = actualTypeArguments[0];
+                Type actualTypeArgument = actualTypeArguments[0];
                 if (actualTypeArgument instanceof ParameterizedType) {
                     genericType = (Class<?>) ((ParameterizedType) actualTypeArgument).getRawType();
                 } else {
@@ -313,7 +316,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
         if (arg instanceof Iterable<?>) {
             return resolveIterableArg(method, (Iterable<?>) arg);
         }
-        if (isBindableObject(arg)) {
+        if (isBindableObject(arg.getClass())) {
             return entityToMap(arg);
         }
         throw unsupportedArg(method, arg);
@@ -339,7 +342,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
         for (Object element : iterable) {
             if (element instanceof Map<?, ?>) {
                 result.add(element);
-            } else if (isBindableObject(element)) {
+            } else if (isBindableObject(element.getClass())) {
                 result.add(entityToMap(element));
             } else {
                 throw unsupportedArg(method, element);
@@ -355,8 +358,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
         );
     }
 
-    private boolean isBindableObject(@NotNull Object o) {
-        Class<?> type = o.getClass();
+    private boolean isBindableObject(@NotNull Class<?> type) {
         String name = type.getName();
         if (StringUtils.startsWiths(name, "java.", "javax.", "jakarta.")) {
             return false;

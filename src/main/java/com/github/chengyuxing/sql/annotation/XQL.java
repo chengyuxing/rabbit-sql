@@ -13,14 +13,14 @@ public @interface XQL {
     /**
      * Sql fragment name.
      *
-     * @return Sql fragment name
+     * @return SQL fragment name
      */
     String value() default "";
 
     /**
      * Sql type.
      *
-     * @return Sql type
+     * @return SQL type
      */
     SqlStatementType type() default SqlStatementType.query;
 }

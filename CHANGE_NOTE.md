@@ -1,5 +1,9 @@
 # change note
 
+# 10.2.9
+
+- Fixed `MostDateTime` format `yyyyMMdd` bug.
+
 # 10.2.8
 
 - `XQLInvocationHandler` optimized.

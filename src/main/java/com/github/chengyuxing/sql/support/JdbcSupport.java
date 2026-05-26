@@ -77,21 +77,19 @@ public abstract class JdbcSupport {
                                                    @Nullable Object value) throws SQLException;
 
     /**
-     * Jdbc execute sql timeout.
+     * On statement created and do some configure before execute.
      *
-     * @param sql  sql
-     * @param args args
-     * @return time out (seconds)
-     * @see Statement#setQueryTimeout(int)
+     * @param statement statement
+     * @param sql       sql
+     * @param args      args
+     * @throws SQLException if connection states error
      */
-    protected @Range(from = 0, to = Integer.MAX_VALUE) int queryTimeout(String sql, Map<String, ?> args) {
-        return 0;
-    }
+    protected abstract void onStatementInit(Statement statement, String sql, Map<String, ?> args) throws SQLException;
 
     /**
      * Set prepared sql statement args.
      *
-     * @param ps    sql statement object
+     * @param ps    SQL statement object
      * @param args  args
      * @param names ordered arg names
      * @throws SQLException if connection states error
@@ -133,7 +131,7 @@ public abstract class JdbcSupport {
      * @param sql  named parameter sql
      * @param args args
      * @return Query: List{@code <DataRow>}, DML: affected row count, DDL: 0
-     * @throws DataAccessException sql execute error
+     * @throws DataAccessException SQL execute error
      */
     protected DataRow executeAny(@NotNull final String sql, Map<String, ?> args) {
         SqlGenerator.PreparedSqlMetaData smd = prepareSql(sql, args);
@@ -143,7 +141,7 @@ public abstract class JdbcSupport {
             connection = getConnection();
             //noinspection SqlSourceToSinkFlow
             ps = connection.prepareStatement(smd.getPrepareSql());
-            ps.setQueryTimeout(queryTimeout(sql, smd.getArgs()));
+            onStatementInit(ps, sql, smd.getArgs());
             setPreparedSqlArgs(ps, smd.getArgs(), smd.getArgNameIndexMapping());
             ps.execute();
             JdbcUtils.printSqlConsole(ps);
@@ -191,7 +189,7 @@ public abstract class JdbcSupport {
             //noinspection SqlSourceToSinkFlow
             PreparedStatement ps = connection.prepareStatement(smd.getPrepareSql());
             close = close.nest(ps);
-            ps.setQueryTimeout(queryTimeout(sql, smd.getArgs()));
+            onStatementInit(ps, sql, smd.getArgs());
             setPreparedSqlArgs(ps, smd.getArgs(), smd.getArgNameIndexMapping());
             ResultSet resultSet = ps.executeQuery();
             close = close.nest(resultSet);
@@ -237,7 +235,7 @@ public abstract class JdbcSupport {
         try {
             connection = getConnection();
             s = connection.createStatement();
-            s.setQueryTimeout(queryTimeout(String.join(";", sqlList), null));
+            onStatementInit(s, String.join(";", sqlList), null);
             final Stream.Builder<int[]> result = Stream.builder();
             int i = 1;
             for (String sql : sqlList) {
@@ -284,7 +282,7 @@ public abstract class JdbcSupport {
             connection = getConnection();
             //noinspection SqlSourceToSinkFlow
             ps = connection.prepareStatement(smd.getPrepareSql());
-            ps.setQueryTimeout(queryTimeout(sql, first));
+            onStatementInit(ps, sql, first);
             final Stream.Builder<int[]> result = Stream.builder();
             int i = 1;
             for (T arg : args) {
@@ -331,7 +329,7 @@ public abstract class JdbcSupport {
             connection = getConnection();
             //noinspection SqlSourceToSinkFlow
             ps = connection.prepareStatement(smd.getPrepareSql());
-            ps.setQueryTimeout(queryTimeout(sql, smd.getArgs()));
+            onStatementInit(ps, sql, smd.getArgs());
             setPreparedSqlArgs(ps, smd.getArgs(), smd.getArgNameIndexMapping());
             return ps.executeUpdate();
         } catch (Exception e) {
@@ -372,7 +370,7 @@ public abstract class JdbcSupport {
             connection = getConnection();
             //noinspection SqlSourceToSinkFlow
             cs = connection.prepareCall(smd.getPrepareSql());
-            cs.setQueryTimeout(queryTimeout(procedure, args));
+            onStatementInit(cs, procedure, args);
 
             List<String> outNames = new ArrayList<>();
             if (!args.isEmpty()) {

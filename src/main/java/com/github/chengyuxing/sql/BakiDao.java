@@ -1192,8 +1192,11 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    protected int queryTimeout(String sql, Map<String, ?> args) {
-        return queryTimeoutHandler.handle(sql, args);
+    protected void onStatementInit(Statement statement, String sql, Map<String, ?> args) throws SQLException {
+        int timeout = queryTimeoutHandler.handle(sql, args);
+        if (timeout > 0) {
+            statement.setQueryTimeout(timeout);
+        }
     }
 
     public SqlGenerator getSqlGenerator() {

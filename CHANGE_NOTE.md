@@ -1,5 +1,9 @@
 # change note
 
+# 10.3.2
+
+- `ReflectUtils#getBeanPropertyMetas` optimized.
+
 # 10.3.1
 
 - Fixed `MostDateTime#of` pattern bug which not contains the time part

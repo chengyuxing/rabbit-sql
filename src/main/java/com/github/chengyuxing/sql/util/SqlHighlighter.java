@@ -1,6 +1,6 @@
 package com.github.chengyuxing.sql.util;
 
-import com.github.chengyuxing.common.console.Color;
+import com.github.chengyuxing.common.console.Style;
 import com.github.chengyuxing.common.console.Printer;
 import com.github.chengyuxing.common.script.ast.impl.KeyExpressionParser;
 import com.github.chengyuxing.common.tuple.Pair;
@@ -63,22 +63,22 @@ public final class SqlHighlighter {
         return highlight(sql, (tag, content) -> {
             switch (tag) {
                 case FUNCTION:
-                    return Printer.colorful(content, Color.BLUE);
+                    return Printer.colorful(content, Style.BLUE);
                 case KEYWORD:
-                    return Printer.colorful(content, Color.DARK_PURPLE);
+                    return Printer.colorful(content, Style.DARK_PURPLE);
                 case NUMBER:
-                    return Printer.colorful(content, Color.DARK_CYAN);
+                    return Printer.colorful(content, Style.DARK_CYAN);
                 case POSTGRESQL_FUNCTION_BODY_SYMBOL:
                 case SINGLE_QUOTE_STRING:
-                    return Printer.colorful(content, Color.DARK_GREEN);
+                    return Printer.colorful(content, Style.DARK_GREEN);
                 case ASTERISK:
-                    return Printer.colorful(content, Color.YELLOW);
+                    return Printer.colorful(content, Style.YELLOW);
                 case LINE_COMMENT:
-                    return Printer.colorful(content, Color.SILVER);
+                    return Printer.colorful(content, Style.SILVER);
                 case BLOCK_COMMENT:
-                    return Printer.colorful(content.replaceAll("\033\\[\\d{2}m|\033\\[0m", ""), Color.SILVER);
+                    return Printer.colorful(content.replaceAll("\033\\[\\d{2}m|\033\\[0m", ""), Style.SILVER);
                 case NAMED_PARAMETER:
-                    return Printer.colorful(content, Color.CYAN);
+                    return Printer.colorful(content, Style.CYAN);
                 default:
                     return content;
             }

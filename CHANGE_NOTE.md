@@ -1,5 +1,9 @@
 # change note
 
+# 10.3.4
+
+- Ansi style optimized.
+
 # 10.3.3
 
 - Fix the error when jdbc driver is not support query timeout.

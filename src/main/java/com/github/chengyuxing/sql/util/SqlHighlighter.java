@@ -214,6 +214,12 @@ public final class SqlHighlighter {
         if (!word.matches("^[a-zA-Z][\\w.]+")) {
             return false;
         }
+        if (delimiters.isEmpty()) {
+            return false;
+        }
+        if (i >= delimiters.size()) {
+            return false;
+        }
         if (i < j - 1) {
             return StringUtils.indexOfNonWhitespace(delimiters.get(i), "(") != -1;
         }
@@ -224,7 +230,13 @@ public final class SqlHighlighter {
         if (!KeyExpressionParser.EXPRESSION_PATTERN.matcher(word).matches()) {
             return false;
         }
-        int idx = i > 0 ? i - 1 : i;
+        if (delimiters.isEmpty()) {
+            return false;
+        }
+        int idx = Math.max(0, i - 1);
+        if (idx >= delimiters.size()) {
+            return false;
+        }
         String prefix = delimiters.get(idx).trim();
         return prefix.endsWith(":") && !prefix.endsWith("::");
     }

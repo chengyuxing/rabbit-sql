@@ -165,7 +165,7 @@ public class NonBakiTests {
 
         String proc = "{call test.func1(:user.addresses[0].name)}";
 
-        String b = SqlHighlighter.ansi(sql);
+        String b = SqlHighlighter.ansi("select");
         System.out.println(System.console());
         System.out.println(b);
 

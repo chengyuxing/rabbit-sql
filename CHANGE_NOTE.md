@@ -1,5 +1,9 @@
 # change note
 
+# 10.3.5
+
+- Fixed SqlHighlighter bug.
+
 # 10.3.4
 
 - Ansi style optimized.

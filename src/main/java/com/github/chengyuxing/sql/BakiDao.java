@@ -20,6 +20,7 @@ import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.impl.*;
 import com.github.chengyuxing.sql.plugins.*;
 import com.github.chengyuxing.sql.support.*;
+import com.github.chengyuxing.sql.types.DatabaseInfo;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.annotation.SqlStatementType;
 import com.github.chengyuxing.sql.types.Execution;
@@ -55,8 +56,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     private static final String SQL_REF_MODIFIER_COUNT = "count";
     private static final String SQL_REF_MODIFIER_PAGE = "page";
     private final DataSource dataSource;
-    private DatabaseMetaData metaData;
-    private String databaseId;
+    private DatabaseInfo databaseInfo;
     private SqlGenerator sqlGenerator;
     private EntityManager entityManager;
     private AroundExecutor<Execution> sqlAroundExecutor;
@@ -142,13 +142,18 @@ public class BakiDao extends JdbcSupport implements Baki {
         this.statementValueHandler = (ps, index, value, metaData) -> JdbcUtils.setStatementValue(ps, index, value);
         this.queryTimeoutHandler = (sql, args) -> 0;
         this.sqlInvokeHandler = type -> null;
-        this.using(c -> {
+        this.databaseInfo = using(c -> {
             try {
-                this.metaData = c.getMetaData();
-                this.databaseId = this.metaData.getDatabaseProductName().toLowerCase();
-                return 0;
+                DatabaseMetaData metaData = c.getMetaData();
+                return new DatabaseInfo(
+                        metaData.getDatabaseProductName().toLowerCase(),
+                        metaData.getDatabaseProductVersion(),
+                        metaData.getURL(),
+                        metaData.getIdentifierQuoteString(),
+                        metaData.getDriverName()
+                );
             } catch (SQLException e) {
-                throw new IllegalStateException("Initialize metadata error.", e);
+                throw new IllegalStateException("fetch database metadata error.", e);
             }
         });
     }
@@ -975,13 +980,8 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public @NotNull DatabaseMetaData metaData() {
-        return this.metaData;
-    }
-
-    @Override
-    public @NotNull String databaseId() {
-        return this.databaseId;
+    public @NotNull DatabaseInfo databaseInfo() {
+        return this.databaseInfo;
     }
 
     /**
@@ -1004,7 +1004,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             // fetch the page helper.
             PageHelper pageHelper = null;
             if (pageHelperProvider != null) {
-                pageHelper = pageHelperProvider.customPageHelper(metaData, databaseId, namedParamPrefix);
+                pageHelper = pageHelperProvider.customPageHelper(databaseInfo(), namedParamPrefix);
             }
             if (pageHelper == null) {
                 pageHelper = builtinPager();
@@ -1064,13 +1064,14 @@ public class BakiDao extends JdbcSupport implements Baki {
      * @throws UnsupportedOperationException there is no default implementation of your database
      */
     protected PageHelper builtinPager() {
+        DatabaseInfo info = databaseInfo();
         if (globalPageHelperProvider != null) {
-            PageHelper pageHelper = globalPageHelperProvider.customPageHelper(metaData, databaseId, namedParamPrefix);
+            PageHelper pageHelper = globalPageHelperProvider.customPageHelper(info, namedParamPrefix);
             if (pageHelper != null) {
                 return pageHelper;
             }
         }
-        switch (databaseId) {
+        switch (info.getName()) {
             case "oracle":
             case "dm dbms":
                 return new OraclePageHelper();
@@ -1091,7 +1092,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             case "microsoft sql server":
                 return new SqlServer2012PageHelper();
             default:
-                throw new UnsupportedOperationException("Pager of \"" + databaseId + "\" default not implement currently, see method 'setGlobalPageHelperProvider'.");
+                throw new UnsupportedOperationException("Pager of \"" + info.getName() + "\" default not implement currently, see method 'setGlobalPageHelperProvider'.");
         }
     }
 
@@ -1099,7 +1100,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      * Get sql from {@link XQLFileManager} by sql name if first arg starts with symbol ({@code &}).<br>
      * Sql name format: {@code &<alias>.<sqlName>}
      *
-     * @param sql  sql statement or sql name
+     * @param sql  SQL statement or SQL name
      * @param args args
      * @return sql
      * @throws NullPointerException if first arg starts with symbol ({@code &}) but {@link XQLFileManager} not configured
@@ -1111,12 +1112,13 @@ public class BakiDao extends JdbcSupport implements Baki {
             myArgs.putAll(args);
         }
         String mySql = sql.trim();
+        DatabaseInfo info = databaseInfo();
         if (mySql.startsWith("&")) {
             log.debug("SQL Name: {}", mySql);
             String sqlRef = mySql.substring(1);
 
             Map<String, Object> scopedArgs = new HashMap<>(myArgs);
-            scopedArgs.put(ARG_DATABASE_ID_KEY, databaseId);
+            scopedArgs.put(ARG_DATABASE_ID_KEY, info);
             Pair<String, Map<String, Object>> result = xqlFileManager.get(sqlRef, scopedArgs);
 
             mySql = result.getItem1();
@@ -1141,7 +1143,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
         }
         if (sqlInterceptor != null) {
-            mySql = sqlInterceptor.preHandle(sql, mySql, myArgs, metaData);
+            mySql = sqlInterceptor.preHandle(sql, mySql, myArgs, info);
         }
         if (mySql.contains("${")) {
             mySql = SqlUtils.formatSqlTemplate(mySql, myArgs);
@@ -1188,7 +1190,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     protected void doHandleStatementValue(@NotNull PreparedStatement ps,
                                           @Range(from = 1, to = Integer.MAX_VALUE) int index,
                                           @Nullable Object value) throws SQLException {
-        statementValueHandler.handle(ps, index, value, metaData);
+        statementValueHandler.handle(ps, index, value, databaseInfo());
     }
 
     @Override

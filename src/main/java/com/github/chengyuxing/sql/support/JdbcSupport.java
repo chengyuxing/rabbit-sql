@@ -173,10 +173,10 @@ public abstract class JdbcSupport {
      * stream.close();</pre>
      * </blockquote>
      *
-     * @param sql  named parameter sql, e.g. <code>select * from test.user where id = :id</code>
+     * @param sql  named parameter SQL, e.g. <code>select * from test.user where id = :id</code>
      * @param args args
      * @return Stream query result
-     * @throws DataAccessException sql execute error
+     * @throws DataAccessException SQL execute error
      */
     protected Stream<DataRow> executeQueryStream(@NotNull final String sql, Map<String, ?> args) {
         SqlGenerator.PreparedSqlMetaData smd = prepareSql(sql, args);

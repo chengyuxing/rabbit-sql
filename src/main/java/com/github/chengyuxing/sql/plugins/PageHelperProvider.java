@@ -1,10 +1,9 @@
 package com.github.chengyuxing.sql.plugins;
 
 import com.github.chengyuxing.sql.page.PageHelper;
+import com.github.chengyuxing.sql.types.DatabaseInfo;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-
-import java.sql.DatabaseMetaData;
 
 /**
  * Page helper provider
@@ -14,12 +13,10 @@ public interface PageHelperProvider {
     /**
      * Implement custom page helper.
      *
-     * @param databaseMetaData current database metadata
-     * @param dbName           current database name
+     * @param databaseInfo     current database information
      * @param namedParamPrefix current named parameter prefix
      * @return PageHelper instance
      */
-    @Nullable PageHelper customPageHelper(@NotNull DatabaseMetaData databaseMetaData,
-                                          @NotNull String dbName,
+    @Nullable PageHelper customPageHelper(@NotNull DatabaseInfo databaseInfo,
                                           char namedParamPrefix);
 }

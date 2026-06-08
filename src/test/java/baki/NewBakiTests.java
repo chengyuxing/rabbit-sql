@@ -13,6 +13,7 @@ import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.github.chengyuxing.sql.plugins.QueryCacheManager;
 import com.github.chengyuxing.sql.plugins.QueryExecutor;
 import com.github.chengyuxing.sql.transaction.Tx;
+import com.github.chengyuxing.sql.types.DatabaseInfo;
 import com.github.chengyuxing.sql.types.StandardOutParamType;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.util.JdbcUtils;
@@ -69,8 +70,8 @@ public class NewBakiTests {
 
         baki = bakiDao;
 
-        bakiDao.setGlobalPageHelperProvider((databaseMetaData, dbName, namedParamPrefix) -> {
-            if (dbName.equals("kingbasees")) {
+        bakiDao.setGlobalPageHelperProvider((info, namedParamPrefix) -> {
+            if (info.getName().equals("kingbasees")) {
                 return new PGPageHelper();
             }
             return null;
@@ -100,6 +101,12 @@ public class NewBakiTests {
                         Args.of("id", 18),
                         Args.of("id", 19)
                 ));
+    }
+
+    @Test
+    public void testDbInfo() {
+        DatabaseInfo info = baki.databaseInfo();
+        System.out.println(info);
     }
 
     @Test

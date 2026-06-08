@@ -4,11 +4,11 @@ import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.plugins.EntityExecutor;
 import com.github.chengyuxing.sql.plugins.QueryExecutor;
 import com.github.chengyuxing.sql.plugins.SimpleDMLExecutor;
+import com.github.chengyuxing.sql.types.DatabaseInfo;
 import com.github.chengyuxing.sql.types.Param;
 import org.jetbrains.annotations.NotNull;
 
 import java.sql.Connection;
-import java.sql.DatabaseMetaData;
 import java.util.Map;
 import java.util.function.Function;
 
@@ -216,16 +216,9 @@ public interface Baki {
     <T> T using(Function<Connection, T> func);
 
     /**
-     * Retrieves the current database metadata.
+     * Retrieves the current database information.
      *
-     * @return The {@link DatabaseMetaData} for the current database.
+     * @return The information for the current database.
      */
-    @NotNull DatabaseMetaData metaData();
-
-    /**
-     * Retrieves the current database name.
-     *
-     * @return The name of the current database.
-     */
-    @NotNull String databaseId();
+    @NotNull DatabaseInfo databaseInfo();
 }

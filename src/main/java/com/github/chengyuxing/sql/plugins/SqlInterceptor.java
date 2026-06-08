@@ -1,8 +1,8 @@
 package com.github.chengyuxing.sql.plugins;
 
+import com.github.chengyuxing.sql.types.DatabaseInfo;
 import org.jetbrains.annotations.NotNull;
 
-import java.sql.DatabaseMetaData;
 import java.util.Map;
 
 /**
@@ -13,11 +13,11 @@ public interface SqlInterceptor {
     /**
      * Pre-handle before SQL real executing, throw exception to reject SQL execution.
      *
-     * @param rawSql    source sql: sql reference or sql content
-     * @param parsedSql the parsed sql content
+     * @param rawSql    source SQL: SQL reference or SQL content
+     * @param parsedSql the parsed SQL content
      * @param args      args
-     * @param metaData  current database metadata
-     * @return new parsed sql content
+     * @param info      current database information
+     * @return new parsed SQL content
      */
-    @NotNull String preHandle(@NotNull final String rawSql, @NotNull final String parsedSql, @NotNull Map<String, ?> args, @NotNull DatabaseMetaData metaData);
+    @NotNull String preHandle(@NotNull final String rawSql, @NotNull final String parsedSql, @NotNull Map<String, ?> args, @NotNull DatabaseInfo info);
 }

@@ -1,5 +1,10 @@
 # change note
 
+# 10.3.6
+
+- Remove  `BakiDao#databaseId` ,`BakiDao#metadata()`
+- Add new method `BakiDao#DatabaseInfo()`
+
 # 10.3.5
 
 - Fixed SqlHighlighter bug.

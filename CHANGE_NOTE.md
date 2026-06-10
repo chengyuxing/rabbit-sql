@@ -1,5 +1,9 @@
 # change note
 
+# 10.3.7
+
+- Some optimized.
+
 # 10.3.6
 
 - Remove  `BakiDao#databaseId` ,`BakiDao#metadata()`

@@ -30,7 +30,7 @@ _java 8+_
 <dependency>
   <groupId>com.github.chengyuxing</groupId>
   <artifactId>rabbit-sql</artifactId>
-  <version>10.3.6</version>
+  <version>10.3.7</version>
 </dependency>
 ```
 
@@ -546,16 +546,16 @@ Concat different sql statement by database name:
 /*[query]*/
 select * from test.user
 where id = 3
--- #if :_databaseId == 'postgresql'
+-- #if :_databaseId.name == 'postgresql'
     ...
 -- #fi
--- #if :_databaseId == 'oracle'
+-- #if :_databaseId.name == 'oracle'
     ...
 -- #fi
 ;
 ```
 
-- Built-In variable `_databaseId` is current database name at runtime.
+- Built-In variable `_databaseId` is current database info at runtime.
 
 ## Appendix
 

@@ -30,7 +30,7 @@ _java 8+_
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>10.3.6</version>
+    <version>10.3.7</version>
 </dependency>
 ```
 
@@ -550,16 +550,16 @@ where id = :id;
 /*[query]*/
 select * from test.user
 where id = 3
--- #if :_databaseId == 'postgresql'
+-- #if :_databaseId.name == 'postgresql'
     ...
 -- #fi
--- #if :_databaseId == 'oracle'
+-- #if :_databaseId.name == 'oracle'
     ...
 -- #fi
 ;
 ```
 
-- 内置变量名 `_databaseId` 值在运行时为当前数据库的名称。
+- 内置变量名 `_databaseId` 值在运行时为当前数据库的对象信息。
 
 ## 附录
 

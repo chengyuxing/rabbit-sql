@@ -142,20 +142,7 @@ public class BakiDao extends JdbcSupport implements Baki {
         this.statementValueHandler = (ps, index, value, metaData) -> JdbcUtils.setStatementValue(ps, index, value);
         this.queryTimeoutHandler = (sql, args) -> 0;
         this.sqlInvokeHandler = type -> null;
-        this.databaseInfo = using(c -> {
-            try {
-                DatabaseMetaData metaData = c.getMetaData();
-                return new DatabaseInfo(
-                        metaData.getDatabaseProductName().toLowerCase(),
-                        metaData.getDatabaseProductVersion(),
-                        metaData.getURL(),
-                        metaData.getIdentifierQuoteString(),
-                        metaData.getDriverName()
-                );
-            } catch (SQLException e) {
-                throw new IllegalStateException("fetch database metadata error.", e);
-            }
-        });
+        this.databaseInfo = using(DatabaseInfo::of);
     }
 
     /**

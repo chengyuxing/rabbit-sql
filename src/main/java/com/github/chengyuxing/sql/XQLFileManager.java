@@ -458,7 +458,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             if (k.startsWith("${")) {
                 String template = e.getValue().getSource();
                 // fix template
-                if (SqlUtils.indexOfWholeLineComment(template) != -1) {
+                if (SqlUtils.indexOfWholeLineComment(template) != -1 || template.contains(NEW_LINE)) {
                     template = NEW_LINE + template;
                 }
                 int lastLN = template.lastIndexOf(NEW_LINE);

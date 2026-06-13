@@ -7,7 +7,6 @@ import com.github.chengyuxing.common.util.ValueUtils;
 import com.github.chengyuxing.common.util.ReflectUtils;
 import com.github.chengyuxing.sql.annotation.*;
 import com.github.chengyuxing.sql.page.IPageable;
-import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.plugins.*;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.annotation.SqlStatementType;
@@ -220,20 +219,14 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
         if (method.isAnnotationPresent(PageableConfig.class)) {
             PageableConfig pageableConfig = method.getDeclaredAnnotation(PageableConfig.class);
             String[] startEnd = pageableConfig.disableDefaultPageSql();
-            Class<? extends PageHelperProvider> pageHelpProviderCls = pageableConfig.pageHelper();
-            if (startEnd.length > 0) {
-                if (count == null) {
-                    throw new IllegalStateException(method.getDeclaringClass() + "#" + method.getName() + " has no @" + CountQuery.class.getSimpleName() + ", property disableDefaultPageSql must work with @" + CountQuery.class.getSimpleName());
-                }
-                pageable.disableDefaultPageSql(count)
-                        .rewriteDefaultPageArgs(pageArgs -> {
-                            pageArgs.updateKey(PageHelper.START_NUM_KEY, startEnd[0]);
-                            if (startEnd.length > 1) {
-                                pageArgs.updateKey(PageHelper.END_NUM_KEY, startEnd[1]);
-                            }
-                            return pageArgs;
-                        });
+            if (startEnd.length != 2) {
+                throw new IllegalArgumentException(method.getDeclaringClass() + "#" + method.getName() + " @" + PageableConfig.class.getSimpleName() + ": it takes two key names for [start] and [end] number to overwrite");
             }
+            Class<? extends PageHelperProvider> pageHelpProviderCls = pageableConfig.pageHelper();
+            if (count == null) {
+                throw new IllegalStateException(method.getDeclaringClass() + "#" + method.getName() + " has no @" + CountQuery.class.getSimpleName() + ", property disableDefaultPageSql must work with @" + CountQuery.class.getSimpleName());
+            }
+            pageable.disableDefaultPageSql(count, startEnd[0], startEnd[1]);
             if (!pageHelpProviderCls.getName().equals(PageHelperProvider.class.getName())) {
                 try {
                     pageable.pageHelper(ReflectUtils.getInstance(pageHelpProviderCls));

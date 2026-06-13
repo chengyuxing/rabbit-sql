@@ -1,7 +1,6 @@
 package com.github.chengyuxing.sql.page;
 
 import com.github.chengyuxing.common.DataRow;
-import com.github.chengyuxing.sql.Args;
 import com.github.chengyuxing.sql.PagedResource;
 import com.github.chengyuxing.sql.plugins.PageHelperProvider;
 import org.jetbrains.annotations.Range;
@@ -21,7 +20,8 @@ public abstract class IPageable {
     protected String countQuery;
     protected Integer count;
     protected boolean disablePageSql;
-    protected Function<Args<Integer>, Args<Integer>> rewriteArgsFunc;
+    protected String startNumKey;
+    protected String endNumKey;
     protected PageHelperProvider pageHelperProvider;
 
     /**
@@ -77,34 +77,36 @@ public abstract class IPageable {
     /**
      * Disable auto generate paged sql ({@link PageHelper#pagedSql(char, String)} and implement
      * custom count query manually.
+     * <p>
+     * It's necessary to overwrite the default page params [{@link PageHelper#START_NUM_KEY start},
+     * {@link PageHelper#END_NUM_KEY end}] for your custom param name in the sql.
+     * <p>
+     * The actually page SQL is in a sub or view query:
+     * <blockquote><pre>
+     *     with cte as (select * from table limit :length offset :index)
+     *     select * from cte
+     * </pre></blockquote>
+     * To overwrite it e.g:
+     * <blockquote><pre>
+     *     disableDefaultPageSql("&myQueryCount", "length", "index")
+     * </pre></blockquote>
+     * Two meaning of the params in the different page type:
      *
-     * @param countQuery count query, overwrite {@link #count(String)}
+     * <ul>
+     *     <li>{@link PageHelper#START_NUM_KEY start} number to {@link PageHelper#END_NUM_KEY end} number</li>
+     *     <li>{@link PageHelper#START_NUM_KEY left} number and {@link PageHelper#END_NUM_KEY right} number</li>
+     * </ul>
+     *
+     * @param countQuery  count query, overwrite {@link #count(String)}
+     * @param startNumKey the pageable param start number key name
+     * @param endNumKey   the pageable param end number key name
      * @return IPageable
      */
-    public IPageable disableDefaultPageSql(String countQuery) {
+    public IPageable disableDefaultPageSql(String countQuery, String startNumKey, String endNumKey) {
         this.disablePageSql = true;
         this.countQuery = countQuery;
-        return this;
-    }
-
-    /**
-     * Overwrite paged args: {@link PageHelper#pagedArgs()}<br>
-     * e.g. postgresql:
-     * <blockquote>
-     * <pre>
-     * args -&gt; {
-     *      args.updateKey({@link PageHelper#START_NUM_KEY START_NUM_KEY}, "my_limit");
-     *      args.updateKey({@link PageHelper#END_NUM_KEY END_NUM_KEY}, "my_offset");
-     *      return args;
-     * }
-     * </pre>
-     * </blockquote>
-     *
-     * @param func (old paged args) -&gt; (new paged args)
-     * @return IPageable
-     */
-    public IPageable rewriteDefaultPageArgs(Function<Args<Integer>, Args<Integer>> func) {
-        this.rewriteArgsFunc = func;
+        this.startNumKey = startNumKey;
+        this.endNumKey = endNumKey;
         return this;
     }
 
@@ -113,8 +115,6 @@ public abstract class IPageable {
      *
      * @param pageHelperProvider page helper provider
      * @return IPageable
-     * @see #disableDefaultPageSql(String)
-     * @see #rewriteDefaultPageArgs(Function)
      */
     public IPageable pageHelper(PageHelperProvider pageHelperProvider) {
         this.pageHelperProvider = pageHelperProvider;

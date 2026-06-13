@@ -78,22 +78,6 @@ public class MyTest {
     }
 
     @Test
-    public void pagerTest() throws Exception {
-        PagedResource<DataRow> res = baki.query("&data.custom_paged")
-                .pageable(1, 7)
-                .args(DataRow.of("id", 8))
-                .disableDefaultPageSql("select count(*) from test.region where id > :id")
-//                .pageHelper(new MysqlPageHelper(){
-//                    @Override
-//                    public String pagedSql(String sql) {
-//                        return super.pagedSql(sql);
-//                    }
-//                })
-                .collect(d -> d);
-        res.getData().forEach(System.out::println);
-    }
-
-    @Test
     public void line() throws Exception {
         DataRow row = baki.execute("do\n" +
                 "$$\n" +

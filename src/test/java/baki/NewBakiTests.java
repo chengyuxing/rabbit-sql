@@ -83,7 +83,7 @@ public class NewBakiTests {
     @Test
     public void testSimpleTable() {
         baki.table("test.guest")
-                .by("id" , "name")
+                .by("id", "name")
                 .update(
                         Arrays.asList(
                                 Args.of("name", "cyx", "address", "oooo", "id", 17),
@@ -441,12 +441,9 @@ public class NewBakiTests {
 
     @Test
     public void testPageTo() {
-        DataRow row = baki.query("select * from test.user")
+        DataRow row = baki.query("select * from test.guest limit :n offset :p")
                 .pageable(1, 4)
-                .rewriteDefaultPageArgs(a -> {
-                    a.updateKey("limit", "my_limit");
-                    return a;
-                })
+                .disableDefaultPageSql("select count(*) from test.guest", "n", "p")
                 .collect()
                 .to((pager, data) -> DataRow.of(
                         "length", pager.getRecordCount(),

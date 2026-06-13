@@ -102,11 +102,8 @@ public abstract class QueryExecutor {
      * <blockquote>
      * <pre>with a as (select ... limit 0 offset 5)<br>select * from a;</pre></blockquote>
      * <p>About custom page query config:</p>
-     * <ul>
-     * <li>custom count query: {@link IPageable#count(String) count(String)};</li>
-     * <li>disable auto generate paged sql: {@link IPageable#disableDefaultPageSql(String) disableDefaultPageSql(String)}, otherwise above example will append ({@code limit ... offset ...}) to the end;</li>
-     * <li>custom page args name: {@link IPageable#rewriteDefaultPageArgs(Function) rewriteDefaultPageArgs(Function)}.</li>
-     * </ul>
+     * <p>
+     * disable auto generate paged sql: {@link IPageable#disableDefaultPageSql(String, String, String) disableDefaultPageSql}, otherwise above example will append ({@code limit ... offset ...}) to the end;
      *
      * @param page current page
      * @param size page size

@@ -1021,12 +1021,12 @@ public class BakiDao extends JdbcSupport implements Baki {
 
             pageHelper.init(page, size, count);
 
-            Args<Integer> pagedArgs = pageHelper.pagedArgs();
-            args.putAll(rewriteArgsFunc == null ? pagedArgs : rewriteArgsFunc.apply(pagedArgs));
-
             String pageQuery;
+            Args<Integer> pagedArgs = pageHelper.pagedArgs();
             if (disablePageSql) {
                 pageQuery = myRecordQuery;
+                pagedArgs.updateKey(PageHelper.START_NUM_KEY, startNumKey);
+                pagedArgs.updateKey(PageHelper.END_NUM_KEY, endNumKey);
             } else {
                 if (isSqlRef) {
                     pageQuery = myRecordQuery + "^" + SQL_REF_MODIFIER_PAGE;
@@ -1035,6 +1035,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                     pageQuery = pageHelper.pagedSql(namedParamPrefix, myRecordQuery);
                 }
             }
+            args.putAll(pagedArgs);
             try (Stream<DataRow> s = executeQueryStream(pageQuery, args)) {
                 List<T> list = s.peek(d -> d.remove(PageHelper.ROW_NUM_KEY))
                         .map(mapper)

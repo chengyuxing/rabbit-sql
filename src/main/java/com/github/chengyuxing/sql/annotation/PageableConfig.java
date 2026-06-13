@@ -5,7 +5,6 @@ import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.plugins.PageHelperProvider;
 
 import java.lang.annotation.*;
-import java.util.function.Function;
 
 /**
  * IPageable configuration.<br>
@@ -20,9 +19,9 @@ public @interface PageableConfig {
      * Disable auto generate paged sql ({@link PageHelper#pagedSql(char, String)} and rewrite default page args.
      *
      * @return default page args [{@link PageHelper#START_NUM_KEY start}, {@link PageHelper#END_NUM_KEY end}]
-     * @see IPageable#rewriteDefaultPageArgs(Function) rewriteDefaultPageArgs
+     * @see IPageable#disableDefaultPageSql(String, String, String) disableDefaultPageSql
      */
-    String[] disableDefaultPageSql() default {};
+    String[] disableDefaultPageSql();
 
     /**
      * Set custom page helper provider for current page query.

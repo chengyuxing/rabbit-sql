@@ -47,6 +47,8 @@ import java.lang.annotation.*;
  *     {@link com.github.chengyuxing.common.DataRow DataRow}
  *     {@link IPageable IPageable}
  *     {@link com.github.chengyuxing.sql.PagedResource PagedResource}
+ *     {@link String}
+ *     {@link Boolean}
  *     {@link Integer}
  *     {@link Long}
  *     {@link Double}

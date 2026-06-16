@@ -181,6 +181,27 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
                 return s.map(dataRowMapping(genericType)).collect(Collectors.toSet());
             }
         }
+        if (returnType == String.class) {
+            return qe.findFirstRow().getString(0);
+        }
+        if (returnType == boolean.class || returnType == Boolean.class) {
+            Object first = qe.findFirstRow().getFirst(0);
+            if (first != null) {
+                if (first instanceof Boolean) {
+                    return first;
+                }
+                String sv = first.toString();
+                if (sv.equalsIgnoreCase("true") || sv.equalsIgnoreCase("false")) {
+                    return Boolean.parseBoolean(sv);
+                }
+                if (sv.equals("0")) {
+                    return false;
+                }
+                if (sv.equals("1")) {
+                    return true;
+                }
+            }
+        }
         if (returnType == int.class || returnType == Integer.class) {
             return qe.findFirstRow().getInt(0);
         }

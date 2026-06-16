@@ -88,7 +88,7 @@ public abstract class IPageable {
      * </pre></blockquote>
      * To overwrite it e.g:
      * <blockquote><pre>
-     *     disableDefaultPageSql("&myQueryCount", "length", "index")
+     *     disableDefaultPageSql("&amp;myQueryCount", "length", "index")
      * </pre></blockquote>
      * Two meaning of the params in the different page type:
      *

@@ -112,6 +112,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     public static final Pattern META_DATA_PATTERN = Pattern.compile("\\s*--\\s*@(?<name>[a-zA-Z]\\w+)\\s+(?<value>.+)\\s*");
     public static final String XQL_DESC_QUOTE = "@@@";
     public static final String YML = "xql-file-manager.yml";
+    public static final char MODIFIER_SIGN = '^';
     /**
      * Notice: function for normalizes the directive line by removing the leading '--' if present.
      */
@@ -595,11 +596,27 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @return the extracted modifier, or null if no modifier is found
      */
     public static @Nullable String extractModifier(@NotNull String sqlReference) {
-        int mIdx = sqlReference.lastIndexOf('^');
+        int mIdx = sqlReference.lastIndexOf(MODIFIER_SIGN);
         if (mIdx == -1) {
             return null;
         }
         return sqlReference.substring(mIdx + 1);
+    }
+
+    /**
+     * Add a modifier to the SQL reference ends.
+     * <p>
+     * The modifier is defined as the substring following the last occurrence of the caret (^) character, e.g. {@code user.queryAll^page}
+     *
+     * @param sqlReference the SQL reference string
+     * @param modifier     the modifier string
+     * @return the SQL reference with modifier
+     */
+    public static String addModifier(@NotNull String sqlReference, @NotNull String modifier) {
+        if (sqlReference.lastIndexOf(MODIFIER_SIGN) != -1) {
+            return sqlReference + "," + modifier;
+        }
+        return sqlReference + MODIFIER_SIGN + modifier;
     }
 
     /**
@@ -613,7 +630,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     public static @NotNull Pair<String, String> decodeSqlReference(@NotNull String sqlReference) {
         String ref = sqlReference;
-        int mIdx = ref.lastIndexOf('^');
+        int mIdx = ref.lastIndexOf(MODIFIER_SIGN);
         if (mIdx != -1) {
             ref = sqlReference.substring(0, mIdx);
         }

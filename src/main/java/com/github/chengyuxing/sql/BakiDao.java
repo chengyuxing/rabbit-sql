@@ -1002,7 +1002,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 String finalCountQuery = countQuery;
                 if (finalCountQuery == null) {
                     if (isSqlRef) {
-                        finalCountQuery = myRecordQuery + "^" + SQL_REF_MODIFIER_COUNT;
+                        finalCountQuery = XQLFileManager.addModifier(myRecordQuery, SQL_REF_MODIFIER_COUNT);
                         args.put(ARG_INTERNAL_PAGE_HELPER_KEY, pageHelper);
                     } else {
                         finalCountQuery = pageHelper.countSql(myRecordQuery);
@@ -1029,7 +1029,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 pagedArgs.updateKey(PageHelper.END_NUM_KEY, endNumKey);
             } else {
                 if (isSqlRef) {
-                    pageQuery = myRecordQuery + "^" + SQL_REF_MODIFIER_PAGE;
+                    pageQuery = XQLFileManager.addModifier(myRecordQuery, SQL_REF_MODIFIER_PAGE);
                     args.put(ARG_INTERNAL_PAGE_HELPER_KEY, pageHelper);
                 } else {
                     pageQuery = pageHelper.pagedSql(namedParamPrefix, myRecordQuery);

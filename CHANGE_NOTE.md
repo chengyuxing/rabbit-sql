@@ -1,5 +1,11 @@
 # change note
 
+# 10.3.8
+
+- `IPageable#disableDefaultPageSql` optimized
+- Remove method: `IPageable#rewriteDefaultPageArgs`
+- XQL Mapper interface method return type add support: `String`, `Boolean`
+
 # 10.3.7
 
 - Some optimized.

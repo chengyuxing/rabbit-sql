@@ -30,7 +30,7 @@ _java 8+_
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>10.3.7</version>
+    <version>10.3.8</version>
 </dependency>
 ```
 
@@ -131,7 +131,7 @@ public interface ExampleMapper {
 | `Map<String,Object>`                                   | query                                         |                       |
 | `PagedResource<DataRow/Map<String,Object>/<JavaBean>>` | query                                         | `@CountQuery`（可选） |
 | `IPageable`                                            | query                                         | `@CountQuery`（可选） |
-| `Long`, `Integer`, `Double`                            | query                                         |                       |
+| `Long`, `Integer`, `Double` ，`String` ，`Boolean`     | query                                         |                       |
 | `<JavaBean>`                                           | query                                         |                       |
 | `DataRow`                                              | query, procedure, function, plsql, ddl, unset |                       |
 | `int/Integer`                                          | insert, update, delete                        |                       |

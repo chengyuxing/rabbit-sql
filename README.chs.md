@@ -207,14 +207,13 @@ select * from t;
 ```java
 PagedResource<DataRow> res = baki.query("&data.custom_paged")
   		          .pageable(1, 7)
-                .count("select count(*) ... where id > :id")
-                .disableDefaultPageSql() //禁用默认生成的分页sql
+                .disableDefaultPageSql("select count(*) ... where id > :id", "limit", "offset")
                 .collect();
 ```
 
 > `disableDefaultPageSql()` 意味着不对 custom_paged 这条sql进行分页构建。
 >
-> **count** 查询语句也需要用户主动传入。 
+> **count** 查询语句也需要用户主动传入，并指定自定义的分页参数。 
 
 #### 调用存储过程/函数
 

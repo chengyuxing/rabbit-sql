@@ -205,14 +205,13 @@ select * from t;
 ```java
 PagedResource<DataRow> res = baki.query("&data.custom_paged")
   		          .pageable(1, 7)
-                .count("select count(*) ... where id > :id")
-                .disableDefaultPageSql()
+                .disableDefaultPageSql("select count(*) ... where id > :id", "limit", "offset")
                 .collect();
 ```
 
 > `disableDefaultPageSql()` will not wrap sql to generate paging statement of name custom_paged.
 >
-> **count** statement is required now.
+> **count** statement is required now, and specify the custom page params.
 
 #### Procedure
 

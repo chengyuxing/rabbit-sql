@@ -1,5 +1,9 @@
 # change note
 
+# 10.3.9
+
+ - Add new property `BakiDao#databaseInfoProvider`
+
 # 10.3.8
 
 - `IPageable#disableDefaultPageSql` optimized

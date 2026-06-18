@@ -19,7 +19,7 @@ public interface QueryCacheManager {
     /**
      * Get cache.
      *
-     * @param sql      sql name or sql string
+     * @param sql      SQL name or SQL string
      * @param args     the SQL args
      * @param provider the non-cached database query interface for supports the cache source.
      * @return streaming result

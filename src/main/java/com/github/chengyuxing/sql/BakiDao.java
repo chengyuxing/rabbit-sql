@@ -111,6 +111,10 @@ public class BakiDao extends JdbcSupport implements Baki {
      * Entity meta provider.
      */
     private EntityManager.EntityMetaProvider entityMetaProvider;
+    /**
+     * Database info provider
+     */
+    private DatabaseInfoProvider databaseInfoProvider;
 
     /**
      * Constructs a new BakiDao with initial datasource.
@@ -966,8 +970,19 @@ public class BakiDao extends JdbcSupport implements Baki {
         }
     }
 
+    /**
+     * Get the database info, if provider is null or returns null, the default initialization returns.
+     *
+     * @return current database info
+     */
     @Override
     public @NotNull DatabaseInfo databaseInfo() {
+        if (databaseInfoProvider != null) {
+            DatabaseInfo info = databaseInfoProvider.resolve(dataSource, () -> using(DatabaseInfo::of));
+            if (info != null) {
+                return info;
+            }
+        }
         return this.databaseInfo;
     }
 
@@ -1314,5 +1329,9 @@ public class BakiDao extends JdbcSupport implements Baki {
             this.entityMetaProvider = entityMetaProvider;
             this.entityManager.setEntityMetaProvider(entityMetaProvider);
         }
+    }
+
+    public void setDatabaseInfoProvider(DatabaseInfoProvider databaseInfoProvider) {
+        this.databaseInfoProvider = databaseInfoProvider;
     }
 }

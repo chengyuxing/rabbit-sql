@@ -17,6 +17,5 @@ public interface PageHelperProvider {
      * @param namedParamPrefix current named parameter prefix
      * @return PageHelper instance
      */
-    @Nullable PageHelper customPageHelper(@NotNull DatabaseInfo databaseInfo,
-                                          char namedParamPrefix);
+    @Nullable PageHelper customPageHelper(@NotNull DatabaseInfo databaseInfo, char namedParamPrefix);
 }

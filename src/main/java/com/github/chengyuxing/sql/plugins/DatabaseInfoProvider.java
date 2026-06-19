@@ -20,7 +20,7 @@ public interface DatabaseInfoProvider {
      * <blockquote><pre>
      *     if(dataSource instanceof DynamicDataSource){
      *         String key = DynamicDataSourceContextHolder.peek();
-     *         return INFO.computeIfAbsent(key, k -> supplier.get());
+     *         return INFO.computeIfAbsent(key, k -&gt; supplier.get());
      *     }
      * </pre></blockquote>
      * Warning: Do not close the datasource!

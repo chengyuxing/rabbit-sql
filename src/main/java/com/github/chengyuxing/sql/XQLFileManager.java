@@ -332,10 +332,10 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      *
      * @param alias    alias
      * @param filename SQL file name
-     * @param sqlName  sql fragment name
-     * @param sql      sql content
-     * @param desc     sql description
-     * @return sql object
+     * @param sqlName  SQL fragment name
+     * @param sql      SQL content
+     * @param desc     SQL description
+     * @return SQL object
      */
     protected @NotNull Sql scanSql(@NotNull String alias, @NotNull String filename, @NotNull String sqlName, @NotNull String sql, @NotNull String desc) {
         try {

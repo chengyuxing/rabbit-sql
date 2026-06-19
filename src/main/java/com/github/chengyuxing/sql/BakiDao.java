@@ -59,7 +59,6 @@ public class BakiDao extends JdbcSupport implements Baki {
     private DatabaseInfo databaseInfo;
     private SqlGenerator sqlGenerator;
     private EntityManager entityManager;
-    private AroundExecutor<Execution> sqlAroundExecutor;
     private char namedParamPrefix = XQLFileManager.DEFAULT_NAMED_PARAM_PREFIX;
 
     //---------optional properties------
@@ -106,7 +105,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     /**
      * Execution watchers.
      */
-    private ExecutionWatcher executionWatcher;
+    private AroundExecutor<Execution> executionWatcher;
     /**
      * Entity meta provider.
      */
@@ -132,15 +131,13 @@ public class BakiDao extends JdbcSupport implements Baki {
     protected void init() {
         this.sqlGenerator = new SqlGenerator(namedParamPrefix);
         this.entityManager = new EntityManager(namedParamPrefix);
-        this.sqlAroundExecutor = new AroundExecutor<Execution>() {
+        this.executionWatcher = new AroundExecutor<Execution>() {
             @Override
             protected void onStart(@NotNull Execution identifier) {
-                if (executionWatcher != null) executionWatcher.onStart(identifier);
             }
 
             @Override
             protected void onStop(@NotNull Execution identifier, @Nullable Object result, @Nullable Throwable throwable) {
-                if (executionWatcher != null) executionWatcher.onStop(identifier, result, throwable);
             }
         };
         this.statementValueHandler = (ps, index, value, metaData) -> JdbcUtils.setStatementValue(ps, index, value);
@@ -168,13 +165,13 @@ public class BakiDao extends JdbcSupport implements Baki {
 
     @Override
     public DataRow executeAny(@NotNull String sql, Map<String, ?> args) {
-        return this.sqlAroundExecutor.call(new Execution(SqlStatementType.unset, sql, args),
+        return this.executionWatcher.call(new Execution(SqlStatementType.unset, sql, args),
                 i -> super.executeAny(sql, args));
     }
 
     @Override
     public Stream<DataRow> executeQueryStream(@NotNull String sql, Map<String, ?> args) {
-        return this.sqlAroundExecutor.call(new Execution(SqlStatementType.query, sql, args),
+        return this.executionWatcher.call(new Execution(SqlStatementType.query, sql, args),
                 i -> {
                     if (queryCacheManager == null || !queryCacheManager.isAvailable(sql, args)) {
                         return super.executeQueryStream(sql, args);
@@ -186,7 +183,7 @@ public class BakiDao extends JdbcSupport implements Baki {
 
     @Override
     public int executeUpdate(@NotNull String sql, Map<String, ?> args) {
-        return this.sqlAroundExecutor.call(new Execution(SqlStatementType.dml, sql, args),
+        return this.executionWatcher.call(new Execution(SqlStatementType.dml, sql, args),
                 i -> super.executeUpdate(sql, args));
     }
 
@@ -195,19 +192,19 @@ public class BakiDao extends JdbcSupport implements Baki {
                                       @NotNull Iterable<T> args,
                                       @NotNull Function<T, ? extends Map<String, ?>> eachMapper,
                                       @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
-        return this.sqlAroundExecutor.call(new Execution(SqlStatementType.dml, sql, args),
+        return this.executionWatcher.call(new Execution(SqlStatementType.dml, sql, args),
                 i -> super.executeBatchUpdate(sql, args, eachMapper, batchSize));
     }
 
     @Override
     public DataRow executeCallStatement(@NotNull String procedure, Map<String, Param> args) {
-        return this.sqlAroundExecutor.call(new Execution(SqlStatementType.procedure, procedure, args),
+        return this.executionWatcher.call(new Execution(SqlStatementType.procedure, procedure, args),
                 i -> super.executeCallStatement(procedure, args));
     }
 
     @Override
     public int executeBatch(@NotNull Iterable<String> sqls, @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
-        return this.sqlAroundExecutor.call(new Execution(SqlStatementType.batch, String.join(";", sqls), null),
+        return this.executionWatcher.call(new Execution(SqlStatementType.batch, String.join(";", sqls), null),
                 i -> super.executeBatch(sqls, batchSize));
     }
 
@@ -1312,12 +1309,14 @@ public class BakiDao extends JdbcSupport implements Baki {
         this.queryCacheManager = queryCacheManager;
     }
 
-    public ExecutionWatcher getExecutionWatcher() {
-        return executionWatcher;
+    public void setExecutionWatcher(AroundExecutor<Execution> executionWatcher) {
+        if (executionWatcher != null) {
+            this.executionWatcher = executionWatcher;
+        }
     }
 
-    public void setExecutionWatcher(ExecutionWatcher executionWatcher) {
-        this.executionWatcher = executionWatcher;
+    public AroundExecutor<Execution> getExecutionWatcher() {
+        return executionWatcher;
     }
 
     public EntityManager.EntityMetaProvider getEntityMetaProvider() {

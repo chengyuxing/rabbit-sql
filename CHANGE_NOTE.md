@@ -3,6 +3,7 @@
 # 10.3.9
 
  - Add new property `BakiDao#databaseInfoProvider`
+ - `BakiDao#executionWatcher` optimized.
 
 # 10.3.8
 

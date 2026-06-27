@@ -800,6 +800,15 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     }
 
     /**
+     * Get SQL generator.
+     *
+     * @return SQL generator instance
+     */
+    public SqlGenerator getSqlGenerator() {
+        return sqlGenerator;
+    }
+
+    /**
      * Loading state.
      *
      * @return true if loading or false

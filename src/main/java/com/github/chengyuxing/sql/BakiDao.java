@@ -130,7 +130,7 @@ public class BakiDao extends JdbcSupport implements Baki {
      */
     protected void init() {
         this.sqlGenerator = new SqlGenerator(namedParamPrefix);
-        this.entityManager = new EntityManager(namedParamPrefix);
+        this.entityManager = new EntityManager(this.sqlGenerator);
         this.executionWatcher = new AroundExecutor<Execution>() {
             @Override
             protected void onStart(@NotNull Execution identifier) {
@@ -1238,8 +1238,8 @@ public class BakiDao extends JdbcSupport implements Baki {
         if (xqlFileManager != null) {
             this.xqlFileManager = xqlFileManager;
             this.namedParamPrefix = xqlFileManager.getNamedParamPrefix();
-            this.sqlGenerator = new SqlGenerator(this.namedParamPrefix);
-            this.entityManager = new EntityManager(this.namedParamPrefix);
+            this.sqlGenerator = xqlFileManager.getSqlGenerator();
+            this.entityManager = new EntityManager(xqlFileManager.getSqlGenerator());
             if (entityMetaProvider != null) {
                 this.entityManager.setEntityMetaProvider(entityMetaProvider);
             }

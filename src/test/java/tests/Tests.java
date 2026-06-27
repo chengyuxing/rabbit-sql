@@ -28,7 +28,7 @@ public class Tests {
         String dt = "2020-12-11";
         String tm = "23时12分55秒";
 
-        System.out.println(MostDateTime.toDate(ts));
+        System.out.println(MostDateTime.of(ts).toDate());
         System.out.println(MostDateTime.now().toString("yyyy-MM-dd"));
     }
 

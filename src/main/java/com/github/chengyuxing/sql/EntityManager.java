@@ -1,5 +1,6 @@
 package com.github.chengyuxing.sql;
 
+import com.github.chengyuxing.sql.util.SqlGenerator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
 
@@ -13,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class EntityManager implements AutoCloseable {
     /**
-     * Entity meta data parse provider.
+     * Entity metadata parse provider.
      */
     public interface EntityMetaProvider {
         /**
@@ -43,14 +44,11 @@ public class EntityManager implements AutoCloseable {
     }
 
     private final Map<Class<?>, EntityMeta> classInformation = new ConcurrentHashMap<>();
-    private final char namedParamPrefix;
+    private final SqlGenerator sqlGenerator;
     private EntityMetaProvider entityMetaProvider;
 
-    public EntityManager(char namedParamPrefix) {
-        if (namedParamPrefix == ' ') {
-            throw new IllegalArgumentException("Prefix char cannot be empty.");
-        }
-        this.namedParamPrefix = namedParamPrefix;
+    public EntityManager(SqlGenerator sqlGenerator) {
+        this.sqlGenerator = sqlGenerator;
     }
 
     public <T> EntityMeta getEntityMeta(@NotNull Class<T> clazz) {
@@ -82,8 +80,8 @@ public class EntityManager implements AutoCloseable {
         classInformation.clear();
     }
 
-    public char getNamedParamPrefix() {
-        return namedParamPrefix;
+    public SqlGenerator getSqlGenerator() {
+        return sqlGenerator;
     }
 
     public EntityMetaProvider getEntityMetaProvider() {
@@ -213,7 +211,7 @@ public class EntityManager implements AutoCloseable {
         }
 
         private String genIdCondition() {
-            return primaryKey + " = " + namedParamPrefix + primaryKey;
+            return primaryKey + " = " + sqlGenerator.getNamedParamPrefix() + primaryKey;
         }
 
         private String genSelect(Set<String> selectedColumns) {
@@ -239,31 +237,31 @@ public class EntityManager implements AutoCloseable {
 
         private String genInsert(Map<String, ColumnMeta> selectColumns) {
             if (selectColumns.isEmpty()) {
-                return "insert into " + tableName + " default values";
+                return sqlGenerator.generateInsertDefaultValues(tableName);
             }
             StringJoiner f = new StringJoiner(", ");
             StringJoiner h = new StringJoiner(", ");
             for (Map.Entry<String, ColumnMeta> entry : selectColumns.entrySet()) {
                 if (columns.containsKey(entry.getKey()) && entry.getValue().isInsertable()) {
                     f.add(entry.getKey());
-                    h.add(namedParamPrefix + entry.getKey());
+                    h.add(sqlGenerator.getNamedParamPrefix() + entry.getKey());
                 }
             }
-            return "insert into " + tableName + "(" + f + ") values (" + h + ")";
+            return sqlGenerator.generateInsert(tableName, f.toString(), h.toString());
         }
 
         private String genUpdateBy(Map<String, ColumnMeta> selectColumns) {
             StringJoiner sets = new StringJoiner(",\n\t");
             for (Map.Entry<String, ColumnMeta> entry : selectColumns.entrySet()) {
                 if (columns.containsKey(entry.getKey()) && !entry.getValue().isPrimaryKey() && entry.getValue().isUpdatable()) {
-                    sets.add(entry.getKey() + " = " + namedParamPrefix + entry.getKey());
+                    sets.add(entry.getKey() + " = " + sqlGenerator.getNamedParamPrefix() + entry.getKey());
                 }
             }
-            return "update " + tableName + "\nset " + sets + "\nwhere ";
+            return sqlGenerator.generateUpdateBy(tableName, sets.toString());
         }
 
         private String genDeleteBy() {
-            return "delete from " + tableName + " where ";
+            return sqlGenerator.generateDeleteBy(tableName);
         }
     }
 

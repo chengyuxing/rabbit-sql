@@ -52,7 +52,7 @@ public class NonBakiTests {
 
     @Test
     public void testEntityManager() {
-        EntityManager entityManager = new EntityManager(':');
+        EntityManager entityManager = new EntityManager(new SqlGenerator(':'));
         entityManager.setEntityMetaProvider(new MyEntityMetaParser());
         EntityManager.EntityMeta entityMeta = entityManager.getEntityMeta(User.class);
         System.out.println(entityMeta);

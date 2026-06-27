@@ -53,7 +53,7 @@ public class SqlGenerator {
         /**
          * Construct a new GeneratedSqlMetaData instance.
          *
-         * @param sourceSql           named parameter sql
+         * @param sourceSql           named parameter SQL
          * @param prepareSql          prepared SQL
          * @param argNameIndexMapping prepared SQL arg name index mapping
          * @param args                args
@@ -111,7 +111,7 @@ public class SqlGenerator {
      * <pre>select * from table where id = ?</pre>
      * </blockquote>
      *
-     * @param sql  named parameter sql
+     * @param sql  named parameter SQL
      * @param args data of named parameter
      * @return GeneratedSqlMetaData
      */
@@ -171,7 +171,7 @@ public class SqlGenerator {
      */
     public String generateNamedParamInsert(@NotNull final String tableName, @NotNull Collection<String> columns) {
         if (columns.isEmpty()) {
-            return "insert into " + tableName + " default values";
+            return generateInsertDefaultValues(tableName);
         }
         StringJoiner f = new StringJoiner(", ");
         StringJoiner h = new StringJoiner(", ");
@@ -180,7 +180,7 @@ public class SqlGenerator {
             f.add(column);
             h.add(namedParamPrefix + column);
         }
-        return "insert into " + tableName + "(" + f + ") values (" + h + ")";
+        return generateInsert(tableName, f.toString(), h.toString());
     }
 
     /**
@@ -196,7 +196,40 @@ public class SqlGenerator {
             SqlUtils.assertInvalidIdentifier(column);
             sb.add(column + " = " + namedParamPrefix + column);
         }
-        return "update " + tableName + "\nset " + sb + "\nwhere ";
+        return generateUpdateBy(tableName, sb.toString());
+    }
+
+    /**
+     * Generate insert default values statement.
+     *
+     * @param tableName table name
+     * @return insert default values statement
+     */
+    public String generateInsertDefaultValues(String tableName) {
+        return "insert into " + tableName + " default values";
+    }
+
+    /**
+     * Generate insert statement.
+     *
+     * @param tableName table name
+     * @param fields    fields statement
+     * @param values    values statement
+     * @return insert statement
+     */
+    public String generateInsert(String tableName, String fields, String values) {
+        return "insert into " + tableName + "(" + fields + ") values (" + values + ")";
+    }
+
+    /**
+     * Generate update by statement.
+     *
+     * @param tableName table name
+     * @param sets      sets statement
+     * @return update statement
+     */
+    public String generateUpdateBy(String tableName, String sets) {
+        return "update " + tableName + "\nset " + sets + "\nwhere ";
     }
 
     /**

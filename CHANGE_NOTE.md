@@ -1,5 +1,9 @@
 # change note
 
+# 10.3.10
+
+- Update rabbit-common
+
 # 10.3.9
 
  - Add new property `BakiDao#databaseInfoProvider`

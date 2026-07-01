@@ -106,9 +106,9 @@ public class JdbcUtils {
      * Get a result by index {@code 0} or by name: {@code result} .
      *
      * @param statement preparedStatement
-     * @param sql       executed sql
+     * @param sql       executed SQL
      * @return DataRow
-     * @throws SQLException sql exp
+     * @throws SQLException SQL exp
      */
     public static DataRow getResult(@NotNull PreparedStatement statement, @NotNull final String sql) throws SQLException {
         ResultSet resultSet = statement.getResultSet();
@@ -130,7 +130,7 @@ public class JdbcUtils {
      * raise notice 'my console.';</pre>
      * </blockquote>
      *
-     * @param sc sql statement object
+     * @param sc SQL statement object
      */
     public static void printSqlConsole(@NotNull Statement sc) {
         if (log.isWarnEnabled()) {

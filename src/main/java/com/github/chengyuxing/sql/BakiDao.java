@@ -14,7 +14,9 @@ import com.github.chengyuxing.sql.dsl.Update;
 import com.github.chengyuxing.sql.dsl.clause.OrderBy;
 import com.github.chengyuxing.sql.dsl.clause.Where;
 import com.github.chengyuxing.sql.dsl.clause.condition.Criteria;
+import com.github.chengyuxing.sql.dsl.types.Logic;
 import com.github.chengyuxing.sql.dsl.types.OrderByType;
+import com.github.chengyuxing.sql.dsl.types.StandardOperator;
 import com.github.chengyuxing.sql.page.IPageable;
 import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.impl.*;
@@ -306,10 +308,10 @@ public class BakiDao extends JdbcSupport implements Baki {
                 List<String> conditionalColumns = new ArrayList<>(Arrays.asList(moreColumns));
                 conditionalColumns.add(0, column);
 
-                StringJoiner sb = new StringJoiner(" and ");
+                StringJoiner sb = new StringJoiner(Logic.AND.padWithSpace());
                 for (String cc : conditionalColumns) {
                     SqlUtils.assertInvalidIdentifier(cc);
-                    sb.add(cc + " = " + namedParamPrefix + cc);
+                    sb.add(cc + StandardOperator.EQ.padWithSpace() + namedParamPrefix + cc);
                 }
                 String condition = sb.toString();
 
@@ -998,41 +1000,24 @@ public class BakiDao extends JdbcSupport implements Baki {
             super(recordQuery, page, size);
         }
 
-        @Override
-        public <T> PagedResource<T> collect(Function<DataRow, T> mapper) {
-            // fetch the page helper.
-            PageHelper pageHelper = null;
-            if (pageHelperProvider != null) {
-                pageHelper = pageHelperProvider.customPageHelper(databaseInfo(), namedParamPrefix);
-            }
-            if (pageHelper == null) {
-                pageHelper = builtinPager();
-            }
-            String myRecordQuery = recordQuery.trim();
-            boolean isSqlRef = myRecordQuery.startsWith("&");
-            if (count == null) {
-                String finalCountQuery = countQuery;
-                if (finalCountQuery == null) {
-                    if (isSqlRef) {
-                        finalCountQuery = XQLFileManager.addModifier(myRecordQuery, SQL_REF_MODIFIER_COUNT);
-                        args.put(ARG_INTERNAL_PAGE_HELPER_KEY, pageHelper);
-                    } else {
-                        finalCountQuery = pageHelper.countSql(myRecordQuery);
-                    }
-                }
-                try (Stream<DataRow> s = executeQueryStream(finalCountQuery, args)) {
-                    count = s.findFirst()
-                            .map(d -> d.getInt(0))
-                            .orElse(0);
+        private int executeCountQuery(boolean isSqlRef, String myRecordQuery, PageHelper pageHelper) {
+            String finalCountQuery = countQuery;
+            if (finalCountQuery == null) {
+                if (isSqlRef) {
+                    finalCountQuery = XQLFileManager.addModifier(myRecordQuery, SQL_REF_MODIFIER_COUNT);
+                    args.put(ARG_INTERNAL_PAGE_HELPER_KEY, pageHelper);
+                } else {
+                    finalCountQuery = pageHelper.countSql(myRecordQuery);
                 }
             }
-
-            if (count == 0) {
-                return PagedResource.empty(page, size);
+            try (Stream<DataRow> s = executeQueryStream(finalCountQuery, args)) {
+                return s.findFirst()
+                        .map(d -> d.getInt(0))
+                        .orElse(0);
             }
+        }
 
-            pageHelper.init(page, size, count);
-
+        private <T> List<T> executeRecordQuery(boolean isSqlRef, String myRecordQuery, PageHelper pageHelper, Function<DataRow, T> mapper) {
             String pageQuery;
             Args<Integer> pagedArgs = pageHelper.pagedArgs();
             if (disablePageSql) {
@@ -1049,11 +1034,33 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
             args.putAll(pagedArgs);
             try (Stream<DataRow> s = executeQueryStream(pageQuery, args)) {
-                List<T> list = s.peek(d -> d.remove(PageHelper.ROW_NUM_KEY))
+                return s.peek(d -> d.remove(PageHelper.ROW_NUM_KEY))
                         .map(mapper)
                         .collect(Collectors.toList());
-                return PagedResource.of(pageHelper, list);
             }
+        }
+
+        @Override
+        public <T> PagedResource<T> collect(Function<DataRow, T> mapper) {
+            // fetch the page helper.
+            PageHelper pageHelper = null;
+            if (pageHelperProvider != null) {
+                pageHelper = pageHelperProvider.customPageHelper(databaseInfo(), namedParamPrefix);
+            }
+            if (pageHelper == null) {
+                pageHelper = builtinPager();
+            }
+            String myRecordQuery = recordQuery.trim();
+            boolean isSqlRef = myRecordQuery.startsWith("&");
+            if (count == null) {
+                count = executeCountQuery(isSqlRef, myRecordQuery, pageHelper);
+            }
+            if (count == 0) {
+                return PagedResource.empty(page, size);
+            }
+            pageHelper.init(page, size, count);
+            List<T> list = executeRecordQuery(isSqlRef, myRecordQuery, pageHelper, mapper);
+            return PagedResource.of(pageHelper, list);
         }
     }
 

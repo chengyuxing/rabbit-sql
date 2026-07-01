@@ -83,7 +83,6 @@ public class XQLFileManagerConfig {
     public void loadProperties(FileResource propertiesLocation) {
         TypedProperties properties = new TypedProperties();
         try {
-            XQLFileManagerConfig config = new XQLFileManagerConfig();
             properties.load(propertiesLocation.getInputStream());
             Map<String, String> localFiles = new LinkedHashMap<>();
             Map<String, Object> localConstants = new HashMap<>();
@@ -101,13 +100,11 @@ public class XQLFileManagerConfig {
                     }
                 }
             });
-
-            config.setFiles(localFiles);
-            config.setConstants(localConstants);
-            config.setPipes(localPipes);
-            config.setCharset(properties.getProperty("charset"));
-            config.setNamedParamPrefix(properties.getProperty("namedParamPrefix", ":").charAt(0));
-            config.copyStateTo(this);
+            this.setFiles(localFiles);
+            this.setConstants(localConstants);
+            this.setPipes(localPipes);
+            this.setCharset(properties.getProperty("charset"));
+            this.setNamedParamPrefix(properties.getProperty("namedParamPrefix", ":").charAt(0));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

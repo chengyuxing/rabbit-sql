@@ -14,9 +14,7 @@ import com.github.chengyuxing.sql.dsl.Update;
 import com.github.chengyuxing.sql.dsl.clause.OrderBy;
 import com.github.chengyuxing.sql.dsl.clause.Where;
 import com.github.chengyuxing.sql.dsl.clause.condition.Criteria;
-import com.github.chengyuxing.sql.dsl.types.Logic;
 import com.github.chengyuxing.sql.dsl.types.OrderByType;
-import com.github.chengyuxing.sql.dsl.types.StandardOperator;
 import com.github.chengyuxing.sql.page.IPageable;
 import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.impl.*;
@@ -308,10 +306,10 @@ public class BakiDao extends JdbcSupport implements Baki {
                 List<String> conditionalColumns = new ArrayList<>(Arrays.asList(moreColumns));
                 conditionalColumns.add(0, column);
 
-                StringJoiner sb = new StringJoiner(Logic.AND.padWithSpace());
+                StringJoiner sb = new StringJoiner(" and ");
                 for (String cc : conditionalColumns) {
                     SqlUtils.assertInvalidIdentifier(cc);
-                    sb.add(cc + StandardOperator.EQ.padWithSpace() + namedParamPrefix + cc);
+                    sb.add(cc + " = " + namedParamPrefix + cc);
                 }
                 String condition = sb.toString();
 

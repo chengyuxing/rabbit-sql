@@ -104,7 +104,7 @@ public class XQLFileManagerConfig {
             this.setConstants(localConstants);
             this.setPipes(localPipes);
             this.setCharset(properties.getProperty("charset"));
-            this.setNamedParamPrefix(properties.getProperty("namedParamPrefix", ":").charAt(0));
+            this.setNamedParamPrefix(properties.getProperty("namedParamPrefix", String.valueOf(DEFAULT_NAMED_PARAM_PREFIX)).charAt(0));
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }

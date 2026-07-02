@@ -33,6 +33,7 @@ import java.nio.charset.Charset;
 import java.util.*;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -203,11 +204,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     public @NotNull Resource parseXql(@NotNull String alias, @NotNull String filename, @NotNull FileResource fileResource) throws IOException, URISyntaxException {
         Map<String, Sql> entry = new LinkedHashMap<>();
-        StringJoiner xqlFileDescriptionBuffer = new StringJoiner(NEW_LINE);
+        List<String> fileDescription = new ArrayList<>();
         try (BufferedReader reader = fileResource.getBufferedReader(Charset.forName(getCharset()))) {
             String line;
             String currentName = null;
-            boolean isMainStarted = false;
+            boolean isMainBegin = false;
             StringBuilder sqlBodyBuffer = new StringBuilder();
             StringBuilder sqlDescriptionBuffer = new StringBuilder();
             while ((line = reader.readLine()) != null) {
@@ -215,7 +216,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                 if (trimLine.isEmpty()) continue;
                 Matcher matcher = KEY_PATTERN.matcher(trimLine);
                 if (matcher.matches()) {
-                    isMainStarted = true;
+                    isMainBegin = true;
                     String sqlName = matcher.group("sqlName");
                     String partName = matcher.group("partName");
                     String name = sqlName != null ? sqlName : "${" + partName + "}";
@@ -228,69 +229,16 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     currentName = name;
                     continue;
                 }
-                if (trimLine.startsWith("/*")) {
-                    // /*#...#*/
-                    if (trimLine.startsWith("/*#")) {
-                        if (trimLine.endsWith("*/")) {
-                            String description = trimLine.substring(3, trimLine.length() - 2);
-                            if (description.endsWith("#")) {
-                                description = description.substring(0, description.length() - 1);
-                            }
-                            if (!StringUtils.isBlank(description)) {
-                                sqlDescriptionBuffer.append(description).append(NEW_LINE);
-                            }
-                            continue;
-                        }
-                        String descriptionStart = trimLine.substring(3);
-                        if (!StringUtils.isBlank(descriptionStart)) {
-                            sqlDescriptionBuffer.append(descriptionStart).append(NEW_LINE);
-                        }
-                        String descLine;
-                        while ((descLine = reader.readLine()) != null) {
-                            int endBlockIdx = StringUtils.lastIndexOfNonWhitespace(descLine, "*/");
-                            if (endBlockIdx != -1) {
-                                String descriptionEnd = descLine.substring(0, endBlockIdx);
-                                if (descriptionEnd.endsWith("#")) {
-                                    descriptionEnd = descriptionEnd.substring(0, descriptionEnd.length() - 1);
-                                }
-                                if (!StringUtils.isBlank(descriptionEnd)) {
-                                    sqlDescriptionBuffer.append(descriptionEnd).append(NEW_LINE);
-                                }
-                                break;
-                            }
-                            sqlDescriptionBuffer.append(descLine).append(NEW_LINE);
-                        }
-                        continue;
-                    }
-                    // @@@
-                    // ...
-                    // @@@
-                    if (!isMainStarted) {
-                        if (trimLine.endsWith("*/")) {
-                            continue;
-                        }
-                        String a;
-                        descBlock:
-                        while ((a = reader.readLine()) != null) {
-                            String ta = a.trim();
-                            if (ta.endsWith("*/")) {
-                                break;
-                            }
-                            if (ta.equals(XQL_DESC_QUOTE)) {
-                                String b;
-                                while ((b = reader.readLine()) != null) {
-                                    String tb = b.trim();
-                                    if (tb.equals(XQL_DESC_QUOTE)) {
-                                        break;
-                                    }
-                                    if (tb.endsWith("*/")) {
-                                        break descBlock;
-                                    }
-                                    xqlFileDescriptionBuffer.add(tb);
-                                }
-                            }
-                        }
-                    }
+                // add the file heading content or some comments until first sql name detected.
+                if (!isMainBegin) {
+                    fileDescription.add(trimLine);
+                    continue;
+                }
+                // /*#...#*/
+                boolean next = parseSqlObjectDescription(trimLine, reader, description ->
+                        sqlDescriptionBuffer.append(description).append(NEW_LINE));
+                if (next) {
+                    continue;
                 }
                 if (currentName != null) {
                     sqlBodyBuffer.append(line).append(NEW_LINE);
@@ -320,11 +268,84 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         if (!entry.isEmpty()) {
             mergeSqlTemplate(entry);
         }
+        String xqlDescription = parseXqlDescription(fileDescription);
+
         Resource resource = new Resource(filename);
         resource.setEntry(Collections.unmodifiableMap(entry));
         resource.setLastModified(fileResource.getLastModified());
-        resource.setDescription(xqlFileDescriptionBuffer.toString().trim());
+        resource.setDescription(xqlDescription);
         return resource;
+    }
+
+    /**
+     * parse xql file description.
+     *
+     * <blockquote><pre>
+     * {@code @@@}
+     * ...
+     * {@code @@@}
+     * </pre></blockquote>
+     *
+     * @param lines comment lines
+     * @return xql description
+     */
+    protected String parseXqlDescription(List<String> lines) {
+        int begin = lines.indexOf(XQL_DESC_QUOTE);
+        int end = lines.lastIndexOf(XQL_DESC_QUOTE);
+        if (begin >= 0 && begin < end) {
+            List<String> subLines = lines.subList(begin + 1, end);
+            return String.join(NEW_LINE, subLines);
+        }
+        return "";
+    }
+
+    /**
+     * Parse SQL object description.
+     *
+     * <blockquote><pre>
+     *     /*#...{@code #*}/
+     * </pre></blockquote>
+     *
+     * @param trimLine current trimmed line
+     * @param reader   current line reader
+     * @param consumer consume resolved description content
+     * @return parsed state, if {@code true} then completed
+     * @throws IOException if reader error
+     */
+    protected boolean parseSqlObjectDescription(String trimLine, BufferedReader reader, Consumer<String> consumer) throws IOException {
+        if (trimLine.startsWith("/*#")) {
+            if (trimLine.endsWith("*/")) {
+                String description = trimLine.substring(3, trimLine.length() - 2);
+                if (description.endsWith("#")) {
+                    description = description.substring(0, description.length() - 1);
+                }
+                if (!StringUtils.isBlank(description)) {
+                    consumer.accept(description);
+                }
+                return true;
+            }
+            String descriptionStart = trimLine.substring(3);
+            if (!StringUtils.isBlank(descriptionStart)) {
+                consumer.accept(descriptionStart);
+            }
+            String descLine;
+            while ((descLine = reader.readLine()) != null) {
+                int endBlockIdx = StringUtils.lastIndexOfNonWhitespace(descLine, "*/");
+                if (endBlockIdx != -1) {
+                    String descriptionEnd = descLine.substring(0, endBlockIdx);
+                    if (descriptionEnd.endsWith("#")) {
+                        descriptionEnd = descriptionEnd.substring(0, descriptionEnd.length() - 1);
+                    }
+                    if (!StringUtils.isBlank(descriptionEnd)) {
+                        consumer.accept(descriptionEnd);
+                    }
+                    break;
+                }
+                consumer.accept(descLine);
+            }
+            return true;
+        }
+        return false;
     }
 
     /**

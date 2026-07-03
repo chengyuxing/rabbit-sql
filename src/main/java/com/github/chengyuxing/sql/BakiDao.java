@@ -306,12 +306,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 List<String> conditionalColumns = new ArrayList<>(Arrays.asList(moreColumns));
                 conditionalColumns.add(0, column);
 
-                StringJoiner sb = new StringJoiner(" and ");
-                for (String cc : conditionalColumns) {
-                    SqlUtils.assertInvalidIdentifier(cc);
-                    sb.add(cc + " = " + namedParamPrefix + cc);
-                }
-                String condition = sb.toString();
+                final String condition = sqlGenerator.generateNamedEqualsCondition(conditionalColumns);
 
                 return new Conditional() {
                     Set<String> collectUpdateSetColumns(Map<String, ?> args) {
@@ -536,8 +531,8 @@ public class BakiDao extends JdbcSupport implements Baki {
                         args.put(IDENTIFIER, queryId);
                         if (!where.isEmpty()) {
                             Pair<String, Map<String, Object>> w = where.buildWhere();
-                            recordSelect += "\nwhere " + w.getItem1();
-                            countSelect += "\nwhere " + w.getItem1();
+                            recordSelect = sqlGenerator.appendWhere(recordSelect) + w.getItem1();
+                            countSelect = sqlGenerator.appendWhere(countSelect) + w.getItem1();
                             args.putAll(w.getItem2());
                         }
                         // order by

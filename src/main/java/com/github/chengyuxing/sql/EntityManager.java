@@ -1,5 +1,7 @@
 package com.github.chengyuxing.sql;
 
+import com.github.chengyuxing.common.PropertyMeta;
+import com.github.chengyuxing.common.util.ReflectUtils;
 import com.github.chengyuxing.sql.util.SqlGenerator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
@@ -60,8 +62,11 @@ public class EntityManager implements AutoCloseable {
     }
 
     private Map<String, ColumnMeta> checkColumns(Class<?> clazz) {
+        Map<String, PropertyMeta> props = ReflectUtils.getBeanPropertyMetas(clazz);
         Map<String, ColumnMeta> columns = new HashMap<>();
-        for (Field field : clazz.getDeclaredFields()) {
+        for (PropertyMeta pm : props.values()) {
+            if (!pm.hasField()) continue;
+            Field field = pm.getField();
             int modifiers = field.getModifiers();
             if (Modifier.isFinal(modifiers) || Modifier.isStatic(modifiers)) {
                 continue;
@@ -76,7 +81,7 @@ public class EntityManager implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         classInformation.clear();
     }
 
@@ -211,53 +216,48 @@ public class EntityManager implements AutoCloseable {
         }
 
         private String genIdCondition() {
-            return primaryKey + " = " + sqlGenerator.getNamedParamPrefix() + primaryKey;
+            return sqlGenerator.generateNamedEqualsCondition(primaryKey);
         }
 
         private String genSelect(Set<String> selectedColumns) {
-            String delimiter = columns.size() > 7 ? ",\n\t" : ", ";
-            String fields;
             if (selectedColumns.isEmpty()) {
-                fields = String.join(delimiter, columns.keySet());
-            } else {
-                StringJoiner sb = new StringJoiner(delimiter);
-                for (String sc : selectedColumns) {
-                    if (columns.containsKey(sc)) {
-                        sb.add(sc);
-                    }
-                }
-                fields = sb.toString();
+                return sqlGenerator.generateRecordSelect(tableName, columns.keySet());
             }
-            return "select " + fields + "\nfrom " + tableName;
+            List<String> scs = new ArrayList<>();
+            for (String sc : selectedColumns) {
+                if (columns.containsKey(sc)) {
+                    scs.add(sc);
+                } else {
+                    throw new IllegalStateException("Column " + sc + " not found");
+                }
+            }
+            return sqlGenerator.generateRecordSelect(tableName, scs);
         }
 
         private String genCountSelect() {
-            return "select count(*)\nfrom " + tableName;
+            return sqlGenerator.generateCountSelect(tableName);
         }
 
         private String genInsert(Map<String, ColumnMeta> selectColumns) {
-            if (selectColumns.isEmpty()) {
-                return sqlGenerator.generateInsertDefaultValues(tableName);
-            }
-            StringJoiner f = new StringJoiner(", ");
-            StringJoiner h = new StringJoiner(", ");
-            for (Map.Entry<String, ColumnMeta> entry : selectColumns.entrySet()) {
-                if (columns.containsKey(entry.getKey()) && entry.getValue().isInsertable()) {
-                    f.add(entry.getKey());
-                    h.add(sqlGenerator.getNamedParamPrefix() + entry.getKey());
+            List<String> ics = new ArrayList<>();
+            if (!selectColumns.isEmpty()) {
+                for (Map.Entry<String, ColumnMeta> entry : selectColumns.entrySet()) {
+                    if (columns.containsKey(entry.getKey()) && entry.getValue().isInsertable()) {
+                        ics.add(entry.getKey());
+                    }
                 }
             }
-            return sqlGenerator.generateInsert(tableName, f.toString(), h.toString());
+            return sqlGenerator.generateNamedParamInsert(tableName, ics);
         }
 
         private String genUpdateBy(Map<String, ColumnMeta> selectColumns) {
-            StringJoiner sets = new StringJoiner(",\n\t");
+            List<String> ucs = new ArrayList<>();
             for (Map.Entry<String, ColumnMeta> entry : selectColumns.entrySet()) {
                 if (columns.containsKey(entry.getKey()) && !entry.getValue().isPrimaryKey() && entry.getValue().isUpdatable()) {
-                    sets.add(entry.getKey() + " = " + sqlGenerator.getNamedParamPrefix() + entry.getKey());
+                    ucs.add(entry.getKey());
                 }
             }
-            return sqlGenerator.generateUpdateBy(tableName, sets.toString());
+            return sqlGenerator.generateNamedParamUpdateBy(tableName, ucs);
         }
 
         private String genDeleteBy() {

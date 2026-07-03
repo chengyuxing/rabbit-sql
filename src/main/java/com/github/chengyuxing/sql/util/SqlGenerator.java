@@ -171,7 +171,7 @@ public class SqlGenerator {
      */
     public String generateNamedParamInsert(@NotNull final String tableName, @NotNull Collection<String> columns) {
         if (columns.isEmpty()) {
-            return generateInsertDefaultValues(tableName);
+            return "insert into " + tableName + " default values";
         }
         StringJoiner f = new StringJoiner(", ");
         StringJoiner h = new StringJoiner(", ");
@@ -180,7 +180,7 @@ public class SqlGenerator {
             f.add(column);
             h.add(namedParamPrefix + column);
         }
-        return generateInsert(tableName, f.toString(), h.toString());
+        return "insert into " + tableName + "(" + f + ") values (" + h + ")";
     }
 
     /**
@@ -193,43 +193,65 @@ public class SqlGenerator {
     public String generateNamedParamUpdateBy(String tableName, Collection<String> columns) {
         StringJoiner sb = new StringJoiner(",\n\t");
         for (String column : columns) {
-            SqlUtils.assertInvalidIdentifier(column);
-            sb.add(column + " = " + namedParamPrefix + column);
+            sb.add(generateNamedEqualsCondition(column));
         }
-        return generateUpdateBy(tableName, sb.toString());
+        return appendWhere("update " + tableName + "\nset " + sb);
     }
 
     /**
-     * Generate insert default values statement.
+     * Generate record select statement.
      *
      * @param tableName table name
-     * @return insert default values statement
+     * @param columns   columns
+     * @return record select statement
      */
-    public String generateInsertDefaultValues(String tableName) {
-        return "insert into " + tableName + " default values";
+    public String generateRecordSelect(String tableName, Collection<String> columns) {
+        String delimiter = columns.size() > 7 ? ",\n\t" : ", ";
+        StringJoiner sb = new StringJoiner(delimiter);
+        if (columns.isEmpty()) {
+            sb.add("*");
+        } else {
+            for (String column : columns) {
+                SqlUtils.assertInvalidIdentifier(column);
+                sb.add(column);
+            }
+        }
+        return "select " + sb + "\nfrom " + tableName;
     }
 
     /**
-     * Generate insert statement.
+     * Generate named equals condition concat by {@code and} statement.
      *
-     * @param tableName table name
-     * @param fields    fields statement
-     * @param values    values statement
-     * @return insert statement
+     * @param columns columns
+     * @return named equals condition statement
      */
-    public String generateInsert(String tableName, String fields, String values) {
-        return "insert into " + tableName + "(" + fields + ") values (" + values + ")";
+    public String generateNamedEqualsCondition(List<String> columns) {
+        StringJoiner sb = new StringJoiner(" and ");
+        for (String c : columns) {
+            sb.add(generateNamedEqualsCondition(c));
+        }
+        return sb.toString();
     }
 
     /**
-     * Generate update by statement.
+     * Generate named equals condition statement.
+     *
+     * @param column column
+     * @return named equals condition statement
+     */
+    public String generateNamedEqualsCondition(String column) {
+        SqlUtils.assertInvalidIdentifier(column);
+        return column + " = " + namedParamPrefix + column;
+    }
+
+    /**
+     * Generate count select statement.
      *
      * @param tableName table name
-     * @param sets      sets statement
-     * @return update statement
+     * @return count select statement
      */
-    public String generateUpdateBy(String tableName, String sets) {
-        return "update " + tableName + "\nset " + sets + "\nwhere ";
+    public String generateCountSelect(String tableName) {
+        return "select count(*)\nfrom " + tableName;
     }
 
     /**
@@ -239,7 +261,7 @@ public class SqlGenerator {
      * @return delete by statement
      */
     public String generateDeleteBy(String tableName) {
-        return "delete from " + tableName + " where ";
+        return appendWhere("delete from " + tableName);
     }
 
     /**
@@ -249,7 +271,17 @@ public class SqlGenerator {
      * @return select columns statement
      */
     public String generateColumnsQueryStatement(String tableName) {
-        return "select * from " + tableName + " where 1 = 2";
+        return appendWhere("select * from " + tableName) + "1 = 2";
+    }
+
+    /**
+     * Append where keyword at the statement ends.
+     *
+     * @param statement main statement
+     * @return statement with where
+     */
+    public String appendWhere(String statement) {
+        return statement + "\nwhere ";
     }
 
     public Pattern getNamedParamPattern() {

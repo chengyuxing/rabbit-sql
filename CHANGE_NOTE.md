@@ -1,13 +1,21 @@
 # change note
 
+# 10.3.11
+
+- Page query optimized
+- XQL file parse optimized
+- SQL generator optimized
+- `EntityManager` generate SQL optimized.
+- `EntityManager` add support ID generate strategy `IDENTITY` for database auto generate
+
 # 10.3.10
 
 - Update rabbit-common
 
 # 10.3.9
 
- - Add new property `BakiDao#databaseInfoProvider`
- - `BakiDao#executionWatcher` optimized.
+- Add new property `BakiDao#databaseInfoProvider`
+- `BakiDao#executionWatcher` optimized.
 
 # 10.3.8
 

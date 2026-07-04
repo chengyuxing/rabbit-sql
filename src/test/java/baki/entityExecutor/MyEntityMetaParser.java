@@ -37,6 +37,12 @@ public class MyEntityMetaParser implements EntityManager.EntityMetaProvider {
             columnMeta.setUpdatable(column.updatable());
         }
         columnMeta.setPrimaryKey(field.isAnnotationPresent(Id.class));
+        if (field.isAnnotationPresent(GeneratedValue.class)) {
+            GeneratedValue generatedValue = field.getAnnotation(GeneratedValue.class);
+            if (generatedValue.strategy() == GenerationType.IDENTITY) {
+                columnMeta.setIdGenerateStrategy(EntityManager.IdGenerateStrategy.IDENTITY);
+            }
+        }
         columnMeta.setIgnore(field.isAnnotationPresent(Transient.class));
         return columnMeta;
     }

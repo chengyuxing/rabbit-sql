@@ -102,7 +102,7 @@ public class EntityManager implements AutoCloseable {
         private final Map<String, ColumnMeta> columns;
         private final Map<String, ColumnMeta> insertColumns;
         private final Map<String, ColumnMeta> updateColumns;
-        private final String primaryKey;
+        private final ColumnMeta primaryKey;
         private final String idCondition;
         private final String select;
         private final String countSelect;
@@ -126,7 +126,7 @@ public class EntityManager implements AutoCloseable {
             }
         }
 
-        public String getPrimaryKey() {
+        public ColumnMeta getPrimaryKey() {
             return primaryKey;
         }
 
@@ -186,10 +186,10 @@ public class EntityManager implements AutoCloseable {
             return genDeleteBy();
         }
 
-        private String checkPrimaryKey() {
+        private ColumnMeta checkPrimaryKey() {
             for (Map.Entry<String, ColumnMeta> entry : columns.entrySet()) {
                 if (entry.getValue().isPrimaryKey()) {
-                    return entry.getKey();
+                    return entry.getValue();
                 }
             }
             throw new IllegalStateException("Primary key not found");
@@ -198,8 +198,9 @@ public class EntityManager implements AutoCloseable {
         private Map<String, ColumnMeta> collectUpdateColumns() {
             Map<String, ColumnMeta> updateColumns = new HashMap<>();
             for (Map.Entry<String, ColumnMeta> entry : columns.entrySet()) {
-                if (!entry.getValue().isPrimaryKey() && entry.getValue().isUpdatable()) {
-                    updateColumns.put(entry.getKey(), entry.getValue());
+                ColumnMeta meta = entry.getValue();
+                if (!meta.isPrimaryKey() && meta.isUpdatable()) {
+                    updateColumns.put(entry.getKey(), meta);
                 }
             }
             return updateColumns;
@@ -208,30 +209,24 @@ public class EntityManager implements AutoCloseable {
         private Map<String, ColumnMeta> collectInsertColumns() {
             Map<String, ColumnMeta> insertColumns = new HashMap<>();
             for (Map.Entry<String, ColumnMeta> entry : columns.entrySet()) {
-                if (entry.getValue().isInsertable()) {
-                    insertColumns.put(entry.getKey(), entry.getValue());
+                ColumnMeta meta = entry.getValue();
+                if (meta.isInsertable() && meta.getIdGenerateStrategy() == IdGenerateStrategy.NONE) {
+                    insertColumns.put(entry.getKey(), meta);
                 }
             }
             return insertColumns;
         }
 
         private String genIdCondition() {
-            return sqlGenerator.generateNamedEqualsCondition(primaryKey);
+            return sqlGenerator.generateNamedEqualsCondition(primaryKey.getName());
         }
 
         private String genSelect(Set<String> selectedColumns) {
+            Set<String> eCols = columns.keySet();
             if (selectedColumns.isEmpty()) {
-                return sqlGenerator.generateRecordSelect(tableName, columns.keySet());
+                return sqlGenerator.generateRecordSelect(tableName, eCols, null);
             }
-            List<String> scs = new ArrayList<>();
-            for (String sc : selectedColumns) {
-                if (columns.containsKey(sc)) {
-                    scs.add(sc);
-                } else {
-                    throw new IllegalStateException("Column " + sc + " not found");
-                }
-            }
-            return sqlGenerator.generateRecordSelect(tableName, scs);
+            return sqlGenerator.generateRecordSelect(tableName, eCols, selectedColumns::contains);
         }
 
         private String genCountSelect() {
@@ -239,25 +234,17 @@ public class EntityManager implements AutoCloseable {
         }
 
         private String genInsert(Map<String, ColumnMeta> selectColumns) {
-            List<String> ics = new ArrayList<>();
-            if (!selectColumns.isEmpty()) {
-                for (Map.Entry<String, ColumnMeta> entry : selectColumns.entrySet()) {
-                    if (columns.containsKey(entry.getKey()) && entry.getValue().isInsertable()) {
-                        ics.add(entry.getKey());
-                    }
-                }
-            }
-            return sqlGenerator.generateNamedParamInsert(tableName, ics);
+            return sqlGenerator.generateNamedParamInsert(tableName, columns.keySet(), c -> {
+                ColumnMeta meta = selectColumns.get(c);
+                return meta != null && meta.isInsertable();
+            });
         }
 
         private String genUpdateBy(Map<String, ColumnMeta> selectColumns) {
-            List<String> ucs = new ArrayList<>();
-            for (Map.Entry<String, ColumnMeta> entry : selectColumns.entrySet()) {
-                if (columns.containsKey(entry.getKey()) && !entry.getValue().isPrimaryKey() && entry.getValue().isUpdatable()) {
-                    ucs.add(entry.getKey());
-                }
-            }
-            return sqlGenerator.generateNamedParamUpdateBy(tableName, ucs);
+            return sqlGenerator.generateNamedParamUpdateBy(tableName, columns.keySet(), c -> {
+                ColumnMeta meta = selectColumns.get(c);
+                return meta != null && !meta.isPrimaryKey() && meta.isUpdatable();
+            });
         }
 
         private String genDeleteBy() {
@@ -268,6 +255,7 @@ public class EntityManager implements AutoCloseable {
     public static class ColumnMeta {
         private String name;
         private boolean primaryKey = false;
+        private IdGenerateStrategy idGenerateStrategy = IdGenerateStrategy.NONE;
         private boolean insertable = true;
         private boolean updatable = true;
         private boolean ignore = false;
@@ -316,22 +304,44 @@ public class EntityManager implements AutoCloseable {
             this.ignore = ignore;
         }
 
+        public IdGenerateStrategy getIdGenerateStrategy() {
+            return idGenerateStrategy;
+        }
+
+        public void setIdGenerateStrategy(IdGenerateStrategy idGenerateStrategy) {
+            if (idGenerateStrategy != null) {
+                this.idGenerateStrategy = idGenerateStrategy;
+            }
+        }
+
         @Override
         public final boolean equals(Object o) {
             if (!(o instanceof ColumnMeta)) return false;
 
-            ColumnMeta that = (ColumnMeta) o;
-            return isPrimaryKey() == that.isPrimaryKey() && isInsertable() == that.isInsertable() && isUpdatable() == that.isUpdatable() && isIgnore() == that.isIgnore() && getName().equals(that.getName());
+            ColumnMeta meta = (ColumnMeta) o;
+            return isPrimaryKey() == meta.isPrimaryKey() && isInsertable() == meta.isInsertable() && isUpdatable() == meta.isUpdatable() && isIgnore() == meta.isIgnore() && getName().equals(meta.getName()) && getIdGenerateStrategy() == meta.getIdGenerateStrategy();
         }
 
         @Override
         public int hashCode() {
             int result = getName().hashCode();
             result = 31 * result + Boolean.hashCode(isPrimaryKey());
+            result = 31 * result + getIdGenerateStrategy().hashCode();
             result = 31 * result + Boolean.hashCode(isInsertable());
             result = 31 * result + Boolean.hashCode(isUpdatable());
             result = 31 * result + Boolean.hashCode(isIgnore());
             return result;
         }
+    }
+
+    public enum IdGenerateStrategy {
+        /**
+         * Generate by manual
+         */
+        NONE,
+        /**
+         * Generate by database auto increment or sequence
+         */
+        IDENTITY
     }
 }

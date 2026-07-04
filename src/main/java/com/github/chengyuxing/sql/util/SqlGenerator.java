@@ -3,9 +3,11 @@ package com.github.chengyuxing.sql.util;
 import com.github.chengyuxing.common.script.ast.impl.KeyExpressionParser;
 import com.github.chengyuxing.common.util.ValueUtils;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -139,7 +141,7 @@ public class SqlGenerator {
     /**
      * Generate normal SQL by named parameter SQL.
      *
-     * @param sql                 named parameter sql
+     * @param sql                 named parameter SQL
      * @param args                data of named parameter
      * @param namedParamFormatter named param string literal formatter
      * @return normal SQL
@@ -165,20 +167,27 @@ public class SqlGenerator {
     /**
      * Generate named parameter insert statement.
      *
-     * @param tableName table name
-     * @param columns   table columns
+     * @param tableName      table name
+     * @param columns        table columns
+     * @param columnSelector returns {@code true} reserved otherwise ignore
      * @return named parameter insert statement
      */
-    public String generateNamedParamInsert(@NotNull final String tableName, @NotNull Collection<String> columns) {
+    public String generateNamedParamInsert(@NotNull final String tableName, @NotNull Collection<String> columns, @Nullable Predicate<String> columnSelector) {
         if (columns.isEmpty()) {
             return "insert into " + tableName + " default values";
         }
         StringJoiner f = new StringJoiner(", ");
         StringJoiner h = new StringJoiner(", ");
         for (String column : columns) {
+            if (columnSelector != null && !columnSelector.test(column)) {
+                continue;
+            }
             SqlUtils.assertInvalidIdentifier(column);
             f.add(column);
             h.add(namedParamPrefix + column);
+        }
+        if (f.length() == 0) {
+            throw new IllegalArgumentException("No columns selected.");
         }
         return "insert into " + tableName + "(" + f + ") values (" + h + ")";
     }
@@ -186,14 +195,21 @@ public class SqlGenerator {
     /**
      * Generate named parameter update by statement.
      *
-     * @param tableName table name
-     * @param columns   table columns
+     * @param tableName      table name
+     * @param columns        table columns
+     * @param columnSelector returns {@code true} reserved otherwise ignore
      * @return update by statement
      */
-    public String generateNamedParamUpdateBy(String tableName, Collection<String> columns) {
+    public String generateNamedParamUpdateBy(String tableName, Collection<String> columns, @Nullable Predicate<String> columnSelector) {
         StringJoiner sb = new StringJoiner(",\n\t");
         for (String column : columns) {
+            if (columnSelector != null && !columnSelector.test(column)) {
+                continue;
+            }
             sb.add(generateNamedEqualsCondition(column));
+        }
+        if (sb.length() == 0) {
+            throw new IllegalArgumentException("No columns selected.");
         }
         return appendWhere("update " + tableName + "\nset " + sb);
     }
@@ -205,15 +221,21 @@ public class SqlGenerator {
      * @param columns   columns
      * @return record select statement
      */
-    public String generateRecordSelect(String tableName, Collection<String> columns) {
+    public String generateRecordSelect(String tableName, Collection<String> columns, @Nullable Predicate<String> columnSelector) {
         String delimiter = columns.size() > 7 ? ",\n\t" : ", ";
         StringJoiner sb = new StringJoiner(delimiter);
         if (columns.isEmpty()) {
             sb.add("*");
         } else {
             for (String column : columns) {
+                if (columnSelector != null && !columnSelector.test(column)) {
+                    continue;
+                }
                 SqlUtils.assertInvalidIdentifier(column);
                 sb.add(column);
+            }
+            if (sb.length() == 0) {
+                throw new IllegalArgumentException("No columns selected.");
             }
         }
         return "select " + sb + "\nfrom " + tableName;

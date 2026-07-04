@@ -719,7 +719,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     /**
      * Get all SQL resources.
      *
-     * @return unmodifiable sql resources
+     * @return unmodifiable SQL resources
      */
     public @NotNull @Unmodifiable Map<String, Resource> getResources() {
         return resources;
@@ -876,7 +876,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         public static final String GENERATED_VAR_KEY = "_var";
         public static final String GENERATED_VAR_PREFIX = GENERATED_VAR_KEY + ".";
         private final char namedParamPrefix = getNamedParamPrefix();
-        private final Pattern namedParamPattern = sqlGenerator.getNamedParamPattern();
 
         public DynamicSqlEvalContext(@NotNull Map<String, Object> args) {
             super(args);
@@ -887,8 +886,35 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             return pipeInstances;
         }
 
+        /**
+         * Generate the defined var unique name.
+         *
+         * @param varMeta var metadata
+         * @return unique var name
+         */
         private String genVarName(VarMeta varMeta) {
             return varMeta.getName() + "_" + varMeta.getId();
+        }
+
+        /**
+         * get the first dot index.
+         *
+         * @param keypath keypath e.g. {@code user.name} or {@code users[0]}
+         * @return original key ends index
+         */
+        private int getFirstDotIndex(String keypath) {
+            int idx = -1;
+            for (int i = 0; i < keypath.length(); i++) {
+                if (keypath.charAt(i) == '.') {
+                    idx = i;
+                    break;
+                }
+                if (keypath.charAt(i) == '[') {
+                    idx = i;
+                    break;
+                }
+            }
+            return idx;
         }
 
         /**
@@ -937,22 +963,12 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             Map<String, Object> usedVars = new HashMap<>();
             if (formatted.indexOf(namedParamPrefix) != -1) {
                 StringBuffer sb = new StringBuffer();
-                Matcher m = namedParamPattern.matcher(formatted);
+                Matcher m = sqlGenerator.getNamedParamPattern().matcher(formatted);
                 while (m.find()) {
                     String name = m.group(1);
                     String replacement = null;
                     if (name != null) {
-                        int idx = -1;
-                        for (int i = 0; i < name.length(); i++) {
-                            if (name.charAt(i) == '.') {
-                                idx = i;
-                                break;
-                            }
-                            if (name.charAt(i) == '[') {
-                                idx = i;
-                                break;
-                            }
-                        }
+                        int idx = getFirstDotIndex(name);
 
                         if (idx == -1 && scope.containsKey(name)) {
                             VarMeta varMeta = scope.get(name);

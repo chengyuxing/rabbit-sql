@@ -84,7 +84,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
 
         String sqlRef = "&" + XQLFileManager.encodeSqlReference(alias, sqlName);
 
-        TiFunction<Baki, Method, Object[], Object> func = baki.getSqlInvokeHandler().func(sqlType);
+        TiFunction<Baki, Method, Object[], Object> func = baki.getSqlInvokeHandler().invoke(sqlType);
         if (func != null) {
             return func.apply(baki, method, args);
         }

@@ -13,8 +13,8 @@ public interface SqlInvokeHandler {
     /**
      * Handle sql execution result.
      *
-     * @param type sql type
-     * @return sql invoke handler function object
+     * @param type SQL type
+     * @return SQL invoke handler function object
      */
-    @Nullable TiFunction<@NotNull Baki, @NotNull Method, @NotNull Object[], Object> func(SqlStatementType type);
+    @Nullable TiFunction<@NotNull Baki, @NotNull Method, @NotNull Object[], Object> invoke(SqlStatementType type);
 }

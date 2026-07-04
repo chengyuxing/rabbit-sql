@@ -1,5 +1,9 @@
 # change note
 
+# 10.3.12
+
+- Some optimized.
+
 # 10.3.11
 
 - Page query optimized

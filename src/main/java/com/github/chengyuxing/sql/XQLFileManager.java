@@ -6,6 +6,7 @@ import com.github.chengyuxing.common.script.ast.ScriptAst;
 import com.github.chengyuxing.common.script.ast.ScriptEngine;
 import com.github.chengyuxing.common.script.ast.impl.EvalContext;
 import com.github.chengyuxing.common.script.ast.impl.EvalResult;
+import com.github.chengyuxing.common.script.ast.impl.KeyExpressionParser;
 import com.github.chengyuxing.common.script.ast.impl.VarMeta;
 import com.github.chengyuxing.common.script.lang.Directives;
 import com.github.chengyuxing.common.script.exception.ScriptSyntaxException;
@@ -897,27 +898,6 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         }
 
         /**
-         * get the first dot index.
-         *
-         * @param keypath keypath e.g. {@code user.name} or {@code users[0]}
-         * @return original key ends index
-         */
-        private int getFirstDotIndex(String keypath) {
-            int idx = -1;
-            for (int i = 0; i < keypath.length(); i++) {
-                if (keypath.charAt(i) == '.') {
-                    idx = i;
-                    break;
-                }
-                if (keypath.charAt(i) == '[') {
-                    idx = i;
-                    break;
-                }
-            }
-            return idx;
-        }
-
-        /**
          * Format the plain text and collect the variables which used in  formatting, e.g.
          * <blockquote>
          * <pre>["CYX", "jack", "Mike"]</pre>
@@ -968,7 +948,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     String name = m.group(1);
                     String replacement = null;
                     if (name != null) {
-                        int idx = getFirstDotIndex(name);
+                        int idx = KeyExpressionParser.getFirstDotIndex(name);
 
                         if (idx == -1 && scope.containsKey(name)) {
                             VarMeta varMeta = scope.get(name);

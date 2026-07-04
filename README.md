@@ -8,6 +8,8 @@
 
 Language: English | [简体中文](https://github.com/chengyuxing/rabbit-sql/blob/master/README.chs.md)
 
+Official website: https://rabbit-sql.com
+
 ## Introducing
 
 Get [Best practice](https://github.com/chengyuxing/rabbit-sql/blob/master/BEST_PRACTICE.md) or [demo](https://github.com/chengyuxing/rabbit-sql-quickstart) to quick start.

@@ -8,6 +8,8 @@
 
 语言：[English](https://github.com/chengyuxing/rabbit-sql) | 简体中文
 
+官方网站：https://rabbit-sql.com
+
 ## 介绍
 
 查看[最佳实践](https://github.com/chengyuxing/rabbit-sql/blob/master/BEST_PRACTICE.chs.md)或者[demo](https://github.com/chengyuxing/rabbit-sql-quickstart)来快速开始。

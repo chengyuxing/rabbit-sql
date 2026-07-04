@@ -10,6 +10,7 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Predicate;
 
 /**
  * Entity manager.
@@ -223,10 +224,10 @@ public class EntityManager implements AutoCloseable {
 
         private String genSelect(Set<String> selectedColumns) {
             Set<String> eCols = columns.keySet();
-            if (selectedColumns.isEmpty()) {
-                return sqlGenerator.generateRecordSelect(tableName, eCols, null);
-            }
-            return sqlGenerator.generateRecordSelect(tableName, eCols, selectedColumns::contains);
+            Predicate<String> columnSelector = selectedColumns.isEmpty()
+                    ? null
+                    : selectedColumns::contains;
+            return sqlGenerator.generateRecordSelect(tableName, eCols, columnSelector);
         }
 
         private String genCountSelect() {

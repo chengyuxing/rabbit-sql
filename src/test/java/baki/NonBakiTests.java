@@ -10,6 +10,8 @@ import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.MostDateTime;
+import com.github.chengyuxing.common.PropertyMeta;
+import com.github.chengyuxing.common.util.ReflectUtils;
 import com.github.chengyuxing.common.util.ValueUtils;
 import com.github.chengyuxing.common.util.StringUtils;
 import com.github.chengyuxing.sql.*;
@@ -372,6 +374,10 @@ public class NonBakiTests {
         System.out.println(resourceMap);
 //        Pair<String, Map<String, Object>> pair = xqlFileManager.get("sys.queryUserByPassword", Args.of("username", "abc"));
 //        System.out.println(SqlUtil.repairSyntaxError(pair.getItem1()));
+    }
+
+    @Test
+    public void testX() {
     }
 
     @Test

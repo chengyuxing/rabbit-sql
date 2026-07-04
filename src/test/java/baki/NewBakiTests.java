@@ -149,6 +149,7 @@ public class NewBakiTests {
 
         baki.entity(Guest.class)
                 .insert()
+                .withNullValues()
                 .save(guest);
 
         baki.entity(Guest.class)

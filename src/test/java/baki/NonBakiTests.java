@@ -147,34 +147,56 @@ public class NonBakiTests {
         String sql = "/*[ooooooooo]*/\n" +
                 "select count(*),\n" +
                 "       count(*) filter ( where '--grade' > :g1 )               greate,--成绩\n" +
-                "            -- #if :databaseId != blank\n" +
+                "            -- #if :databaseId != 90\n" +
                 "        test.string_agg (id, ', ') /*filter ( where grade < :g2 and grade > :g3)*/ good,\n" +
                 "       -- #fi\n" +
                 "       count(*) filter /*( where grade < 60 )               bad\n" +
                 "from test.score where id::number = :id*/;";
 
-        SqlGenerator sqlGenerator = new SqlGenerator(':');
-        SqlGenerator.PreparedSqlMetaData pair = sqlGenerator.generatePreparedSql(sql, Collections.emptyMap());
-        System.out.println(pair.getSourceSql());
-        System.out.println(pair.getPrepareSql());
-
-        Matcher m = sqlGenerator.getNamedParamPattern().matcher(sql);
-        while (m.find()) {
-            for (int i = 1; i <= m.groupCount(); i++) {
-                System.out.println("Group " + i + ": " + m.group(i));
-            }
-        }
+//        SqlGenerator sqlGenerator = new SqlGenerator(':');
+//        SqlGenerator.PreparedSqlMetaData pair = sqlGenerator.generatePreparedSql(sql, Collections.emptyMap());
+//        System.out.println(pair.getSourceSql());
+//        System.out.println(pair.getPrepareSql());
+//
+//        Matcher m = sqlGenerator.getNamedParamPattern().matcher(sql);
+//        while (m.find()) {
+//            for (int i = 1; i <= m.groupCount(); i++) {
+//                System.out.println("Group " + i + ": " + m.group(i));
+//            }
+//        }
 
         String proc = "{call test.func1(:user.addresses[0].name)}";
 
-        String b = SqlHighlighter.ansi("select");
-        System.out.println(System.console());
+        String b = SqlHighlighter.ansi(sql);
         System.out.println(b);
 
         String c = SqlHighlighter.ansi(proc);
         System.out.println(c);
+    }
+    @Test
+    public void testHighlightSql() {
+        // language=sql
+        String sql = "-- @cache 30m\n" +
+                "-- @rules admin,guest\n" +
+                "-- #check :age > 30 throw '年龄不能大于30岁'\n" +
+                "-- #var id = 14\n" +
+                "-- #var users = 'a,xxx,c' | split(',')\n" +
+                "select * from test.guest where\n" +
+                "-- //TEMPLATE-BEGIN:myCnd\n" +
+                "id = :id \n" +
+                "and name in (\n" +
+                "    -- #for item of :users; last as isLast\n" +
+                "        -- #if !:isLast  \n" +
+                "        :item,\n" +
+                "        -- #else\n" +
+                "        :item\n" +
+                "        -- #fi\n" +
+                "    -- #done\n" +
+                "    )\n" +
+                "-- //TEMPLATE-END";
 
-        System.out.println(System.getenv("TERM"));
+        String a = SqlHighlighter.ansi(sql);
+        System.out.println(a);
     }
 
     static final String query = "select t.id || 'number' || 'age:age,name:cyx', '{\"name\":\"user\"}'::jsonb from test.user where id =:integer::integer and id >:idc or id < :idc and name=text :username.hobbies[0].name";

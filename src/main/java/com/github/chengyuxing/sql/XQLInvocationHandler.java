@@ -201,6 +201,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
                     return true;
                 }
             }
+            return returnType == Boolean.class ? null : false;
         }
         if (returnType == int.class || returnType == Integer.class) {
             return qe.findFirstRow().getInt(0);

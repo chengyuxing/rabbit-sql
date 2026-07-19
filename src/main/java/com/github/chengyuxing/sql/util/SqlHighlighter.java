@@ -3,14 +3,17 @@ package com.github.chengyuxing.sql.util;
 import com.github.chengyuxing.common.console.Style;
 import com.github.chengyuxing.common.console.Printer;
 import com.github.chengyuxing.common.script.ast.impl.KeyExpressionParser;
+import com.github.chengyuxing.common.script.lexer.RabbitScriptLexer;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.util.StringUtils;
 import com.github.chengyuxing.sql.Keywords;
+import com.github.chengyuxing.sql.XQLFileManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -19,32 +22,40 @@ import java.util.regex.Pattern;
  */
 public final class SqlHighlighter {
     private static final Logger log = LoggerFactory.getLogger(SqlHighlighter.class);
-    public static final Pattern STR_PATTERN = Pattern.compile("'(''|[^'])*'", Pattern.MULTILINE);
+    public static final Pattern QUOTE_PATTERN = Pattern.compile("'(''|[^'])*'|\"([^\"])*\"", Pattern.MULTILINE);
     public static final Pattern BLOCK_COMMENT_PATTERN = Pattern.compile("(/\\*.*?\\*/)", Pattern.DOTALL | Pattern.MULTILINE);
 
     public enum TAG {
-        FUNCTION,
-        KEYWORD,
-        NUMBER,
-        /**
-         * $$
-         * body
-         * $$
-         */
-        POSTGRESQL_FUNCTION_BODY_SYMBOL,
-        ASTERISK,
-        SINGLE_QUOTE_STRING,
-        LINE_COMMENT,
-        BLOCK_COMMENT,
-        NAMED_PARAMETER,
-        OTHER
+        FUNCTION("func_name("),
+        KEYWORD("sql statement keyword"),
+        NUMBER("1, 3.14"),
+        POSTGRESQL_FUNCTION_BODY_SYMBOL("$$"),
+        ASTERISK("*"),
+        QUOTE_STRING("'' or \"\""),
+        LINE_COMMENT("-- comment"),
+        BLOCK_COMMENT("/*  */"),
+        METADATA_DEFINE_COMMENT("-- @name value"),
+        RABBIT_SCRIPT_COMMENT("-- #if, --#for, ..."),
+        INLINE_TEMPLATE_COMMENT("--//TEMPLATE-BEGIN:name, --//TEMPLATE-END"),
+        NAMED_PARAMETER(":name, :user.id"),
+        OTHER("");
+
+        private final String description;
+
+        TAG(String description) {
+            this.description = description;
+        }
+
+        public String getDescription() {
+            return description;
+        }
     }
 
     /**
      * Build highlight sql for console if console is active.
      *
-     * @param sql sql string
-     * @return normal sql string or highlight sql string
+     * @param sql SQL string
+     * @return normal SQL string or highlight SQL string
      */
     public static String highlightIfAnsiCapable(String sql) {
         if (System.console() != null && System.getenv().get("TERM") != null) {
@@ -56,11 +67,11 @@ public final class SqlHighlighter {
     /**
      * Highlight sql string with ansi color.
      *
-     * @param sql sql string
-     * @return highlighted sql
+     * @param sql SQL string
+     * @return highlighted SQL
      */
     public static String ansi(String sql) {
-        return highlight(sql, (tag, content) -> {
+        return highlight(sql, Printer::removeStyle, (tag, content) -> {
             switch (tag) {
                 case FUNCTION:
                     return Printer.colorful(content, Style.BLUE);
@@ -69,14 +80,19 @@ public final class SqlHighlighter {
                 case NUMBER:
                     return Printer.colorful(content, Style.DARK_CYAN);
                 case POSTGRESQL_FUNCTION_BODY_SYMBOL:
-                case SINGLE_QUOTE_STRING:
-                    return Printer.colorful(content, Style.DARK_GREEN);
+                case QUOTE_STRING:
+                    if (content.startsWith("'")) {
+                        return Printer.colorful(content, Style.DARK_GREEN);
+                    }
+                    return Printer.colorful(content, Style.WHITE);
                 case ASTERISK:
                     return Printer.colorful(content, Style.YELLOW);
+                case METADATA_DEFINE_COMMENT:
+                case RABBIT_SCRIPT_COMMENT:
+                case INLINE_TEMPLATE_COMMENT:
                 case LINE_COMMENT:
-                    return Printer.colorful(content, Style.SILVER);
                 case BLOCK_COMMENT:
-                    return Printer.colorful(content.replaceAll("\033\\[\\d{2}m|\033\\[0m", ""), Style.SILVER);
+                    return Printer.colorful(content, Style.SILVER);
                 case NAMED_PARAMETER:
                     return Printer.colorful(content, Style.CYAN);
                 default:
@@ -86,13 +102,19 @@ public final class SqlHighlighter {
     }
 
     /**
-     * Custom highlight sql string.
+     * Custom highlight SQL string.
      *
-     * @param sql      sql string
-     * @param replacer colored content function: ({@link TAG tag}, content) -&gt; colored content
-     * @return highlighted sql
+     * @param sql          SQL string
+     * @param commentFixer after words handled, if line comment contains the chars which is not
+     *                     belongs the original comment, format and fix the comment for parsing extends:
+     *                     {@link TAG#LINE_COMMENT LINE_COMMENT}
+     *                     {@link TAG#METADATA_DEFINE_COMMENT METADATA_DEFINE_COMMENT}
+     *                     {@link TAG#INLINE_TEMPLATE_COMMENT INLINE_TEMPLATE_COMMENT}
+     *                     {@link TAG#RABBIT_SCRIPT_COMMENT RABBIT_SCRIPT_COMMENT}
+     * @param replacer     colored content function: ({@link TAG tag}, content) -&gt; colored content
+     * @return highlighted SQL
      */
-    public static String highlight(String sql, BiFunction<TAG, String, String> replacer) {
+    public static String highlight(String sql, Function<String, String> commentFixer, BiFunction<TAG, String, String> replacer) {
         try {
             Pair<String, Map<String, String>> r = escapeSubstring(sql);
             String rSql = r.getItem1();
@@ -135,16 +157,32 @@ public final class SqlHighlighter {
             // reinsert the sub string
             Map<String, String> subStr = r.getItem2();
             for (String key : subStr.keySet()) {
-                colorfulSql = colorfulSql.replace(key, replacer.apply(TAG.SINGLE_QUOTE_STRING, subStr.get(key)));
+                colorfulSql = colorfulSql.replace(key, replacer.apply(TAG.QUOTE_STRING, subStr.get(key)));
             }
             // resolve single comment
             String[] sqlLines = colorfulSql.split("\n");
             for (int i = 0; i < sqlLines.length; i++) {
-                String line = sqlLines[i];
+                String line = commentFixer.apply(sqlLines[i]);
                 int lineCmtIdx = findLineCommentIndex(line);
                 if (lineCmtIdx != -1) {
                     String head = line.substring(0, lineCmtIdx);
                     String tail = line.substring(lineCmtIdx);
+                    // @name value
+                    if (XQLFileManager.META_DATA_PATTERN.matcher(line).matches()) {
+                        sqlLines[i] = head + replacer.apply(TAG.METADATA_DEFINE_COMMENT, tail);
+                        continue;
+                    }
+                    // inline template
+                    if (XQLFileManager.INLINE_TEMPLATE_BEGIN_PATTERN.matcher(line).matches() ||
+                            XQLFileManager.INLINE_TEMPLATE_END_PATTERN.matcher(line).matches()) {
+                        sqlLines[i] = head + replacer.apply(TAG.INLINE_TEMPLATE_COMMENT, tail);
+                        continue;
+                    }
+                    // rabbit script
+                    if (RabbitScriptLexer.DIRECTIVES_PATTERN.matcher(tail.substring(2)).matches()) {
+                        sqlLines[i] = head + replacer.apply(TAG.RABBIT_SCRIPT_COMMENT, tail);
+                        continue;
+                    }
                     sqlLines[i] = head + replacer.apply(TAG.LINE_COMMENT, tail);
                 }
             }
@@ -242,17 +280,17 @@ public final class SqlHighlighter {
     }
 
     /**
-     * Escape sql substring (single quotes) to unique string holder and save the substring map.
+     * Escape SQL substring ({@code '} or {@code "}) to unique string holder and save the substring map.
      *
-     * @param sql sql string
-     * @return [sql string with unique string holder, substring map]
+     * @param sql SQL string
+     * @return [SQL string with unique string holder, substring map]
      */
     private static Pair<String, Map<String, String>> escapeSubstring(final String sql) {
         //noinspection UnnecessaryUnicodeEscape
-        if (!sql.contains("'")) {
+        if (!sql.contains("'") && !sql.contains("\"")) {
             return Pair.of(sql, Collections.emptyMap());
         }
-        Matcher m = STR_PATTERN.matcher(sql);
+        Matcher m = QUOTE_PATTERN.matcher(sql);
         Map<String, String> map = new HashMap<>();
         StringBuilder sb = new StringBuilder();
         int pos = 0;

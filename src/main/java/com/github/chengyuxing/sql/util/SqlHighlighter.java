@@ -24,6 +24,8 @@ public final class SqlHighlighter {
     private static final Logger log = LoggerFactory.getLogger(SqlHighlighter.class);
     public static final Pattern QUOTE_PATTERN = Pattern.compile("'(''|[^'])*'|\"([^\"])*\"", Pattern.MULTILINE);
     public static final Pattern BLOCK_COMMENT_PATTERN = Pattern.compile("(/\\*.*?\\*/)", Pattern.DOTALL | Pattern.MULTILINE);
+    @SuppressWarnings("UnnecessaryUnicodeEscape")
+    private static final String SUBSTR_KEY_PREFIX = "\u0c35";
 
     public enum TAG {
         FUNCTION("func_name("),
@@ -144,7 +146,7 @@ public final class SqlHighlighter {
                         // symbol '*' highlight
                     } else if (word.equals("*")) {
                         replacement = replacer.apply(TAG.ASTERISK, word);
-                    } else {
+                    } else if (!word.matches(SUBSTR_KEY_PREFIX + "\\d+")) {
                         replacement = replacer.apply(TAG.OTHER, word);
                     }
                 }
@@ -156,8 +158,8 @@ public final class SqlHighlighter {
             String colorfulSql = sb.toString();
             // reinsert the sub string
             Map<String, String> subStr = r.getItem2();
-            for (String key : subStr.keySet()) {
-                colorfulSql = colorfulSql.replace(key, replacer.apply(TAG.QUOTE_STRING, subStr.get(key)));
+            for (Map.Entry<String, String> e : subStr.entrySet()) {
+                colorfulSql = colorfulSql.replaceAll(e.getKey(), replacer.apply(TAG.QUOTE_STRING, e.getValue()));
             }
             // resolve single comment
             String[] sqlLines = colorfulSql.split("\n");
@@ -298,9 +300,9 @@ public final class SqlHighlighter {
             int start = m.start();
             int end = m.end();
             String str = m.group();
-            String holder = UUID.randomUUID().toString();
-            map.put(holder, str);
-            sb.append(sql, pos, start).append(holder);
+            String key = SUBSTR_KEY_PREFIX + start;
+            map.put(key, str);
+            sb.append(sql, pos, start).append(key);
             pos = end;
         }
         sb.append(sql, pos, sql.length());

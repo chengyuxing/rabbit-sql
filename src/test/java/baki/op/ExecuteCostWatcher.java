@@ -1,24 +1,24 @@
 package baki.op;
 
 import com.github.chengyuxing.common.AroundExecutor;
-import com.github.chengyuxing.sql.types.Execution;
+import com.github.chengyuxing.sql.types.ExecutionContext;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class ExecuteCostWatcher extends AroundExecutor<Execution> {
+public class ExecuteCostWatcher extends AroundExecutor<ExecutionContext> {
     private static final Logger log = LoggerFactory.getLogger(ExecuteCostWatcher.class);
 
     @Override
-    public void onStart(@NotNull Execution execution) {
-        execution.setState("startTime", System.currentTimeMillis());
+    public void before(@NotNull ExecutionContext context) {
+        context.setState("startTime", System.currentTimeMillis());
     }
 
     @Override
-    public void onStop(@NotNull Execution execution, @Nullable Object result, @Nullable Throwable throwable) {
-        long startTime = execution.getState("startTime");
+    public void after(@NotNull ExecutionContext context, @Nullable Throwable throwable) {
+        long startTime = context.getState("startTime");
         long cost = System.currentTimeMillis() - startTime;
-        log.info("{}: {}, SPENT: {} sec.", "SQL Watcher", execution.getSql(), cost / 1000.0);
+        log.info("{}: {}, SPENT: {} sec.", "SQL Watcher", context.getSql(), cost / 1000.0);
     }
 }

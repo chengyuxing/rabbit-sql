@@ -6,15 +6,16 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * SQL Execute data info holder.
+ * SQL Execute context.
  */
-public class Execution {
+public class ExecutionContext {
     private final SqlStatementType type;
     private final String sql;
     private final Object args;
+    private Object result;
     private final Map<String, Object> status = new HashMap<>();
 
-    public Execution(SqlStatementType type, String sql, Object args) {
+    public ExecutionContext(SqlStatementType type, String sql, Object args) {
         this.type = type;
         this.sql = sql;
         this.args = args;
@@ -30,6 +31,14 @@ public class Execution {
 
     public Object getArgs() {
         return args;
+    }
+
+    public Object getResult() {
+        return result;
+    }
+
+    public void setResult(Object result) {
+        this.result = result;
     }
 
     public void setState(String key, Object value) {

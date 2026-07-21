@@ -87,11 +87,10 @@ public class NonBakiTests {
 
         System.out.println("-----");
 //        System.out.println(new ObjectMapper().writeValueAsString(args));
-        System.out.println("00000");
-        System.out.println("00000");
-        System.out.println(xqlFileManager.get("for.query^count", args));
-        System.out.println(xqlFileManager.contains("for.query"));
-        System.out.println(xqlFileManager.getSqlObject("for.query^count"));
+//        System.out.println(xqlFileManager.get("for.queryGuests^count", args));
+        System.out.println(xqlFileManager.contains("for.queryGuests"));
+        System.out.println(xqlFileManager.getSqlObject("for.queryGuests^count"));
+        System.out.println(xqlFileManager.getSqlObject("for.queryGuests").getMetadata());
     }
 
     @Test

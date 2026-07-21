@@ -382,7 +382,12 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             Matcher m = META_DATA_PATTERN.matcher(line);
             if (m.find()) {
                 metadata.put(m.group("name"), m.group("value"));
-            } else {
+                continue;
+            }
+            if (StringUtils.isBlank(line)) {
+                continue;
+            }
+            if (SqlUtils.indexOfWholeLineComment(line) == -1) {
                 break;
             }
         }

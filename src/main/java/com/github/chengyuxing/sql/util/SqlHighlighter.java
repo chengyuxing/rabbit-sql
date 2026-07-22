@@ -3,6 +3,8 @@ package com.github.chengyuxing.sql.util;
 import com.github.chengyuxing.common.console.Style;
 import com.github.chengyuxing.common.console.Printer;
 import com.github.chengyuxing.common.script.ast.impl.KeyExpressionParser;
+import com.github.chengyuxing.common.script.lang.Constants;
+import com.github.chengyuxing.common.script.lang.TokenType;
 import com.github.chengyuxing.common.script.lexer.RabbitScriptLexer;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.util.StringUtils;
@@ -25,10 +27,10 @@ public final class SqlHighlighter {
     private static final Logger log = LoggerFactory.getLogger(SqlHighlighter.class);
     public static final Pattern QUOTE_PATTERN = Pattern.compile("'(''|[^'])*'|\"([^\"])*\"", Pattern.MULTILINE);
     public static final Pattern BLOCK_COMMENT_PATTERN = Pattern.compile("(/\\*.*?\\*/)", Pattern.DOTALL | Pattern.MULTILINE);
+    public static final Pattern METADATA_NAME_PATTERN = Pattern.compile("@[a-zA-Z]\\w+");
     @SuppressWarnings("UnnecessaryUnicodeEscape")
     private static final String SUBSTR_KEY_PREFIX = "\u0c35";
     private static final Pattern SPLITTER_PATTERN = Pattern.compile("([\\s,():;{}]+)");
-    private static final Pattern METADATA_VAR_PATTERN = Pattern.compile("@[a-zA-Z]\\w+");
 
     public enum TAG {
         FUNCTION("func_name("),
@@ -107,10 +109,13 @@ public final class SqlHighlighter {
                     if (StringUtils.equalsAnyIgnoreCase(content, RabbitScriptLexer.DIRECTIVES)) {
                         return Printer.colorful(content, Style.DARK_YELLOW);
                     }
-                    if (METADATA_VAR_PATTERN.matcher(content).matches()) {
+                    if (METADATA_NAME_PATTERN.matcher(content).matches()) {
                         return "@" + Printer.colorful(content.substring(1), Style.DEFAULT_FG);
                     }
-                    if (StringUtils.equalsAny(content, "null", "blank", "true", "false", "of", "throw", "as")) {
+                    if (StringUtils.equalsAny(content, Constants.NULL,
+                            Constants.BLANK, Constants.TRUE,
+                            Constants.FALSE, TokenType.FOR_OF.name(),
+                            TokenType.FOR_PROPERTY_AS.name(), TokenType.CHECK_THROW.name())) {
                         return Printer.colorful(content, Style.DARK_PURPLE);
                     }
                     return content;

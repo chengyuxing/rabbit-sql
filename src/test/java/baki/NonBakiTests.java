@@ -185,7 +185,7 @@ public class NonBakiTests {
                 "id = :id \n" +
                 "and name in (\n" +
                 "    -- #for item of :users; last as isLast\n" +
-                "        -- #if !:isLast  \n" +
+                "        -- #if !:isLast && :name != blank  \n" +
                 "        :item,\n" +
                 "        -- #else\n" +
                 "        :item\n" +

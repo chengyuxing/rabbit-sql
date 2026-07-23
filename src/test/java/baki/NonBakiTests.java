@@ -10,8 +10,6 @@ import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.MostDateTime;
-import com.github.chengyuxing.common.PropertyMeta;
-import com.github.chengyuxing.common.util.ReflectUtils;
 import com.github.chengyuxing.common.util.ValueUtils;
 import com.github.chengyuxing.common.util.StringUtils;
 import com.github.chengyuxing.sql.*;
@@ -37,7 +35,6 @@ import java.nio.file.Paths;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
-import java.util.regex.Matcher;
 
 public class NonBakiTests {
 
@@ -172,6 +169,7 @@ public class NonBakiTests {
         String c = SqlHighlighter.ansi(proc);
         System.out.println(c);
     }
+
     @Test
     public void testHighlightSql() {
         // language=sql
@@ -180,7 +178,7 @@ public class NonBakiTests {
                 "-- #check :age > 30 throw '年龄不能大于30岁'\n" +
                 "-- #var id = 14\n" +
                 "-- #var users = 'a,xxx,c' | split(',')\n" +
-                "select * from test.guest where\n" +
+                "select * from ${table} where\n" +
                 "-- //TEMPLATE-BEGIN:myCnd\n" +
                 "id = :id \n" +
                 "and name in (\n" +

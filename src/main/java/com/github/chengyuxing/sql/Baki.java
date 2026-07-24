@@ -4,6 +4,7 @@ import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.plugins.EntityExecutor;
 import com.github.chengyuxing.sql.plugins.QueryExecutor;
 import com.github.chengyuxing.sql.plugins.SimpleDMLExecutor;
+import com.github.chengyuxing.sql.support.BatchResult;
 import com.github.chengyuxing.sql.types.DatabaseInfo;
 import com.github.chengyuxing.sql.types.Param;
 import org.jetbrains.annotations.NotNull;
@@ -44,100 +45,6 @@ public interface Baki {
     @NotNull QueryExecutor query(@NotNull String sql);
 
     /**
-     * Inserts a single row into the database using the provided SQL statement and data.
-     *
-     * @param sql  The SQL insert statement.
-     * @param data The data to be inserted, represented as a map of column names to values.
-     * @return The number of rows affected by the insert operation.
-     */
-    int insert(@NotNull String sql, @NotNull Map<String, ?> data);
-
-    /**
-     * Inserts multiple rows into the database using the provided SQL statement and data.
-     *
-     * @param sql  The SQL insert statement.
-     * @param data The data to be inserted, represented as an iterable collection of maps,
-     *             where each map represents a row of data.
-     * @return The number of rows affected by the insert operation.
-     */
-    int insert(@NotNull String sql, @NotNull Iterable<? extends Map<String, ?>> data);
-
-    /**
-     * Inserts multiple rows into the database using the provided SQL statement and data.
-     *
-     * @param sql       The SQL insert statement.
-     * @param data      The data to be inserted, represented as an iterable collection of objects.
-     * @param argMapper A function that maps each object to a map of column names to values.
-     * @param <T>       The type of the objects in the data collection.
-     * @return The number of rows affected by the insert operation.
-     */
-    <T> int insert(@NotNull String sql, @NotNull Iterable<T> data, @NotNull Function<T, ? extends Map<String, ?>> argMapper);
-
-    /**
-     * Updates the database using the provided SQL statement and arguments.
-     *
-     * @param sql  The SQL update statement.
-     * @param args The arguments to be used in the update statement, represented as a map
-     *             of parameter names to values.
-     * @return The number of rows affected by the update operation.
-     */
-    int update(@NotNull String sql, Map<String, ?> args);
-
-    /**
-     * Updates the database using the provided SQL statement and arguments.
-     *
-     * @param sql  The SQL update statement.
-     * @param args The arguments to be used in the update statement, represented as an
-     *             iterable collection of maps, where each map represents a set of arguments.
-     * @return The number of rows affected by the update operation.
-     */
-    int update(@NotNull String sql, @NotNull Iterable<? extends Map<String, ?>> args);
-
-    /**
-     * Updates the database using the provided SQL statement and arguments.
-     *
-     * @param sql       The SQL update statement.
-     * @param args      The arguments to be used in the update statement, represented as an
-     *                  iterable collection of objects.
-     * @param argMapper A function that maps each object to a map of parameter names to values.
-     * @param <T>       The type of the objects in the data collection.
-     * @return The number of rows affected by the update operation.
-     */
-    <T> int update(@NotNull String sql, @NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper);
-
-    /**
-     * Deletes rows from the database using the provided SQL statement and arguments.
-     *
-     * @param sql  The SQL delete statement.
-     * @param args The arguments to be used in the delete statement, represented as a map
-     *             of parameter names to values.
-     * @return The number of rows affected by the delete operation.
-     */
-    int delete(@NotNull String sql, Map<String, ?> args);
-
-    /**
-     * Deletes rows from the database using the provided SQL statement and arguments.
-     *
-     * @param sql  The SQL delete statement.
-     * @param args The arguments to be used in the delete statement, represented as an
-     *             iterable collection of maps, where each map represents a set of arguments.
-     * @return The number of rows affected by the delete operation.
-     */
-    int delete(@NotNull String sql, @NotNull Iterable<? extends Map<String, ?>> args);
-
-    /**
-     * Deletes rows from the database using the provided SQL statement and arguments.
-     *
-     * @param sql       The SQL delete statement.
-     * @param args      The arguments to be used in the delete statement, represented as an
-     *                  iterable collection of objects.
-     * @param argMapper A function that maps each object to a map of parameter names to values.
-     * @param <T>       The type of the objects in the data collection.
-     * @return The number of rows affected by the delete operation.
-     */
-    <T> int delete(@NotNull String sql, @NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper);
-
-    /**
      * Executes a stored procedure or function.
      *
      * @param procedure The name of the stored procedure or function.
@@ -164,7 +71,7 @@ public interface Baki {
      *             iterable collection of maps, where each map represents a set of arguments.
      * @return The number of rows affected by the execution.
      */
-    int execute(@NotNull String sql, @NotNull Iterable<? extends Map<String, ?>> args);
+    BatchResult execute(@NotNull String sql, @NotNull Iterable<? extends Map<String, ?>> args);
 
     /**
      * Executes a batch of prepared DML statements.
@@ -176,7 +83,7 @@ public interface Baki {
      * @param <T>       The type of the objects in the data collection.
      * @return The number of rows affected by the execution.
      */
-    <T> int execute(@NotNull String sql, @NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper);
+    <T> BatchResult execute(@NotNull String sql, @NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper);
 
     /**
      * Executes a batch of non-prepared SQL statements (DML or DDL).
@@ -185,7 +92,7 @@ public interface Baki {
      *                of strings.
      * @return The number of rows affected by the execution.
      */
-    int execute(@NotNull Iterable<String> sqlList);
+    BatchResult execute(@NotNull Iterable<String> sqlList);
 
     /**
      * Creates a new simple DML executor for the specified table.

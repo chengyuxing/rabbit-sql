@@ -921,51 +921,6 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public int insert(@NotNull String sql, @NotNull Map<String, ?> data) {
-        return executeUpdate(sql, data);
-    }
-
-    @Override
-    public int insert(@NotNull String sql, @NotNull Iterable<? extends Map<String, ?>> data) {
-        return executeBatchUpdate(sql, data, Function.identity(), batchSize);
-    }
-
-    @Override
-    public <T> int insert(@NotNull String sql, @NotNull Iterable<T> data, @NotNull Function<T, ? extends Map<String, ?>> argMapper) {
-        return executeBatchUpdate(sql, data, argMapper, batchSize);
-    }
-
-    @Override
-    public int update(@NotNull String sql, Map<String, ?> args) {
-        return executeUpdate(sql, args);
-    }
-
-    @Override
-    public int update(@NotNull String sql, @NotNull Iterable<? extends Map<String, ?>> args) {
-        return executeBatchUpdate(sql, args, Function.identity(), batchSize);
-    }
-
-    @Override
-    public <T> int update(@NotNull String sql, @NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper) {
-        return executeBatchUpdate(sql, args, argMapper, batchSize);
-    }
-
-    @Override
-    public int delete(@NotNull String sql, Map<String, ?> args) {
-        return executeUpdate(sql, args);
-    }
-
-    @Override
-    public int delete(@NotNull String sql, @NotNull Iterable<? extends Map<String, ?>> args) {
-        return executeBatchUpdate(sql, args, Function.identity(), batchSize);
-    }
-
-    @Override
-    public <T> int delete(@NotNull String sql, @NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper) {
-        return executeBatchUpdate(sql, args, argMapper, batchSize);
-    }
-
-    @Override
     public @NotNull DataRow call(@NotNull String procedure, Map<String, Param> params) {
         return executeCallStatement(procedure, params);
     }

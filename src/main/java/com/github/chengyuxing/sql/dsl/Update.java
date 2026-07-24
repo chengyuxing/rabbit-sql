@@ -2,6 +2,7 @@ package com.github.chengyuxing.sql.dsl;
 
 import com.github.chengyuxing.common.MethodReference;
 import com.github.chengyuxing.sql.dsl.clause.Where;
+import com.github.chengyuxing.sql.support.BatchResult;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Function;
@@ -47,7 +48,7 @@ public interface Update<T> {
      * @return affected row count
      * @see #withNullValues()
      */
-    int save(@NotNull Iterable<T> entities);
+    BatchResult save(@NotNull Iterable<T> entities);
 
     /**
      * Update the specified columns by condition.

@@ -38,6 +38,7 @@ import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 /**
@@ -196,13 +197,13 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public <T> int executeBatchUpdate(@NotNull String sql,
-                                      @NotNull Iterable<T> args,
-                                      @NotNull Function<T, ? extends Map<String, ?>> eachMapper,
-                                      @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
+    public <T> BatchResult executeBatchUpdate(@NotNull String sql,
+                                              @NotNull Iterable<T> args,
+                                              @NotNull Function<T, ? extends Map<String, ?>> eachMapper,
+                                              @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
         return this.executionWatcher.call(new ExecutionContext(SqlStatementType.dml, sql, args),
                 context -> {
-                    int result = super.executeBatchUpdate(sql, args, eachMapper, batchSize);
+                    BatchResult result = super.executeBatchUpdate(sql, args, eachMapper, batchSize);
                     context.setResult(result);
                     return result;
                 });
@@ -219,10 +220,10 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public int executeBatch(@NotNull Iterable<String> sqls, @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
+    public BatchResult executeBatch(@NotNull Iterable<String> sqls, @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
         return this.executionWatcher.call(new ExecutionContext(SqlStatementType.batch, String.join(";", sqls), null),
                 context -> {
-                    int result = super.executeBatch(sqls, batchSize);
+                    BatchResult result = super.executeBatch(sqls, batchSize);
                     context.setResult(result);
                     return result;
                 });
@@ -350,26 +351,26 @@ public class BakiDao extends JdbcSupport implements Baki {
                     }
 
                     @Override
-                    public int update(@NotNull Iterable<? extends Map<String, ?>> args) {
+                    public BatchResult update(@NotNull Iterable<? extends Map<String, ?>> args) {
                         return update(args, Function.identity());
                     }
 
                     @Override
-                    public <T> int update(@NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper) {
+                    public <T> BatchResult update(@NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper) {
                         if (enableBatch) {
                             Map<String, ?> first = argMapper.apply(args.iterator().next());
                             Set<String> columns = collectUpdateSetColumns(first);
                             if (columns.isEmpty()) {
-                                return 0;
+                                return new BatchResult(new int[0]);
                             }
                             String update = sqlGenerator.generateNamedParamUpdateBy(finalName, columns, null) + condition;
                             return executeBatchUpdate(update, args, argMapper, batchSize);
                         }
-                        int n = 0;
+                        IntStream.Builder builder = IntStream.builder();
                         for (T arg : args) {
-                            n += update(argMapper.apply(arg));
+                            builder.add(update(argMapper.apply(arg)));
                         }
-                        return n;
+                        return new BatchResult(builder.build().toArray());
                     }
 
                     @Override
@@ -379,12 +380,12 @@ public class BakiDao extends JdbcSupport implements Baki {
                     }
 
                     @Override
-                    public int delete(@NotNull Iterable<? extends Map<String, ?>> args) {
+                    public BatchResult delete(@NotNull Iterable<? extends Map<String, ?>> args) {
                         return delete(args, Function.identity());
                     }
 
                     @Override
-                    public <T> int delete(@NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper) {
+                    public <T> BatchResult delete(@NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper) {
                         String delete = sqlGenerator.generateDeleteBy(finalName) + condition;
                         return executeBatchUpdate(delete, args, argMapper, batchSize);
                     }
@@ -404,22 +405,22 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
 
             @Override
-            public int insert(@NotNull Iterable<? extends Map<String, ?>> data) {
+            public BatchResult insert(@NotNull Iterable<? extends Map<String, ?>> data) {
                 return insert(data, Function.identity());
             }
 
             @Override
-            public <T> int insert(@NotNull Iterable<T> data, @NotNull Function<T, ? extends Map<String, ?>> argMapper) {
+            public <T> BatchResult insert(@NotNull Iterable<T> data, @NotNull Function<T, ? extends Map<String, ?>> argMapper) {
                 if (enableBatch) {
                     Map<String, ?> first = argMapper.apply(data.iterator().next());
                     String insert = sqlGenerator.generateNamedParamInsert(finalName, first.keySet(), null);
                     return executeBatchUpdate(insert, data, argMapper, batchSize);
                 }
-                int n = 0;
+                IntStream.Builder builder = IntStream.builder();
                 for (T arg : data) {
-                    n += insert(argMapper.apply(arg));
+                    builder.add(insert(argMapper.apply(arg)));
                 }
-                return n;
+                return new BatchResult(builder.build().toArray());
             }
 
             @Override
@@ -713,7 +714,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                     }
 
                     @Override
-                    public int save(Iterable<T> entities) {
+                    public BatchResult save(Iterable<T> entities) {
                         if (withNullValues) {
                             return executeBatchUpdate(entityMeta.getInsert(),
                                     entities,
@@ -724,12 +725,12 @@ public class BakiDao extends JdbcSupport implements Baki {
                                     },
                                     batchSize);
                         }
-                        int n = 0;
+                        IntStream.Builder builder = IntStream.builder();
                         for (T e : entities) {
                             Args<Object> args = Args.ofEntity(e, field -> getEntityMetaProvider().columnMeta(field).getName());
-                            n += insertWithoutNulls(args);
+                            builder.add(insertWithoutNulls(args));
                         }
-                        return n;
+                        return new BatchResult(builder.build().toArray());
                     }
 
                     @Override
@@ -815,7 +816,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                     }
 
                     @Override
-                    public int save(@NotNull Iterable<T> entities) {
+                    public BatchResult save(@NotNull Iterable<T> entities) {
                         if (withNullValues) {
                             return executeBatchUpdate(entityMeta.getUpdateById(),
                                     entities,
@@ -828,12 +829,12 @@ public class BakiDao extends JdbcSupport implements Baki {
                                     },
                                     batchSize);
                         }
-                        int n = 0;
+                        IntStream.Builder builder = IntStream.builder();
                         for (T e : entities) {
                             Args<Object> args = Args.ofEntity(e, field -> getEntityMetaProvider().columnMeta(field).getName());
-                            n += updateWithoutNulls(args);
+                            builder.add(updateWithoutNulls(args));
                         }
-                        return n;
+                        return new BatchResult(builder.build().toArray());
                     }
 
                     @Override
@@ -893,7 +894,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                     }
 
                     @Override
-                    public int execute(@NotNull Iterable<T> entities) {
+                    public BatchResult execute(@NotNull Iterable<T> entities) {
                         return executeBatchUpdate(entityMeta.getDeleteById(), entities, e -> {
                             Args<Object> args = Args.ofEntity(e, field -> getEntityMetaProvider().columnMeta(field).getName());
                             if (args.get(primaryKey.getName()) == null) {
@@ -931,17 +932,17 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     @Override
-    public int execute(@NotNull String sql, @NotNull Iterable<? extends Map<String, ?>> args) {
+    public BatchResult execute(@NotNull String sql, @NotNull Iterable<? extends Map<String, ?>> args) {
         return executeBatchUpdate(sql, args, Function.identity(), batchSize);
     }
 
     @Override
-    public <T> int execute(@NotNull String sql, @NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper) {
+    public <T> BatchResult execute(@NotNull String sql, @NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper) {
         return executeBatchUpdate(sql, args, argMapper, batchSize);
     }
 
     @Override
-    public int execute(@NotNull Iterable<String> sqlList) {
+    public BatchResult execute(@NotNull Iterable<String> sqlList) {
         return executeBatch(sqlList, batchSize);
     }
 

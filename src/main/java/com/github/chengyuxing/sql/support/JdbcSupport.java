@@ -17,7 +17,6 @@ import java.sql.*;
 import java.util.*;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
@@ -128,7 +127,7 @@ public abstract class JdbcSupport {
      *     <li>type: {@link DataRow#getString(int, String...) getString(1)} 或 {@link DataRow#get(Object) get("type")}</li>
      * </ul>
      *
-     * @param sql  named parameter sql
+     * @param sql  named parameter SQL
      * @param args args
      * @return Query: List{@code <DataRow>}, DML: affected row count, DDL: 0
      * @throws DataAccessException SQL execute error
@@ -146,7 +145,7 @@ public abstract class JdbcSupport {
             ps.execute();
             JdbcUtils.printSqlConsole(ps);
             return JdbcUtils.getResult(ps, smd.getPrepareSql());
-        } catch (Exception e) {
+        } catch (SQLException e) {
             throw wrappedDataAccessException(smd.getPrepareSql(), e);
         } finally {
             JdbcUtils.closeStatement(ps);
@@ -209,7 +208,7 @@ public abstract class JdbcSupport {
                     }
                 }
             }, false).onClose(close);
-        } catch (Exception ex) {
+        } catch (Throwable ex) {
             if (close != null) {
                 try {
                     close.close();
@@ -224,33 +223,38 @@ public abstract class JdbcSupport {
     /**
      * Batch executes not prepared sql ({@code ddl} or {@code dml}).
      *
-     * @param sqlList   more than 1 sql
+     * @param sqlList   more than 1 SQL
      * @param batchSize batch size
-     * @return affected row count
-     * @throws DataAccessException execute sql error
+     * @return affected row count array
+     * @throws DataAccessException execute SQL error
      */
-    protected int executeBatch(@NotNull final Iterable<String> sqlList, @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
+    protected BatchResult executeBatch(@NotNull final Iterable<String> sqlList,
+                                       @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
         Connection connection = null;
         Statement s = null;
         try {
             connection = getConnection();
             s = connection.createStatement();
             onStatementInit(s, String.join(";", sqlList), null);
-            final Stream.Builder<int[]> result = Stream.builder();
-            int i = 1;
+
+            List<int[]> batches = new ArrayList<>();
+            int batchCount = 0;
             for (String sql : sqlList) {
                 String parsedSql = prepareSql(sql, Collections.emptyMap()).getSourceSql();
                 //noinspection SqlSourceToSinkFlow
                 s.addBatch(parsedSql);
-                if (i % batchSize == 0) {
-                    result.add(s.executeBatch());
+                batchCount++;
+                if (batchCount == batchSize) {
+                    batches.add(s.executeBatch());
                     s.clearBatch();
+                    batchCount = 0;
                 }
-                i++;
             }
-            result.add(s.executeBatch());
-            s.clearBatch();
-            return result.build().flatMapToInt(IntStream::of).sum();
+            if (batchCount > 0) {
+                batches.add(s.executeBatch());
+                s.clearBatch();
+            }
+            return new BatchResult(batches.stream().flatMapToInt(Arrays::stream).toArray());
         } catch (SQLException e) {
             throw wrappedDataAccessException(String.join(";\n", sqlList), e);
         } finally {
@@ -262,42 +266,46 @@ public abstract class JdbcSupport {
     /**
      * Batch execute prepared non-query sql ({@code insert}, {@code update}, {@code delete}).
      *
-     * @param sql        named parameter sql
-     * @param args       args collection
-     * @param eachMapper each object mapping to Map function
-     * @param batchSize  batch size
-     * @param <T>        arg type
+     * @param sql       named parameter SQL
+     * @param args      args collection
+     * @param argMapper each object mapping to Map function
+     * @param batchSize batch size
+     * @param <T>       arg type
      * @return affected row count
      * @throws DataAccessException execute procedure error
      */
-    protected <T> int executeBatchUpdate(@NotNull final String sql,
-                                         @NotNull Iterable<T> args,
-                                         @NotNull Function<T, ? extends Map<String, ?>> eachMapper,
-                                         @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
-        Map<String, ?> first = eachMapper.apply(args.iterator().next());
+    protected <T> BatchResult executeBatchUpdate(@NotNull final String sql,
+                                                 @NotNull Iterable<T> args,
+                                                 @NotNull Function<T, ? extends Map<String, ?>> argMapper,
+                                                 @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
+        Map<String, ?> first = argMapper.apply(args.iterator().next());
         SqlGenerator.PreparedSqlMetaData smd = prepareSql(sql, first);
         Connection connection = null;
         PreparedStatement ps = null;
+        List<int[]> batches = new ArrayList<>();
         try {
             connection = getConnection();
             //noinspection SqlSourceToSinkFlow
             ps = connection.prepareStatement(smd.getPrepareSql());
             onStatementInit(ps, sql, first);
-            final Stream.Builder<int[]> result = Stream.builder();
-            int i = 1;
+
+            int batchCount = 0;
             for (T arg : args) {
-                setPreparedSqlArgs(ps, eachMapper.apply(arg), smd.getArgNameIndexMapping());
+                setPreparedSqlArgs(ps, argMapper.apply(arg), smd.getArgNameIndexMapping());
                 ps.addBatch();
-                if (i % batchSize == 0) {
-                    result.add(ps.executeBatch());
+                batchCount++;
+                if (batchCount == batchSize) {
+                    batches.add(ps.executeBatch());
                     ps.clearBatch();
+                    batchCount = 0;
                 }
-                i++;
             }
-            result.add(ps.executeBatch());
-            ps.clearBatch();
-            return result.build().flatMapToInt(IntStream::of).sum();
-        } catch (Exception e) {
+            if (batchCount > 0) {
+                batches.add(ps.executeBatch());
+                ps.clearBatch();
+            }
+            return new BatchResult(batches.stream().flatMapToInt(Arrays::stream).toArray());
+        } catch (SQLException e) {
             throw wrappedDataAccessException(smd.getPrepareSql(), e);
         } finally {
             JdbcUtils.closeStatement(ps);
@@ -332,7 +340,7 @@ public abstract class JdbcSupport {
             onStatementInit(ps, sql, smd.getArgs());
             setPreparedSqlArgs(ps, smd.getArgs(), smd.getArgNameIndexMapping());
             return ps.executeUpdate();
-        } catch (Exception e) {
+        } catch (SQLException e) {
             throw wrappedDataAccessException(smd.getPrepareSql(), e);
         } finally {
             JdbcUtils.closeStatement(ps);

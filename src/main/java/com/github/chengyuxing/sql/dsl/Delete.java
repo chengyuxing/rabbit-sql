@@ -1,6 +1,7 @@
 package com.github.chengyuxing.sql.dsl;
 
 import com.github.chengyuxing.sql.dsl.clause.Where;
+import com.github.chengyuxing.sql.support.BatchResult;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Function;
@@ -25,7 +26,7 @@ public interface Delete<T> {
      * @param entities entities
      * @return affected row count
      */
-    int execute(@NotNull Iterable<T> entities);
+    BatchResult execute(@NotNull Iterable<T> entities);
 
     /**
      * Delete by condition.

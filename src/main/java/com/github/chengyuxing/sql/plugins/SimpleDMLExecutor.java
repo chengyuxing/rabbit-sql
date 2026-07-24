@@ -1,5 +1,6 @@
 package com.github.chengyuxing.sql.plugins;
 
+import com.github.chengyuxing.sql.support.BatchResult;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -39,7 +40,7 @@ public interface SimpleDMLExecutor {
      * @return affected row count
      * @see SimpleDMLExecutor#enableBatch()
      */
-    int insert(@NotNull Iterable<? extends Map<String, ?>> data);
+    BatchResult insert(@NotNull Iterable<? extends Map<String, ?>> data);
 
     /**
      * Execute multiple insert.
@@ -50,7 +51,7 @@ public interface SimpleDMLExecutor {
      * @return affected row count
      * @see #insert(Iterable)
      */
-    <T> int insert(@NotNull Iterable<T> data, @NotNull Function<T, ? extends Map<String, ?>> argMapper);
+    <T> BatchResult insert(@NotNull Iterable<T> data, @NotNull Function<T, ? extends Map<String, ?>> argMapper);
 
     /**
      * Specify the columns for generate where equation condition.
@@ -112,7 +113,7 @@ public interface SimpleDMLExecutor {
          * @return affected row count
          * @see SimpleDMLExecutor#enableBatch()
          */
-        int update(@NotNull Iterable<? extends Map<String, ?>> args);
+        BatchResult update(@NotNull Iterable<? extends Map<String, ?>> args);
 
         /**
          * Execute multiple update.
@@ -123,7 +124,7 @@ public interface SimpleDMLExecutor {
          * @return affected row count
          * @see #update(Iterable)
          */
-        <T> int update(@NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper);
+        <T> BatchResult update(@NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper);
 
         /**
          * Execute delete.
@@ -139,7 +140,7 @@ public interface SimpleDMLExecutor {
          * @param args args
          * @return affected row count
          */
-        int delete(@NotNull Iterable<? extends Map<String, ?>> args);
+        BatchResult delete(@NotNull Iterable<? extends Map<String, ?>> args);
 
         /**
          * Execute batch delete.
@@ -149,6 +150,6 @@ public interface SimpleDMLExecutor {
          * @param <T>       arg type
          * @return affected row count
          */
-        <T> int delete(@NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper);
+        <T> BatchResult delete(@NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper);
     }
 }

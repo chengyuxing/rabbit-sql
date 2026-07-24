@@ -134,13 +134,13 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
             throw new IllegalStateException(method.getDeclaringClass() + "#" + method.getName() + " return type must be Map");
         }
         //noinspection unchecked
-        return baki.execute(sqlRef, (Map<String, Object>) args);
+        return baki.execute(sqlRef, (Map<String, ?>) args);
     }
 
     protected Object handleModify(BakiDao baki, String sqlRef, Object args, Method method, Class<?> returnType) {
         if (returnType == Integer.class || returnType == int.class) {
             //noinspection unchecked
-            return baki.execute(sqlRef, (Map<String, Object>) args).getInt(0);
+            return baki.execute(sqlRef, (Map<String, ?>) args).getInt(0);
         }
         if (returnType == BatchResult.class) {
             return baki.execute(sqlRef, (Iterable<?>) args, element -> {
@@ -164,7 +164,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
         }
         Map<String, Param> myPaArgs = new HashMap<>();
         //noinspection unchecked
-        for (Map.Entry<String, Object> entry : ((Map<String, Object>) args).entrySet()) {
+        for (Map.Entry<String, ?> entry : ((Map<String, ?>) args).entrySet()) {
             myPaArgs.put(entry.getKey(), (Param) entry.getValue());
         }
         return baki.call(sqlRef, myPaArgs);

@@ -278,7 +278,11 @@ public abstract class JdbcSupport {
                                                  @NotNull Iterable<T> args,
                                                  @NotNull Function<T, ? extends Map<String, ?>> argMapper,
                                                  @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
-        Map<String, ?> first = argMapper.apply(args.iterator().next());
+        Iterator<T> iterator = args.iterator();
+        if (!iterator.hasNext()) {
+            return new BatchResult(new int[0]);
+        }
+        Map<String, ?> first = argMapper.apply(iterator.next());
         SqlGenerator.PreparedSqlMetaData smd = prepareSql(sql, first);
         Connection connection = null;
         PreparedStatement ps = null;

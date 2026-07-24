@@ -1,9 +1,7 @@
 package com.github.chengyuxing.sql.dsl;
 
 import com.github.chengyuxing.common.MethodReference;
-import com.github.chengyuxing.sql.support.BatchResult;
-
-import java.sql.PreparedStatement;
+import com.github.chengyuxing.sql.types.BatchResult;
 
 /**
  * DSL insert operator.

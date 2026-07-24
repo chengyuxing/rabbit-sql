@@ -2,7 +2,7 @@ package com.github.chengyuxing.sql.dsl;
 
 import com.github.chengyuxing.common.MethodReference;
 import com.github.chengyuxing.sql.dsl.clause.Where;
-import com.github.chengyuxing.sql.support.BatchResult;
+import com.github.chengyuxing.sql.types.BatchResult;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Function;

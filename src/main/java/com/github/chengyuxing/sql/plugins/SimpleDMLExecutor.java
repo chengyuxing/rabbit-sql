@@ -1,6 +1,6 @@
 package com.github.chengyuxing.sql.plugins;
 
-import com.github.chengyuxing.sql.support.BatchResult;
+import com.github.chengyuxing.sql.types.BatchResult;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;

@@ -20,6 +20,7 @@ import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.impl.*;
 import com.github.chengyuxing.sql.plugins.*;
 import com.github.chengyuxing.sql.support.*;
+import com.github.chengyuxing.sql.types.BatchResult;
 import com.github.chengyuxing.sql.types.DatabaseInfo;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.annotation.SqlStatementType;

@@ -12,7 +12,7 @@ import com.github.chengyuxing.sql.*;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.github.chengyuxing.sql.plugins.QueryCacheManager;
 import com.github.chengyuxing.sql.plugins.QueryExecutor;
-import com.github.chengyuxing.sql.support.BatchResult;
+import com.github.chengyuxing.sql.types.BatchResult;
 import com.github.chengyuxing.sql.transaction.Tx;
 import com.github.chengyuxing.sql.types.DatabaseInfo;
 import com.github.chengyuxing.sql.types.StandardOutParamType;

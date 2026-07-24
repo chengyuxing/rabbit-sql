@@ -4,7 +4,7 @@ import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.plugins.EntityExecutor;
 import com.github.chengyuxing.sql.plugins.QueryExecutor;
 import com.github.chengyuxing.sql.plugins.SimpleDMLExecutor;
-import com.github.chengyuxing.sql.support.BatchResult;
+import com.github.chengyuxing.sql.types.BatchResult;
 import com.github.chengyuxing.sql.types.DatabaseInfo;
 import com.github.chengyuxing.sql.types.Param;
 import org.jetbrains.annotations.NotNull;

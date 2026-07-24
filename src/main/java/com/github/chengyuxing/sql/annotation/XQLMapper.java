@@ -1,6 +1,7 @@
 package com.github.chengyuxing.sql.annotation;
 
 import com.github.chengyuxing.sql.page.IPageable;
+import com.github.chengyuxing.sql.types.BatchResult;
 
 import java.lang.annotation.*;
 
@@ -56,7 +57,7 @@ import java.lang.annotation.*;
  *     {@link Double}
  *     {@code <Java Bean>}</li>
  *     <li>insert, update, delete: {@code int} {@link Integer} {@link com.github.chengyuxing.common.DataRow DataRow}</li>
- *     <li>batch execute: {@link com.github.chengyuxing.sql.support.BatchResult BatchResult}</li>
+ *     <li>batch execute: {@link BatchResult BatchResult}</li>
  *     <li>procedure, function, ddl, plsql, other: {@link java.util.Map Map} {@link com.github.chengyuxing.common.DataRow DataRow}</li>
  * </ul>
  *

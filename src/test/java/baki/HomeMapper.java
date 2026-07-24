@@ -4,7 +4,7 @@ import com.github.chengyuxing.sql.annotation.*;
 import baki.entity.Guest;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.PagedResource;
-import com.github.chengyuxing.sql.support.BatchResult;
+import com.github.chengyuxing.sql.types.BatchResult;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.annotation.SqlStatementType;
 

@@ -8,7 +8,7 @@ import com.github.chengyuxing.common.util.ReflectUtils;
 import com.github.chengyuxing.sql.annotation.*;
 import com.github.chengyuxing.sql.page.IPageable;
 import com.github.chengyuxing.sql.plugins.*;
-import com.github.chengyuxing.sql.support.BatchResult;
+import com.github.chengyuxing.sql.types.BatchResult;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.annotation.SqlStatementType;
 import org.jetbrains.annotations.NotNull;

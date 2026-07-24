@@ -19,6 +19,7 @@ import java.lang.annotation.*;
  *         <li>{@link com.github.chengyuxing.sql.XQLInvocationHandler#INSERT_PATTERN insert}</li>
  *         <li>{@link com.github.chengyuxing.sql.XQLInvocationHandler#UPDATE_PATTERN update}</li>
  *         <li>{@link com.github.chengyuxing.sql.XQLInvocationHandler#DELETE_PATTERN delete}</li>
+ *         <li>{@link com.github.chengyuxing.sql.XQLInvocationHandler#BATCH_PATTERN batch}</li>
  *         <li>{@link com.github.chengyuxing.sql.XQLInvocationHandler#CALL_PATTERN procedure/function}</li>
  *     </ul>
  *     </li>
@@ -31,8 +32,9 @@ import java.lang.annotation.*;
  * Single argument:
  * <blockquote><pre>
  *     // {id: 1, name: "name"}
- *     method(Map&lt;String,Object&gt; args) // Map
+ *     method(Map&lt;String, ?&gt; args) // Map
  *     method(Entity entity) // Java bean entity
+ *     method(Iterable&lt;?&gt;) // Iterable for batch execute
  * </pre></blockquote>
  * Multiple arguments:
  * <blockquote><pre>
@@ -53,7 +55,8 @@ import java.lang.annotation.*;
  *     {@link Long}
  *     {@link Double}
  *     {@code <Java Bean>}</li>
- *     <li>insert, update, delete: {@code int} {@link Integer}</li>
+ *     <li>insert, update, delete: {@code int} {@link Integer} {@link com.github.chengyuxing.common.DataRow DataRow}</li>
+ *     <li>batch execute: {@link com.github.chengyuxing.sql.support.BatchResult BatchResult}</li>
  *     <li>procedure, function, ddl, plsql, other: {@link java.util.Map Map} {@link com.github.chengyuxing.common.DataRow DataRow}</li>
  * </ul>
  *

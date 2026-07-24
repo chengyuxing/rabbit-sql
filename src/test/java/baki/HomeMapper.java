@@ -35,6 +35,6 @@ public interface HomeMapper {
 
     Guest queryOneGuest();
 
-    @XQL(type = SqlStatementType.insert)
+    @XQL(type = SqlStatementType.batch)
     BatchResult batchAddGuests(Iterable<?> guests);
 }

@@ -29,6 +29,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
     public static final Pattern UPDATE_PATTERN = Pattern.compile("^(?:update|modify|change)[^a-z]\\w*");
     public static final Pattern DELETE_PATTERN = Pattern.compile("^(?:delete|remove)[^a-z]\\w*");
     public static final Pattern CALL_PATTERN = Pattern.compile("^(?:call|proc|func)[^a-z]\\w*");
+    public static final Pattern BATCH_PATTERN = Pattern.compile("^batch[^a-z]\\w*");
 
     private final ClassLoader classLoader = this.getClass().getClassLoader();
 
@@ -98,13 +99,15 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
             case delete:
             case dml:
                 return handleModify(baki, sqlRef, myArgs, method, returnType);
+            case batch:
+                return handleBatchModify(baki, sqlRef, myArgs, method, returnType);
             case procedure:
             case function:
                 return handleProcedure(baki, sqlRef, myArgs, method, returnType);
             case ddl:
             case plsql:
             case unset:
-                return handleNormal(baki, sqlRef, myArgs, method, returnType);
+                return handleExecute(baki, sqlRef, myArgs, method, returnType);
             default:
                 throw new IllegalAccessException(method.getDeclaringClass() + "#" + method.getName() + " SQL type [" + sqlType + "] not supported");
         }
@@ -123,15 +126,18 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
         if (DELETE_PATTERN.matcher(method).matches()) {
             return SqlStatementType.delete;
         }
+        if (BATCH_PATTERN.matcher(method).matches()) {
+            return SqlStatementType.batch;
+        }
         if (CALL_PATTERN.matcher(method).matches()) {
             return SqlStatementType.procedure;
         }
         return SqlStatementType.unset;
     }
 
-    protected DataRow handleNormal(BakiDao baki, String sqlRef, Object args, Method method, Class<?> returnType) {
+    protected DataRow handleExecute(BakiDao baki, String sqlRef, Object args, Method method, Class<?> returnType) {
         if (!Map.class.isAssignableFrom(returnType)) {
-            throw new IllegalStateException(method.getDeclaringClass() + "#" + method.getName() + " return type must be Map");
+            throw new IllegalStateException(method.getDeclaringClass() + "#" + method.getName() + " return type must be Map or DataRow for the current XQL type");
         }
         //noinspection unchecked
         return baki.execute(sqlRef, (Map<String, ?>) args);
@@ -142,6 +148,14 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
             //noinspection unchecked
             return baki.execute(sqlRef, (Map<String, ?>) args).getInt(0);
         }
+        if (Map.class.isAssignableFrom(returnType)) {
+            //noinspection unchecked
+            return baki.execute(sqlRef, (Map<String, ?>) args);
+        }
+        throw new IllegalStateException(method.getDeclaringClass() + "#" + method.getName() + " return type must be Integer, int, Map or DataRow for the current XQL type");
+    }
+
+    protected Object handleBatchModify(BakiDao baki, String sqlRef, Object args, Method method, Class<?> returnType) {
         if (returnType == BatchResult.class) {
             return baki.execute(sqlRef, (Iterable<?>) args, element -> {
                 if (element instanceof Map<?, ?>) {
@@ -155,12 +169,12 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
                 }
             });
         }
-        throw new IllegalStateException(method.getDeclaringClass() + "#" + method.getName() + " return type must be Integer / int / BatchResult");
+        throw new IllegalStateException(method.getDeclaringClass() + "#" + method.getName() + " return type must be BatchResult for the current XQL type");
     }
 
     protected DataRow handleProcedure(BakiDao baki, String sqlRef, Object args, Method method, Class<?> returnType) {
         if (!Map.class.isAssignableFrom(returnType)) {
-            throw new IllegalStateException(method.getDeclaringClass() + "#" + method.getName() + " return type must be map or DataRow");
+            throw new IllegalStateException(method.getDeclaringClass() + "#" + method.getName() + " return type must be Map or DataRow for the current XQL type");
         }
         Map<String, Param> myPaArgs = new HashMap<>();
         //noinspection unchecked
@@ -231,7 +245,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
         if (isBindableObject(returnType)) {
             return qe.findFirstEntity(returnType);
         }
-        throw new UnsupportedOperationException(method.getDeclaringClass() + "#" + method.getName() + ", unsupported return type: " + returnType.getName());
+        throw new UnsupportedOperationException(method.getDeclaringClass() + "#" + method.getName() + ", unsupported return type: " + returnType.getName() + " for the current XQL type");
     }
 
     protected IPageable configurePageable(String alias, QueryExecutor qe, Method method) {

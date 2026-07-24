@@ -8,6 +8,7 @@ import com.github.chengyuxing.common.util.ReflectUtils;
 import com.github.chengyuxing.sql.annotation.*;
 import com.github.chengyuxing.sql.page.IPageable;
 import com.github.chengyuxing.sql.plugins.*;
+import com.github.chengyuxing.sql.support.BatchResult;
 import com.github.chengyuxing.sql.types.Param;
 import com.github.chengyuxing.sql.annotation.SqlStatementType;
 import org.jetbrains.annotations.NotNull;
@@ -136,24 +137,30 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
         return baki.execute(sqlRef, (Map<String, Object>) args);
     }
 
-    protected int handleModify(BakiDao baki, String sqlRef, Object args, Method method, Class<?> returnType) {
-        if (returnType != Integer.class && returnType != int.class) {
-            throw new IllegalStateException(method.getDeclaringClass() + "#" + method.getName() + " return type must be Integer or int");
-        }
-        if (args instanceof Map) {
+    protected Object handleModify(BakiDao baki, String sqlRef, Object args, Method method, Class<?> returnType) {
+        if (returnType == Integer.class || returnType == int.class) {
             //noinspection unchecked
-            return baki.execute(sqlRef, (Map<String, Object>) args).getFirstAs();
+            return baki.execute(sqlRef, (Map<String, Object>) args).getInt(0);
         }
-        //noinspection unchecked
-        return baki.execute(sqlRef, (Iterable<? extends Map<String, Object>>) args);
+        if (returnType == BatchResult.class) {
+            return baki.execute(sqlRef, (Iterable<?>) args, element -> {
+                if (element instanceof Map<?, ?>) {
+                    //noinspection unchecked
+                    return (Map<String, ?>) element;
+                } else if (isBindableObject(element.getClass())) {
+                    //noinspection unchecked
+                    return (Map<String, ?>) entityArgToMap(element);
+                } else {
+                    throw unsupportedArg(method, element);
+                }
+            });
+        }
+        throw new IllegalStateException(method.getDeclaringClass() + "#" + method.getName() + " return type must be Integer / int / BatchResult");
     }
 
     protected DataRow handleProcedure(BakiDao baki, String sqlRef, Object args, Method method, Class<?> returnType) {
         if (!Map.class.isAssignableFrom(returnType)) {
             throw new IllegalStateException(method.getDeclaringClass() + "#" + method.getName() + " return type must be map or DataRow");
-        }
-        if (args instanceof Collection) {
-            throw new IllegalArgumentException(method.getDeclaringClass() + "#" + method.getName() + " args must not be Collection");
         }
         Map<String, Param> myPaArgs = new HashMap<>();
         //noinspection unchecked
@@ -164,21 +171,18 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
     }
 
     protected Object handleQuery(BakiDao baki, String alias, String sqlName, Object args, Method method, Class<?> returnType, Class<?> genericType) {
-        if (args instanceof Collection) {
-            throw new IllegalArgumentException(method.getDeclaringClass() + "#" + method.getName() + " args must not be Collection");
-        }
         @SuppressWarnings("unchecked") QueryExecutor qe = baki.query("&" + XQLFileManager.encodeSqlReference(alias, sqlName)).args((Map<String, Object>) args);
         if (returnType == Stream.class) {
-            return qe.stream().map(dataRowMapping(genericType));
+            return qe.stream().map(dataRowReturnTypeMapping(genericType));
         }
         if (returnType == List.class) {
             try (Stream<DataRow> s = qe.stream()) {
-                return s.map(dataRowMapping(genericType)).collect(Collectors.toList());
+                return s.map(dataRowReturnTypeMapping(genericType)).collect(Collectors.toList());
             }
         }
         if (returnType == Set.class) {
             try (Stream<DataRow> s = qe.stream()) {
-                return s.map(dataRowMapping(genericType)).collect(Collectors.toSet());
+                return s.map(dataRowReturnTypeMapping(genericType)).collect(Collectors.toSet());
             }
         }
         if (returnType == String.class) {
@@ -216,18 +220,18 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
             return qe.findFirstRow();
         }
         if (returnType == Optional.class) {
-            return qe.findFirst().map(dataRowMapping(genericType));
+            return qe.findFirst().map(dataRowReturnTypeMapping(genericType));
         }
         if (returnType == IPageable.class) {
             return configurePageable(alias, qe, method);
         }
         if (returnType == PagedResource.class) {
-            return configurePageable(alias, qe, method).collect(dataRowMapping(genericType));
+            return configurePageable(alias, qe, method).collect(dataRowReturnTypeMapping(genericType));
         }
         if (isBindableObject(returnType)) {
             return qe.findFirstEntity(returnType);
         }
-        return null;
+        throw new UnsupportedOperationException(method.getDeclaringClass() + "#" + method.getName() + ", unsupported return type: " + returnType.getName());
     }
 
     protected IPageable configurePageable(String alias, QueryExecutor qe, Method method) {
@@ -291,7 +295,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
      * @param genericType method return generic type
      * @return function
      */
-    protected Function<DataRow, Object> dataRowMapping(Class<?> genericType) {
+    protected Function<DataRow, Object> dataRowReturnTypeMapping(Class<?> genericType) {
         return d -> {
             if (genericType.isAssignableFrom(d.getClass())) {
                 return d;
@@ -301,6 +305,19 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
                     (field, value) -> entityMetaProvider().columnValue(field, value)
             );
         };
+    }
+
+    /**
+     * Entity mapping to Map.
+     *
+     * @param entity entity
+     * @return map
+     */
+    protected Object entityArgToMap(Object entity) {
+        return ValueUtils.entityToMap(entity,
+                f -> entityMetaProvider().columnMeta(f).getName(),
+                HashMap::new
+        );
     }
 
     /**
@@ -329,10 +346,10 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
             return arg;
         }
         if (arg instanceof Iterable<?>) {
-            return resolveIterableArg(method, (Iterable<?>) arg);
+            return arg;
         }
         if (isBindableObject(arg.getClass())) {
-            return entityToMap(arg);
+            return entityArgToMap(arg);
         }
         throw unsupportedArg(method, arg);
     }
@@ -350,27 +367,6 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
             result.put(arg.value(), args[i]);
         }
         return result;
-    }
-
-    private Object resolveIterableArg(Method method, Iterable<?> iterable) {
-        List<Object> result = new ArrayList<>();
-        for (Object element : iterable) {
-            if (element instanceof Map<?, ?>) {
-                result.add(element);
-            } else if (isBindableObject(element.getClass())) {
-                result.add(entityToMap(element));
-            } else {
-                throw unsupportedArg(method, element);
-            }
-        }
-        return result;
-    }
-
-    private Object entityToMap(Object entity) {
-        return ValueUtils.entityToMap(entity,
-                f -> entityMetaProvider().columnMeta(f).getName(),
-                HashMap::new
-        );
     }
 
     private boolean isBindableObject(@NotNull Class<?> type) {

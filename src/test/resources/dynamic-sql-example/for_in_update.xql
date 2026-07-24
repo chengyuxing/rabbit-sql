@@ -91,3 +91,7 @@ or name in (
 or address = :user.addresses[1]
 and age < :safeAge
 ;
+
+/*[batchAddGuests]*/
+insert into test.guest(name, address, age, photo) values (:name,:address,:age,:photo)
+;

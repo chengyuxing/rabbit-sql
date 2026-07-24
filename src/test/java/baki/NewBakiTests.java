@@ -12,6 +12,7 @@ import com.github.chengyuxing.sql.*;
 import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.github.chengyuxing.sql.plugins.QueryCacheManager;
 import com.github.chengyuxing.sql.plugins.QueryExecutor;
+import com.github.chengyuxing.sql.support.BatchResult;
 import com.github.chengyuxing.sql.transaction.Tx;
 import com.github.chengyuxing.sql.types.DatabaseInfo;
 import com.github.chengyuxing.sql.types.StandardOutParamType;
@@ -23,7 +24,6 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.sql.CallableStatement;
-import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Stream;
@@ -235,6 +235,16 @@ public class NewBakiTests {
         System.out.println(res);
 //        int i = homeMapper.now();
 //        System.out.println(i);
+        List<Guest> guests = Arrays.asList(
+                DataRow.of("name", "cyxa", "age", 28, "address", "km").toEntity(Guest.class),
+                DataRow.of("name", "cyxa", "age", 28, "address", "km").toEntity(Guest.class),
+                DataRow.of("name", "cyxa", "age", 28, "address", "km").toEntity(Guest.class),
+                DataRow.of("name", "cyxa", "age", 28, "address", "km").toEntity(Guest.class)
+        );
+        BatchResult result = homeMapper.batchAddGuests(guests);
+        System.out.println(result);
+        System.out.println(Arrays.toString(result.getAffectedRows()));
+        System.out.println(result.getAffectedRowsCount());
     }
 
     @Test
@@ -402,7 +412,7 @@ public class NewBakiTests {
         for (int i = 0; i < 10; i++) {
             args.add(Args.of("users", Arrays.asList("chengyuxing", i, "昆明市")));
         }
-        int i = baki.execute("&new.insert", args);
+        int i = baki.execute("&new.insert", args).getAffectedRowsCount();
         System.out.println(i);
     }
 

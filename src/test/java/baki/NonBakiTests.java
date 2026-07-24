@@ -10,6 +10,8 @@ import com.fasterxml.jackson.datatype.jsr310.deser.LocalDateTimeDeserializer;
 import com.fasterxml.jackson.datatype.jsr310.ser.LocalDateTimeSerializer;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.MostDateTime;
+import com.github.chengyuxing.common.script.lang.Token;
+import com.github.chengyuxing.common.script.lexer.IdentifierLexer;
 import com.github.chengyuxing.common.util.ValueUtils;
 import com.github.chengyuxing.common.util.StringUtils;
 import com.github.chengyuxing.sql.*;
@@ -148,6 +150,10 @@ public class NonBakiTests {
                 "       -- #fi\n" +
                 "       count(*) filter /*( where grade < 60 )               bad\n" +
                 "from test.score where id::number = :id*/;";
+
+        IdentifierLexer lexer = new IdentifierLexer(sql, 0);
+        List<Token> tokens = lexer.tokenize();
+        System.out.println(tokens);
 
 //        SqlGenerator sqlGenerator = new SqlGenerator(':');
 //        SqlGenerator.PreparedSqlMetaData pair = sqlGenerator.generatePreparedSql(sql, Collections.emptyMap());

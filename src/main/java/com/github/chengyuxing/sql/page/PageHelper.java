@@ -21,7 +21,7 @@ public abstract class PageHelper {
      *
      * @param namedParamPrefix named parameter prefix
      * @param sql              sql
-     * @return paged sql
+     * @return paged SQL
      */
     public abstract @NotNull String pagedSql(char namedParamPrefix, @NotNull String sql);
 
@@ -37,8 +37,8 @@ public abstract class PageHelper {
     /**
      * Create count query sql.
      *
-     * @param sql record query sql
-     * @return count query sql
+     * @param sql record query SQL
+     * @return count query SQL
      */
     public String countSql(@NotNull String sql) {
         return "select count(*) from (\n" + sql + "\n) t_4_rabbit";

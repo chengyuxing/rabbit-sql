@@ -546,7 +546,9 @@ public class BakiDao extends JdbcSupport implements Baki {
                         final InternalWhere where = new InternalWhere(whereCriteria);
                         final InternalOrderBy orderBy = new InternalOrderBy(orderByColumns);
                         // select a, b, c from table
-                        String recordSelect = selectColumns.isEmpty() ? entityMeta.getSelect() : entityMeta.getSelect(selectColumns);
+                        String recordSelect = selectColumns.isEmpty()
+                                ? entityMeta.getSelect()
+                                : entityMeta.getSelect(selectColumns);
                         // select count(*) from table
                         String countSelect = entityMeta.getCountSelect();
                         // where

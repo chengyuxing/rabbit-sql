@@ -29,7 +29,7 @@ _java 8+_
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql-spring-boot-starter</artifactId>
-    <version>5.3.13</version>
+    <version>5.3.14</version>
 </dependency>
 ```
 
@@ -286,14 +286,8 @@ If operations such as secondary processing and conversion are required for query
 Batch submission is recommended for operations such as batch insert and update to reduce the number of network interactions and improve database performance.
 
 ```java
-baki.insert("&<sql名>", <Collection>);
-```
-
-```java
 baki.execute("&<sql名>", <Collection>);
 ```
-
-> insert, update, delete batch operations are performed by passing in the collection.
 
 ##### Cache repeat query
 

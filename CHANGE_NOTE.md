@@ -1,5 +1,22 @@
 # change note
 
+# 10.3.13
+
+- Remove builtin pipe: `type`
+- FileResource optimized, add `ConnectionInterceptor` to configure the http resource request options.
+- `StringUtils#foreachWindow` param consumer add matched substring
+- SQL Highlight support line comment extends handler
+- `RabbitScriptEngine` add Constants type
+- Key expression parse optimized, support property name `['name']`
+- New method `DataRow#walkAs`
+- XQL mapping fix bool type result bug
+- AroundExecutor optimized: rename methods: `onStart` -> `before` , `onStop` -> `after`
+- XQL metadata support parsing untinl the line comment not found anymore
+- Remove methods: `Baki#insert`, `Baki#update`, `Baki#delete`
+- Batch execute change the return type to `BatchResult` for supports the row state
+- XQL Mapper interface add support result type `BatchResult` for the batch method
+- XQL Mapper method add support `XQL type = batch` for the batch execute
+
 # 10.3.12
 
 - Some optimized.

@@ -32,7 +32,7 @@ _java 8+_
 <dependency>
   <groupId>com.github.chengyuxing</groupId>
   <artifactId>rabbit-sql</artifactId>
-  <version>10.3.12</version>
+  <version>10.3.13</version>
 </dependency>
 ```
 
@@ -115,6 +115,7 @@ By default, all methods behaviors are depends on method prefix and sql name mapp
 | insert               | insert \| save \| add \| append \|create                   |
 | update               | update \| modify \| change                                 |
 | delete               | delete \| remove                                           |
+| batch                | batch                                                      |
 | procedure / function | call \| proc \| func                                       |
 
 **Argument type:**
@@ -122,19 +123,20 @@ By default, all methods behaviors are depends on method prefix and sql name mapp
 - **Argument dictionary**: `DataRow|Map<String,Object>|<JavaBean>`
 - **Argument List**: Each argument annotated with `@Arg`
 
-| Return Type                                            | sql Type（Type）                              | Remark                  |
-| ------------------------------------------------------ | --------------------------------------------- | ----------------------- |
-| `List<DataRow/Map<String,Object>/<JavaBean>>`          | query                                         |                         |
-| `Set<DataRow/Map<String,Object>/<JavaBean>>`           | query                                         |                         |
-| `Stream<DataRow/Map<String,Object>/<JavaBean>>`        | query                                         |                         |
-| `Optional<DataRow/Map<String,Object>/<JavaBean>>`      | query                                         |                         |
-| `Map<String,Object>`                                   | query                                         |                         |
-| `PagedResource<DataRow/Map<String,Object>/<JavaBean>>` | query                                         | `@CountQuery`(optional) |
-| `IPageable`                                            | query                                         | `@CountQuery`(optional) |
-| `Long`, `Integer`, `Double` , `String` , `Boolean`     | query                                         |                         |
-| `<JavaBean>`                                           | query                                         |                         |
-| `DataRow`                                              | query, procedure, function, ddl, plsql, unset |                         |
-| `int/Integer`                                          | insert, update, delete                        |                         |
+| Return Type                                            | sql Type（Type）                                             | Remark                                     |
+| ------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------------ |
+| `List<DataRow/Map<String,Object>/<JavaBean>>`          | query                                                        |                                            |
+| `Set<DataRow/Map<String,Object>/<JavaBean>>`           | query                                                        |                                            |
+| `Stream<DataRow/Map<String,Object>/<JavaBean>>`        | query                                                        |                                            |
+| `Optional<DataRow/Map<String,Object>/<JavaBean>>`      | query                                                        |                                            |
+| `Map<String,Object>`                                   | query                                                        |                                            |
+| `PagedResource<DataRow/Map<String,Object>/<JavaBean>>` | query                                                        | `@CountQuery`, `@PageableConfig`(optional) |
+| `IPageable`                                            | query                                                        | `@CountQuery`, `@PageableConfig`(optional) |
+| `Long`, `Integer`, `Double` , `String` , `Boolean`     | query                                                        |                                            |
+| `<JavaBean>`                                           | query                                                        |                                            |
+| `DataRow`                                              | query, procedure, function, ddl, plsql, unset, insert, update, delete |                                            |
+| `int/Integer`                                          | insert, update, delete                                       |                                            |
+| `BatchResult`                                          | batch                                                        |                                            |
 
 If the method annotated with special annotations, method will not mapping to xql file sql name, it just execute by the itself:
 
@@ -477,7 +479,6 @@ Implement  `com.github.chengyuxing.common.script.pipe.IPipe`  interface and add 
 - **lower**: convert to lower case;
 - **kv**: object or map convert to keyValues `List<KeyValue>` ;
 - **nvl**: if value is null, the default will be returned, e.g. `nvl('default')` ;
-- **type**: returns the Java object type name;
 - **split**: split string to string array by delimiter, e.g. `split(',')` ;
 - **in**: returns the params is containing the value or not, e.g. `in('a','b','c')`
 

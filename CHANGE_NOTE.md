@@ -1,5 +1,9 @@
 # change note
 
+# 10.3.14
+
+- Some optimized.
+
 # 10.3.13
 
 - Remove builtin pipe: `type`

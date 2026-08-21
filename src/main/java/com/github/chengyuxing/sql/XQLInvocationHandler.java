@@ -66,7 +66,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
 
         if (method.isAnnotationPresent(XQL.class)) {
             XQL xql = method.getDeclaredAnnotation(XQL.class);
-            if (!StringUtils.isBlank(xql.value())) {
+            if (!StringUtils.isEmpty(xql.value())) {
                 sqlName = xql.value();
             }
             sqlType = xql.type();

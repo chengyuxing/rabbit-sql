@@ -1,5 +1,10 @@
 # change note
 
+# 10.3.15
+
+- Update `rabbit-common`
+- Add `EntityMetaProvider` default implementation
+
 # 10.3.14
 
 - Some optimized.

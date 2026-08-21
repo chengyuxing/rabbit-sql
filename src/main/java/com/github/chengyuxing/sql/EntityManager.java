@@ -2,6 +2,7 @@ package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.PropertyMeta;
 import com.github.chengyuxing.common.util.ReflectUtils;
+import com.github.chengyuxing.common.util.ValueUtils;
 import com.github.chengyuxing.sql.util.SqlGenerator;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Unmodifiable;
@@ -48,7 +49,22 @@ public class EntityManager implements AutoCloseable {
 
     private final Map<Class<?>, EntityMeta> classInformation = new ConcurrentHashMap<>();
     private final SqlGenerator sqlGenerator;
-    private EntityMetaProvider entityMetaProvider;
+    private EntityMetaProvider entityMetaProvider = new EntityMetaProvider() {
+        @Override
+        public String tableName(Class<?> clazz) {
+            return clazz.getSimpleName();
+        }
+
+        @Override
+        public EntityManager.ColumnMeta columnMeta(Field field) {
+            return new EntityManager.ColumnMeta(field.getName());
+        }
+
+        @Override
+        public Object columnValue(Field field, Object value) {
+            return ValueUtils.adaptValue(field.getType(), value);
+        }
+    };
 
     public EntityManager(SqlGenerator sqlGenerator) {
         this.sqlGenerator = sqlGenerator;

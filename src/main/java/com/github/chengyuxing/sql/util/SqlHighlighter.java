@@ -148,7 +148,7 @@ public final class SqlHighlighter {
             for (int i = 0, j = words.size(); i < j; i++) {
                 String word = words.get(i);
                 String replacement = word;
-                if (!StringUtils.isEmpty(word)) {
+                if (!StringUtils.isBlank(word)) {
                     // functions highlight
                     if (!StringUtils.equalsAnyIgnoreCase(word, Keywords.STANDARD) && detectFunction(word, i, j, delimiters)) {
                         replacement = replacer.apply(TAG.FUNCTION, word);
@@ -191,7 +191,7 @@ public final class SqlHighlighter {
                     String cleanedLine = commentStyleCleaner.apply(line);
                     String head = line.substring(0, lineCmtIdx);
                     String tail = line.substring(lineCmtIdx);
-                    if (StringUtils.isEmpty(head)) {
+                    if (StringUtils.isSpaces(head)) {
                         // @name value
                         if (XQLFileManager.META_DATA_PATTERN.matcher(cleanedLine).matches()) {
                             sqlLines[i] = head + replacer.apply(TAG.METADATA_DEFINE_COMMENT, tail);

@@ -318,13 +318,13 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                 if (description.endsWith("#")) {
                     description = description.substring(0, description.length() - 1);
                 }
-                if (!StringUtils.isEmpty(description)) {
+                if (!StringUtils.isBlank(description)) {
                     consumer.accept(description);
                 }
                 return true;
             }
             String descriptionStart = trimLine.substring(3);
-            if (!StringUtils.isEmpty(descriptionStart)) {
+            if (!StringUtils.isBlank(descriptionStart)) {
                 consumer.accept(descriptionStart);
             }
             String descLine;
@@ -335,7 +335,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                     if (descriptionEnd.endsWith("#")) {
                         descriptionEnd = descriptionEnd.substring(0, descriptionEnd.length() - 1);
                     }
-                    if (!StringUtils.isEmpty(descriptionEnd)) {
+                    if (!StringUtils.isBlank(descriptionEnd)) {
                         consumer.accept(descriptionEnd);
                     }
                     break;
@@ -384,7 +384,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
                 metadata.put(m.group("name"), m.group("value"));
                 continue;
             }
-            if (StringUtils.isEmpty(line)) {
+            if (StringUtils.isBlank(line)) {
                 continue;
             }
             if (SqlUtils.indexOfWholeLineComment(line) == -1) {

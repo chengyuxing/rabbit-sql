@@ -1,5 +1,10 @@
 # change note
 
+# 10.3.16
+
+- Fixed `Comparators#isBlank` check the iterable type bug
+- Remove method: `StringUtils#isEmpty`
+
 # 10.3.15
 
 - Update `rabbit-common`

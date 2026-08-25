@@ -32,7 +32,7 @@ _java 8+_
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>10.3.15</version>
+    <version>10.3.16</version>
 </dependency>
 ```
 

@@ -191,7 +191,7 @@ public final class SqlHighlighter {
                     String cleanedLine = commentStyleCleaner.apply(line);
                     String head = line.substring(0, lineCmtIdx);
                     String tail = line.substring(lineCmtIdx);
-                    if (StringUtils.isSpaces(head)) {
+                    if (StringUtils.isBlank(head)) {
                         // @name value
                         if (XQLFileManager.META_DATA_PATTERN.matcher(cleanedLine).matches()) {
                             sqlLines[i] = head + replacer.apply(TAG.METADATA_DEFINE_COMMENT, tail);

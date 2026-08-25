@@ -217,8 +217,9 @@ public class SqlGenerator {
     /**
      * Generate record select statement.
      *
-     * @param tableName table name
-     * @param columns   columns
+     * @param tableName      table name
+     * @param columns        columns
+     * @param columnSelector filtered the column in result select statement
      * @return record select statement
      */
     public String generateRecordSelect(String tableName, Collection<String> columns, @Nullable Predicate<String> columnSelector) {

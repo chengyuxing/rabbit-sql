@@ -7,6 +7,10 @@ import com.github.chengyuxing.sql.page.impl.PGPageHelper;
 import com.github.chengyuxing.sql.util.SqlGenerator;
 import org.junit.Test;
 
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 
 public class Tests {
@@ -26,9 +30,9 @@ public class Tests {
         String ts = "12月11 23:12:55";
         String dt = "2020-12-11";
         String tm = "23时12分55秒";
+        System.out.println(MostDateTime.now().toString("yyyy-MM-dd HH:mm:ss.SSSXXX"));
+        System.out.println(ZonedDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSSXXX")));
 
-        System.out.println(MostDateTime.of(ts).toDate());
-        System.out.println(MostDateTime.now().toString("yyyy-MM-dd"));
     }
 
     @Test

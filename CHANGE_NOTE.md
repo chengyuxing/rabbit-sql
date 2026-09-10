@@ -1,20 +1,24 @@
 # change note
 
-# 10.3.16
+## 10.3.17
+
+- Update `rabbit-common`
+
+## 10.3.16
 
 - Fixed `Comparators#isBlank` check the iterable type bug
 - Remove method: `StringUtils#isEmpty`
 
-# 10.3.15
+## 10.3.15
 
 - Update `rabbit-common`
 - Add `EntityMetaProvider` default implementation
 
-# 10.3.14
+## 10.3.14
 
 - Some optimized.
 
-# 10.3.13
+## 10.3.13
 
 - Remove builtin pipe: `type`
 - FileResource optimized, add `ConnectionInterceptor` to configure the http resource request options.
@@ -31,11 +35,11 @@
 - XQL Mapper interface add support result type `BatchResult` for the batch method
 - XQL Mapper method add support `XQL type = batch` for the batch execute
 
-# 10.3.12
+## 10.3.12
 
 - Some optimized.
 
-# 10.3.11
+## 10.3.11
 
 - Page query optimized
 - XQL file parse optimized
@@ -43,76 +47,76 @@
 - `EntityManager` generate SQL optimized.
 - `EntityManager` add support ID generate strategy `IDENTITY` for database auto generate
 
-# 10.3.10
+## 10.3.10
 
 - Update rabbit-common
 
-# 10.3.9
+## 10.3.9
 
 - Add new property `BakiDao#databaseInfoProvider`
 - `BakiDao#executionWatcher` optimized.
 
-# 10.3.8
+## 10.3.8
 
 - `IPageable#disableDefaultPageSql` optimized
 - Remove method: `IPageable#rewriteDefaultPageArgs`
 - XQL Mapper interface method return type add support: `String`, `Boolean`
 
-# 10.3.7
+## 10.3.7
 
 - Some optimized.
 
-# 10.3.6
+## 10.3.6
 
 - Remove  `BakiDao#databaseId` ,`BakiDao#metadata()`
 - Add new method `BakiDao#DatabaseInfo()`
 
-# 10.3.5
+## 10.3.5
 
 - Fixed SqlHighlighter bug.
 
-# 10.3.4
+## 10.3.4
 
 - Ansi style optimized.
 
-# 10.3.3
+## 10.3.3
 
 - Fix the error when jdbc driver is not support query timeout.
 
-# 10.3.2
+## 10.3.2
 
 - `ReflectUtils#getBeanPropertyMetas` optimized.
 
-# 10.3.1
+## 10.3.1
 
 - Fixed `MostDateTime#of` pattern bug which not contains the time part
 
-# 10.3.0
+## 10.3.0
 
 - Some optimized.
 
-# 10.2.9
+## 10.2.9
 
 - Fixed `MostDateTime` format `yyyyMMdd` bug.
 
-# 10.2.8
+## 10.2.8
 
 - `XQLInvocationHandler` optimized.
 
-# 10.2.7
+## 10.2.7
 
 - New method `Query#forEach` of entity query
 
-# 10.2.6
+## 10.2.6
 
 - Entity `Where` condition add support tests for dynamic
 - `Baki#table` method `where` change to `by` for accept columns
 
-# 10.2.5
+## 10.2.5
 
 - `XQLFileManager` add support define sql metadata `-- @name value`
 
-# 10.2.4
+## 10.2.4
 
 - `XQLFileManager` add support inline template: `-- //TEMPLATE-BEGIN:myInLineCnd` in a SQL object.
 - Dynamic SQL `#for` directive syntax changed to
@@ -122,12 +126,12 @@
 - Dynamic SQL Script engine optimized.
 - Key expression parse optimized.
 
-# 10.2.3
+## 10.2.3
 
 - Fixed `#for` loop body named param parse bug.
 - Dynamic SQL script lexer string literal parse optimized.
 
-# 10.2.2
+## 10.2.2
 
 - `StringUtils#isNumber` optimized.
 - Add support index syntax `[]` for key path expression.
@@ -138,71 +142,71 @@
 - `ValueUtils#getDeepValue` optimized.
 - Lexer optimized.
 
-# 10.2.1
+## 10.2.1
 
 - SQL highlight optimized.
 - Dynamic sql `#for` loop body parse string format optimized.
 
-# 10.2.0
+## 10.2.0
 
 - Some optimized.
 
-# 10.1.4
+## 10.1.4
 
 - Rename package utils to util.
 
-# 10.1.3
+## 10.1.3
 
 - Make Global sql execution exception wrap as DataAccessException.
 - XQL Mapper method args parsing optimized.
 - New const identifier for entity query id, it can be used for location the sql.
 - Some code and performance optimized.
 
-# 10.1.2
+## 10.1.2
 
 - Entity insert optimized.
 
-# 10.1.1
+## 10.1.1
 
 - New method of entity executor `query#select(...)`.
 
-# 10.1.0
+## 10.1.0
 
 - Add support simple entity executor: baki#entity().
 - Add support entity meta provider interface.
 
-# 10.0.9
+## 10.0.9
 
 - Batch execute add support each entity mapping to Map function.
 
-# 10.0.8
+## 10.0.8
 
 - `Baki#insert` change 1st param as sql content.
 - New method `Baki#table` for simple dml.
 
-# 10.0.7
+## 10.0.7
 
 - `QueryCacheManager` optimized.
 - `SqlInvokeHandler` optimized.
 
-# 10.0.6
+## 10.0.6
 
 - Removed SqlParseChecker and SqlInterceptor optimized.
 - New method XQLFileManager#extractModifier.
 - BakiDao page query optimized.
 - BakiDao#prepareSql optimized.
 
-# 10.0.5
+## 10.0.5
 
 - Some optimized.
 
-# 10.0.4
+## 10.0.4
 
 - pipe's params add support variable name.
 - parsing `#var` in `#for` body optimized.
 - strict params cannot same as `#var` variables.
 
-# 10.0.3
+## 10.0.3
 
 - Remove config field `XQLFileManager#delimiter`, xql parsing optimized.
 - Template formatter optimized,Remove `TemplateFormatter`.
@@ -210,12 +214,12 @@
 - New method `PagedResource#to`.
 - `XQLFileManager` parsing template optimized.
 
-# 10.0.2
+## 10.0.2
 
 - Dynamic sql add new pipe 'in'
 - `ClasspathResource` optimized
 
-# 10.0.1
+## 10.0.1
 
 - Dynamic sql add supports: #guard...#throw, #check exp throw, #var ...
 - Dynamic sql verify logic optimized and fixed #else verify bug.
@@ -224,113 +228,113 @@
 - QueryCacheManager#get add 2nd parameter query args.
 - Some optimized.
 
-# 10.0.0
+## 10.0.0
 
 - Remove jpa supports.
 - New baki interface methods.
 - Some more changes.
 
-# 9.0.20
+## 9.0.20
 
 - Some optimized.
 
-# 9.0.19
+## 9.0.19
 
 - Some optimized.
 
-# 9.0.18
+## 9.0.18
 
 - Optimized page query.
 - Fixed executeBatch bug.
 
-# 9.0.17
+## 9.0.17
 
 - exception error msg optimized.
 
-# 9.0.16
+## 9.0.16
 
 - Fixed generate page sql error which ends with line comment.
 
-# 9.0.15
+## 9.0.15
 
 - Fixed column name bug.
 
-# 9.0.14
+## 9.0.14
 
 - Support where condition in delete and update.
 
-# 9.0.13
+## 9.0.13
 
 - dsl query optimized.
 
-# 9.0.12
+## 9.0.12
 
 - Some optimized.
 
-# 9.0.10
+## 9.0.10
 
 - Fixed pipe class not found bug.
 
-# 9.0.9
+## 9.0.9
 
 - Fixed first sql block comment bugs.
 
-# 9.0.8
+## 9.0.8
 
 - Some optimized.
 
-# 9.0.7
+## 9.0.7
 
 - Some optimized.
 
-# 9.0.6
+## 9.0.6
 
 - Pipe parse optimized.
 
-# 9.0.5
+## 9.0.5
 
 - Some optimized.
 
-# 9.0.4
+## 9.0.4
 
 - Update entity executor.
 
-# 9.0.3
+## 9.0.3
 
 - Some optimized.
 
-# 9.0.2
+## 9.0.2
 
 - Support sqlserver page query.
 - JdbcSupport optimized.
 
-# 9.0.0
+## 9.0.0
 
 - jdk17.
 - Some update.
 
-# 8.1.2
+## 8.1.2
 
 - Some optimized.
 
-# 8.1.1
+## 8.1.1
 
 - `Baki#update/delete` optimized.
 
-# 8.1.0
+## 8.1.0
 
 - Support support dsl query.
 - Some update and fixed.
 
-# 7.14.0
+## 7.14.0
 
 - Fixed bugs.
 
-# 7.13.0
+## 7.13.0
 
 - Some optimized.
 
-# 7.12.7
+## 7.12.7
 
 - Remove `BakiDao#reloadXqlOnGet`.
 - Remove empty constructor default load config.
@@ -338,20 +342,20 @@
 - Interface mapper proxy instance throw exception optimized.
 - `XQLFileManager#contains` optimized.
 
-# 7.12.6
+## 7.12.6
 
 - `QueryCacheManager` optimized.
 - debug log optimized.
 
-# 7.12.5
+## 7.12.5
 
 - `QueryCacheManager` optimized.
 
-# 7.12.4
+## 7.12.4
 
 - `XQLInvocationHandler` optimized.
 
-# 7.12.3
+## 7.12.3
 
 - Add keyword `create` for insert, `list` for select.
 - Pageable page sql optimized.
@@ -359,24 +363,24 @@
 - New `QueryCacheManager` interface for `QueryExecutor`.
 - `BakiDao#executeQueryStreamWithCache` optimized.
 
-# 7.12.2
+## 7.12.2
 
 - Optimized.
 
-# 7.12.1
+## 7.12.1
 
 - Optimized.
 
-# 7.12.0
+## 7.12.0
 
 - Mapper add return type `Set`, `Long`, `Double`
 - Add @Function
 
-# 7.11.20
+## 7.11.20
 
 - Some optimized.
 
-# 7.11.19
+## 7.11.19
 
 - Mapper support detect method name to execute sql.
 

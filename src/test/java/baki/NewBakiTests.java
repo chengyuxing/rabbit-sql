@@ -2,6 +2,7 @@ package baki;
 
 import baki.entity.AnotherUser;
 import baki.entity.Guest;
+import baki.entity.NewGuest;
 import baki.entityExecutor.MyEntityMetaParser;
 import baki.op.ExecuteCostWatcher;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -123,6 +124,15 @@ public class NewBakiTests {
                 .by("address")
                 .delete(Args.of("address", "USA"));
         System.out.println(i);
+    }
+
+    @Test
+    public void testE() {
+        baki.entity(NewGuest.class)
+                .update()
+                .where(w -> w.eq(NewGuest::getAddress, "a"))
+                .set(NewGuest::getXm, "cyx")
+                .save();
     }
 
     @Test

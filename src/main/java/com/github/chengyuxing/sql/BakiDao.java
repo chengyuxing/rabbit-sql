@@ -3,6 +3,7 @@ package com.github.chengyuxing.sql;
 import com.github.chengyuxing.common.AroundExecutor;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.common.MethodReference;
+import com.github.chengyuxing.common.PropertyMeta;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.tuple.Triple;
 import com.github.chengyuxing.common.util.ReflectUtils;
@@ -452,12 +453,9 @@ public class BakiDao extends JdbcSupport implements Baki {
 
             String parseMethodRefColumn(MethodReference<T> methodRef) {
                 String fieldName = ReflectUtils.getFieldName(methodRef);
-                try {
-                    Field field = clazz.getDeclaredField(fieldName);
-                    return getEntityMetaProvider().columnMeta(field).getName();
-                } catch (NoSuchFieldException e) {
-                    throw new RuntimeException(e);
-                }
+                Map<String, PropertyMeta> metas = ReflectUtils.getBeanPropertyMetas(clazz);
+                Field field = metas.get(fieldName).getField();
+                return getEntityMetaProvider().columnMeta(field).getName();
             }
 
             final class InternalWhere extends Where<T> {

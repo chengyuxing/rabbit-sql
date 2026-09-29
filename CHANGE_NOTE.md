@@ -1,5 +1,9 @@
 # change note
 
+## 10.3.18
+
+- Fixed `Baki#entity` bug: no such field exception
+
 ## 10.3.17
 
 - Update `rabbit-common`

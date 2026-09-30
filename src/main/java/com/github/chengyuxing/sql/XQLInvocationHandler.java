@@ -391,15 +391,7 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
         if (type.isInterface() || type.isEnum() || type.isArray() || type.isPrimitive()) {
             return false;
         }
-        if (type.isSynthetic() || StringUtils.startsWiths(name, "$$", "$Proxy")) {
-            return false;
-        }
-        for (Field field : type.getDeclaredFields()) {
-            if (!Modifier.isStatic(field.getModifiers())) {
-                return true;
-            }
-        }
-        return false;
+        return !type.isSynthetic() && !StringUtils.startsWiths(name, "$$", "$Proxy");
     }
 
     private boolean isImplicitSingleArg(Parameter parameter) {

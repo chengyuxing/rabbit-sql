@@ -1,5 +1,9 @@
 # change note
 
+## 10.3.19
+
+- Fix mapper method with empty entity param bug
+
 ## 10.3.18
 
 - Fixed `Baki#entity` bug: no such field exception

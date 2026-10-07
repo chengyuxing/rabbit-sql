@@ -246,6 +246,8 @@ In other frameworks, even custom field annotation parsing can meet the requireme
 
 Use of transactions follows thread isolation:
 
+`Tx` does not support nested transactions. Calling `Tx.begin()` or `Tx.using()` while a transaction is active in the current thread throws `IllegalStateException` before changing the existing transaction or executing the nested callback.
+
 ```java
 Tx.using(() -> {
   ......

@@ -17,10 +17,14 @@ public final class Tx {
      * Begin transaction.
      *
      * @param definition transaction definition
+     * @throws IllegalStateException if a transaction is already active in the current thread
      * @see #using(Runnable, Definition)
      * @see #using(Supplier, Definition)
      */
     public static void begin(Definition definition) {
+        if (AbstractTransactionSyncManager.isTransactionActive()) {
+            throw new IllegalStateException("Nested transactions are not supported.");
+        }
         AbstractTransactionSyncManager.initTransaction(definition);
         if (!AbstractTransactionSyncManager.isSynchronizationActive()) {
             AbstractTransactionSyncManager.initSynchronization();
@@ -75,8 +79,8 @@ public final class Tx {
      * @see #rollback()
      */
     public static void using(Runnable runnable, Definition definition) {
+        begin(definition);
         try {
-            begin(definition);
             runnable.run();
             commit();
         } catch (Throwable e) {
@@ -98,8 +102,8 @@ public final class Tx {
      */
     public static <T> T using(Supplier<T> supplier, Definition definition) {
         T result;
+        begin(definition);
         try {
-            begin(definition);
             result = supplier.get();
             commit();
             return result;

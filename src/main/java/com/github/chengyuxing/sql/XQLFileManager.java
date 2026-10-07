@@ -604,11 +604,13 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         lock.lock();
         try {
             loading = true;
-            resources = Collections.unmodifiableMap(buildResources());
-            pipeInstances = Collections.unmodifiableMap(buildPipeInstances());
+            Map<String, Resource> newResources = Collections.unmodifiableMap(buildResources());
+            Map<String, IPipe<?>> newPipeInstances = Collections.unmodifiableMap(buildPipeInstances());
+            resources = newResources;
+            pipeInstances = newPipeInstances;
+            initialized = true;
         } finally {
             loading = false;
-            initialized = true;
             lock.unlock();
         }
     }

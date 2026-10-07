@@ -35,6 +35,7 @@ public class SqlGenerator {
                         "(?<!\\%1$s)\\%1$s(%2$s)|" +        // Named parameters
                                 "'(?:''|[^'])*'|" +         // String literals
                                 "\"(?:\"\"|[^\"])*\"|" +    // Identifier literals
+                                "(?<![\\p{L}\\p{N}_$])(?<dollarQuote>\\$(?:[\\p{L}_][\\p{L}\\p{N}_]*)?\\$).*?\\k<dollarQuote>|" + // PostgreSQL dollar-quoted literals
                                 "--.*?$|" +                 // Line comments
                                 "/\\*.*?\\*/|" +            // Block comments
                                 "::\\w+",                   // PostgreSQL type casts

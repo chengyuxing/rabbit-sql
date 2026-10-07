@@ -250,6 +250,8 @@ public class JpaEntityMetaParser implements EntityManager.EntityMetaProvider {
 
 事务的使用请遵循线程的隔离性。
 
+`Tx` 不支持嵌套事务。同一线程已有活动事务时，调用 `Tx.begin()` 或 `Tx.using()` 会抛出 `IllegalStateException`，不会修改已有事务或执行内层回调。
+
 ```java
 Tx.using(() -> {
   ......

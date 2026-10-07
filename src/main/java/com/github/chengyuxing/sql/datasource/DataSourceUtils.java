@@ -40,6 +40,19 @@ public abstract class DataSourceUtils {
         Connection connection = fetchConnection(dataSource);
         // If transaction is active, bind new connection to transaction in current thread.
         if (isTransactionActive()) {
+            try {
+                connection.setAutoCommit(false);
+                //noinspection MagicConstant
+                connection.setTransactionIsolation(getCurrentTransactionIsolationLevel());
+                connection.setReadOnly(isCurrentTransactionReadOnly());
+            } catch (SQLException | RuntimeException | Error e) {
+                try {
+                    connection.close();
+                } catch (SQLException | RuntimeException | Error closeError) {
+                    e.addSuppressed(closeError);
+                }
+                throw e;
+            }
             ConnectionHolder holderToUse = connectionHolder;
             if (holderToUse == null) {
                 holderToUse = new ConnectionHolder(connection);
@@ -47,10 +60,6 @@ public abstract class DataSourceUtils {
                 holderToUse.setConnection(connection);
             }
             holderToUse.requested();
-            connection.setAutoCommit(false);
-            //noinspection MagicConstant
-            connection.setTransactionIsolation(getCurrentTransactionIsolationLevel());
-            connection.setReadOnly(isCurrentTransactionReadOnly());
             registerSynchronization(new TransactionSynchronization(holderToUse, dataSource));
             holderToUse.setSyncWithTransaction(true);
             if (holderToUse != connectionHolder) {

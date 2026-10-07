@@ -41,7 +41,21 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
 
     @Override
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+        if (method.getDeclaringClass() == Object.class) {
+            switch (method.getName()) {
+                case "equals": return proxy == args[0];
+                case "hashCode": return System.identityHashCode(proxy);
+                case "toString": return "XQLMapper[" + proxy.getClass().getInterfaces()[0].getName() + "]@" + Integer.toHexString(System.identityHashCode(proxy));
+                default: throw new UnsupportedOperationException("Unsupported Object method: " + method);
+            }
+        }
+        if (method.isDefault()) {
+            throw new UnsupportedOperationException("Default mapper methods are not supported: " + method);
+        }
         Class<?> clazz = method.getDeclaringClass();
+        if (!clazz.isAnnotationPresent(XQLMapper.class)) {
+            clazz = proxy.getClass().getInterfaces()[0];
+        }
         Class<?> returnType = method.getReturnType();
         Class<?> returnGenericType = getReturnGenericType(method);
 

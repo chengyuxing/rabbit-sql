@@ -22,6 +22,7 @@ import com.github.chengyuxing.sql.util.JdbcUtils;
 import com.zaxxer.hikari.HikariDataSource;
 import org.jetbrains.annotations.NotNull;
 import org.junit.BeforeClass;
+import org.junit.AfterClass;
 import org.junit.Test;
 
 import java.sql.CallableStatement;
@@ -31,14 +32,17 @@ import java.util.stream.Stream;
 
 public class NewBakiTests {
     private static BakiDao bakiDao;
+    private static HikariDataSource dataSource;
     private static Baki baki;
     private static final ObjectMapper json = new ObjectMapper();
 
     @BeforeClass
     public static void init() {
-        HikariDataSource dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
-        dataSource.setUsername("chengyuxing");
+        dataSource = new HikariDataSource();
+        dataSource.setJdbcUrl(Objects.requireNonNull(System.getProperty("rabbit.sql.test.jdbcUrl"),
+                "Set rabbit.sql.test.jdbcUrl to an isolated PostgreSQL test database."));
+        dataSource.setUsername(System.getProperty("rabbit.sql.test.username", ""));
+        dataSource.setPassword(System.getProperty("rabbit.sql.test.password", ""));
 
         XQLFileManager xqlFileManager = new XQLFileManager();
         xqlFileManager.add("new", "dynamic-sql-example/for_in_update.xql");
@@ -79,6 +83,11 @@ public class NewBakiTests {
         });
         bakiDao.setExecutionWatcher(new ExecuteCostWatcher());
         bakiDao.setEntityMetaProvider(new MyEntityMetaParser());
+    }
+
+    @AfterClass
+    public static void closeDataSource() {
+        if (dataSource != null) dataSource.close();
     }
 
     @Test

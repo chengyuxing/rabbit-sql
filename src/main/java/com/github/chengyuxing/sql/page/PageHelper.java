@@ -70,12 +70,25 @@ public abstract class PageHelper {
     public void init(@Range(from = 1, to = Integer.MAX_VALUE) int page,
                      @Range(from = 1, to = Integer.MAX_VALUE) int size,
                      @Range(from = 0, to = Integer.MAX_VALUE) int count) {
+        validatePage(page, size);
+        if (count < 0) {
+            throw new IllegalArgumentException("Record count must not be negative.");
+        }
         pageNumber = page;
         pageSize = size;
         recordCount = count;
         pageCount = recordCount / pageSize;
         if (recordCount % pageSize != 0) {
             pageCount += 1;
+        }
+    }
+
+    static void validatePage(int page, int size) {
+        if (page < 1 || size < 1) {
+            throw new IllegalArgumentException("Page number and size must be positive.");
+        }
+        if (((long) page - 1) * size > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("Page offset exceeds the supported integer range.");
         }
     }
 

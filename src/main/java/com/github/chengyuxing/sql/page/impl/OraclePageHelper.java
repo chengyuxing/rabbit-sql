@@ -18,14 +18,15 @@ import org.jetbrains.annotations.NotNull;
  */
 public class OraclePageHelper extends PageHelper {
     public int end() {
-        int end = pageNumber * pageSize;
-        if (end > recordCount)
-            end = recordCount;
-        return end;
+        return (int) Math.min((long) pageNumber * pageSize, recordCount);
     }
 
     public int start() {
-        return (pageNumber - 1) * pageSize + 1;
+        long start = ((long) pageNumber - 1) * pageSize + 1;
+        if (start > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException("Page start exceeds the supported integer range.");
+        }
+        return (int) start;
     }
 
     @Override

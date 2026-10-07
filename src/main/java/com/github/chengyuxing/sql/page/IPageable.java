@@ -34,6 +34,7 @@ public abstract class IPageable {
     public IPageable(String recordQuery,
                      @Range(from = 1, to = Integer.MAX_VALUE) int page,
                      @Range(from = 1, to = Integer.MAX_VALUE) int size) {
+        PageHelper.validatePage(page, size);
         this.recordQuery = recordQuery;
         this.page = page;
         this.size = size;
@@ -70,6 +71,9 @@ public abstract class IPageable {
      * @return IPageable
      */
     public IPageable count(@Range(from = 0, to = Integer.MAX_VALUE) Integer count) {
+        if (count != null && count < 0) {
+            throw new IllegalArgumentException("Record count must not be negative.");
+        }
         this.count = count;
         return this;
     }

@@ -1256,6 +1256,9 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     public void setBatchSize(@Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
+        if (batchSize < 1) {
+            throw new IllegalArgumentException("Batch size must be positive.");
+        }
         this.batchSize = batchSize;
     }
 

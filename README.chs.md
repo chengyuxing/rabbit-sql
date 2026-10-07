@@ -145,6 +145,8 @@ public interface ExampleMapper {
 - `@Procedure`
 - `@Function`
 
+Mapper 代理的 `equals()` 和 `hashCode()` 按对象身份判断；`toString()` 描述代理接口，不访问数据库。父接口的 SQL 方法在声明接口标注了 `@XQLMapper` 时保留父接口别名，否则使用传入 `proxyXQLMapper()` 的接口别名。返回类型需要明确，不支持未解析的泛型类型变量。接口默认方法会抛出 `UnsupportedOperationException`。
+
 ### Baki
 
 访问数据库的基础接口。
@@ -179,9 +181,11 @@ try(Stream<DataRow> fruits = baki.query("select * from fruit").stream()){
         }
 ```
 
-> 只有当进行终端操作时才会真正的开始执行查询，推荐使用 **try-with-resource** 语句进行包裹，在查询完成后将自动释放连接对象。
+> 数据库查询在创建 Stream 时执行，结果行随 Stream 消费逐步读取。`findFirst()` 等终端操作不会自动关闭 Stream，即使提前结束读取，也必须使用 **try-with-resources** 关闭。`rows()`、`entities()` 等集合方法会自动关闭底层 Stream。
 
 - 分页查询
+
+页码、每页条数必须大于零，总记录数不能为负。内置分页参数使用 `int`，偏移超出范围时会抛出 `IllegalArgumentException`，避免整数溢出。批次大小也必须大于零。
 
 默认的分页查询将自动根据数据库生成**分页查询语句**和生成 **count** 查询语句。
 
@@ -252,6 +256,10 @@ public class JpaEntityMetaParser implements EntityManager.EntityMetaProvider {
 
 `Tx` 不支持嵌套事务。同一线程已有活动事务时，调用 `Tx.begin()` 或 `Tx.using()` 会抛出 `IllegalStateException`，不会修改已有事务或执行内层回调。
 
+业务代码失败时保留原始异常，回滚及清理失败通过 suppressed exceptions 附加。提交失败时先尝试回滚，再释放连接。即使某个连接清理失败，也会继续清理其他已注册连接，并清除线程内事务状态。
+
+`Tx` 的状态仅属于当前线程。多个数据源的连接逐个提交，这不是 XA 或分布式事务，不能保证跨数据库原子性；某个连接提交成功后，其他连接提交失败也无法撤销此前的提交。Spring 应用中的事务传播应由 Spring 管理。
+
 ```java
 Tx.using(() -> {
   ......
@@ -267,6 +275,8 @@ Tx.using(() -> {
 `:name` (jdbc标准的命名参数写法，sql将被预编译安全处理，参数名为：`name` )
 
 > 最终被编译为 `?`，极力推荐使用预编译sql，可以有效避免sql注入的风险。
+
+使用 Map 参数时，缺失的命名参数键与显式传入 `null` 在默认参数处理器下都会绑定为 SQL `NULL`。如果缺失参数应报错，可在业务入口或 `SqlInterceptor` 中校验。Debug 日志包含 SQL 参数值；涉及敏感数据时，应关闭参数日志或通过日志配置脱敏。
 
 ### 字符串模版
 
@@ -956,6 +966,26 @@ end;
 详细说明请参考：
 
 👉 [动态sql](#动态SQL) 文档
+
+## 运行测试
+
+使用 Java 8+ 运行自包含回归测试和已有的 `tests.Tests` 示例：
+
+```shell
+mvn test
+```
+
+默认测试无需外部数据库，JDBC 回归测试使用临时 SQLite 文件。依赖本地文件或数据库数据的历史示例不纳入默认测试，可通过 `-Dtest=类名` 显式选择。
+
+`integration-tests` profile 会额外执行 `tests.MyTest` 和 `baki.NewBakiTests` 中的 PostgreSQL 示例。需要提供独立测试数据库，并准备这些示例用到的 schema、表、函数和本地文件；部分示例会修改数据：
+
+```shell
+mvn -Pintegration-tests test \
+  -Drabbit.sql.test.jdbcUrl=jdbc:postgresql://localhost:5432/rabbit_sql_test \
+  -Drabbit.sql.test.username=test_user
+```
+
+数据库需要密码时设置 `rabbit.sql.test.password`。未提供 JDBC 地址时，PostgreSQL 示例会在连接前报错。
 
 [badge:maven]:https://img.shields.io/maven-central/v/com.github.chengyuxing/rabbit-sql
 [badge:license]: https://img.shields.io/github/license/chengyuxing/rabbit-sql

@@ -143,6 +143,8 @@ If the method annotated with special annotations, method will not mapping to xql
 - `@Procedure`
 - `@Function`
 
+Mapper proxies use identity-based `equals()` and `hashCode()`; `toString()` describes the proxied interface without querying the database. Inherited SQL methods retain their declaring parent interface's `@XQLMapper` alias when present; otherwise they use the alias of the interface passed to `proxyXQLMapper()`. Parent method return types must be concrete; unresolved generic type variables are not supported. Interface default methods throw `UnsupportedOperationException`.
+
 ### Baki
 
 Basic interface to access database.
@@ -177,9 +179,11 @@ try(Stream<DataRow> fruits = baki.query("select * from fruit").stream()){
         }
 ```
 
-> Query will not truly execute until invoke **Stream terminal operation**(e.g. `foreach()` ), use jdk7 **try-with-resource** to release connection when query complete.
+> The database query executes when the Stream is created; rows are read as the Stream is consumed. Terminal operations such as `findFirst()` do not close it automatically. Always use **try-with-resources**, including when consumption stops early. Collection methods such as `rows()` and `entities()` close their underlying Stream automatically.
 
 - Paging
+
+Page numbers and sizes must be positive, and record counts must be nonnegative. Built-in paging parameters use `int`; offsets outside that range throw `IllegalArgumentException` instead of overflowing. Batch sizes must also be positive.
 
 Default pageable query will auto generate **paging statement** and **count** statement by database.
 
@@ -248,6 +252,10 @@ Use of transactions follows thread isolation:
 
 `Tx` does not support nested transactions. Calling `Tx.begin()` or `Tx.using()` while a transaction is active in the current thread throws `IllegalStateException` before changing the existing transaction or executing the nested callback.
 
+When business code fails, its original exception is rethrown; rollback and cleanup failures are attached as suppressed exceptions. A failed commit attempts rollback before releasing connections. All registered connections are cleaned up and thread-local transaction state is cleared even if one cleanup fails.
+
+`Tx` is local to the current thread. Connections from multiple data sources are committed one at a time; this is not an XA/distributed transaction and does not guarantee cross-database atomicity. A connection that has already committed cannot be undone when another commit fails. In Spring applications, use Spring's transaction management for propagation.
+
 ```java
 Tx.using(() -> {
   ......
@@ -263,6 +271,8 @@ Prepare sql support named parameter style, e.g.
 `:name` (jdbc standard named parameter syntax, sql will be prepare saftly, parameter name is `name` )
 
 > Named parameter will be compile to `?`, Recommend to use prepare sql for avoid sql injection.
+
+With Map arguments, a missing named-parameter key and an explicitly null value both bind SQL `NULL` through the default value handler. Validate required arguments in business code or a `SqlInterceptor` if missing values should be rejected. Debug logging includes SQL arguments, so avoid enabling argument logs for sensitive values unless your logging setup redacts them.
 
 ### String template
 
@@ -952,6 +962,26 @@ The parsing process is completely decoupled from SQL itself.
 For detailed instructions, please refer to:
 
 👉 [Dynamic sql](#Dynamic-SQL) document
+
+## Running tests
+
+Run the self-contained regression suite and the existing `tests.Tests` examples with Java 8+:
+
+```shell
+mvn test
+```
+
+These tests require no external database; JDBC regressions use temporary SQLite files. Legacy examples that depend on local files or database fixtures are not part of the default suite and can be selected explicitly with `-Dtest=ClassName`.
+
+The `integration-tests` profile additionally runs the PostgreSQL examples in `tests.MyTest` and `baki.NewBakiTests`. Supply an isolated test database containing the schema, tables, functions and file fixtures those examples use; some examples modify data:
+
+```shell
+mvn -Pintegration-tests test \
+  -Drabbit.sql.test.jdbcUrl=jdbc:postgresql://localhost:5432/rabbit_sql_test \
+  -Drabbit.sql.test.username=test_user
+```
+
+Set `rabbit.sql.test.password` when the database requires authentication. The PostgreSQL examples fail before connecting if the JDBC URL is not provided.
 
 [badge:maven]:https://img.shields.io/maven-central/v/com.github.chengyuxing/rabbit-sql
 [badge:license]: https://img.shields.io/github/license/chengyuxing/rabbit-sql

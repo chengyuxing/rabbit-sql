@@ -126,6 +126,7 @@ public abstract class AbstractTransactionSyncManager {
     }
 
     public static void clear() {
+        resources.remove();
         synchronizations.remove();
         currentTransactionIsolationLevel.remove();
         currentTransactionReadOnly.remove();

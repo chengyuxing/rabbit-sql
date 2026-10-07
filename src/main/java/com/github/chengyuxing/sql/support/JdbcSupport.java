@@ -164,6 +164,9 @@ public abstract class JdbcSupport extends JdbcHelper {
      */
     protected BatchResult executeBatch(@NotNull final Iterable<String> sqlList,
                                        @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
+        if (batchSize < 1) {
+            throw new IllegalArgumentException("Batch size must be positive.");
+        }
         Connection connection = null;
         Statement s = null;
         try {
@@ -212,6 +215,9 @@ public abstract class JdbcSupport extends JdbcHelper {
                                                  @NotNull Iterable<T> args,
                                                  @NotNull Function<T, ? extends Map<String, ?>> argMapper,
                                                  @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
+        if (batchSize < 1) {
+            throw new IllegalArgumentException("Batch size must be positive.");
+        }
         Iterator<T> iterator = args.iterator();
         if (!iterator.hasNext()) {
             return new BatchResult(new int[0]);

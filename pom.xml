@@ -13,6 +13,7 @@
     <url>https://github.com/chengyuxing/rabbit-sql</url>
 
     <properties>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>8</maven.compiler.source>
         <maven.compiler.target>8</maven.compiler.target>
         <snakeyaml.version>1.33</snakeyaml.version>
@@ -183,6 +184,17 @@
         <build>
             <plugins>
                 <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.2.5</version>
+                    <configuration>
+                        <includes>
+                            <include>**/*RegressionTest.java</include>
+                            <include>**/Tests.java</include>
+                        </includes>
+                    </configuration>
+                </plugin>
+                <plugin>
                     <groupId>org.sonatype.central</groupId>
                     <artifactId>central-publishing-maven-plugin</artifactId>
                     <version>0.8.0</version>
@@ -243,4 +255,25 @@
                 </plugin>
             </plugins>
         </build>
+    <profiles>
+        <profile>
+            <id>integration-tests</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-surefire-plugin</artifactId>
+                        <configuration>
+                            <includes combine.self="override">
+                                <include>**/*RegressionTest.java</include>
+                                <include>**/Tests.java</include>
+                                <include>**/MyTest.java</include>
+                                <include>**/NewBakiTests.java</include>
+                            </includes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

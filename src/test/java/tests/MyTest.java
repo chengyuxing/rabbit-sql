@@ -8,6 +8,7 @@ import com.github.chengyuxing.sql.types.StandardOutParamType;
 import com.github.chengyuxing.sql.types.Param;
 import com.zaxxer.hikari.HikariDataSource;
 import org.junit.BeforeClass;
+import org.junit.AfterClass;
 import org.junit.Test;
 import org.postgresql.util.PGobject;
 
@@ -26,8 +27,10 @@ public class MyTest {
     @BeforeClass
     public static void init() throws IOException, URISyntaxException {
         dataSource = new HikariDataSource();
-        dataSource.setJdbcUrl("jdbc:postgresql://127.0.0.1:5432/postgres");
-        dataSource.setUsername("chengyuxing");
+        dataSource.setJdbcUrl(Objects.requireNonNull(System.getProperty("rabbit.sql.test.jdbcUrl"),
+                "Set rabbit.sql.test.jdbcUrl to an isolated PostgreSQL test database."));
+        dataSource.setUsername(System.getProperty("rabbit.sql.test.username", ""));
+        dataSource.setPassword(System.getProperty("rabbit.sql.test.password", ""));
 
         XQLFileManager manager = new XQLFileManager();
         manager.add("data", "dynamic-sql-example/choose.xql");
@@ -35,6 +38,11 @@ public class MyTest {
         BakiDao bakiDao = new BakiDao(dataSource);
         bakiDao.setXqlFileManager(manager);
         baki = bakiDao;
+    }
+
+    @AfterClass
+    public static void closeDataSource() {
+        if (dataSource != null) dataSource.close();
     }
 
     @Test

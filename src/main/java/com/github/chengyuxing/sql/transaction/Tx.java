@@ -6,6 +6,7 @@ import com.github.chengyuxing.sql.datasource.DataSourceUtils;
 import com.github.chengyuxing.sql.exceptions.TransactionException;
 
 import java.sql.SQLException;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
@@ -22,6 +23,7 @@ public final class Tx {
      * @see #using(Supplier, Definition)
      */
     public static void begin(Definition definition) {
+        Objects.requireNonNull(definition, "Transaction definition must not be null.");
         if (AbstractTransactionSyncManager.isTransactionActive()) {
             throw new IllegalStateException("Nested transactions are not supported.");
         }
@@ -48,11 +50,7 @@ public final class Tx {
      * @see #begin()
      */
     public static void commit() {
-        try {
-            commitTransaction();
-        } finally {
-            releaseTransaction();
-        }
+        completeTransaction(true);
     }
 
     /**
@@ -62,11 +60,7 @@ public final class Tx {
      * @see #begin()
      */
     public static void rollback() {
-        try {
-            rollbackTransaction();
-        } finally {
-            releaseTransaction();
-        }
+        completeTransaction(false);
     }
 
     /**
@@ -79,14 +73,10 @@ public final class Tx {
      * @see #rollback()
      */
     public static void using(Runnable runnable, Definition definition) {
-        begin(definition);
-        try {
+        using(() -> {
             runnable.run();
-            commit();
-        } catch (Throwable e) {
-            rollback();
-            throw e;
-        }
+            return null;
+        }, definition);
     }
 
     /**
@@ -105,12 +95,18 @@ public final class Tx {
         begin(definition);
         try {
             result = supplier.get();
-            commit();
-            return result;
         } catch (Throwable e) {
-            rollback();
+            try {
+                rollback();
+            } catch (Throwable rollbackError) {
+                if (rollbackError != e) {
+                    e.addSuppressed(rollbackError);
+                }
+            }
             throw e;
         }
+        commit();
+        return result;
     }
 
     /**
@@ -139,11 +135,50 @@ public final class Tx {
         return using(supplier, Definition.defaultDefinition());
     }
 
-    private static void releaseTransaction() {
-        if (AbstractTransactionSyncManager.isSynchronizationActive()) {
-            AbstractTransactionSyncManager.getSynchronizations().forEach(DataSourceUtils.TransactionSynchronization::afterCompletion);
+    private static void completeTransaction(boolean commit) {
+        Throwable failure = null;
+        try {
+            if (commit) {
+                commitTransaction();
+            } else {
+                rollbackTransaction();
+            }
+        } catch (RuntimeException | Error e) {
+            failure = e;
+            if (commit) {
+                try {
+                    rollbackTransaction();
+                } catch (RuntimeException | Error rollbackError) {
+                    if (rollbackError != e) e.addSuppressed(rollbackError);
+                }
+            }
+            throw e;
+        } finally {
+            try {
+                releaseTransaction();
+            } catch (RuntimeException | Error cleanupError) {
+                if (failure == null) throw cleanupError;
+                if (cleanupError != failure) failure.addSuppressed(cleanupError);
+            }
         }
-        AbstractTransactionSyncManager.clear();
+    }
+
+    private static void releaseTransaction() {
+        Throwable failure = null;
+        try {
+            for (DataSourceUtils.TransactionSynchronization synchronization : AbstractTransactionSyncManager.getSynchronizations()) {
+                try {
+                    synchronization.afterCompletion();
+                } catch (RuntimeException | Error e) {
+                    if (failure == null) failure = e;
+                    else if (e != failure) failure.addSuppressed(e);
+                }
+            }
+        } finally {
+            AbstractTransactionSyncManager.clear();
+        }
+        if (failure instanceof Error) throw (Error) failure;
+        if (failure != null) throw (RuntimeException) failure;
     }
 
     private static void commitTransaction() {
@@ -160,15 +195,18 @@ public final class Tx {
     }
 
     private static void rollbackTransaction() {
-        AbstractTransactionSyncManager.getSynchronizations().forEach(s -> {
+        TransactionException failure = null;
+        for (DataSourceUtils.TransactionSynchronization s : AbstractTransactionSyncManager.getSynchronizations()) {
             ConnectionHolder holder = s.getConnectionHolder();
             if (holder.hasConnection()) {
                 try {
                     holder.getConnection().rollback();
                 } catch (SQLException e) {
-                    throw new TransactionException("Transaction rollback failed.", e);
+                    if (failure == null) failure = new TransactionException("Transaction rollback failed.", e);
+                    else failure.addSuppressed(e);
                 }
             }
-        });
+        }
+        if (failure != null) throw failure;
     }
 }

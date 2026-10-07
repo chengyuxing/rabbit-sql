@@ -2,6 +2,7 @@ package tests;
 
 import com.github.chengyuxing.sql.datasource.AbstractTransactionSyncManager;
 import com.github.chengyuxing.sql.datasource.DataSourceUtils;
+import com.github.chengyuxing.sql.exceptions.TransactionException;
 import com.github.chengyuxing.sql.transaction.Tx;
 import org.junit.After;
 import org.junit.Test;
@@ -92,6 +93,130 @@ public class TransactionRegressionTest {
         assertArrayEquals(new Throwable[]{recording.closeFailure}, error.getSuppressed());
     }
 
+    @Test
+    public void businessFailureSurvivesRollbackAndCleanupFailures() {
+        RecordingConnection recording = new RecordingConnection();
+        recording.rollbackFailure = new SQLException("rollback failed");
+        recording.closeFailure = new SQLException("close failed");
+        RuntimeException businessFailure = new RuntimeException("business failed");
+        RuntimeException error = assertThrows(RuntimeException.class, () -> Tx.using((Runnable) () -> {
+            acquire(recording);
+            throw businessFailure;
+        }));
+        assertSame(businessFailure, error);
+        assertEquals(1, error.getSuppressed().length);
+        assertSame(recording.rollbackFailure, error.getSuppressed()[0].getCause());
+        assertSame(recording.closeFailure, error.getSuppressed()[0].getSuppressed()[0].getCause());
+        assertEquals(1, recording.rollbacks);
+        assertEquals(1, recording.closes);
+        assertTransactionCleared(recording);
+    }
+
+    @Test
+    public void supplierFailurePreservesOriginalError() {
+        RecordingConnection recording = new RecordingConnection();
+        recording.rollbackFailure = new SQLException("rollback failed");
+        AssertionError businessFailure = new AssertionError("business failed");
+        AssertionError error = assertThrows(AssertionError.class, () -> Tx.using((Supplier<Integer>) () -> {
+            acquire(recording);
+            throw businessFailure;
+        }));
+        assertSame(businessFailure, error);
+        assertSame(recording.rollbackFailure, error.getSuppressed()[0].getCause());
+        assertTransactionCleared(recording);
+    }
+
+    @Test
+    public void failedCommitAttemptsRollbackBeforeReleasingConnections() {
+        RecordingConnection recording = new RecordingConnection();
+        recording.commitFailure = new SQLException("commit failed");
+        recording.rollbackFailure = new SQLException("rollback failed");
+        recording.closeFailure = new SQLException("close failed");
+        TransactionException error = assertThrows(TransactionException.class, () -> Tx.using((Runnable) () -> acquire(recording)));
+        assertSame(recording.commitFailure, error.getCause());
+        assertSame(recording.rollbackFailure, error.getSuppressed()[0].getCause());
+        assertSame(recording.closeFailure, error.getSuppressed()[1].getCause());
+        assertEquals(1, recording.commits);
+        assertEquals(1, recording.rollbacks);
+        assertEquals(1, recording.closes);
+        assertTransactionCleared(recording);
+    }
+
+    @Test
+    public void rollbackAndCleanupContinueAfterOneConnectionFails() {
+        RecordingConnection first = new RecordingConnection();
+        first.rollbackFailure = new SQLException("rollback failed");
+        first.closeFailure = new SQLException("close failed");
+        RecordingConnection second = new RecordingConnection();
+        Tx.begin();
+        acquire(first);
+        acquire(second);
+        TransactionException error = assertThrows(TransactionException.class, Tx::rollback);
+        assertSame(first.rollbackFailure, error.getCause());
+        assertSame(first.closeFailure, error.getSuppressed()[0].getCause());
+        assertEquals(1, first.rollbacks);
+        assertEquals(1, second.rollbacks);
+        assertEquals(1, first.closes);
+        assertEquals(1, second.closes);
+        assertTransactionCleared(first);
+        assertTransactionCleared(second);
+    }
+
+    @Test
+    public void successfulSupplierCommitsAndReturnsResult() {
+        RecordingConnection recording = new RecordingConnection();
+        assertEquals(Integer.valueOf(42), Tx.using(() -> {
+            acquire(recording);
+            return 42;
+        }));
+        assertEquals(1, recording.commits);
+        assertEquals(0, recording.rollbacks);
+        assertEquals(1, recording.closes);
+        assertTransactionCleared(recording);
+    }
+
+    @Test
+    public void failedCleanupStillClosesOtherConnectionsAndClearsState() {
+        RecordingConnection first = new RecordingConnection();
+        first.closeFailure = new SQLException("first close failed");
+        RecordingConnection second = new RecordingConnection();
+        second.closeFailure = new SQLException("second close failed");
+        Tx.begin();
+        acquire(first);
+        acquire(second);
+        TransactionException error = assertThrows(TransactionException.class, Tx::commit);
+        assertSame(first.closeFailure, error.getCause());
+        assertSame(second.closeFailure, error.getSuppressed()[0].getCause());
+        assertEquals(1, first.closes);
+        assertEquals(1, second.closes);
+        assertTransactionCleared(first);
+        assertTransactionCleared(second);
+    }
+
+    @Test
+    public void nullDefinitionDoesNotActivateTransaction() {
+        assertThrows(NullPointerException.class, () -> Tx.begin(null));
+        assertFalse(AbstractTransactionSyncManager.isTransactionActive());
+        assertFalse(AbstractTransactionSyncManager.isSynchronizationActive());
+    }
+
+    private static void acquire(RecordingConnection recording) {
+        try {
+            DataSourceUtils.getConnection(recording.dataSource);
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void assertTransactionCleared(RecordingConnection recording) {
+        assertFalse(AbstractTransactionSyncManager.isTransactionActive());
+        assertFalse(AbstractTransactionSyncManager.isSynchronizationActive());
+        assertNull(AbstractTransactionSyncManager.getResource(recording.dataSource));
+        assertNull(AbstractTransactionSyncManager.resources.get());
+        assertNull(AbstractTransactionSyncManager.getCurrentTransactionName());
+        assertNull(AbstractTransactionSyncManager.getCurrentTransactionIsolationLevel());
+    }
+
     private static class RecordingConnection {
         int commits;
         int rollbacks;
@@ -99,6 +224,8 @@ public class TransactionRegressionTest {
         String failingMethod;
         final SQLException setupFailure = new SQLException("setup failed");
         SQLException closeFailure;
+        SQLException commitFailure;
+        SQLException rollbackFailure;
         final Connection connection = (Connection) Proxy.newProxyInstance(
                 Connection.class.getClassLoader(), new Class<?>[]{Connection.class}, (proxy, method, args) -> {
                     String name = method.getName();
@@ -106,8 +233,14 @@ public class TransactionRegressionTest {
                         throw setupFailure;
                     }
                     switch (name) {
-                        case "commit": commits++; break;
-                        case "rollback": rollbacks++; break;
+                        case "commit":
+                            commits++;
+                            if (commitFailure != null) throw commitFailure;
+                            break;
+                        case "rollback":
+                            rollbacks++;
+                            if (rollbackFailure != null) throw rollbackFailure;
+                            break;
                         case "close":
                             closes++;
                             if (closeFailure != null) throw closeFailure;

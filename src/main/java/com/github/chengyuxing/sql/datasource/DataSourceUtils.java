@@ -1,5 +1,6 @@
 package com.github.chengyuxing.sql.datasource;
 
+import com.github.chengyuxing.sql.exceptions.TransactionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -170,12 +171,15 @@ public abstract class DataSourceUtils {
          * Close connection and clear connection state after transaction complete.
          */
         public void afterCompletion() {
-            unbindResource(dataSource);
-            if (connectionHolder.hasConnection()) {
-                releaseConnection(connectionHolder.getConnection(), null);
+            try (Connection connection = connectionHolder.getConnection()) {
+                unbindResource(dataSource);
+            } catch (SQLException e) {
+                throw new TransactionException("Transaction connection close failed.", e);
+            } finally {
                 connectionHolder.setConnection(null);
+                connectionHolder.setSyncWithTransaction(false);
+                connectionHolder.clear();
             }
-            connectionHolder.clear();
         }
     }
 }

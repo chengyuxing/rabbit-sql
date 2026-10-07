@@ -42,6 +42,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 /**
  * <h2>Default implementation of Baki interface</h2>
@@ -223,9 +224,11 @@ public class BakiDao extends JdbcSupport implements Baki {
 
     @Override
     public BatchResult executeBatch(@NotNull Iterable<String> sqls, @Range(from = 1, to = Integer.MAX_VALUE) int batchSize) {
-        return this.executionWatcher.call(new ExecutionContext(SqlStatementType.batch, String.join(";", sqls), null),
+        List<String> statements = new ArrayList<>();
+        sqls.forEach(statements::add);
+        return this.executionWatcher.call(new ExecutionContext(SqlStatementType.batch, String.join(";", statements), null),
                 context -> {
-                    BatchResult result = super.executeBatch(sqls, batchSize);
+                    BatchResult result = super.executeBatch(statements, batchSize);
                     context.setResult(result);
                     return result;
                 });
@@ -314,6 +317,25 @@ public class BakiDao extends JdbcSupport implements Baki {
         };
     }
 
+    // A null SQL means the first row has no columns to update.
+    private <T> BatchResult executeMappedBatch(Iterable<T> data,
+                                               Function<T, ? extends Map<String, ?>> argMapper,
+                                               Function<Map<String, ?>, String> sqlFactory) {
+        Iterator<T> iterator = data.iterator();
+        if (!iterator.hasNext()) {
+            return new BatchResult(new int[0]);
+        }
+        Map<String, ?> first = argMapper.apply(iterator.next());
+        String sql = sqlFactory.apply(first);
+        if (sql == null) {
+            return new BatchResult(new int[0]);
+        }
+        try (Stream<Map<String, ?>> mapped = Stream.<Map<String, ?>>concat(Stream.of(first),
+                StreamSupport.stream(Spliterators.spliteratorUnknownSize(iterator, Spliterator.ORDERED), false).map(argMapper))) {
+            return executeBatchUpdate(sql, mapped::iterator, Function.identity(), batchSize);
+        }
+    }
+
     @Override
     public @NotNull SimpleDMLExecutor table(@NotNull String name) {
         if (xqlFileManager != null) {
@@ -360,13 +382,11 @@ public class BakiDao extends JdbcSupport implements Baki {
                     @Override
                     public <T> BatchResult update(@NotNull Iterable<T> args, @NotNull Function<T, ? extends Map<String, ?>> argMapper) {
                         if (enableBatch) {
-                            Map<String, ?> first = argMapper.apply(args.iterator().next());
-                            Set<String> columns = collectUpdateSetColumns(first);
-                            if (columns.isEmpty()) {
-                                return new BatchResult(new int[0]);
-                            }
-                            String update = sqlGenerator.generateNamedParamUpdateBy(finalName, columns, null) + condition;
-                            return executeBatchUpdate(update, args, argMapper, batchSize);
+                            return executeMappedBatch(args, argMapper, first -> {
+                                Set<String> columns = collectUpdateSetColumns(first);
+                                return columns.isEmpty() ? null :
+                                        sqlGenerator.generateNamedParamUpdateBy(finalName, columns, null) + condition;
+                            });
                         }
                         IntStream.Builder builder = IntStream.builder();
                         for (T arg : args) {
@@ -414,9 +434,8 @@ public class BakiDao extends JdbcSupport implements Baki {
             @Override
             public <T> BatchResult insert(@NotNull Iterable<T> data, @NotNull Function<T, ? extends Map<String, ?>> argMapper) {
                 if (enableBatch) {
-                    Map<String, ?> first = argMapper.apply(data.iterator().next());
-                    String insert = sqlGenerator.generateNamedParamInsert(finalName, first.keySet(), null);
-                    return executeBatchUpdate(insert, data, argMapper, batchSize);
+                    return executeMappedBatch(data, argMapper,
+                            first -> sqlGenerator.generateNamedParamInsert(finalName, first.keySet(), null));
                 }
                 IntStream.Builder builder = IntStream.builder();
                 for (T arg : data) {
@@ -454,7 +473,11 @@ public class BakiDao extends JdbcSupport implements Baki {
             String parseMethodRefColumn(MethodReference<T> methodRef) {
                 String fieldName = ReflectUtils.getFieldName(methodRef);
                 Map<String, PropertyMeta> metas = ReflectUtils.getBeanPropertyMetas(clazz);
-                Field field = metas.get(fieldName).getField();
+                PropertyMeta propertyMeta = metas.get(fieldName);
+                if (propertyMeta == null || !propertyMeta.hasField()) {
+                    throw new IllegalArgumentException("Cannot find entity field: " + clazz.getName() + "." + fieldName);
+                }
+                Field field = propertyMeta.getField();
                 return getEntityMetaProvider().columnMeta(field).getName();
             }
 
@@ -683,7 +706,8 @@ public class BakiDao extends JdbcSupport implements Baki {
                     private void assertPkNullableFromEntity(Map<String, Object> args) {
                         if (primaryKey.getIdGenerateStrategy() == EntityManager.IdGenerateStrategy.NONE &&
                                 args.get(primaryKey.getName()) == null) {
-                            throw new IllegalArgumentException("Primary key must not be null");
+                            throw new IllegalArgumentException("Primary key '" + primaryKey.getName() +
+                                    "' must not be null for entity " + clazz.getName());
                         }
                     }
 
@@ -694,6 +718,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                     }
 
                     private int insertWithoutNulls(Map<String, Object> args) {
+                        assertPkNullableFromEntity(args);
                         Map<String, EntityManager.ColumnMeta> columns = new HashMap<>(insertColumns);
                         columns.entrySet().removeIf(e -> args.get(e.getKey()) == null);
                         String insert = entityMeta.getInsert(columns);
@@ -740,6 +765,10 @@ public class BakiDao extends JdbcSupport implements Baki {
                             final Map<String, Object> values = new HashMap<>();
                             final Map<String, EntityManager.ColumnMeta> columns = new HashMap<>();
 
+                            {
+                                addColumn(column, value);
+                            }
+
                             void addColumn(MethodReference<T> column, Object value) {
                                 String columnName = parseMethodRefColumn(column);
                                 EntityManager.ColumnMeta columnMeta = columnMetas.get(columnName);
@@ -764,12 +793,7 @@ public class BakiDao extends JdbcSupport implements Baki {
 
                             @Override
                             public int save() {
-                                addColumn(column, value);
-                                if (primaryKey.getIdGenerateStrategy() == EntityManager.IdGenerateStrategy.NONE &&
-                                        values.containsKey(primaryKey.getName()) &&
-                                        values.get(primaryKey.getName()) == null) {
-                                    throw new IllegalArgumentException("Cannot insert null primary key: " + entityMeta.getPrimaryKey());
-                                }
+                                assertPkNullableFromEntity(values);
                                 String insert = entityMeta.getInsert(columns);
                                 return executeUpdate(insert, values);
                             }
@@ -783,10 +807,11 @@ public class BakiDao extends JdbcSupport implements Baki {
                 return new Update<T>() {
                     final Map<String, EntityManager.ColumnMeta> columnMetas = entityMeta.getColumns();
                     final Map<String, EntityManager.ColumnMeta> updateColumnMetas = entityMeta.getUpdateColumns();
+                    final String updateById = entityMeta.getUpdateById();
                     boolean withNullValues = false;
 
                     private int updateWithNulls(Map<String, Object> args) {
-                        return executeUpdate(entityMeta.getUpdateById(), args);
+                        return executeUpdate(updateById, args);
                     }
 
                     private int updateWithoutNulls(Map<String, Object> args) {
@@ -833,6 +858,9 @@ public class BakiDao extends JdbcSupport implements Baki {
                         IntStream.Builder builder = IntStream.builder();
                         for (T e : entities) {
                             Args<Object> args = Args.ofEntity(e, field -> getEntityMetaProvider().columnMeta(field).getName());
+                            if (args.get(primaryKey.getName()) == null) {
+                                throw new IllegalArgumentException("Cannot update entity with null primary key");
+                            }
                             builder.add(updateWithoutNulls(args));
                         }
                         return new BatchResult(builder.build().toArray());

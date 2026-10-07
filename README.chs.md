@@ -32,7 +32,7 @@ _java 8+_
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>10.3.19</version>
+    <version>10.3.20</version>
 </dependency>
 ```
 
@@ -249,6 +249,12 @@ public class JpaEntityMetaParser implements EntityManager.EntityMetaProvider {
 ```
 
 在其他框架中，甚至自定义字段注解解析也可以满足需求，不再受限于其他框架的实体映射规则。
+
+`BakiDao#entity` 的实体 CRUD 使用 JavaBean getter/setter 和对应字段。字段沿继承链查找，子类同名字段优先；重写 getter 不影响父类字段注解的解析。布尔属性可以使用 `Entity::isActive` 方法引用。
+
+实体 CRUD 要求一个主键，不支持复合主键；重复列名和空表名、空列名会在元数据初始化时被拒绝。`NONE` 策略的主键必须在所有插入入口显式提供非空值。只有主键或没有可更新列的实体可以查询、插入和删除，调用更新操作会报错。
+
+更换 `entityMetaProvider` 会清除元数据缓存。建议在使用前完成配置；更换后应重新获取实体执行器，已有执行器仍持有之前的元数据。
 
 ### 事务
 
@@ -602,8 +608,10 @@ sql 拦截器，默认值为：
 预编译sql对象自定义参数值处理器，默认值为：
 
 ```java
-(ps, index, value, metaData) -> JdbcUtil.setStatementValue(ps, index, value)
+(ps, index, value, metaData) -> JdbcUtils.setStatementValue(ps, index, value)
 ```
+
+默认处理器会将 `File` 和 `Path` 读为字节数组后绑定。大文件可以传入 `InputStream`，保持流打开直到执行结束，并由调用方负责关闭。
 
 ##### globalPageHelperProvider
 
@@ -628,6 +636,8 @@ XQL文件管理器，支持统一管理SQL，根据SQL名来获取SQL执行，�
 默认值：1000
 
 JDBC底层执行批量操作每次提交数据数量。
+
+预编译批处理只消费每行一次，并逐行解析 SQL 和参数。各行生成的预编译 SQL 必须一致，结构变化会被拒绝。若需要失败时回滚整批数据（包括已经执行的分批），请使用 `Tx.using`。
 
 ##### pageKey
 

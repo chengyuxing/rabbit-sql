@@ -131,6 +131,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     private volatile Map<String, IPipe<?>> pipeInstances = Collections.emptyMap();
     private volatile boolean loading;
     private volatile boolean initialized;
+    private XQLFileManagerConfig loadedConfig;
 
     /**
      * Constructs a new XQLFileManager.
@@ -533,6 +534,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
     protected Map<String, Resource> buildResources() {
         Map<String, Resource> newResources = new LinkedHashMap<>();
         Map<String, Resource> oldResources = this.resources;
+        boolean configurationUnchanged = super.equals(loadedConfig);
         for (Map.Entry<String, String> e : getFiles().entrySet()) {
             String alias = e.getKey();
             String filename = e.getValue();
@@ -545,7 +547,7 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             if (ext != null && (ext.equals("sql") || ext.equals("xql"))) {
                 try {
                     Resource old = oldResources.get(alias);
-                    if (old != null
+                    if (configurationUnchanged && old != null
                             && old.getFilename().equals(filename)
                             && old.getLastModified() == fr.getLastModified()) {
                         newResources.put(alias, old);
@@ -573,10 +575,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         for (Map.Entry<String, String> e : getPipes().entrySet()) {
             try {
                 IPipe<?> old = oldPipeInstances.get(e.getKey());
-                if (old != null) {
+                Class<?> pipeClass = classLoader.loadClass(e.getValue());
+                if (old != null && old.getClass() == pipeClass) {
                     newPipeInstances.put(e.getKey(), old);
                 } else {
-                    IPipe<?> newPipe = (IPipe<?>) ReflectUtils.getInstance(classLoader.loadClass(e.getValue()));
+                    IPipe<?> newPipe = (IPipe<?>) ReflectUtils.getInstance(pipeClass);
                     newPipeInstances.put(e.getKey(), newPipe);
                 }
             } catch (NoSuchMethodException | InvocationTargetException | InstantiationException |
@@ -606,8 +609,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
             loading = true;
             Map<String, Resource> newResources = Collections.unmodifiableMap(buildResources());
             Map<String, IPipe<?>> newPipeInstances = Collections.unmodifiableMap(buildPipeInstances());
+            XQLFileManagerConfig newConfig = new XQLFileManagerConfig();
+            copyStateTo(newConfig);
             resources = newResources;
             pipeInstances = newPipeInstances;
+            loadedConfig = newConfig;
             initialized = true;
         } finally {
             loading = false;
@@ -858,9 +864,15 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     @Override
     public void close() {
-        initialized = false;
-        resources = Collections.emptyMap();
-        pipeInstances = Collections.emptyMap();
+        lock.lock();
+        try {
+            initialized = false;
+            resources = Collections.emptyMap();
+            pipeInstances = Collections.emptyMap();
+            loadedConfig = null;
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override

@@ -2,6 +2,7 @@ package com.github.chengyuxing.sql;
 
 import com.github.chengyuxing.common.PropertyMeta;
 import com.github.chengyuxing.common.util.ReflectUtils;
+import com.github.chengyuxing.common.util.StringUtils;
 import com.github.chengyuxing.common.util.ValueUtils;
 import com.github.chengyuxing.sql.util.SqlGenerator;
 import org.jetbrains.annotations.NotNull;
@@ -49,7 +50,7 @@ public class EntityManager implements AutoCloseable {
 
     private final Map<Class<?>, EntityMeta> classInformation = new ConcurrentHashMap<>();
     private final SqlGenerator sqlGenerator;
-    private EntityMetaProvider entityMetaProvider = new EntityMetaProvider() {
+    private volatile EntityMetaProvider entityMetaProvider = new EntityMetaProvider() {
         @Override
         public String tableName(Class<?> clazz) {
             return clazz.getSimpleName();
@@ -70,12 +71,16 @@ public class EntityManager implements AutoCloseable {
         this.sqlGenerator = sqlGenerator;
     }
 
-    public <T> EntityMeta getEntityMeta(@NotNull Class<T> clazz) {
+    public synchronized <T> EntityMeta getEntityMeta(@NotNull Class<T> clazz) {
         return classInformation.computeIfAbsent(clazz, c -> new EntityMeta(checkTableName(c), checkColumns(c)));
     }
 
     private String checkTableName(Class<?> clazz) {
-        return entityMetaProvider.tableName(clazz);
+        String tableName = entityMetaProvider.tableName(clazz);
+        if (StringUtils.isBlank(tableName)) {
+            throw new IllegalArgumentException("Missing table name for entity " + clazz.getName());
+        }
+        return tableName;
     }
 
     private Map<String, ColumnMeta> checkColumns(Class<?> clazz) {
@@ -92,13 +97,20 @@ public class EntityManager implements AutoCloseable {
             if (columnMeta.isIgnore()) {
                 continue;
             }
-            columns.put(columnMeta.getName(), columnMeta);
+            String columnName = columnMeta.getName();
+            if (StringUtils.isBlank(columnName)) {
+                throw new IllegalArgumentException("Missing column name for entity " + clazz.getName() + "." + field.getName());
+            }
+            if (columns.putIfAbsent(columnName, columnMeta) != null) {
+                throw new IllegalArgumentException("Duplicate column '" + columnName + "' in entity " + clazz.getName() +
+                        " (field " + field.getName() + ")");
+            }
         }
         return columns;
     }
 
     @Override
-    public void close() {
+    public synchronized void close() {
         classInformation.clear();
     }
 
@@ -110,8 +122,12 @@ public class EntityManager implements AutoCloseable {
         return entityMetaProvider;
     }
 
-    public void setEntityMetaProvider(@NotNull EntityMetaProvider entityMetaProvider) {
-        this.entityMetaProvider = entityMetaProvider;
+    /**
+     * Replace the provider and clear cached metadata. Recreate existing entity executors after this change.
+     */
+    public synchronized void setEntityMetaProvider(@NotNull EntityMetaProvider entityMetaProvider) {
+        this.entityMetaProvider = Objects.requireNonNull(entityMetaProvider, "entityMetaProvider");
+        classInformation.clear();
     }
 
     public class EntityMeta {
@@ -138,7 +154,7 @@ public class EntityManager implements AutoCloseable {
                 this.select = genSelect(Collections.emptySet());
                 this.countSelect = genCountSelect();
                 this.insert = genInsert(insertColumns);
-                this.updateById = genUpdateBy(updateColumns) + idCondition;
+                this.updateById = updateColumns.isEmpty() ? null : genUpdateBy(updateColumns) + idCondition;
                 this.deleteById = genDeleteBy() + idCondition;
             }
         }
@@ -188,6 +204,9 @@ public class EntityManager implements AutoCloseable {
         }
 
         public String getUpdateById() {
+            if (updateById == null) {
+                throw new IllegalStateException("No updatable columns for table " + tableName);
+            }
             return updateById;
         }
 
@@ -204,12 +223,20 @@ public class EntityManager implements AutoCloseable {
         }
 
         private ColumnMeta checkPrimaryKey() {
+            ColumnMeta primaryKey = null;
             for (Map.Entry<String, ColumnMeta> entry : columns.entrySet()) {
                 if (entry.getValue().isPrimaryKey()) {
-                    return entry.getValue();
+                    if (primaryKey != null) {
+                        throw new IllegalStateException("Multiple primary keys are not supported for table " + tableName +
+                                ": " + primaryKey.getName() + ", " + entry.getKey());
+                    }
+                    primaryKey = entry.getValue();
                 }
             }
-            throw new IllegalStateException("Primary key not found");
+            if (primaryKey == null) {
+                throw new IllegalStateException("Primary key not found for table " + tableName);
+            }
+            return primaryKey;
         }
 
         private Map<String, ColumnMeta> collectUpdateColumns() {
@@ -251,16 +278,16 @@ public class EntityManager implements AutoCloseable {
         }
 
         private String genInsert(Map<String, ColumnMeta> selectColumns) {
-            return sqlGenerator.generateNamedParamInsert(tableName, columns.keySet(), c -> {
+            return sqlGenerator.generateNamedParamInsert(tableName, selectColumns.keySet(), c -> {
                 ColumnMeta meta = selectColumns.get(c);
-                return meta != null && meta.isInsertable();
+                return columns.containsKey(c) && meta != null && meta.isInsertable();
             });
         }
 
         private String genUpdateBy(Map<String, ColumnMeta> selectColumns) {
-            return sqlGenerator.generateNamedParamUpdateBy(tableName, columns.keySet(), c -> {
+            return sqlGenerator.generateNamedParamUpdateBy(tableName, selectColumns.keySet(), c -> {
                 ColumnMeta meta = selectColumns.get(c);
-                return meta != null && !meta.isPrimaryKey() && meta.isUpdatable();
+                return columns.containsKey(c) && meta != null && !meta.isPrimaryKey() && meta.isUpdatable();
             });
         }
 

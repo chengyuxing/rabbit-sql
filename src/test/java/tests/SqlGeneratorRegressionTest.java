@@ -10,6 +10,17 @@ import java.util.Map;
 import static org.junit.Assert.*;
 
 public class SqlGeneratorRegressionTest {
+    @Test
+    public void backtickIdentifiersPreserveColonsAndEscapedBackticks() {
+        SqlGenerator generator = new SqlGenerator(':');
+        String sql = "select :id as `label:word`, `escaped``:other` from t where id = :id";
+        SqlGenerator.PreparedSqlMetaData result = generator.generatePreparedSql(sql, Collections.singletonMap("id", 7));
+        assertEquals("select ? as `label:word`, `escaped``:other` from t where id = ?", result.getPrepareSql());
+        assertEquals(Collections.singletonMap("id", Arrays.asList(1, 2)), result.getArgNameIndexMapping());
+        assertEquals("select 7 as `label:word`, `escaped``:other` from t where id = 7",
+                generator.generateSql(sql, Collections.singletonMap("id", 7), Object::toString));
+    }
+
     private final SqlGenerator generator = new SqlGenerator(':');
     private final Map<String, Integer> args = Collections.singletonMap("id", 7);
 

@@ -344,7 +344,9 @@ public abstract class Where<T> {
     public Where<T> and(Function<Where<T>, Where<T>> orGroup, boolean... tests) {
         if (isAllPassed(tests)) {
             List<Criteria> criteriaList = orGroup.apply(newInstance()).criteria;
-            criteria.add(new AndGroup(criteriaList));
+            if (!criteriaList.isEmpty()) {
+                criteria.add(new AndGroup(criteriaList));
+            }
         }
         return this;
     }
@@ -370,7 +372,9 @@ public abstract class Where<T> {
     public Where<T> or(Function<Where<T>, Where<T>> andGroup, boolean... tests) {
         if (isAllPassed(tests)) {
             List<Criteria> criteriaList = andGroup.apply(newInstance()).criteria;
-            criteria.add(new OrGroup(criteriaList));
+            if (!criteriaList.isEmpty()) {
+                criteria.add(new OrGroup(criteriaList));
+            }
         }
         return this;
     }

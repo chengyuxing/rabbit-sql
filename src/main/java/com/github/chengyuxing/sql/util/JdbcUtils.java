@@ -86,14 +86,14 @@ public class JdbcUtils {
             ps.setBinaryStream(index, (InputStream) value);
         } else if (value instanceof Path) {
             try {
-                ps.setBinaryStream(index, Files.newInputStream((Path) value));
+                ps.setBytes(index, Files.readAllBytes((Path) value));
             } catch (IOException e) {
                 throw new IllegalArgumentException("Set binary value failed.", e);
             }
         } else if (value instanceof File) {
             try {
-                ps.setBinaryStream(index, new FileInputStream((File) value));
-            } catch (FileNotFoundException e) {
+                ps.setBytes(index, Files.readAllBytes(((File) value).toPath()));
+            } catch (IOException e) {
                 throw new IllegalArgumentException("Set binary value failed.", e);
             }
         } else {

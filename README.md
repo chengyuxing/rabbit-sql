@@ -32,7 +32,7 @@ _java 8+_
 <dependency>
   <groupId>com.github.chengyuxing</groupId>
   <artifactId>rabbit-sql</artifactId>
-  <version>10.3.19</version>
+  <version>10.3.20</version>
 </dependency>
 ```
 
@@ -245,6 +245,12 @@ public class JpaEntityMetaParser implements EntityManager.EntityMetaProvider {
 ```
 
 In other frameworks, even custom field annotation parsing can meet the requirements and is no longer limited by the entity mapping rules of other frameworks.
+
+Entity CRUD through `BakiDao#entity` uses JavaBean getters/setters and their corresponding fields. Fields are searched through the class hierarchy, with child declarations taking precedence. Overridden getters preserve inherited field annotations. Boolean properties support method references such as `Entity::isActive`.
+
+Entity CRUD requires a single primary key; composite keys are unsupported. Duplicate column names and blank table or column names are rejected during metadata initialization. Every insert entry point requires a non-null explicit primary key for the `NONE` strategy. Entities with only a primary key or no updatable columns support queries, inserts and deletes; update operations are rejected.
+
+Replacing `entityMetaProvider` clears the metadata cache. Configure it before use, or obtain new entity executors after replacement: existing executors still hold their previous metadata.
 
 ### Transaction
 
@@ -598,8 +604,10 @@ Custom sql interceptor, default:
 Custom prepared sql statement parameter value handler, default:
 
 ```java
-(ps, index, value, metaData) -> JdbcUtil.setStatementValue(ps, index, value)
+(ps, index, value, metaData) -> JdbcUtils.setStatementValue(ps, index, value)
 ```
+
+The default handler reads `File` and `Path` values into byte arrays before binding them. For large binary values, pass an `InputStream` and keep it open until execution completes; the caller owns and closes that stream.
 
 ##### globalPageHelperProvider
 
@@ -624,6 +632,8 @@ XQL file manager, support unified management of SQL, according to the SQL name t
 Default: 1000
 
 The JDBC low-level batch operation executes the number of data submitted each time.
+
+Prepared batches consume each input row once and resolve its SQL and parameters separately. All rows must produce the same prepared SQL; changing its structure is rejected. Use `Tx.using` when failures must roll back the entire batch, including chunks already executed.
 
 ##### pageKey
 

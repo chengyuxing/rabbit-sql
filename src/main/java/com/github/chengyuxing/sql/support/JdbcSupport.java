@@ -167,16 +167,21 @@ public abstract class JdbcSupport extends JdbcHelper {
         if (batchSize < 1) {
             throw new IllegalArgumentException("Batch size must be positive.");
         }
+        List<String> statements = new ArrayList<>();
+        sqlList.forEach(statements::add);
+        if (statements.isEmpty()) {
+            return new BatchResult(new int[0]);
+        }
         Connection connection = null;
         Statement s = null;
         try {
             connection = getConnection();
             s = connection.createStatement();
-            onStatementInit(s, String.join(";", sqlList), null);
+            onStatementInit(s, String.join(";", statements), null);
 
             List<int[]> batches = new ArrayList<>();
             int batchCount = 0;
-            for (String sql : sqlList) {
+            for (String sql : statements) {
                 String parsedSql = prepareSql(sql, Collections.emptyMap()).getSourceSql();
                 //noinspection SqlSourceToSinkFlow
                 s.addBatch(parsedSql);
@@ -193,7 +198,7 @@ public abstract class JdbcSupport extends JdbcHelper {
             }
             return new BatchResult(batches.stream().flatMapToInt(Arrays::stream).toArray());
         } catch (SQLException e) {
-            throw wrappedDataAccessException(String.join(";\n", sqlList), e);
+            throw wrappedDataAccessException(String.join(";\n", statements), e);
         } finally {
             JdbcUtils.closeStatement(s);
             releaseConnection(connection, getDataSource());
@@ -231,11 +236,15 @@ public abstract class JdbcSupport extends JdbcHelper {
             connection = getConnection();
             //noinspection SqlSourceToSinkFlow
             ps = connection.prepareStatement(smd.getPrepareSql());
-            onStatementInit(ps, sql, first);
+            onStatementInit(ps, sql, smd.getArgs());
 
             int batchCount = 0;
-            for (T arg : args) {
-                setPreparedSqlArgs(ps, argMapper.apply(arg), smd.getArgNameIndexMapping());
+            SqlGenerator.PreparedSqlMetaData row = smd;
+            while (true) {
+                if (!smd.getPrepareSql().equals(row.getPrepareSql())) {
+                    throw new IllegalArgumentException("SQL changes between batch rows; use individual statements or group rows with matching SQL.");
+                }
+                setPreparedSqlArgs(ps, row.getArgs(), row.getArgNameIndexMapping());
                 ps.addBatch();
                 batchCount++;
                 if (batchCount == batchSize) {
@@ -243,6 +252,10 @@ public abstract class JdbcSupport extends JdbcHelper {
                     ps.clearBatch();
                     batchCount = 0;
                 }
+                if (!iterator.hasNext()) {
+                    break;
+                }
+                row = prepareSql(sql, argMapper.apply(iterator.next()));
             }
             if (batchCount > 0) {
                 batches.add(ps.executeBatch());

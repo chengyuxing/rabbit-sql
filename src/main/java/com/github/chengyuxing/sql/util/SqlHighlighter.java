@@ -6,7 +6,6 @@ import com.github.chengyuxing.common.script.ast.impl.KeyExpressionParser;
 import com.github.chengyuxing.common.script.lang.Constants;
 import com.github.chengyuxing.common.script.lang.TokenType;
 import com.github.chengyuxing.common.script.lexer.RabbitScriptLexer;
-import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.util.StringUtils;
 import com.github.chengyuxing.sql.Keywords;
 import com.github.chengyuxing.sql.XQLFileManager;
@@ -14,7 +13,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.regex.Matcher;
@@ -25,20 +23,20 @@ import java.util.regex.Pattern;
  */
 public final class SqlHighlighter {
     private static final Logger log = LoggerFactory.getLogger(SqlHighlighter.class);
-    public static final Pattern QUOTE_PATTERN = Pattern.compile("'(''|[^'])*'|\"([^\"])*\"", Pattern.MULTILINE);
-    public static final Pattern BLOCK_COMMENT_PATTERN = Pattern.compile("(/\\*.*?\\*/)", Pattern.DOTALL | Pattern.MULTILINE);
     public static final Pattern METADATA_NAME_PATTERN = Pattern.compile("@[a-zA-Z]\\w+");
-    @SuppressWarnings("UnnecessaryUnicodeEscape")
-    private static final String SUBSTR_KEY_PREFIX = "\u0c35";
-    private static final Pattern SPLITTER_PATTERN = Pattern.compile("([\\s,():;{}]+)");
+    private static final Pattern WORD_PATTERN = Pattern.compile("[#@]?[\\p{L}_][\\p{L}\\p{N}_$]*(?:\\.[\\p{L}_][\\p{L}\\p{N}_$]*)*");
+    private static final Pattern NUMBER_PATTERN = Pattern.compile("(?:\\d+(?:\\.\\d*)?|\\.\\d+)(?:[eE][+-]?\\d+)?");
+    private static final Pattern DOLLAR_DELIMITER_PATTERN = Pattern.compile("\\$(?:[\\p{L}_][\\p{L}\\p{N}_]*)?\\$");
+    private static final Set<String> KEYWORDS = new HashSet<>(Arrays.asList(Keywords.STANDARD));
 
     public enum TAG {
         FUNCTION("func_name("),
         KEYWORD("sql statement keyword"),
         NUMBER("1, 3.14"),
+        /** Legacy delimiter tag; complete dollar-quoted values now use QUOTE_STRING. */
         POSTGRESQL_FUNCTION_BODY_SYMBOL("$$"),
         ASTERISK("*"),
-        QUOTE_STRING("'' or \"\""),
+        QUOTE_STRING("quoted string or identifier, including dollar quoting"),
         LINE_COMMENT("-- comment"),
         BLOCK_COMMENT("/*  */"),
         METADATA_DEFINE_COMMENT("-- @name value"),
@@ -88,7 +86,7 @@ public final class SqlHighlighter {
                     return Printer.colorful(content, Style.DARK_CYAN);
                 case POSTGRESQL_FUNCTION_BODY_SYMBOL:
                 case QUOTE_STRING:
-                    if (content.startsWith("'")) {
+                    if (content.startsWith("'") || content.startsWith("$")) {
                         return Printer.colorful(content, Style.DARK_GREEN);
                     }
                     return content;
@@ -126,207 +124,155 @@ public final class SqlHighlighter {
     }
 
     /**
-     * Custom highlight SQL string.
+     * Custom highlight SQL string. Scans original text without placeholder substitution.
+     * Quoted values (including dollar quoting), identifiers and comments are opaque tokens.
+     * RabbitScript and metadata comments additionally highlight their contents.
      *
      * @param sql                 SQL string
-     * @param commentStyleCleaner clean the comment which has highlight words after the words handler, get the
-     *                            original comment to do the next step line comment script resolve handler:
-     *                            {@link TAG#METADATA_DEFINE_COMMENT METADATA_DEFINE_COMMENT}
-     *                            {@link TAG#INLINE_TEMPLATE_COMMENT INLINE_TEMPLATE_COMMENT}
-     *                            {@link TAG#RABBIT_SCRIPT_COMMENT RABBIT_SCRIPT_COMMENT}
-     * @param replacer            colored content function: ({@link TAG tag}, content) -&gt; colored content
-     * @return highlighted SQL
+     * @param commentStyleCleaner removes existing styles before classifying comments
+     * @param replacer            colored content function: (tag, content) -&gt; colored content
+     * @return highlighted SQL; the original SQL if highlighting fails
      */
     public static String highlight(String sql, Function<String, String> commentStyleCleaner, BiFunction<TAG, String, String> replacer) {
         try {
-            Pair<String, Map<String, String>> r = escapeSubstring(sql);
-            String rSql = r.getItem1();
-            Pair<List<String>, List<String>> x = StringUtils.regexSplit(rSql, SPLITTER_PATTERN, 1);
-            List<String> words = x.getItem1();
-            List<String> delimiters = x.getItem2();
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0, j = words.size(); i < j; i++) {
-                String word = words.get(i);
-                String replacement = word;
-                if (!StringUtils.isBlank(word)) {
-                    // functions highlight
-                    if (!StringUtils.equalsAnyIgnoreCase(word, Keywords.STANDARD) && detectFunction(word, i, j, delimiters)) {
-                        replacement = replacer.apply(TAG.FUNCTION, word);
-                        // named parameter
-                    } else if (detectNamedParameter(word, i, delimiters)) {
-                        replacement = replacer.apply(TAG.NAMED_PARAMETER, word);
-                        // keywords highlight
-                    } else if (StringUtils.equalsAnyIgnoreCase(word, Keywords.STANDARD)) {
-                        replacement = replacer.apply(TAG.KEYWORD, word);
-                        // number highlight
-                    } else if (StringUtils.isNumber(word)) {
-                        replacement = replacer.apply(TAG.NUMBER, word);
-                        // PostgreSQL function body block highlight
-                    } else if (word.equals("$$")) {
-                        replacement = replacer.apply(TAG.POSTGRESQL_FUNCTION_BODY_SYMBOL, word);
-                        // symbol '*' highlight
-                    } else if (word.equals("*")) {
-                        replacement = replacer.apply(TAG.ASTERISK, word);
-                    } else if (!word.matches(SUBSTR_KEY_PREFIX + "\\d+")) {
-                        replacement = replacer.apply(TAG.OTHER, word);
-                    }
-                }
-                sb.append(replacement);
-                if (i < j - 1) {
-                    sb.append(delimiters.get(i));
-                }
-            }
-            String colorfulSql = sb.toString();
-            // reinsert the sub string
-            Map<String, String> subStr = r.getItem2();
-            for (Map.Entry<String, String> e : subStr.entrySet()) {
-                colorfulSql = colorfulSql.replace(e.getKey(), replacer.apply(TAG.QUOTE_STRING, e.getValue()));
-            }
-            // resolve single comment
-            String[] sqlLines = colorfulSql.split("\n");
-            for (int i = 0; i < sqlLines.length; i++) {
-                String line = sqlLines[i];
-                int lineCmtIdx = findLineCommentIndex(line);
-                if (lineCmtIdx != -1) {
-                    String cleanedLine = commentStyleCleaner.apply(line);
-                    String head = line.substring(0, lineCmtIdx);
-                    String tail = line.substring(lineCmtIdx);
-                    if (StringUtils.isBlank(head)) {
-                        // @name value
-                        if (XQLFileManager.META_DATA_PATTERN.matcher(cleanedLine).matches()) {
-                            sqlLines[i] = head + replacer.apply(TAG.METADATA_DEFINE_COMMENT, tail);
-                            continue;
-                        }
-                        // inline template
-                        if (XQLFileManager.INLINE_TEMPLATE_BEGIN_PATTERN.matcher(cleanedLine).matches() ||
-                                XQLFileManager.INLINE_TEMPLATE_END_PATTERN.matcher(cleanedLine).matches()) {
-                            sqlLines[i] = head + replacer.apply(TAG.INLINE_TEMPLATE_COMMENT, tail);
-                            continue;
-                        }
-                        // rabbit script
-                        if (RabbitScriptLexer.DIRECTIVES_PATTERN.matcher(commentStyleCleaner.apply(tail.substring(2))).matches()) {
-                            sqlLines[i] = head + replacer.apply(TAG.RABBIT_SCRIPT_COMMENT, tail);
-                            continue;
-                        }
-                    }
-                    sqlLines[i] = head + replacer.apply(TAG.LINE_COMMENT, tail);
-                }
-            }
-            colorfulSql = String.join("\n", sqlLines);
-            // resolve block comment
-            Matcher matcher = BLOCK_COMMENT_PATTERN.matcher(colorfulSql);
-            StringBuffer blockCmtBuf = new StringBuffer();
-            while (matcher.find()) {
-                matcher.appendReplacement(
-                        blockCmtBuf,
-                        Matcher.quoteReplacement(replacer.apply(TAG.BLOCK_COMMENT, matcher.group()))
-                );
-            }
-            matcher.appendTail(blockCmtBuf);
-            return blockCmtBuf.toString();
+            return highlightSource(sql, commentStyleCleaner, replacer);
         } catch (Exception e) {
             log.error("highlight sql error.", e);
             return sql;
         }
     }
 
-    /**
-     * Finds the index of the start of a line comment (--) in the given line.
-     * It skips over any single or double-quoted strings, and only identifies
-     * '--' as a comment if it is not within a quoted string.
-     *
-     * @param line the line of text to search for a line comment
-     * @return the index of the start of the line comment, or -1 if no line comment is found
-     */
-    private static int findLineCommentIndex(String line) {
-        boolean inSingle = false;
-        boolean inDouble = false;
-
-        for (int i = 0; i < line.length() - 1; i++) {
-            char c = line.charAt(i);
-
-            if (c == '\'' && !inDouble) {
-                if (inSingle && i + 1 < line.length() && line.charAt(i + 1) == '\'') {
-                    i++; // skip escaped ''
-                } else {
-                    inSingle = !inSingle;
+    private static String highlightSource(String sql, Function<String, String> cleaner, BiFunction<TAG, String, String> replacer) {
+        StringBuilder result = new StringBuilder(sql.length());
+        Matcher words = WORD_PATTERN.matcher(sql);
+        Matcher numbers = NUMBER_PATTERN.matcher(sql);
+        Matcher parameters = KeyExpressionParser.EXPRESSION_PATTERN.matcher(sql);
+        Matcher dollars = DOLLAR_DELIMITER_PATTERN.matcher(sql);
+        int length = sql.length();
+        for (int i = 0; i < length; ) {
+            char c = sql.charAt(i);
+            if (sql.startsWith("--", i)) {
+                int end = i + 2;
+                while (end < length && sql.charAt(end) != '\n' && sql.charAt(end) != '\r') {
+                    end++;
                 }
-                continue;
-            }
-
-            if (c == '"' && !inSingle) {
-                inDouble = !inDouble;
-                continue;
-            }
-
-            if (!inSingle && !inDouble && c == '-' && line.charAt(i + 1) == '-') {
-                return i;
-            }
-        }
-        return -1;
-    }
-
-    /**
-     * Detect probably is function or not.
-     *
-     * @param i          word index
-     * @param j          max word length
-     * @param delimiters delimiters
-     * @return true or false
-     */
-    private static boolean detectFunction(String word, int i, int j, List<String> delimiters) {
-        if (!word.matches("^[a-zA-Z][\\w.]+")) {
-            return false;
-        }
-        if (delimiters.isEmpty()) {
-            return false;
-        }
-        if (i >= delimiters.size()) {
-            return false;
-        }
-        if (i < j - 1) {
-            return StringUtils.indexOfNonWhitespace(delimiters.get(i), "(") != -1;
-        }
-        return false;
-    }
-
-    private static boolean detectNamedParameter(String word, int i, List<String> delimiters) {
-        if (!KeyExpressionParser.EXPRESSION_PATTERN.matcher(word).matches()) {
-            return false;
-        }
-        if (delimiters.isEmpty()) {
-            return false;
-        }
-        int idx = Math.max(0, i - 1);
-        if (idx >= delimiters.size()) {
-            return false;
-        }
-        String prefix = delimiters.get(idx).trim();
-        return prefix.endsWith(":") && !prefix.endsWith("::");
-    }
-
-    /**
-     * Escape SQL substring ({@code '} or {@code "}) to unique string holder and save the substring map.
-     *
-     * @param sql SQL string
-     * @return [SQL string with unique string holder, substring map]
-     */
-    private static Pair<String, Map<String, String>> escapeSubstring(final String sql) {
-        if (!sql.contains("'") && !sql.contains("\"")) {
-            return Pair.of(sql, Collections.emptyMap());
-        }
-        AtomicInteger index = new AtomicInteger();
-        Map<String, String> map = new HashMap<>();
-        StringBuilder sb = new StringBuilder();
-        StringUtils.scan(sql, QUOTE_PATTERN, 0, (seg, hit) -> {
-            if (hit) {
-                String key = SUBSTR_KEY_PREFIX + index.getAndIncrement();
-                map.put(key, seg);
-                sb.append(key);
+                String comment = sql.substring(i, end);
+                TAG tag = commentTag(sql, i, comment, cleaner);
+                if (tag != TAG.LINE_COMMENT) {
+                    comment = "--" + highlightSource(comment.substring(2), cleaner, replacer);
+                }
+                result.append(replacer.apply(tag, comment));
+                i = end;
+            } else if (sql.startsWith("/*", i)) {
+                int end = blockCommentEnd(sql, i);
+                result.append(replacer.apply(TAG.BLOCK_COMMENT, sql.substring(i, end)));
+                i = end;
+            } else if (c == '\'' || c == '"' || c == '`') {
+                boolean escaped = c == '`' || c == '\'' && i > 0
+                        && (sql.charAt(i - 1) == 'E' || sql.charAt(i - 1) == 'e')
+                        && (i == 1 || !isIdentifierPart(sql.charAt(i - 2)));
+                int end = quotedEnd(sql, i, c, escaped);
+                result.append(replacer.apply(TAG.QUOTE_STRING, sql.substring(i, end)));
+                i = end;
+            } else if (c == '$' && (i == 0 || !isIdentifierPart(sql.charAt(i - 1)))
+                    && dollars.region(i, length).lookingAt()) {
+                String delimiter = dollars.group();
+                int close = sql.indexOf(delimiter, dollars.end());
+                int end = close < 0 ? length : close + delimiter.length();
+                result.append(replacer.apply(TAG.QUOTE_STRING, sql.substring(i, end)));
+                i = end;
+            } else if (c == ':' && (i == 0 || sql.charAt(i - 1) != ':')
+                    && parameters.region(i + 1, length).lookingAt()) {
+                result.append(':').append(replacer.apply(TAG.NAMED_PARAMETER, parameters.group()));
+                i = parameters.end();
+            } else if (words.region(i, length).lookingAt()) {
+                String word = words.group();
+                int end = words.end();
+                TAG tag = TAG.OTHER;
+                if (KEYWORDS.contains(word.toLowerCase(Locale.ROOT))) {
+                    tag = TAG.KEYWORD;
+                } else if (word.charAt(0) != '#' && word.charAt(0) != '@' && followedByParenthesis(sql, end)) {
+                    tag = TAG.FUNCTION;
+                }
+                result.append(replacer.apply(tag, word));
+                i = end;
+            } else if (numbers.region(i, length).lookingAt()) {
+                result.append(replacer.apply(TAG.NUMBER, numbers.group()));
+                i = numbers.end();
+            } else if (c == '*') {
+                result.append(replacer.apply(TAG.ASTERISK, "*"));
+                i++;
             } else {
-                sb.append(seg);
+                result.append(c);
+                i++;
             }
-        });
-        return Pair.of(sb.toString(), map);
+        }
+        return result.toString();
+    }
+
+    private static TAG commentTag(String sql, int start, String comment, Function<String, String> cleaner) {
+        int lineStart = Math.max(sql.lastIndexOf('\n', start - 1), sql.lastIndexOf('\r', start - 1)) + 1;
+        String head = cleaner.apply(sql.substring(lineStart, start));
+        if (!StringUtils.isBlank(head)) {
+            return TAG.LINE_COMMENT;
+        }
+        String line = head + cleaner.apply(comment);
+        if (XQLFileManager.META_DATA_PATTERN.matcher(line).matches()) {
+            return TAG.METADATA_DEFINE_COMMENT;
+        }
+        if (XQLFileManager.INLINE_TEMPLATE_BEGIN_PATTERN.matcher(line).matches()
+                || XQLFileManager.INLINE_TEMPLATE_END_PATTERN.matcher(line).matches()) {
+            return TAG.INLINE_TEMPLATE_COMMENT;
+        }
+        if (RabbitScriptLexer.DIRECTIVES_PATTERN.matcher(cleaner.apply(comment.substring(2))).matches()) {
+            return TAG.RABBIT_SCRIPT_COMMENT;
+        }
+        return TAG.LINE_COMMENT;
+    }
+
+    private static int quotedEnd(String sql, int start, char quote, boolean backslashEscapes) {
+        for (int i = start + 1; i < sql.length(); i++) {
+            char c = sql.charAt(i);
+            if (backslashEscapes && c == '\\' && i + 1 < sql.length()) {
+                i++;
+            } else if (c == quote) {
+                if (i + 1 < sql.length() && sql.charAt(i + 1) == quote) {
+                    i++;
+                } else {
+                    return i + 1;
+                }
+            }
+        }
+        return sql.length();
+    }
+
+    private static int blockCommentEnd(String sql, int start) {
+        int depth = 1;
+        int i = start + 2;
+        while (i < sql.length()) {
+            if (sql.startsWith("/*", i)) {
+                depth++;
+                i += 2;
+            } else if (sql.startsWith("*/", i)) {
+                i += 2;
+                if (--depth == 0) {
+                    return i;
+                }
+            } else {
+                i++;
+            }
+        }
+        return sql.length();
+    }
+
+    private static boolean followedByParenthesis(String sql, int start) {
+        while (start < sql.length() && Character.isWhitespace(sql.charAt(start))) {
+            start++;
+        }
+        return start < sql.length() && sql.charAt(start) == '(';
+    }
+
+    private static boolean isIdentifierPart(char c) {
+        return Character.isLetterOrDigit(c) || c == '_' || c == '$';
     }
 }

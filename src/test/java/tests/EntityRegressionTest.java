@@ -6,6 +6,7 @@ import com.github.chengyuxing.sql.BakiDao;
 import com.github.chengyuxing.sql.EntityManager;
 import com.github.chengyuxing.sql.plugins.EntityExecutor;
 import com.github.chengyuxing.sql.util.SqlGenerator;
+import com.github.chengyuxing.sql.util.JdbcUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -14,11 +15,49 @@ import org.sqlite.SQLiteDataSource;
 
 import javax.persistence.*;
 import java.lang.reflect.Field;
+import java.lang.reflect.Proxy;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.util.Date;
 import java.util.Collections;
 
 import static org.junit.Assert.*;
 
 public class EntityRegressionTest {
+    @Test
+    public void jdbcSqlDateMappedToUtilDateCanBeUpdatedWithoutCustomDateAdaptation() throws Exception {
+        baki.execute("create table dated_entries (entry_id integer primary key, value integer)", Collections.emptyMap());
+        baki.execute("insert into dated_entries values (42, 0)", Collections.emptyMap());
+        java.sql.Date sqlDate = java.sql.Date.valueOf("2026-10-09");
+        // SQLite returns numeric dates. Model a JDBC driver returning SQL Date at the result boundary.
+        ResultSetMetaData metadata = (ResultSetMetaData) Proxy.newProxyInstance(getClass().getClassLoader(),
+                new Class<?>[]{ResultSetMetaData.class}, (proxy, method, args) -> {
+                    assertEquals("getColumnClassName", method.getName());
+                    return java.sql.Date.class.getName();
+                });
+        ResultSet result = (ResultSet) Proxy.newProxyInstance(getClass().getClassLoader(),
+                new Class<?>[]{ResultSet.class}, (proxy, method, args) -> {
+                    if (method.getName().equals("getMetaData")) return metadata;
+                    assertEquals("getObject", method.getName());
+                    return ((Integer) args[0]) == 1 ? 42L : sqlDate;
+                });
+        DateRow entity = JdbcUtils.createDataRow(new String[]{"entry_id", "value"}, result)
+                .toEntity(DateRow.class, f -> provider.columnMeta(f).getName(), provider::columnValue);
+        assertEquals(Date.class, entity.getValue().getClass());
+        assertEquals(sqlDate.getTime(), entity.getValue().toInstant().toEpochMilli());
+        assertEquals(1, baki.entity(DateRow.class).update().save(entity));
+        assertEquals(sqlDate.getTime(), baki.query("select value from dated_entries where entry_id = 42")
+                .findFirstRow().getLong(0).longValue());
+    }
+
+    @Entity
+    @Table(name = "dated_entries")
+    public static class DateRow extends BaseId {
+        private Date value;
+        public Date getValue() { return value; }
+        public void setValue(Date value) { this.value = value; }
+    }
+
     @Test
     public void insertSettersKeepTheLatestValueIncludingAfterReuse() {
         com.github.chengyuxing.sql.dsl.Insert.InsertSetter<Row> setter = baki.entity(Row.class).insert()
@@ -63,6 +102,9 @@ public class EntityRegressionTest {
     private final MyEntityMetaParser provider = new MyEntityMetaParser() {
         @Override
         public Object columnValue(Field field, Object value) {
+            if (field.getType() == boolean.class && value instanceof Number) {
+                return ((Number) value).intValue() != 0;
+            }
             return ValueUtils.adaptValue(field.getType(), value);
         }
     };
@@ -76,6 +118,40 @@ public class EntityRegressionTest {
         baki.execute("create table entries (entry_id integer primary key, name text, active integer)", Collections.emptyMap());
         baki.execute("create table only_ids (entry_id integer primary key)", Collections.emptyMap());
         baki.execute("create table identity_ids (id integer primary key autoincrement)", Collections.emptyMap());
+    }
+
+    @Test
+    public void findByIdUsesInheritedMappedPrimaryKeyAndBindsItsValue() {
+        EntityExecutor<OverrideRow> executor = baki.entity(OverrideRow.class);
+        OverrideRow first = new OverrideRow();
+        first.setId(1L);
+        first.setName("first");
+        executor.insert().save(first);
+        OverrideRow target = new OverrideRow();
+        target.setId(7L);
+        target.setName("target");
+        target.setActive(true);
+        executor.insert().save(target);
+
+        OverrideRow read = executor.findById(7L).get();
+        assertEquals(Long.valueOf(7L), read.getId());
+        assertEquals("target", read.getName());
+        assertTrue(read.isActive());
+        assertEquals("first", executor.findById(1L).get().getName());
+        assertFalse(executor.findById(99L).isPresent());
+        assertFalse(executor.findById("1 OR 1=1").isPresent());
+        assertEquals(2L, executor.query("trace-id").count());
+    }
+
+    @Test
+    public void findByIdRejectsNullBeforeExecutingSql() {
+        EntityExecutor<Row> executor = baki.entity(Row.class);
+        baki.setSqlInterceptor((rawSql, parsedSql, args, info) -> {
+            throw new AssertionError("A null primary key must be rejected before SQL execution.");
+        });
+        IllegalArgumentException error = assertThrows(IllegalArgumentException.class, () -> executor.findById(null));
+        assertTrue(error.getMessage().contains("entry_id"));
+        assertTrue(error.getMessage().contains(Row.class.getName()));
     }
 
     @Test

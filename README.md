@@ -32,7 +32,7 @@ _java 8+_
 <dependency>
   <groupId>com.github.chengyuxing</groupId>
   <artifactId>rabbit-sql</artifactId>
-  <version>10.3.20</version>
+  <version>10.3.21</version>
 </dependency>
 ```
 
@@ -251,6 +251,20 @@ Entity CRUD through `BakiDao#entity` uses JavaBean getters/setters and their cor
 Entity CRUD requires a single primary key; composite keys are unsupported. Duplicate column names and blank table or column names are rejected during metadata initialization. Every insert entry point requires a non-null explicit primary key for the `NONE` strategy. Entities with only a primary key or no updatable columns support queries, inserts and deletes; update operations are rejected.
 
 Replacing `entityMetaProvider` clears the metadata cache. Configure it before use, or obtain new entity executors after replacement: existing executors still hold their previous metadata.
+
+Default value conversion maps JDBC date subclasses to the declared field type: a `java.util.Date` field receives a plain `Date` with the same epoch milliseconds, supporting `toInstant()` and subsequent updates. Explicit `java.sql.Date`, `Time` and `Timestamp` fields retain their types. SQL dates mapped to `LocalDate` and SQL times mapped to `LocalTime` retain their calendar values. Other Java time conversions use the source epoch value and the system default zone, preserving `Timestamp` nanoseconds. Plain `Date` has millisecond precision; use `Timestamp` or Java time types when nanoseconds matter. Custom `columnValue` implementations can reuse these rules through `ValueUtils.adaptValue(field.getType(), value)`.
+
+JDBC parameters use `setDate`, `setTime` or `setTimestamp` according to their runtime type; plain `java.util.Date` binds as a timestamp using epoch milliseconds. For date-only or time-only values, prefer the corresponding SQL type or `LocalDate` / `LocalTime`.
+
+Date and time strings are validated completely through `MostDateTime.parse`, rejecting invalid dates and unrecognized prefixes or suffixes. Fractional seconds support 1–9 digits, retaining precision in `Timestamp` and Java time types that support nanoseconds. Use `MostDateTime.of(String)` explicitly to extract dates from text. Time-only strings use today's date in the system default zone.
+
+Use `findById` to fetch one entity by its primary key without writing a `where` clause:
+
+```java
+Optional<User> user = baki.entity(User.class).findById(42L);
+```
+
+The primary-key column comes from `EntityMetaProvider`, for example by adapting JPA's `@Id` and `@Column`; inherited fields and custom column names are supported. The non-null ID is bound as a prepared parameter. A missing row returns `Optional.empty()`. The existing `query(queryId)` parameter remains a query identifier, not a primary-key filter.
 
 ### Transaction
 
@@ -588,6 +602,10 @@ Default implement of interface **Baki**, support some basic operation.
 - If [XQLFileManager](#XQLFileManager) configured ,  you can manage sql in file and support [dynamic sql](#Dynamic-SQL);
 
 - if [pageable query](#paging) not support your database, implement custom page helper provider to property `globalPageHelperProvider` get support.
+
+#### SQL log highlighting
+
+`SqlHighlighter.ansi(sql)` applies ANSI styles to original text segments, preserving semicolons, whitespace, line endings and quoted content. Parameters inside quotes, backtick identifiers, PostgreSQL dollar quotes or ordinary comments are excluded from SQL parameter highlighting; dollar-quoted content is styled as one complete string. RabbitScript directives, metadata and inline template comments retain expression highlighting. `highlightIfAnsiCapable(sql)` enables colors in an ANSI-capable terminal. Highlighting failures return the complete original SQL.
 
 #### Options
 

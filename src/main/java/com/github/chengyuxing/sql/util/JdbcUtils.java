@@ -64,8 +64,14 @@ public class JdbcUtils {
     public static void setStatementValue(@NotNull PreparedStatement ps, @Range(from = 1, to = Integer.MAX_VALUE) int index, Object value) throws SQLException {
         if (value == null) {
             ps.setNull(index, Types.NULL);
+        } else if (value instanceof Timestamp) {
+            ps.setTimestamp(index, (Timestamp) value);
+        } else if (value instanceof Date) {
+            ps.setDate(index, (Date) value);
+        } else if (value instanceof Time) {
+            ps.setTime(index, (Time) value);
         } else if (value instanceof java.util.Date) {
-            ps.setTimestamp(index, Timestamp.from(((java.util.Date) value).toInstant()));
+            ps.setTimestamp(index, new Timestamp(((java.util.Date) value).getTime()));
         } else if (value instanceof LocalDateTime) {
             ps.setTimestamp(index, Timestamp.valueOf((LocalDateTime) value));
         } else if (value instanceof LocalDate) {

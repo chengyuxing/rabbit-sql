@@ -4,7 +4,10 @@ import com.github.chengyuxing.sql.dsl.Delete;
 import com.github.chengyuxing.sql.dsl.Insert;
 import com.github.chengyuxing.sql.dsl.Query;
 import com.github.chengyuxing.sql.dsl.Update;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import java.util.Optional;
 
 /**
  * Entity executor.
@@ -15,7 +18,8 @@ public interface EntityExecutor<T> {
     /**
      * Query.
      *
-     * @param queryId the {@link com.github.chengyuxing.sql.Baki#IDENTIFIER identifier} into args for the query
+     * @param queryId the {@link com.github.chengyuxing.sql.Baki#IDENTIFIER identifier} into args for the query,
+     *                not a primary-key filter
      * @param <SELF>  query builder
      * @return Query instance
      */
@@ -28,6 +32,15 @@ public interface EntityExecutor<T> {
      * @return Query instance
      */
     <SELF extends Query<T, SELF>> Query<T, SELF> query();
+
+    /**
+     * Find an entity using the single primary key defined by the entity metadata provider.
+     *
+     * @param id non-null primary-key value
+     * @return matching entity, or an empty optional if no row exists
+     * @throws IllegalArgumentException if {@code id} is null
+     */
+    @NotNull Optional<T> findById(@NotNull Object id);
 
     /**
      * Insert.

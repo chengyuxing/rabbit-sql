@@ -548,6 +548,17 @@ public class BakiDao extends JdbcSupport implements Baki {
             }
 
             @Override
+            public @NotNull Optional<T> findById(@NotNull Object id) {
+                if (id == null) {
+                    throw new IllegalArgumentException("Primary key '" + primaryKey.getName() + "' must not be null for entity " + clazz.getName());
+                }
+                String sql = sqlGenerator.appendWhere(entityMeta.getSelect()) + entityMeta.getIdCondition();
+                return Optional.ofNullable(BakiDao.this.query(sql)
+                        .args(primaryKey.getName(), id)
+                        .findFirstEntity(clazz));
+            }
+
+            @Override
             public <SELF extends Query<T, SELF>> Query<T, SELF> query() {
                 return query(null);
             }

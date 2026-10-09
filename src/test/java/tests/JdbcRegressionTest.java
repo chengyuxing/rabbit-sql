@@ -9,6 +9,7 @@ import com.github.chengyuxing.sql.transaction.Definition;
 import com.github.chengyuxing.sql.transaction.Level;
 import com.github.chengyuxing.sql.transaction.Tx;
 import com.github.chengyuxing.sql.types.BatchResult;
+import com.github.chengyuxing.sql.util.JdbcUtils;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -16,6 +17,10 @@ import org.junit.rules.TemporaryFolder;
 import org.sqlite.SQLiteDataSource;
 
 import java.io.File;
+import java.lang.reflect.Proxy;
+import java.sql.PreparedStatement;
+import java.sql.Time;
+import java.sql.Timestamp;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Arrays;
@@ -27,6 +32,33 @@ import java.util.stream.Stream;
 import static org.junit.Assert.*;
 
 public class JdbcRegressionTest {
+    @Test
+    public void dateParametersUseTheirJdbcTypesAndKeepTimestampNanoseconds() throws Exception {
+        Object[][] cases = {
+                {java.sql.Date.valueOf("2026-10-09"), "setDate"},
+                {Time.valueOf("12:34:56"), "setTime"},
+                {Timestamp.valueOf("2026-10-09 12:34:56.123456789"), "setTimestamp"},
+                {new java.util.Date(1791504000123L), "setTimestamp"}
+        };
+        for (Object[] testCase : cases) {
+            Object[] bound = new Object[2];
+            PreparedStatement statement = (PreparedStatement) Proxy.newProxyInstance(
+                    getClass().getClassLoader(), new Class<?>[]{PreparedStatement.class}, (proxy, method, args) -> {
+                        assertEquals(3, args[0]);
+                        bound[0] = method.getName();
+                        bound[1] = args[1];
+                        return null;
+                    });
+            JdbcUtils.setStatementValue(statement, 3, testCase[0]);
+            assertEquals(testCase[1], bound[0]);
+            if (testCase[0].getClass() == java.util.Date.class) {
+                assertEquals(((java.util.Date) testCase[0]).getTime(), ((Timestamp) bound[1]).getTime());
+            } else {
+                assertSame(testCase[0], bound[1]);
+            }
+        }
+    }
+
     @Rule
     public TemporaryFolder folder = new TemporaryFolder();
     private BakiDao baki;

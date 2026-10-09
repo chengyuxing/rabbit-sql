@@ -32,7 +32,7 @@ _java 8+_
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>10.3.20</version>
+    <version>10.3.21</version>
 </dependency>
 ```
 
@@ -255,6 +255,20 @@ public class JpaEntityMetaParser implements EntityManager.EntityMetaProvider {
 实体 CRUD 要求一个主键，不支持复合主键；重复列名和空表名、空列名会在元数据初始化时被拒绝。`NONE` 策略的主键必须在所有插入入口显式提供非空值。只有主键或没有可更新列的实体可以查询、插入和删除，调用更新操作会报错。
 
 更换 `entityMetaProvider` 会清除元数据缓存。建议在使用前完成配置；更换后应重新获取实体执行器，已有执行器仍持有之前的元数据。
+
+默认类型转换会将 JDBC 日期子类映射为字段声明的类型：`java.util.Date` 字段得到普通 `Date`，保留毫秒时间值，可安全调用 `toInstant()` 并用于后续更新；显式声明的 `java.sql.Date`、`Time`、`Timestamp` 保留对应类型。SQL 日期转 `LocalDate`、SQL 时间转 `LocalTime` 保留日历值；转换为其他 Java 时间类型时，按源对象的 epoch 时间值和系统默认时区转换，`Timestamp` 保留纳秒精度。普通 `Date` 仅有毫秒精度，需要保留纳秒时请使用 `Timestamp` 或 `java.time` 类型。自定义 `columnValue` 时可调用 `ValueUtils.adaptValue(field.getType(), value)` 复用这些规则。
+
+JDBC 参数绑定根据值的实际类型选择 `setDate`、`setTime` 或 `setTimestamp`；普通 `java.util.Date` 使用毫秒时间值绑定为时间戳。仅包含日期或时间的值，建议使用对应的 SQL 类型或 `LocalDate`、`LocalTime`。
+
+日期和时间字符串转换使用 `MostDateTime.parse` 完整校验输入，拒绝非法日期及未识别的前后缀。小数秒支持 1～9 位，转换到 `Timestamp` 和支持纳秒的 Java 时间类型时保留精度。需要从文本中提取日期时，请显式使用 `MostDateTime.of(String)`；纯时间字符串以系统默认时区的今天为日期。
+
+按主键查询单条记录可以直接使用 `findById`，无需编写 `where`：
+
+```java
+Optional<User> user = baki.entity(User.class).findById(42L);
+```
+
+主键列由 `EntityMetaProvider` 提供，例如适配 JPA 的 `@Id` 和 `@Column`；支持继承字段及自定义列名。主键值通过预编译参数绑定，不能为 `null`，没有匹配记录时返回 `Optional.empty()`。现有 `query(queryId)` 的参数仍是查询标识，不是主键查询条件。
 
 ### 事务
 
@@ -592,6 +606,10 @@ where id = 3
 - 如果配置了[XQLFileManager](#XQLFileManager)的情况下，可以实现sql文件与代码分离，支持[动态sql](#动态SQL)；
 
 - [分页查询](#分页查询)如果没有受支持的数据库，则可以通过属性 `globalPageHelperProvider` 实现自定义的数据库分页帮助提供程序；
+
+#### SQL 日志高亮
+
+`SqlHighlighter.ansi(sql)` 按原文片段生成 ANSI 高亮，保留分号、空白、换行及字符串内容。单/双引号、反引号、PostgreSQL dollar quoting 和普通注释中的命名参数不会被当作 SQL 参数高亮；dollar quoted 内容作为完整字符串着色。RabbitScript 指令、元数据和内联模版注释保留内部表达式高亮。`highlightIfAnsiCapable(sql)` 在终端支持 ANSI 时启用配色，高亮失败时返回完整原文。
 
 #### 配置项
 

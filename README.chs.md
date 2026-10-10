@@ -32,7 +32,7 @@ _java 8+_
 <dependency>
     <groupId>com.github.chengyuxing</groupId>
     <artifactId>rabbit-sql</artifactId>
-    <version>10.3.21</version>
+    <version>10.3.22</version>
 </dependency>
 ```
 
@@ -261,6 +261,8 @@ public class JpaEntityMetaParser implements EntityManager.EntityMetaProvider {
 JDBC 参数绑定根据值的实际类型选择 `setDate`、`setTime` 或 `setTimestamp`；普通 `java.util.Date` 使用毫秒时间值绑定为时间戳。仅包含日期或时间的值，建议使用对应的 SQL 类型或 `LocalDate`、`LocalTime`。
 
 日期和时间字符串转换使用 `MostDateTime.parse` 完整校验输入，拒绝非法日期及未识别的前后缀。小数秒支持 1～9 位，转换到 `Timestamp` 和支持纳秒的 Java 时间类型时保留精度。需要从文本中提取日期时，请显式使用 `MostDateTime.of(String)`；纯时间字符串以系统默认时区的今天为日期。
+
+SQL 风格的带偏移时间字符串也支持，例如 `2026-10-10 10:35:57.672+08`，会映射到 `2026-10-10T02:35:57.672Z` 对应的时刻。支持 `+08`、`+0800`、`+08:30` 等偏移表示，偏移量前可以有一个空格。`ValueUtils.adaptValue` 继续完整校验输入，不会失败后退回文本提取；从文本提取时间的 `MostDateTime.of` 也保留完整偏移量。
 
 按主键查询单条记录可以直接使用 `findById`，无需编写 `where`：
 

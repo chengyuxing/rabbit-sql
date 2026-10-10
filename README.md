@@ -32,7 +32,7 @@ _java 8+_
 <dependency>
   <groupId>com.github.chengyuxing</groupId>
   <artifactId>rabbit-sql</artifactId>
-  <version>10.3.21</version>
+  <version>10.3.22</version>
 </dependency>
 ```
 
@@ -257,6 +257,8 @@ Default value conversion maps JDBC date subclasses to the declared field type: a
 JDBC parameters use `setDate`, `setTime` or `setTimestamp` according to their runtime type; plain `java.util.Date` binds as a timestamp using epoch milliseconds. For date-only or time-only values, prefer the corresponding SQL type or `LocalDate` / `LocalTime`.
 
 Date and time strings are validated completely through `MostDateTime.parse`, rejecting invalid dates and unrecognized prefixes or suffixes. Fractional seconds support 1–9 digits, retaining precision in `Timestamp` and Java time types that support nanoseconds. Use `MostDateTime.of(String)` explicitly to extract dates from text. Time-only strings use today's date in the system default zone.
+
+SQL-style offset date-time strings are also supported: `2026-10-10 10:35:57.672+08` maps to the instant `2026-10-10T02:35:57.672Z`. Offsets such as `+08`, `+0800` and `+08:30` are preserved, with an optional space before the offset. `ValueUtils.adaptValue` continues to validate the complete input without falling back to text extraction; `MostDateTime.of` also retains the full offset when extracting a date-time from text.
 
 Use `findById` to fetch one entity by its primary key without writing a `where` clause:
 

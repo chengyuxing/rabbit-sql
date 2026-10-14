@@ -33,6 +33,23 @@ import static org.junit.Assert.*;
 
 public class JdbcRegressionTest {
     @Test
+    public void uuidParametersUseStandardStringBinding() throws Exception {
+        java.util.UUID uuid = java.util.UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
+        Object[] bound = new Object[2];
+        PreparedStatement statement = (PreparedStatement) Proxy.newProxyInstance(
+                getClass().getClassLoader(), new Class<?>[]{PreparedStatement.class}, (proxy, method, args) -> {
+                    assertEquals("setString", method.getName());
+                    assertEquals(3, args[0]);
+                    bound[0] = args[1];
+                    bound[1] = com.github.chengyuxing.common.util.ValueUtils.adaptValue(java.util.UUID.class, args[1]);
+                    return null;
+                });
+        JdbcUtils.setStatementValue(statement, 3, uuid);
+        assertEquals("550e8400-e29b-41d4-a716-446655440000", bound[0]);
+        assertEquals(uuid, bound[1]);
+    }
+
+    @Test
     public void dateParametersUseTheirJdbcTypesAndKeepTimestampNanoseconds() throws Exception {
         Object[][] cases = {
                 {java.sql.Date.valueOf("2026-10-09"), "setDate"},

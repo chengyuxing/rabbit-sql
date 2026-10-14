@@ -25,6 +25,52 @@ import static org.junit.Assert.*;
 
 public class EntityRegressionTest {
     @Test
+    public void uuidPrimaryKeySupportsEntityInsertFindUpdateAndDelete() {
+        baki.execute("create table uuid_entries (entry_id varchar(36) primary key, name text)", Collections.emptyMap());
+        java.util.UUID id = java.util.UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
+        UuidRow entity = new UuidRow();
+        entity.setId(id);
+        entity.setName("first");
+        EntityExecutor<UuidRow> executor = baki.entity(UuidRow.class);
+        assertEquals(1, executor.insert().save(entity));
+        assertEquals(id.toString(),
+                baki.query("select entry_id from uuid_entries").findFirstRow().getString(0));
+        UuidRow read = executor.findById(id).get();
+        assertEquals(id, read.getId());
+        assertEquals("first", read.getName());
+        read.setName("updated");
+        assertEquals(1, executor.update().save(read));
+        assertEquals("updated", executor.findById(id).get().getName());
+        assertEquals(1, executor.delete().execute(read));
+        assertFalse(executor.findById(id).isPresent());
+    }
+
+    @Entity
+    @Table(name = "uuid_entries")
+    public static class UuidRow {
+        @Id
+        @Column(name = "entry_id")
+        private java.util.UUID id;
+        private String name;
+
+        public java.util.UUID getId() {
+            return id;
+        }
+
+        public void setId(java.util.UUID id) {
+            this.id = id;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public void setName(String name) {
+            this.name = name;
+        }
+    }
+
+    @Test
     public void jdbcSqlDateMappedToUtilDateCanBeUpdatedWithoutCustomDateAdaptation() throws Exception {
         baki.execute("create table dated_entries (entry_id integer primary key, value integer)", Collections.emptyMap());
         baki.execute("insert into dated_entries values (42, 0)", Collections.emptyMap());

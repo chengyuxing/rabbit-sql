@@ -238,6 +238,8 @@ baki.call("{:res = call test.sum(:a, :b)}",
 
 ### 实体映射
 
+UUID 字段通过默认值转换支持 UUID 对象、标准 36 位字符串和无横线的 32 位十六进制字符串。UUID 参数使用 `setString` 绑定带横线的标准格式，文本列需能容纳 36 个字符。旧的 32 位文本主键仍可读取，但 UUID 参数已采用标准格式，需迁移存储格式或使用原始字符串查询；实体按主键更新、删除也需统一格式。数据库原生 UUID 列和二进制列可按驱动要求定制 `StatementValueHandler`。
+
 本框架为了做到最纯粹的执行 SQL ，内部将不再硬编码实体映射逻辑，以到达与各种框架做到最大的兼容性。
 
 实体映射核心为 `DataRow` 类，其提供了方法 `toEntity` 和 `ofEntity` ，如果有特殊实体映射需求，通过配置属性 `BakiDao#entityMetaProvider` 来实现自定义解析。

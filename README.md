@@ -236,6 +236,8 @@ baki.call("{:res = call test.sum(:a, :b)}",
 
 ### Entity-Mapping
 
+UUID fields accept UUID objects, standard 36-character strings and compact 32-character hexadecimal strings through the default value conversion. UUID parameters are bound with `setString` using the standard form with hyphens; text columns must accommodate 36 characters. Existing compact text keys can still be read, but must be migrated or queried using their original string representation because UUID parameters use the standard form. Native UUID and binary columns may require a driver-specific `StatementValueHandler`.
+
 To achieve the purest execution of SQL in this framework, the entity mapping logic will no longer be hard-coded internally to reach the maximum compatibility with various frameworks. The core of entity mapping is the `DataRow` class, which provides the methods` toEntity` and `ofEntity`. If there are special entity mapping requirements, Custom parsing can be achieved by configuring the attribute `BakiDao#entityMetaProvider`. 
 
 ```java

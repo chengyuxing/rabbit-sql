@@ -1,5 +1,13 @@
 # change note
 
+## 10.3.23
+
+- Update rabbit-common to 3.2.15; UUID entity values accept standard 36-character and compact 32-character hexadecimal strings.
+- Bind UUID parameters as standard strings with hyphens using `setString`. Text columns must accommodate 36 characters; existing compact text keys require migration or binding the original string for key comparisons.
+- Add UUID conversion and entity CRUD regression coverage on Java 8 and Java 17.
+- Include entity, property, column and value types in entity mapping errors; retain the original conversion or getter/setter cause.
+- Include file, qualified SQL name and the original reason in dynamic SQL compilation and evaluation errors, including template recompilation and lexer failures. Syntax positions refer to the compiled SQL fragment. Preserve business exceptions from `#check` and `#guard`.
+
 ## 10.3.19
 
 - Fix mapper method with empty entity param bug

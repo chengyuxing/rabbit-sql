@@ -10,6 +10,9 @@ import com.github.chengyuxing.common.script.ast.impl.KeyExpressionParser;
 import com.github.chengyuxing.common.script.ast.impl.VarMeta;
 import com.github.chengyuxing.common.script.lang.Directives;
 import com.github.chengyuxing.common.script.exception.ScriptSyntaxException;
+import com.github.chengyuxing.common.script.exception.LexerException;
+import com.github.chengyuxing.common.script.exception.CheckViolationException;
+import com.github.chengyuxing.common.script.exception.GuardViolationException;
 import com.github.chengyuxing.common.script.pipe.IPipe;
 import com.github.chengyuxing.common.tuple.Pair;
 import com.github.chengyuxing.common.util.ValueUtils;
@@ -359,15 +362,11 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      * @return SQL object
      */
     protected @NotNull Sql scanSql(@NotNull String alias, @NotNull String filename, @NotNull String sqlName, @NotNull String sql, @NotNull String desc) {
-        try {
-            Sql sqlObj = new Sql(sql);
-            sqlObj.setMetadata(parseMetadata(sql));
-            sqlObj.setDescription(desc);
-            log.debug("scan(;) {} to compile sql [{}.{}]: {}", filename, alias, sqlName, SqlHighlighter.highlightIfAnsiCapable(sql));
-            return sqlObj;
-        } catch (ScriptSyntaxException e) {
-            throw new XQLParseException("File: " + filename + " -> '" + sqlName + "' has script syntax error", e);
-        }
+        Sql sqlObj = new Sql(sql, filename, alias + "." + sqlName);
+        sqlObj.setMetadata(parseMetadata(sql));
+        sqlObj.setDescription(desc);
+        log.debug("scan(;) {} to compile sql [{}.{}]: {}", filename, alias, sqlName, SqlHighlighter.highlightIfAnsiCapable(sql));
+        return sqlObj;
     }
 
     /**
@@ -806,7 +805,15 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
         ScriptAst ast = sql.getAst();
         if (ast.isDynamic()) {
             EvalContext context = new DynamicSqlEvalContext(args);
-            EvalResult result = scriptEngine.execute(ast, context);
+            EvalResult result;
+            try {
+                result = scriptEngine.execute(ast, context);
+            } catch (CheckViolationException | GuardViolationException ex) {
+                throw ex;
+            } catch (RuntimeException ex) {
+                throw new XQLParseException("File: " + sql.filename + " -> '" + name
+                        + "' dynamic SQL evaluation error: " + ex.getMessage(), ex);
+            }
             Map<String, Object> vars = new HashMap<>(1);
             vars.put(DynamicSqlEvalContext.GENERATED_VAR_KEY, result.getUsedVars());
             return Pair.of(result.getContent(), vars);
@@ -1015,12 +1022,20 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
      */
     public class Sql {
         private String source;
+        private final String filename;
+        private final String reference;
         private ScriptAst ast;
         private Map<String, String> metadata;
         private String description = "";
 
         public Sql(@NotNull String source) {
+            this(source, null, null);
+        }
+
+        private Sql(@NotNull String source, String filename, String reference) {
             this.source = source;
+            this.filename = filename;
+            this.reference = reference;
             this.buildAst();
         }
 
@@ -1060,7 +1075,15 @@ public class XQLFileManager extends XQLFileManagerConfig implements AutoCloseabl
          * Compile the source SQL to ast tree.
          */
         private void buildAst() {
-            this.ast = scriptEngine.compile(source);
+            try {
+                this.ast = scriptEngine.compile(source);
+            } catch (ScriptSyntaxException | LexerException ex) {
+                if (filename == null) {
+                    throw ex;
+                }
+                throw new XQLParseException("File: " + filename + " -> '" + reference
+                        + "' script syntax error (SQL fragment position): " + ex.getMessage(), ex);
+            }
         }
 
         @Override

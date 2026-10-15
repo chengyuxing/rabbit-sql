@@ -261,7 +261,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                 try (Stream<DataRow> s = stream()) {
                     return s.map(d -> d.toEntity(entityClass,
                             field -> getEntityMetaProvider().columnMeta(field).getName(),
-                            getEntityMetaProvider()::columnValue
+                            BakiDao.this::columnValue
                     )).collect(Collectors.toList());
                 }
             }
@@ -304,7 +304,7 @@ public class BakiDao extends JdbcSupport implements Baki {
             public <T> T findFirstEntity(Class<T> entityClass) {
                 return findFirst().map(d -> d.toEntity(entityClass,
                         field -> getEntityMetaProvider().columnMeta(field).getName(),
-                        getEntityMetaProvider()::columnValue
+                        BakiDao.this::columnValue
                 )).orElse(null);
             }
 
@@ -315,6 +315,16 @@ public class BakiDao extends JdbcSupport implements Baki {
                 }
             }
         };
+    }
+
+    private Object columnValue(Field field, Object value) {
+        EntityManager.EntityMetaProvider provider = getEntityMetaProvider();
+        EntityManager.ColumnMeta meta = provider.columnMeta(field);
+        EntityManager.checkBooleanStorage(field, meta);
+        if (meta.getBooleanStorage() != null) {
+            return meta.getBooleanStorage().toEntityValue(value);
+        }
+        return provider.columnValue(field, value);
     }
 
     // A null SQL means the first row has no columns to update.
@@ -474,6 +484,14 @@ public class BakiDao extends JdbcSupport implements Baki {
                 EntityManager.ColumnMeta meta = entityMeta.getColumns().get(column);
                 if (meta == null) {
                     throw new IllegalArgumentException("Cannot find mapped entity column: " + column);
+                }
+                if (meta.getBooleanStorage() != null) {
+                    try {
+                        return meta.getBooleanStorage().toDatabaseValue(value);
+                    } catch (IllegalArgumentException ex) {
+                        throw new IllegalArgumentException("Invalid boolean parameter for " + clazz.getName()
+                                + ", column " + column + ": " + ex.getMessage(), ex);
+                    }
                 }
                 if (value instanceof Enum<?>) {
                     Enum<?> constant = (Enum<?>) value;
@@ -696,7 +714,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                         return executeQueryStream(query.getItem1(), query.getItem3())
                                 .map(d -> d.toEntity(clazz,
                                         f -> getEntityMetaProvider().columnMeta(f).getName(),
-                                        getEntityMetaProvider()::columnValue
+                                        BakiDao.this::columnValue
                                 ));
                     }
 
@@ -722,7 +740,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                                 .args(query.getItem3())
                                 .collect(d -> d.toEntity(clazz,
                                         f -> getEntityMetaProvider().columnMeta(f).getName(),
-                                        getEntityMetaProvider()::columnValue
+                                        BakiDao.this::columnValue
                                 ))
                                 .getData();
                     }
@@ -745,7 +763,7 @@ public class BakiDao extends JdbcSupport implements Baki {
                                 .pageHelper(pageHelperProvider)
                                 .collect(d -> d.toEntity(clazz,
                                         f -> getEntityMetaProvider().columnMeta(f).getName(),
-                                        getEntityMetaProvider()::columnValue
+                                        BakiDao.this::columnValue
                                 ));
                     }
 

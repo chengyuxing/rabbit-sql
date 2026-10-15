@@ -1,5 +1,16 @@
 # change note
 
+## 10.3.24
+
+- Update rabbit-common to 3.2.16; Spring Boot Starter 5.3.25 uses rabbit-sql 10.3.24.
+- Add `update().only(...)` and `exclude(...)` for per-operation field selection in single and batch entity updates. Repeated selections accumulate; the two modes cannot be mixed. Existing `where().set()` updates retain their behavior.
+- Add `existsById(id)`, `deleteById(id)` and condition-based `query().exists()`. Existence checks use dialect paging and do not load entities or execute count queries.
+- Add strict enum name/ordinal conversion and `ColumnMeta.enumerated` parameter storage strategies for entity writes, setters, primary keys and WHERE conditions. Raw JDBC enum parameters use the constant name.
+- Add `ColumnMeta.booleanStorage`: numeric 0/1, string "0"/"1", and string "N"/"Y". Configured fields use the same rule for entity results and parameters; preserve nulls and validate field/value types. Custom annotations can be adapted through `EntityMetaProvider.columnMeta`.
+- Extract ORDER BY keyword generation into `SqlGenerator.appendOrderBy`; omit the clause when no sort expressions are configured.
+- Move generic return type resolution to `ReflectUtils.getReturnGenericType(method, index)` without reloading classes by name. Keep the Mapper's protected customization hook, defaulting to the first argument.
+- Move and refine `ReflectUtils.isBindableObject` to reject JDK proxies, enum constant subclasses and scalar/container subclasses without requiring argument beans to have a no-argument constructor.
+
 ## 10.3.23
 
 - Update rabbit-common to 3.2.15; UUID entity values accept standard 36-character and compact 32-character hexadecimal strings.

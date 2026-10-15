@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Unmodifiable;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
@@ -97,6 +98,7 @@ public class EntityManager implements AutoCloseable {
             if (columnMeta.isIgnore()) {
                 continue;
             }
+            checkBooleanStorage(field, columnMeta);
             String columnName = columnMeta.getName();
             if (StringUtils.isBlank(columnName)) {
                 throw new IllegalArgumentException("Missing column name for entity " + clazz.getName() + "." + field.getName());
@@ -120,6 +122,14 @@ public class EntityManager implements AutoCloseable {
 
     public EntityMetaProvider getEntityMetaProvider() {
         return entityMetaProvider;
+    }
+
+    public static void checkBooleanStorage(Field field, ColumnMeta meta) {
+        if (meta.getBooleanStorage() != null && field.getType() != boolean.class && field.getType() != Boolean.class) {
+            throw new IllegalArgumentException("Boolean storage " + meta.getBooleanStorage()
+                    + " requires boolean or Boolean field: " + field.getDeclaringClass().getName()
+                    + "." + field.getName() + " (" + field.getType().getName() + ")");
+        }
     }
 
     /**
@@ -304,6 +314,8 @@ public class EntityManager implements AutoCloseable {
         private boolean updatable = true;
         /** Enum parameter storage strategy; null uses STRING (the constant name). */
         private ColumnEnumType enumerated;
+        /** Boolean storage strategy; null keeps the provider and JDBC defaults. */
+        private BooleanStorage booleanStorage;
         private boolean ignore = false;
 
         public ColumnMeta(@NotNull String name) {
@@ -368,13 +380,27 @@ public class EntityManager implements AutoCloseable {
             this.enumerated = enumerated;
         }
 
+        public BooleanStorage getBooleanStorage() {
+            return booleanStorage;
+        }
+
+        /**
+         * Configure both result and parameter conversion for a boolean or Boolean field.
+         * Configured results bypass {@link EntityMetaProvider#columnValue(Field, Object)}.
+         *
+         * @param booleanStorage storage strategy, or null to keep existing conversion
+         */
+        public void setBooleanStorage(BooleanStorage booleanStorage) {
+            this.booleanStorage = booleanStorage;
+        }
+
         @Override
         public final boolean equals(Object o) {
             if (!(o instanceof ColumnMeta)) return false;
 
             ColumnMeta meta = (ColumnMeta) o;
             return isPrimaryKey() == meta.isPrimaryKey() && isInsertable() == meta.isInsertable() && isUpdatable() == meta.isUpdatable() && isIgnore() == meta.isIgnore() && getName().equals(meta.getName()) && getIdGenerateStrategy() == meta.getIdGenerateStrategy()
-                    && getEnumerated() == meta.getEnumerated();
+                    && getEnumerated() == meta.getEnumerated() && getBooleanStorage() == meta.getBooleanStorage();
         }
 
         @Override
@@ -386,6 +412,7 @@ public class EntityManager implements AutoCloseable {
             result = 31 * result + Boolean.hashCode(isUpdatable());
             result = 31 * result + Boolean.hashCode(isIgnore());
             result = 31 * result + Objects.hashCode(getEnumerated());
+            result = 31 * result + Objects.hashCode(getBooleanStorage());
             return result;
         }
     }
@@ -404,5 +431,81 @@ public class EntityManager implements AutoCloseable {
     public enum ColumnEnumType {
         ORDINAL,
         STRING,
+    }
+
+    /** Explicit boolean column encodings. Nulls are preserved in both directions. */
+    public enum BooleanStorage {
+        /** Bind Integer 0/1; read numeric 0/1. */
+        NUMERIC(0, 1),
+        /** Bind and read the exact strings "0"/"1". */
+        ZERO_ONE_STRING("0", "1"),
+        /** Bind and read the exact strings "N"/"Y". */
+        YES_NO("N", "Y");
+
+        private final Object falseValue;
+        private final Object trueValue;
+
+        BooleanStorage(Object falseValue, Object trueValue) {
+            this.falseValue = falseValue;
+            this.trueValue = trueValue;
+        }
+
+        /**
+         * Encode a boolean parameter using this storage rule.
+         *
+         * @param value Boolean value or null
+         * @return encoded Integer or String value, or null
+         * @throws IllegalArgumentException if the value is not a Boolean or null
+         */
+        public Object toDatabaseValue(Object value) {
+            if (value == null) {
+                return null;
+            }
+            if (!(value instanceof Boolean)) {
+                throw new IllegalArgumentException("Boolean storage " + this + " requires a Boolean parameter, got: "
+                        + value + " (" + value.getClass().getName() + ")");
+            }
+            return (Boolean) value ? trueValue : falseValue;
+        }
+
+        /**
+         * Decode a database value using this storage rule.
+         *
+         * @param value stored value, an already converted Boolean, or null
+         * @return Boolean value or null
+         * @throws IllegalArgumentException if the stored value does not match this rule
+         */
+        public Object toEntityValue(Object value) {
+            // Some drivers already return Boolean for numeric boolean columns.
+            if (value == null || value instanceof Boolean) {
+                return value;
+            }
+            if (this == NUMERIC && value instanceof Number) {
+                try {
+                    BigDecimal number = new BigDecimal(value.toString());
+                    if (number.compareTo(BigDecimal.ZERO) == 0) {
+                        return false;
+                    }
+                    if (number.compareTo(BigDecimal.ONE) == 0) {
+                        return true;
+                    }
+                } catch (NumberFormatException ex) {
+                    throw invalidValue(value);
+                }
+            } else {
+                if (falseValue.equals(value)) {
+                    return false;
+                }
+                if (trueValue.equals(value)) {
+                    return true;
+                }
+            }
+            throw invalidValue(value);
+        }
+
+        private IllegalArgumentException invalidValue(Object value) {
+            return new IllegalArgumentException("Invalid value for boolean storage " + this + ": " + value
+                    + " (" + value.getClass().getName() + "); expected " + falseValue + " or " + trueValue);
+        }
     }
 }

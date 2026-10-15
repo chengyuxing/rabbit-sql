@@ -20,6 +20,8 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.github.chengyuxing.common.util.ReflectUtils.isBindableObject;
+
 /**
  * XQL mapping to interface method invocation handler.
  */
@@ -31,8 +33,6 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
     public static final Pattern CALL_PATTERN = Pattern.compile("^(?:call|proc|func)[^a-z]\\w*");
     public static final Pattern BATCH_PATTERN = Pattern.compile("^batch[^a-z]\\w*");
 
-    private final ClassLoader classLoader = this.getClass().getClassLoader();
-
     protected abstract @NotNull BakiDao baki();
 
     protected EntityManager.EntityMetaProvider entityMetaProvider() {
@@ -43,10 +43,14 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
         if (method.getDeclaringClass() == Object.class) {
             switch (method.getName()) {
-                case "equals": return proxy == args[0];
-                case "hashCode": return System.identityHashCode(proxy);
-                case "toString": return "XQLMapper[" + proxy.getClass().getInterfaces()[0].getName() + "]@" + Integer.toHexString(System.identityHashCode(proxy));
-                default: throw new UnsupportedOperationException("Unsupported Object method: " + method);
+                case "equals":
+                    return proxy == args[0];
+                case "hashCode":
+                    return System.identityHashCode(proxy);
+                case "toString":
+                    return "XQLMapper[" + proxy.getClass().getInterfaces()[0].getName() + "]@" + Integer.toHexString(System.identityHashCode(proxy));
+                default:
+                    throw new UnsupportedOperationException("Unsupported Object method: " + method);
             }
         }
         if (method.isDefault()) {
@@ -294,27 +298,15 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
     }
 
     /**
-     * Get method first return generic type
+     * Get the method's first return generic argument. Subclasses may customize resolution.
      *
-     * @param method method
-     * @return generic type
-     * @throws ClassNotFoundException java bean entity class not found
+     * @param method mapper method
+     * @return generic argument class, or null if the return type is not parameterized
+     * @throws ClassNotFoundException retained for compatibility with subclass overrides
+     * @see ReflectUtils#getReturnGenericType(Method, int)
      */
     protected Class<?> getReturnGenericType(Method method) throws ClassNotFoundException {
-        Class<?> genericType = null;
-        Type genericReturnType = method.getGenericReturnType();
-        if (genericReturnType instanceof ParameterizedType) {
-            Type[] actualTypeArguments = ((ParameterizedType) genericReturnType).getActualTypeArguments();
-            if (actualTypeArguments.length == 1) {
-                Type actualTypeArgument = actualTypeArguments[0];
-                if (actualTypeArgument instanceof ParameterizedType) {
-                    genericType = (Class<?>) ((ParameterizedType) actualTypeArgument).getRawType();
-                } else {
-                    genericType = classLoader.loadClass(actualTypeArgument.getTypeName());
-                }
-            }
-        }
-        return genericType;
+        return ReflectUtils.getReturnGenericType(method, 0);
     }
 
     /**
@@ -395,17 +387,6 @@ public abstract class XQLInvocationHandler implements InvocationHandler {
             result.put(arg.value(), args[i]);
         }
         return result;
-    }
-
-    private boolean isBindableObject(@NotNull Class<?> type) {
-        String name = type.getName();
-        if (StringUtils.startsWiths(name, "java.", "javax.", "jakarta.")) {
-            return false;
-        }
-        if (type.isInterface() || type.isEnum() || type.isArray() || type.isPrimitive()) {
-            return false;
-        }
-        return !type.isSynthetic() && !StringUtils.startsWiths(name, "$$", "$Proxy");
     }
 
     private boolean isImplicitSingleArg(Parameter parameter) {

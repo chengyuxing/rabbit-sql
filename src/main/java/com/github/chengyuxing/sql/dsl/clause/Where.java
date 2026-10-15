@@ -41,6 +41,17 @@ public abstract class Where<T> {
     protected abstract @NotNull String getColumnName(@NotNull MethodReference<T> MethodReference);
 
     /**
+     * Convert one bound condition value, including individual IN and BETWEEN values.
+     *
+     * @param column database column name
+     * @param value condition value
+     * @return parameter value
+     */
+    protected Object getColumnValue(String column, Object value) {
+        return value;
+    }
+
+    /**
      * Add a condition.
      *
      * @param column   column
@@ -416,11 +427,11 @@ public abstract class Where<T> {
                 if (condition instanceof InCondition) {
                     @SuppressWarnings({"rawtypes", "unchecked"}) Pair<String, Map<String, Object>> result = ((InCondition) condition).buildStatement(unique, namedParamPrefix());
                     sb.append(result.getItem1());
-                    params.putAll(result.getItem2());
+                    result.getItem2().forEach((key, value) -> params.put(key, getColumnValue(condition.getColumn(), value)));
                 } else if (condition instanceof BetweenCondition) {
                     @SuppressWarnings({"rawtypes", "unchecked"}) Pair<String, Map<String, Object>> result = ((BetweenCondition) condition).buildStatement(unique, namedParamPrefix());
                     sb.append(result.getItem1());
-                    params.putAll(result.getItem2());
+                    result.getItem2().forEach((key, value) -> params.put(key, getColumnValue(condition.getColumn(), value)));
                 } else {
                     if (condition.getOperator() == IS_NULL || condition.getOperator() == IS_NOT_NULL) {
                         sb.append(condition.getColumn())
@@ -431,7 +442,7 @@ public abstract class Where<T> {
                         sb.append(condition.getColumn())
                                 .append(condition.getOperator().padWithSpace())
                                 .append(namedParamPrefix()).append(key);
-                        params.put(key, condition.getValue());
+                        params.put(key, getColumnValue(condition.getColumn(), condition.getValue()));
                     }
                 }
             } else if (criteria instanceof AndGroup) {

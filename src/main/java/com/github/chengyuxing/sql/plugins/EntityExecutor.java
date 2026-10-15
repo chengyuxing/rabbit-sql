@@ -43,6 +43,24 @@ public interface EntityExecutor<T> {
     @NotNull Optional<T> findById(@NotNull Object id);
 
     /**
+     * Check for a row by its single primary key without loading an entity.
+     *
+     * @param id non-null primary-key value
+     * @return whether a matching row exists
+     * @throws IllegalArgumentException if id is null
+     */
+    boolean existsById(@NotNull Object id);
+
+    /**
+     * Delete a row by its single primary key.
+     *
+     * @param id non-null primary-key value
+     * @return affected row count, zero if no row matches
+     * @throws IllegalArgumentException if id is null
+     */
+    int deleteById(@NotNull Object id);
+
+    /**
      * Insert.
      *
      * @return Insert object

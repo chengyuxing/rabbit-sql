@@ -79,6 +79,6 @@ public abstract class OrderBy<T> {
         for (Pair<String, OrderByType> order : orders) {
             joiner.add(order.getItem1() + " " + order.getItem2().name().toLowerCase());
         }
-        return "\norder by " + joiner;
+        return joiner.toString();
     }
 }

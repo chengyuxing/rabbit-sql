@@ -280,6 +280,16 @@ public class SqlGenerator {
     }
 
     /**
+     * Generate exists select statement.
+     *
+     * @param tableName table name
+     * @return 1 select statement
+     */
+    public String generate1Select(String tableName) {
+        return "select 1 from " + tableName;
+    }
+
+    /**
      * Generate delete by statement.
      *
      * @param tableName table name
@@ -307,6 +317,16 @@ public class SqlGenerator {
      */
     public String appendWhere(String statement) {
         return statement + "\nwhere ";
+    }
+
+    /**
+     * Append order by keyword at the statement ends.
+     *
+     * @param statement main statement
+     * @return statement with order by
+     */
+    public String appendOrderBy(String statement) {
+        return statement + "\norder by ";
     }
 
     public Pattern getNamedParamPattern() {

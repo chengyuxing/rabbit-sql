@@ -302,6 +302,8 @@ public class EntityManager implements AutoCloseable {
         private IdGenerateStrategy idGenerateStrategy = IdGenerateStrategy.NONE;
         private boolean insertable = true;
         private boolean updatable = true;
+        /** Enum parameter storage strategy; null uses STRING (the constant name). */
+        private ColumnEnumType enumerated;
         private boolean ignore = false;
 
         public ColumnMeta(@NotNull String name) {
@@ -358,12 +360,21 @@ public class EntityManager implements AutoCloseable {
             }
         }
 
+        public ColumnEnumType getEnumerated() {
+            return enumerated;
+        }
+
+        public void setEnumerated(ColumnEnumType enumerated) {
+            this.enumerated = enumerated;
+        }
+
         @Override
         public final boolean equals(Object o) {
             if (!(o instanceof ColumnMeta)) return false;
 
             ColumnMeta meta = (ColumnMeta) o;
-            return isPrimaryKey() == meta.isPrimaryKey() && isInsertable() == meta.isInsertable() && isUpdatable() == meta.isUpdatable() && isIgnore() == meta.isIgnore() && getName().equals(meta.getName()) && getIdGenerateStrategy() == meta.getIdGenerateStrategy();
+            return isPrimaryKey() == meta.isPrimaryKey() && isInsertable() == meta.isInsertable() && isUpdatable() == meta.isUpdatable() && isIgnore() == meta.isIgnore() && getName().equals(meta.getName()) && getIdGenerateStrategy() == meta.getIdGenerateStrategy()
+                    && getEnumerated() == meta.getEnumerated();
         }
 
         @Override
@@ -374,6 +385,7 @@ public class EntityManager implements AutoCloseable {
             result = 31 * result + Boolean.hashCode(isInsertable());
             result = 31 * result + Boolean.hashCode(isUpdatable());
             result = 31 * result + Boolean.hashCode(isIgnore());
+            result = 31 * result + Objects.hashCode(getEnumerated());
             return result;
         }
     }
@@ -387,5 +399,10 @@ public class EntityManager implements AutoCloseable {
          * Generate by database auto increment or sequence
          */
         IDENTITY
+    }
+
+    public enum ColumnEnumType {
+        ORDINAL,
+        STRING,
     }
 }

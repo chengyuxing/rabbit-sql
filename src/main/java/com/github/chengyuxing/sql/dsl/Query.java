@@ -136,6 +136,14 @@ public interface Query<T, SELF extends Query<T, SELF>> {
     long count();
 
     /**
+     * Check whether any row matches the current conditions. Does not load entities
+     * or execute a count query; projection and ordering are ignored.
+     *
+     * @return whether at least one row matches
+     */
+    boolean exists();
+
+    /**
      * Foreach query result.
      *
      * @param consumer consumer

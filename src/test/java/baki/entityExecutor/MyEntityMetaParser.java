@@ -1,6 +1,7 @@
 package baki.entityExecutor;
 
 import com.github.chengyuxing.sql.EntityManager;
+import com.github.chengyuxing.common.util.ValueUtils;
 
 import javax.persistence.*;
 import java.lang.reflect.Field;
@@ -43,6 +44,11 @@ public class MyEntityMetaParser implements EntityManager.EntityMetaProvider {
                 columnMeta.setIdGenerateStrategy(EntityManager.IdGenerateStrategy.IDENTITY);
             }
         }
+        Enumerated enumerated = field.getAnnotation(Enumerated.class);
+        if (enumerated != null) {
+            columnMeta.setEnumerated(enumerated.value() == EnumType.ORDINAL
+                    ? EntityManager.ColumnEnumType.ORDINAL : EntityManager.ColumnEnumType.STRING);
+        }
         columnMeta.setIgnore(field.isAnnotationPresent(Transient.class));
         return columnMeta;
     }
@@ -55,6 +61,6 @@ public class MyEntityMetaParser implements EntityManager.EntityMetaProvider {
                 return value;
             };
         }
-        return value;
+        return ValueUtils.adaptValue(field.getType(), value);
     }
 }

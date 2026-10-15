@@ -88,6 +88,8 @@ public class JdbcUtils {
             ps.setTimestamp(index, Timestamp.from((Instant) value));
         } else if (value instanceof UUID) {
             ps.setString(index, value.toString());
+        } else if (value instanceof Enum<?>) {
+            ps.setString(index, ((Enum<?>) value).name());
         } else if (value instanceof InputStream) {
             ps.setBinaryStream(index, (InputStream) value);
         } else if (value instanceof Path) {

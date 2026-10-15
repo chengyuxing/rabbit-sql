@@ -14,6 +14,40 @@ import java.util.function.Function;
  */
 public interface Update<T> {
     /**
+     * Update only the specified mapped properties in primary-key saves.
+     * Repeated calls accumulate properties for this Update instance, including
+     * batch saves. Null handling follows {@link #withNullValues()}.
+     * Cannot be combined with {@link #exclude(MethodReference[])} or conditional
+     * {@link #where(Function)} updates.
+     *
+     * @param fields one or more entity getter references, not database column names
+     * @return Update object
+     * @throws IllegalArgumentException if no fields are supplied, or a property is
+     * unmapped, a primary key, or not updatable
+     * @throws IllegalStateException if exclusions have already been configured
+     */
+    @SuppressWarnings("unchecked")
+    Update<T> only(@NotNull MethodReference<T>... fields);
+
+    /**
+     * Exclude mapped entity properties from the SET clause of primary-key saves.
+     * Repeated calls accumulate exclusions for this Update instance; batch saves
+     * apply the same exclusions to every entity. Primary-key lookup and metadata
+     * updatable restrictions are unchanged. Null handling follows {@link #withNullValues()}.
+     * If no columns remain, save returns zero (one zero per entity for a batch).
+     * Cannot be combined with conditional {@link #where(Function)} updates.
+     * Cannot be combined with {@link #only(MethodReference[])}; an empty field list
+     * otherwise leaves the configuration unchanged.
+     *
+     * @param fields entity getter references, not database column names
+     * @return Update object
+     * @throws IllegalArgumentException if a reference does not resolve to a mapped property
+     * @throws IllegalStateException if only-properties have already been configured
+     */
+    @SuppressWarnings("unchecked")
+    Update<T> exclude(@NotNull MethodReference<T>... fields);
+
+    /**
      * Enabling updates allows setting null values
      * and invoke JDBC {@link java.sql.Statement#executeBatch() executeBatchUpdate} otherwise update each item with for loop.
      * <p>

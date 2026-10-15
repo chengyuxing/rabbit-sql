@@ -25,6 +25,63 @@ import static org.junit.Assert.*;
 
 public class EntityRegressionTest {
     @Test
+    public void queriesWithoutSortExpressionsOmitOrderBy() {
+        baki.execute("insert into entries values (1, 'first', 1), (2, 'second', 0)", Collections.emptyMap());
+        java.util.List<String> sqls = new java.util.ArrayList<>();
+        baki.setSqlInterceptor((rawSql, sql, args, info) -> {
+            sqls.add(sql.toLowerCase(java.util.Locale.ROOT));
+            return sql;
+        });
+        for (boolean configureEmptyOrder : new boolean[]{false, true}) {
+            com.github.chengyuxing.sql.dsl.Query<Row, ?> query = baki.entity(Row.class).query();
+            if (configureEmptyOrder) {
+                query.orderBy(o -> o);
+            }
+            assertEquals(2, query.list().size());
+            assertEquals(1, query.top(1).size());
+            assertTrue(query.findFirst().isPresent());
+            assertEquals(1, query.pageable(1, 1).getData().size());
+            assertEquals(2, query.count());
+            assertTrue(query.exists());
+        }
+        assertFalse(sqls.isEmpty());
+        for (String sql : sqls) {
+            assertFalse(sql, sql.contains("order by"));
+        }
+    }
+
+    @Test
+    public void multipleSortExpressionsApplyToRecordsButNotCountOrExists() {
+        baki.execute("insert into entries values (1, 'a', 1), (2, 'b', 0), (3, 'a', 1)", Collections.emptyMap());
+        java.util.List<String> sqls = new java.util.ArrayList<>();
+        baki.setSqlInterceptor((rawSql, sql, args, info) -> {
+            sqls.add(sql.toLowerCase(java.util.Locale.ROOT));
+            return sql;
+        });
+        com.github.chengyuxing.sql.dsl.Query<Row, ?> query = baki.entity(Row.class).query()
+                .where(w -> w.gt(Row::getId, 0L))
+                .orderBy(o -> o.asc(Row::getName)).orderBy(o -> o.desc(Row::getId));
+        assertEquals(java.util.Arrays.asList(3L, 1L, 2L), query.list().stream()
+                .map(Row::getId).collect(java.util.stream.Collectors.toList()));
+        assertEquals(Long.valueOf(3), query.top(1).get(0).getId());
+        assertEquals(Long.valueOf(1), query.pageable(2, 1).getData().get(0).getId());
+        for (String sql : sqls) {
+            if (!sql.contains("count(")) {
+                assertTrue(sql, sql.contains("order by name asc, entry_id desc"));
+                assertEquals(sql, sql.indexOf("order by"), sql.lastIndexOf("order by"));
+            } else {
+                assertFalse(sql, sql.contains("order by"));
+            }
+        }
+        sqls.clear();
+        assertEquals(3, query.count());
+        assertTrue(query.exists());
+        for (String sql : sqls) {
+            assertFalse(sql, sql.contains("order by"));
+        }
+    }
+
+    @Test
     public void uuidPrimaryKeySupportsEntityInsertFindUpdateAndDelete() {
         baki.execute("create table uuid_entries (entry_id varchar(36) primary key, name text)", Collections.emptyMap());
         java.util.UUID id = java.util.UUID.fromString("550e8400-e29b-41d4-a716-446655440000");
@@ -33,6 +90,7 @@ public class EntityRegressionTest {
         entity.setName("first");
         EntityExecutor<UuidRow> executor = baki.entity(UuidRow.class);
         assertEquals(1, executor.insert().save(entity));
+        assertTrue(executor.existsById(id));
         assertEquals(id.toString(),
                 baki.query("select entry_id from uuid_entries").findFirstRow().getString(0));
         UuidRow read = executor.findById(id).get();
@@ -43,6 +101,10 @@ public class EntityRegressionTest {
         assertEquals("updated", executor.findById(id).get().getName());
         assertEquals(1, executor.delete().execute(read));
         assertFalse(executor.findById(id).isPresent());
+        assertFalse(executor.existsById(id));
+        assertEquals(0, executor.deleteById(id));
+        assertEquals(1, executor.insert().save(entity));
+        assertEquals(1, executor.deleteById(id));
     }
 
     @Entity

@@ -1,5 +1,9 @@
 # change note
 
+## 10.3.25
+
+- Fixed `BakiDao#getEntityMetaProvider` NPE by default
+
 ## 10.3.24
 
 - Update rabbit-common to 3.2.16; Spring Boot Starter 5.3.25 uses rabbit-sql 10.3.24.

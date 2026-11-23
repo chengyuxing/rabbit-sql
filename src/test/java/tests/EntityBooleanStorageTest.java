@@ -6,6 +6,7 @@ import com.github.chengyuxing.sql.BakiDao;
 import com.github.chengyuxing.sql.EntityManager;
 import com.github.chengyuxing.sql.EntityManager.BooleanStorage;
 import com.github.chengyuxing.sql.plugins.EntityExecutor;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -242,7 +243,7 @@ public class EntityBooleanStorageTest {
     private Row mapped(DataRow row) {
         BakiDao probe = new BakiDao(source) {
             @Override
-            public Stream<DataRow> executeQueryStream(String sql, Map<String, ?> args) {
+            public Stream<DataRow> executeQueryStream(@NotNull String sql, Map<String, ?> args) {
                 return Stream.of(row);
             }
         };

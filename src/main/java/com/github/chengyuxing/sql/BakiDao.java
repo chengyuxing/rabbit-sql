@@ -1522,7 +1522,7 @@ public class BakiDao extends JdbcSupport implements Baki {
     }
 
     public EntityManager.EntityMetaProvider getEntityMetaProvider() {
-        return entityMetaProvider;
+        return this.entityManager.getEntityMetaProvider();
     }
 
     public void setEntityMetaProvider(EntityManager.EntityMetaProvider entityMetaProvider) {

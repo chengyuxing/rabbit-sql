@@ -9,6 +9,7 @@ import com.github.chengyuxing.sql.util.JdbcUtils;
 import com.github.chengyuxing.common.DataRow;
 import com.github.chengyuxing.sql.page.PageHelper;
 import com.github.chengyuxing.sql.page.impl.*;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -199,7 +200,7 @@ public class EntityConvenienceRegressionTest {
             source.setUrl("jdbc:sqlite::memory:");
             BakiDao probe = new BakiDao(source) {
                 @Override protected PageHelper builtinPager() { return pager; }
-                @Override public Stream<DataRow> executeQueryStream(String sql, Map<String, ?> args) {
+                @Override public Stream<DataRow> executeQueryStream(@NotNull String sql, Map<String, ?> args) {
                     executions.incrementAndGet();
                     assertTrue(sql.contains("select 1 from entries"));
                     assertFalse(sql.contains("count("));
